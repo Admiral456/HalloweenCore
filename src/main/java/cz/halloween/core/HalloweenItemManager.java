@@ -27,10 +27,20 @@ public final class HalloweenItemManager {
             Object raw = getItemStack.invoke(customStack);
             if (!(raw instanceof ItemStack item)) return null;
 
+            String implementation = raw.getClass().getName();
+            if (!implementation.startsWith("org.bukkit.")) {
+                String warningKey = namespacedId + "|unsafe-itemstack";
+                if (warnedMissing.add(warningKey)) {
+                    plugin.getLogger().warning("ItemsAdder returned an unsupported ItemStack implementation for '"
+                            + namespacedId + "' (" + implementation + "). Using vanilla fallback.");
+                }
+                return null;
+            }
+
             ItemStack clone = item.clone();
             clone.setAmount(Math.max(1, amount));
             return clone;
-        } catch (ReflectiveOperationException | LinkageError ignored) {
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
             return null;
         }
     }
