@@ -26,6 +26,18 @@ public final class HalloweenBossManager {
         );
     }
 
+    public boolean isVampireReady() {
+        VampireSpec spec = getVampireSpec();
+        int requiredProgress = plugin.getConfig().getInt("bosses.vampire.spawn-requirements.global-progress-percent", 100);
+        long goal = plugin.getService().getGlobalGoal();
+        double progress = plugin.getService().getGlobalProgressPercent();
+        boolean progressReady = goal <= 0L || progress >= Math.max(0, Math.min(100, requiredProgress));
+        return plugin.getDataManager().isFinaleUnlocked()
+                && progressReady
+                && spec.finalBoss()
+                && spec.arenaRequired();
+    }
+
     public boolean isVampireSpecificationValid() {
         VampireSpec spec = getVampireSpec();
         return spec.minHeightBlocks() >= 10
