@@ -39,6 +39,8 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween claim <id>
 - /halloween top
 - /halloween reload
+- /halloween debug
+- /halloween setvillage (admin)
 - /halloween give <hráč> <počet>
 - /halloween on|off
 
