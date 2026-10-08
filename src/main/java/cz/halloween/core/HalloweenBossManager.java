@@ -69,6 +69,7 @@ public final class HalloweenBossManager {
             }
         }
         return spec.enabled()
+                && !plugin.getDataManager().isVampireDefeated()
                 && plugin.getDataManager().isFinaleUnlocked()
                 && progressReady
                 && spec.finalBoss()
