@@ -26,6 +26,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenBossManager bossManager;
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
+    private HalloweenVillageDiscoveryManager villageDiscoveryManager;
 
     @Override
     public void onEnable() {
@@ -44,6 +45,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         bossManager = new HalloweenBossManager(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
+        villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
 
         for (String error : HalloweenConfigValidator.validate(this)) {
             getLogger().severe("[CONFIG] " + error);
@@ -56,6 +58,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new HalloweenQuitListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenItemListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenRewardMenuListener(this), this);
+        getServer().getPluginManager().registerEvents(villageDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
 
         if (getCommand("halloween") != null) {
