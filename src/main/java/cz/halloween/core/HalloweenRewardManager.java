@@ -34,8 +34,10 @@ public final class HalloweenRewardManager {
             long cost = Math.max(0L, section.getLong(id + ".cost", 0L));
             String name = section.getString(id + ".name", id);
             boolean claimed = plugin.getDataManager().hasClaimedReward(player.getUniqueId(), id);
+            int minCurse = Math.max(0, section.getInt(id + ".min-curse", 0));
+            String requirement = minCurse > 0 ? " &8• &5prokletí " + minCurse : "";
             String status = claimed ? "&8[VYBRÁNO]" : "&a[DOSTUPNÉ]";
-            player.sendMessage(plugin.color("&e" + id + " &8» &f" + name + " &7(" + cost + " fragmentů) " + status));
+            player.sendMessage(plugin.color("&e" + id + " &8» &f" + name + " &7(" + cost + " fragmentů)" + requirement + " " + status));
         }
 
         player.sendMessage(plugin.color("&7Použití: &f/halloween claim <id>"));
@@ -57,6 +59,13 @@ public final class HalloweenRewardManager {
 
         if (plugin.getDataManager().hasClaimedReward(player.getUniqueId(), normalizedId)) {
             player.sendMessage(plugin.color("&cTuhle limitovanou odměnu už máš."));
+            return false;
+        }
+
+        int minCurse = Math.max(0, section.getInt("min-curse", 0));
+        int currentCurse = plugin.getService().getCurseLevel(player.getUniqueId());
+        if (currentCurse < minCurse) {
+            player.sendMessage(plugin.color("&cTahle odměna vyžaduje prokletí alespoň &5" + minCurse + "&c. Tvoje úroveň: &e" + currentCurse + "&c."));
             return false;
         }
 
@@ -95,8 +104,10 @@ public final class HalloweenRewardManager {
         }
 
         var overflow = player.getInventory().addItem(item);
-        if (!overflow.isEmpty()) {
-            player.getWorld().dropItemNaturally(player.getLocation(), overflow.values().iterator().next());
+        for (ItemStack overflowItem : overflow.values()) {
+            if (overflowItem != null && !overflowItem.getType().isAir() && overflowItem.getAmount() > 0) {
+                player.getWorld().dropItemNaturally(player.getLocation(), overflowItem);
+            }
         }
 
         plugin.getDataManager().markRewardClaimed(player.getUniqueId(), normalizedId);
