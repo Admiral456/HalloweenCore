@@ -4,15 +4,15 @@ Namespace:
 - warriorland_halloween
 
 Included item textures (32x32 PNG):
-- textures/item/hunter_mask.png
-- textures/item/cursed_talisman.png
-- textures/item/halloween_token.png
-- textures/item/cursed_candy.png
+- resourcepack/assets/warriorland_halloween/textures/item/hunter_mask.png
+- resourcepack/assets/warriorland_halloween/textures/item/cursed_talisman.png
+- resourcepack/assets/warriorland_halloween/textures/item/halloween_token.png
+- resourcepack/assets/warriorland_halloween/textures/item/cursed_candy.png
 
 Planned world/audio assets:
-- resourcepack/warriorland_halloween/textures/sky/halloween_sky.png
-- resourcepack/warriorland_halloween/sounds/haunted_theme.ogg
-- resourcepack/warriorland_halloween/sounds/event_ambience.ogg
+- resourcepack/assets/minecraft/shaders/core/sky.fsh
+- resourcepack/assets/warriorland_halloween/sounds/haunted_theme.ogg
+- resourcepack/assets/warriorland_halloween/sounds/event_ambience.ogg
 
 The Java plugin uses these IDs:
 - warriorland_halloween:hunter_mask
