@@ -68,6 +68,7 @@ rewards:
     hunter-mask:
       cost: 1500
       min-curse: 1
+      itemsadder-id: "warriorland_halloween:hunter_mask"
       material: CARVED_PUMPKIN
       amount: 1
       name: "&6&lMaska nočního lovce &8[Halloween 2026]"
@@ -79,6 +80,7 @@ rewards:
     cursed-talisman:
       cost: 5000
       min-curse: 4
+      itemsadder-id: "warriorland_halloween:cursed_talisman"
       material: NETHER_STAR
       amount: 1
       name: "&5&lProkletý talisman &8[2026]"
@@ -90,6 +92,7 @@ rewards:
     halloween-token:
       cost: 10000
       min-curse: 5
+      itemsadder-id: "warriorland_halloween:halloween_token"
       material: NAME_TAG
       amount: 1
       name: "&c&lHalloween 2026"
@@ -102,6 +105,7 @@ special-mobs:
   chance: 0.04
   bonus-fragments: 12
   relic-drop-chance: 0.12
+  relic-item-id: "warriorland_halloween:cursed_candy"
   types:
     cursed-zombie:
       name: "&5&lProkletý zombie"
