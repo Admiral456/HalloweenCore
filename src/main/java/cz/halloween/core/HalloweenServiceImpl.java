@@ -89,9 +89,16 @@ public final class HalloweenServiceImpl implements HalloweenService {
             multiplier *= plugin.getEventManager().getMultiplier(source == null ? "unknown" : source);
         }
 
-        double curseBonus = plugin.getConfig().getDouble("curse.bonus-per-level", 0.05D);
-        int level = getCurseLevel(playerId);
-        multiplier *= Math.max(0.0D, 1.0D + (level * curseBonus));
+        boolean curseBoostedSource = source != null && switch (source.toLowerCase()) {
+            case "mob-kill", "mining", "farming", "fishing", "special-mob" -> true;
+            default -> false;
+        };
+
+        if (curseBoostedSource) {
+            double curseBonus = plugin.getConfig().getDouble("curse.bonus-per-level", 0.05D);
+            int level = getCurseLevel(playerId);
+            multiplier *= Math.max(0.0D, 1.0D + (level * curseBonus));
+        }
 
         return Math.max(1.0D, multiplier);
     }
@@ -120,7 +127,7 @@ public final class HalloweenServiceImpl implements HalloweenService {
 
     @Override
     public int getCurseLevel(UUID playerId) {
-        long fragments = getFragments(playerId);
+        long fragments = plugin.getDataManager().getLifetimeFragments(playerId);
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("curse.levels");
         if (section == null) return 0;
 
