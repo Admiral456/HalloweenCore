@@ -21,7 +21,8 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - odměny jsou navíc gated podle úrovně prokletí, takže nejlepší věci vyžadují aktivní hraní
 - během eventu běží atmosférická smyčka zvuku
 - při připojení se zobrazí Halloween title/subtitle
-- custom odměny a relikvie mají připravené ItemsAdder ID a bezpečný vanilla fallback
+- custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
+- po dosažení globálního cíle se natrvalo odemkne serverové finále pro budoucího hlavního bosse
 
 ## Příkazy
 
