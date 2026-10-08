@@ -107,13 +107,14 @@ public final class HalloweenMobManager implements Listener {
 
     public boolean spawnEventMob(Player player) {
         if (!plugin.isEventEnabled() || player == null) return false;
+        if (!plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
 
         World world = player.getWorld();
         if (!plugin.isEligibleGameplayWorld(world)) return false;
         int maxEventMobs = Math.max(1, plugin.getConfig().getInt("random-events.max-event-mobs", 12));
         if (countEventMobs(world) >= maxEventMobs) return false;
 
-        String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "hex-witch"};
+        String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
         String mobId = ids[ThreadLocalRandom.current().nextInt(ids.length)];
 
         org.bukkit.Location spawnLocation = findSafeEventLocation(player);
