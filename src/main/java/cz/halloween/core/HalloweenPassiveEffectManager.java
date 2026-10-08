@@ -27,6 +27,9 @@ public final class HalloweenPassiveEffectManager {
         if (!plugin.getConfig().getBoolean("rewards.passive-effects.enabled", true)) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player)) continue;
+            if (!plugin.isEligibleGameplayWorld(player.getWorld())) continue;
+
             ItemStack helmet = player.getInventory().getHelmet();
             if (!isReward(helmet, "hunter-mask")) continue;
 
