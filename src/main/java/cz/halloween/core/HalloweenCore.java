@@ -130,6 +130,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             if (enabled) eventManager.reloadSchedule();
             else {
                 eventManager.stop();
+                if (bossManager != null) bossManager.stopVampireBossBar();
                 if (atmosphere != null) atmosphere.stopPlayback();
             }
         }
