@@ -69,6 +69,7 @@ rewards:
       cost: 1500
       min-curse: 1
       itemsadder-id: "warriorland_halloween:hunter_mask"
+      bonus-multiplier: 0.05
       material: CARVED_PUMPKIN
       amount: 1
       name: "&6&lMaska nočního lovce &8[Halloween 2026]"
@@ -81,6 +82,7 @@ rewards:
       cost: 5000
       min-curse: 4
       itemsadder-id: "warriorland_halloween:cursed_talisman"
+      bonus-multiplier: 0.10
       material: NETHER_STAR
       amount: 1
       name: "&5&lProkletý talisman &8[2026]"
