@@ -90,6 +90,10 @@ public final class HalloweenDataManager {
         players.addAll(lastJoin.keySet());
         players.addAll(streaks.keySet());
         players.addAll(claimedRewards.keySet());
+        players.addAll(challengeDay.keySet());
+        players.addAll(challengeType.keySet());
+        players.addAll(challengeProgress.keySet());
+        players.addAll(challengeClaimed);
 
         for (UUID uuid : players) {
             String base = "players." + uuid;
