@@ -73,6 +73,14 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         atmosphere.start();
         passiveEffectManager.start();
 
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            if (new HalloweenPlaceholderExpansion(this).register()) {
+                getLogger().info("PlaceholderAPI expansion registered: %halloween_*%");
+            } else {
+                getLogger().warning("PlaceholderAPI is present, but Halloween expansion could not be registered.");
+            }
+        }
+
         getLogger().info("HalloweenCore enabled. Event=" + eventEnabled);
     }
 
