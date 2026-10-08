@@ -4,6 +4,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -118,11 +120,12 @@ public final class HalloweenDataManager {
             File temp = new File(plugin.getDataFolder(), "data.yml.tmp");
             data.save(temp);
 
-            if (file.exists() && !file.delete()) {
-                throw new IOException("Could not replace old data.yml.");
-            }
-            if (!temp.renameTo(file)) {
-                throw new IOException("Could not move temporary data.yml into place.");
+            try {
+                Files.move(temp.toPath(), file.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING,
+                        StandardCopyOption.ATOMIC_MOVE);
+            } catch (java.nio.file.AtomicMoveNotSupportedException ex) {
+                Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException ex) {
             plugin.getLogger().severe("Could not save data.yml: " + ex.getMessage());
