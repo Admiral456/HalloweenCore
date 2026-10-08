@@ -225,6 +225,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 plugin.getConfig().getString("rewards.shop.halloween-token.itemsadder-id", ""));
         boolean cursedCandy = plugin.getItemManager().isCustomItemAvailable(
                 plugin.getConfig().getString("special-mobs.relic-item-id", ""));
+        boolean hauntedMap = plugin.getItemManager().isCustomItemAvailable(
+                plugin.getConfig().getString("special-mobs.map-item-id", ""));
 
         long total = plugin.getService().getServerFragments();
         long goal = plugin.getService().getGlobalGoal();
@@ -242,10 +244,14 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7  cursed_talisman: " + status(cursedTalisman)));
         sender.sendMessage(plugin.color("&7  halloween_token: " + status(halloweenToken)));
         sender.sendMessage(plugin.color("&7  cursed_candy: " + status(cursedCandy)));
+        sender.sendMessage(plugin.color("&7  haunted_map: " + status(hauntedMap)));
         sender.sendMessage(plugin.color("&7MythicMobs: " + status(mythicMobs)));
         sender.sendMessage(plugin.color("&7BattlePass: " + status(battlePass)));
         sender.sendMessage(plugin.color("&7WorldGuard: " + status(worldGuard)));
         sender.sendMessage(plugin.color("&7PlaceholderAPI: " + status(papi)));
+        boolean villageConfigured = plugin.getConfig().getBoolean("haunted-village.enabled", false)
+                && !plugin.getConfig().getString("haunted-village.world", "").isBlank();
+        sender.sendMessage(plugin.color("&7Haunted Village: " + (villageConfigured ? "&aKONFIGUROVÁNA" : "&eČEKÁ NA SOUŘADNICE")));
         var configErrors = HalloweenConfigValidator.validate(plugin);
         sender.sendMessage(plugin.color("&7Config preflight: " + (configErrors.isEmpty() ? "&aOK" : "&c" + configErrors.size() + " chyba/chyb")));
         if (!configErrors.isEmpty()) {
