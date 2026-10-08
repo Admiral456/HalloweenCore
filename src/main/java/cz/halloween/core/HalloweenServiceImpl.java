@@ -65,7 +65,12 @@ public final class HalloweenServiceImpl implements HalloweenService {
         long after = getServerFragments();
         long goal = getGlobalGoal();
         if (goal > 0L && before < goal && after >= goal) {
+            plugin.getDataManager().unlockFinale();
+            plugin.getDataManager().save();
             plugin.broadcastGlobalGoalReached();
+        } else if (goal > 0L && after >= goal && !plugin.getDataManager().isFinaleUnlocked()) {
+            plugin.getDataManager().unlockFinale();
+            plugin.getDataManager().save();
         }
 
         for (long milestone : plugin.getConfig().getLongList("global-milestones")) {
