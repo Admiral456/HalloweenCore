@@ -109,6 +109,14 @@ rewards:
         - "&7Unikátní památeční předmět."
         - "&8Po skončení eventu už nebude v obchodu."
 
+haunted-village:
+  enabled: false
+  world: ""
+  x: 0
+  y: 100
+  z: 0
+  map-use-cooldown-seconds: 30
+
 special-mobs:
   enabled: true
   chance: 0.04
@@ -116,6 +124,8 @@ special-mobs:
   bonus-fragments: 12
   relic-drop-chance: 0.12
   relic-item-id: "warriorland_halloween:cursed_candy"
+  map-drop-chance: 0.03
+  map-item-id: "warriorland_halloween:haunted_map"
   types:
     cursed-zombie:
       name: "&5&lProkletý zombie"
