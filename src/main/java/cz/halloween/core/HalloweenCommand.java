@@ -209,7 +209,8 @@ public final class HalloweenCommand implements CommandExecutor {
 
         long before = plugin.getService().getFragments(target.getUniqueId());
         long newBalance = plugin.getService().addFragments(target.getUniqueId(), amount, "admin");
-        if (newBalance < before + amount && before <= Long.MAX_VALUE - amount) {
+        long expected = before > Long.MAX_VALUE - amount ? Long.MAX_VALUE : before + amount;
+        if (newBalance < expected) {
             sender.sendMessage(plugin.color("&cFragmenty se nepodařilo přidat."));
             return true;
         }
