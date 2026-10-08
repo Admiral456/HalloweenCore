@@ -41,6 +41,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween reload
 - /halloween debug
 - /halloween setvillage (admin)
+- /halloween setvampirearena (admin)
 - /halloween give <hráč> <počet>
 - /halloween on|off
 
