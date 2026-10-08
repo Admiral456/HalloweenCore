@@ -255,6 +255,12 @@ bosses:
     min-height-blocks: 10
     min-width-with-wings-blocks: 8
     wings-required: true
+    arena:
+      configured: false
+      world: ""
+      x: 0
+      y: 100
+      z: 0
     arena-required: true
     final-boss: true
     limited-to-event: true
