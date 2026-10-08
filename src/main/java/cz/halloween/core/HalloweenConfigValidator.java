@@ -97,6 +97,17 @@ public final class HalloweenConfigValidator {
             errors.add("special-mobs.map-item-id should use namespace:id");
         }
 
+        if (villageEnabled) {
+            double radius = plugin.getConfig().getDouble("haunted-village.discovery-radius", -1.0D);
+            long reward = plugin.getConfig().getLong("haunted-village.discovery-reward-fragments", -1L);
+            if (radius < 2.0D || radius > 128.0D) {
+                errors.add("haunted-village.discovery-radius must be between 2 and 128");
+            }
+            if (reward <= 0L) {
+                errors.add("haunted-village.discovery-reward-fragments must be > 0");
+            }
+        }
+
         ConfigurationSection vampire = plugin.getConfig().getConfigurationSection("bosses.vampire");
         if (vampire != null) {
             if (vampire.getInt("min-height-blocks", 0) < 10) {
