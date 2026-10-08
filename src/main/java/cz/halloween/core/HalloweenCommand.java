@@ -29,6 +29,7 @@ public final class HalloweenCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("claim")) return claim(sender, args);
         if (args[0].equalsIgnoreCase("challenge")) return challenge(sender);
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
+        if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
@@ -41,6 +42,7 @@ public final class HalloweenCommand implements CommandExecutor {
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
+        sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
         return true;
@@ -173,6 +175,40 @@ public final class HalloweenCommand implements CommandExecutor {
 
         if (position == 1) sender.sendMessage(plugin.color("&7Leaderboard je zatím prázdný."));
         return true;
+    }
+
+    private boolean debug(CommandSender sender) {
+        if (!checkAdmin(sender)) return true;
+
+        boolean itemsAdder = plugin.getServer().getPluginManager().getPlugin("ItemsAdder") != null;
+        boolean mythicMobs = plugin.getServer().getPluginManager().getPlugin("MythicMobs") != null;
+        boolean battlePass = plugin.getServer().getPluginManager().getPlugin("BattlePass") != null;
+        boolean worldGuard = plugin.getServer().getPluginManager().getPlugin("WorldGuard") != null;
+        boolean papi = plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
+
+        long total = plugin.getService().getServerFragments();
+        long goal = plugin.getService().getGlobalGoal();
+        double progress = plugin.getService().getGlobalProgressPercent();
+        HalloweenBossManager.VampireSpec vampire = plugin.getBossManager().getVampireSpec();
+
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        sender.sendMessage(plugin.color("&6&lHALLOWEEN DIAGNOSTIKA"));
+        sender.sendMessage(plugin.color("&7Event: " + (plugin.isEventEnabled() ? "&aON" : "&cOFF")));
+        sender.sendMessage(plugin.color("&7Random events: " + (plugin.getConfig().getBoolean("random-events.enabled", true) ? "&aON" : "&cOFF")));
+        sender.sendMessage(plugin.color("&7Server progress: &e" + total + " &7/ &e" + goal + " &8(" + String.format("%.1f", progress) + "%)"));
+        sender.sendMessage(plugin.color("&7Online hráči: &e" + Bukkit.getOnlinePlayers().size()));
+        sender.sendMessage(plugin.color("&7ItemsAdder: " + status(itemsAdder)));
+        sender.sendMessage(plugin.color("&7MythicMobs: " + status(mythicMobs)));
+        sender.sendMessage(plugin.color("&7BattlePass: " + status(battlePass)));
+        sender.sendMessage(plugin.color("&7WorldGuard: " + status(worldGuard)));
+        sender.sendMessage(plugin.color("&7PlaceholderAPI: " + status(papi)));
+        sender.sendMessage(plugin.color("&7Upíří boss: &e" + vampire.id() + " &7min. &e" + vampire.minHeightBlocks() + " &7h / &e" + vampire.minWidthWithWingsBlocks() + " &7w+křídla " + (plugin.getBossManager().isVampireSpecificationValid() ? "&aOK" : "&cNE"));
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        return true;
+    }
+
+    private String status(boolean present) {
+        return present ? "&aNALEZEN" : "&cNENÍ";
     }
 
     private boolean reload(CommandSender sender) {
