@@ -7,41 +7,33 @@ items:
     lore:
       - "&7Limitovaná Halloween odměna."
       - "&7Připomínka eventu WarriorLand 2026."
-    resource:
-      material: CARVED_PUMPKIN
-      generate: true
-      textures:
-        - item/hunter_mask
+    material: CARVED_PUMPKIN
+    graphics:
+      texture: item/hunter_mask
 
   cursed_talisman:
     display_name: "&5&lProkletý talisman &8[2026]"
     lore:
       - "&7Relikvie vysokého prokletí."
       - "&7Odemčená až na vyšší úrovni prokletí."
-    resource:
-      material: NETHER_STAR
-      generate: true
-      textures:
-        - item/cursed_talisman
+    material: NETHER_STAR
+    graphics:
+      texture: item/cursed_talisman
 
   halloween_token:
     display_name: "&c&lHalloween 2026"
     lore:
       - "&7Jedinečná památka."
       - "&8Po skončení eventu už nebude běžně dostupná."
-    resource:
-      material: NAME_TAG
-      generate: true
-      textures:
-        - item/halloween_token
+    material: NAME_TAG
+    graphics:
+      texture: item/halloween_token
 
   cursed_candy:
     display_name: "&6&lProkleté cukroví &8[Halloween 2026]"
     lore:
       - "&7Padá ze speciálních Halloween mobů."
       - "&7Po snězení tě na chvíli poznačí prokletí."
-    resource:
-      material: PUMPKIN_PIE
-      generate: true
-      textures:
-        - item/cursed_candy
+    material: PUMPKIN_PIE
+    graphics:
+      texture: item/cursed_candy
