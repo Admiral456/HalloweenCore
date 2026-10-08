@@ -56,6 +56,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         if (getCommand("halloween") != null) {
             getCommand("halloween").setExecutor(new HalloweenCommand(this));
+            getCommand("halloween").setTabCompleter(new HalloweenCommand(this));
         }
 
         long saveInterval = 20L * 60L * 5L;
