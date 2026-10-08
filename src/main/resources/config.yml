@@ -271,6 +271,7 @@ bosses:
       provider: MODEL_ENGINE
       id: vampire_king
       required: true
+      plugin-required: true
       ready: false
       min-height-blocks: 10
       min-width-with-wings-blocks: 8
