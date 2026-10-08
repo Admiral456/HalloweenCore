@@ -130,6 +130,9 @@ special-mobs:
 notifications:
   fragment-gain: true
 
+daily-challenge:
+  reward-fragments: 60
+
 return-rewards:
   claim-delay-hours: 20
   streak-window-hours: 48
