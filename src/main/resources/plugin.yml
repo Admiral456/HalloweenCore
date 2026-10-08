@@ -4,7 +4,7 @@ main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
 description: Halloween event core for Purpur/Paper 1.21.10.
-softdepend: [ItemsAdder, MythicMobs, BattlePass, WorldGuard, PlaceholderAPI]
+softdepend: [ItemsAdder, MythicMobs, ModelEngine, BattlePass, WorldGuard, PlaceholderAPI]
 commands:
   halloween:
     description: Halloween event statistics and administration.
