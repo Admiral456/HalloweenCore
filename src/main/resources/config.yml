@@ -200,6 +200,7 @@ random-events:
   duration-minutes: 5
   surge-interval-seconds: 45
   max-event-mobs: 12
+  event-mobs-enabled: true
   special-mob-chance-multiplier: 1.50
   sound: "halloween:haunted_theme"
   types:
