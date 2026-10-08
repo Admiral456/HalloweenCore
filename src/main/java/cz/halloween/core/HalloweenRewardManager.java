@@ -44,6 +44,39 @@ public final class HalloweenRewardManager {
         player.sendMessage(plugin.color("&8&m--------------------------------"));
     }
 
+    public double getBonusMultiplier(Player player) {
+        if (player == null) return 1.0D;
+
+        double bonus = 0.0D;
+        var shop = plugin.getConfig().getConfigurationSection("rewards.shop");
+        if (shop == null) return 1.0D;
+
+        if (isEquippedReward(player, "hunter-mask")) {
+            bonus += Math.max(0.0D, shop.getDouble("hunter-mask.bonus-multiplier", 0.05D));
+        }
+        if (hasRewardInInventory(player, "cursed-talisman")) {
+            bonus += Math.max(0.0D, shop.getDouble("cursed-talisman.bonus-multiplier", 0.10D));
+        }
+        return Math.max(1.0D, 1.0D + bonus);
+    }
+
+    private boolean hasRewardInInventory(Player player, String rewardId) {
+        for (ItemStack item : player.getInventory().getContents()) {
+            if (isRewardItem(item, rewardId)) return true;
+        }
+        return false;
+    }
+
+    private boolean isEquippedReward(Player player, String rewardId) {
+        return isRewardItem(player.getInventory().getHelmet(), rewardId);
+    }
+
+    private boolean isRewardItem(ItemStack item, String rewardId) {
+        if (item == null || item.getType().isAir() || item.getItemMeta() == null) return false;
+        String stored = item.getItemMeta().getPersistentDataContainer().get(rewardKey, PersistentDataType.STRING);
+        return rewardId.equalsIgnoreCase(stored);
+    }
+
     public boolean claim(Player player, String id) {
         if (id == null || id.isBlank()) {
             player.sendMessage(plugin.color("&cPoužij /halloween claim <id>."));
