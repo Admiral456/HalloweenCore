@@ -28,6 +28,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         service = new HalloweenServiceImpl(this);
 
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new HalloweenActivityListener(this), this);
+
         if (getCommand("halloween") != null) {
             getCommand("halloween").setExecutor(new HalloweenCommand(this));
         }
@@ -43,7 +45,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (dataManager != null) dataManager.save();
     }
 
-    @EventHandler
+    @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
         if (!eventEnabled) return;
 
