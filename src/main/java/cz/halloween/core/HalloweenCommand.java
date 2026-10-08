@@ -357,6 +357,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(plugin.color("&7Konfigurace: " + (spec.enabled() ? "&aZAPNUTA" : "&eVYPNUTA")));
                 sender.sendMessage(plugin.color("&7Specifikace: " + (plugin.getBossManager().isVampireSpecificationValid() ? "&aOK" : "&cNEPLATNÁ")));
                 sender.sendMessage(plugin.color("&7Finále: " + (plugin.getDataManager().isFinaleUnlocked() ? "&aODEMČENO" : "&cNEODEMČENO")));
+                sender.sendMessage(plugin.color("&7Král upírů poražen: " + (plugin.getDataManager().isVampireDefeated() ? "&aANO" : "&cNE")));
                 sender.sendMessage(plugin.color("&7Aréna: " + (plugin.getBossManager().isVampireReady() ? "&aPŘIPRAVENA" : "&eČEKÁ")));
                 sender.sendMessage(plugin.color("&7Encounter: " + (encounter.isActive() ? "&aAKTIVNÍ" : "&eNEBĚŽÍ")));
                 if (encounter.isActive()) {
