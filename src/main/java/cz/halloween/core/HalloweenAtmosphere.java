@@ -59,7 +59,7 @@ public final class HalloweenAtmosphere {
 
     private void play(Player player) {
         String custom = plugin.getConfig().getString("atmosphere.sound", "");
-        String fallback = plugin.getConfig().getString("atmosphere.fallback-sound", "minecraft:music_disc.11");
+        String fallback = plugin.getConfig().getString("atmosphere.fallback-sound", "");
         float volume = (float) Math.max(0.0D, plugin.getConfig().getDouble("atmosphere.volume", 0.35D));
         float pitch = (float) Math.max(0.1D, plugin.getConfig().getDouble("atmosphere.pitch", 1.0D));
 
