@@ -63,6 +63,7 @@ public final class HalloweenCommand implements CommandExecutor {
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
         sender.sendMessage(plugin.color("&6&lHALLOWEEN 2026"));
         sender.sendMessage(plugin.color("&7Tvoje fragmenty: &e" + amount));
+        sender.sendMessage(plugin.color("&7Celoživotně získáno: &e" + plugin.getDataManager().getLifetimeFragments(player.getUniqueId())));
         sender.sendMessage(plugin.color("&7Prokletí: &e" + curse + " &8(" + curseName + "&8)"));
         sender.sendMessage(plugin.color("&7Denní streak: &e" + streak + "&7/7"));
         sender.sendMessage(plugin.color("&7Tvůj násobič fragmentů: &e" + String.format("%.2f", plugin.getService().getFragmentMultiplier(player.getUniqueId(), "mob-kill")) + "x"));
@@ -160,7 +161,7 @@ public final class HalloweenCommand implements CommandExecutor {
 
         sender.sendMessage(plugin.color("&6&lHALLOWEEN TOP"));
         int position = 1;
-        for (Map.Entry<UUID, Long> entry : plugin.getDataManager().getAllFragments().entrySet().stream()
+        for (Map.Entry<UUID, Long> entry : plugin.getDataManager().getAllLifetimeFragments().entrySet().stream()
                 .sorted(Map.Entry.<UUID, Long>comparingByValue(Comparator.reverseOrder()))
                 .limit(10)
                 .toList()) {
