@@ -202,7 +202,8 @@ public final class HalloweenCommand implements CommandExecutor {
         sender.sendMessage(plugin.color("&7BattlePass: " + status(battlePass)));
         sender.sendMessage(plugin.color("&7WorldGuard: " + status(worldGuard)));
         sender.sendMessage(plugin.color("&7PlaceholderAPI: " + status(papi)));
-        sender.sendMessage(plugin.color("&7Upíří boss: &e" + vampire.id() + " &7min. &e" + vampire.minHeightBlocks() + " &7h / &e" + vampire.minWidthWithWingsBlocks() + " &7w+křídla " + (plugin.getBossManager().isVampireSpecificationValid() ? "&aOK" : "&cNE"));
+        sender.sendMessage(plugin.color("&7Finále odemčeno: " + (plugin.getDataManager().isFinaleUnlocked() ? "&aANO" : "&cNE")));
+        sender.sendMessage(plugin.color("&7Upíří boss: &e" + vampire.id() + " &7min. &e" + vampire.minHeightBlocks() + " &7h / &e" + vampire.minWidthWithWingsBlocks() + " &7w+křídla " + (plugin.getBossManager().isVampireSpecificationValid() ? "&aOK" : "&cNE") + " &8• připravenost: " + (plugin.getBossManager().isVampireReady() ? "&aANO" : "&eČEKÁ"));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
         return true;
     }
