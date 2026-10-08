@@ -51,6 +51,13 @@ public final class HalloweenServiceImpl implements HalloweenService {
             }
         }
 
+        if (plugin.getChallengeManager() != null) {
+            Player player = plugin.getServer().getPlayer(playerId);
+            if (player != null) {
+                plugin.getChallengeManager().recordAction(player, source);
+            }
+        }
+
         long after = getServerFragments();
         long goal = getGlobalGoal();
         if (goal > 0L && before < goal && after >= goal) {
