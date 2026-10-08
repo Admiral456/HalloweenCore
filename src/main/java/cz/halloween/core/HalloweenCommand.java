@@ -23,12 +23,14 @@ public final class HalloweenCommand implements CommandExecutor {
         if (args.length == 0 || args[0].equalsIgnoreCase("stats")) return stats(sender);
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
+        if (args[0].equalsIgnoreCase("curse")) return curse(sender);
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
+        sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
@@ -46,10 +48,13 @@ public final class HalloweenCommand implements CommandExecutor {
         long amount = plugin.getService().getFragments(player.getUniqueId());
         long goal = plugin.getService().getGlobalGoal();
         long total = plugin.getService().getServerFragments();
+        int curse = plugin.getService().getCurseLevel(player.getUniqueId());
+        String curseName = plugin.getService().getCurseName(player.getUniqueId());
 
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
         sender.sendMessage(plugin.color("&6&lHALLOWEEN 2026"));
         sender.sendMessage(plugin.color("&7Tvoje fragmenty: &e" + amount));
+        sender.sendMessage(plugin.color("&7Prokletí: &e" + curse + " &8(" + curseName + "&8)"));
         sender.sendMessage(plugin.color("&7Serverový progress: &e" + total + " &7/ &e" + goal));
         sender.sendMessage(plugin.color("&7Progress: &e" + String.format("%.1f", plugin.getService().getGlobalProgressPercent()) + "%"));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
@@ -64,6 +69,21 @@ public final class HalloweenCommand implements CommandExecutor {
         sender.sendMessage(plugin.color("&6&lHALLOWEEN PROGRESS"));
         sender.sendMessage(plugin.color("&7Aktuálně: &e" + total + " &7/ &e" + goal));
         sender.sendMessage(plugin.color("&7Progress: &e" + String.format("%.1f", plugin.getService().getGlobalProgressPercent()) + "%"));
+        return true;
+    }
+
+    private boolean curse(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz může použít jen hráč."));
+            return true;
+        }
+        if (!checkUse(player) || !checkEnabled(player)) return true;
+
+        int level = plugin.getService().getCurseLevel(player.getUniqueId());
+        String name = plugin.getService().getCurseName(player.getUniqueId());
+        sender.sendMessage(plugin.color("&6&lTVÉ PROKLETÍ"));
+        sender.sendMessage(plugin.color("&7Úroveň: &e" + level));
+        sender.sendMessage(plugin.color("&7Titul: &e" + name));
         return true;
     }
 
