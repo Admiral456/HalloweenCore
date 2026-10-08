@@ -53,6 +53,7 @@ public final class HalloweenItemListener implements Listener {
         if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return;
 
         Player player = event.getPlayer();
+        if (!plugin.isEventEnabled()) return;
         ItemStack item = event.getItem();
         if (!isRelic(item, "haunted-map-2026")) return;
 
