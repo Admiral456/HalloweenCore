@@ -422,10 +422,10 @@ public final class HalloweenVampireEncounterManager implements Listener {
             if (seconds < minSeconds) continue;
 
             Player player = Bukkit.getPlayer(uuid);
+            if (participationReward > 0L) {
+                plugin.getService().addFragments(uuid, participationReward, "boss-participation");
+            }
             if (player != null) {
-                if (participationReward > 0L) {
-                    plugin.getService().addFragments(uuid, participationReward, "boss-participation");
-                }
                 player.sendMessage(plugin.color("&6HALLOWEEN &8» &fZa účast v boji získáváš &e+"
                         + participationReward + " &ffragmentů."));
             }
@@ -543,6 +543,10 @@ public final class HalloweenVampireEncounterManager implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBossDeath(EntityDeathEvent event) {
         if (!isTrackedVampireBoss(event.getEntity())) return;
+        if (!plugin.isEventEnabled()) {
+            finishNoReward();
+            return;
+        }
         finishVictory(event.getEntity().getKiller());
     }
 }
