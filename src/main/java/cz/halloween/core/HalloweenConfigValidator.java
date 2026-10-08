@@ -83,6 +83,20 @@ public final class HalloweenConfigValidator {
             }
         }
 
+        boolean villageEnabled = plugin.getConfig().getBoolean("haunted-village.enabled", false);
+        String villageWorld = plugin.getConfig().getString("haunted-village.world", "");
+        if (villageEnabled && villageWorld.isBlank()) {
+            errors.add("haunted-village.world must be configured when Haunted Village is enabled");
+        }
+        double mapChance = plugin.getConfig().getDouble("special-mobs.map-drop-chance", -1.0D);
+        if (mapChance < 0.0D || mapChance > 1.0D) {
+            errors.add("special-mobs.map-drop-chance must be between 0 and 1");
+        }
+        String mapItemId = plugin.getConfig().getString("special-mobs.map-item-id", "");
+        if (mapItemId.isBlank() || !mapItemId.contains(":")) {
+            errors.add("special-mobs.map-item-id should use namespace:id");
+        }
+
         ConfigurationSection vampire = plugin.getConfig().getConfigurationSection("bosses.vampire");
         if (vampire != null) {
             if (vampire.getInt("min-height-blocks", 0) < 10) {
