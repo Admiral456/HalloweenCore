@@ -303,4 +303,7 @@ messages:
   global-goal-reached: "&6&lHALLOWEEN &8» &fServer společně dosáhl hlavního cíle! Něco se probouzí..."
   finale-unlocked: "&6&lHALLOWEEN &8» &4Finále je odemčeno. Něco čeká za branou..."
   global-milestone: "&6&lHALLOWEEN &8» &dCelý WarriorLand dosáhl milníku &e%milestone% &dfragmentů."
+  vampire-start: "&4&lHALLOWEEN &8» &fKrál upírů sestoupil do arény. &7Poražte ho společně."
+  vampire-timeout: "&4&lHALLOWEEN &8» &cKrál upírů zmizel v temnotě. Aréna je zticha."
+  vampire-victory: "&4&lHALLOWEEN &8» &6Král upírů byl poražen! Temnota ustupuje."
 
