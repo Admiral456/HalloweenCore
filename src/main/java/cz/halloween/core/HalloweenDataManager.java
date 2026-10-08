@@ -207,6 +207,10 @@ public final class HalloweenDataManager {
         return Map.copyOf(fragments);
     }
 
+    public Map<UUID, Long> getAllLifetimeFragments() {
+        return Map.copyOf(lifetimeFragments);
+    }
+
     public long getLastJoin(UUID uuid) {
         return lastJoin.getOrDefault(uuid, 0L);
     }
