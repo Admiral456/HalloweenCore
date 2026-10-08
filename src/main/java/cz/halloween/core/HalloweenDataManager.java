@@ -27,6 +27,7 @@ public final class HalloweenDataManager {
     private final Map<UUID, Integer> challengeProgress = new HashMap<>();
     private final Set<UUID> challengeClaimed = new HashSet<>();
     private long serverFragments;
+    private boolean finaleUnlocked;
 
     public HalloweenDataManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -44,10 +45,12 @@ public final class HalloweenDataManager {
         challengeProgress.clear();
         challengeClaimed.clear();
         serverFragments = 0L;
+        finaleUnlocked = false;
         if (!file.exists()) return;
 
         YamlConfiguration data = YamlConfiguration.loadConfiguration(file);
         serverFragments = Math.max(0L, data.getLong("server.total-fragments", 0L));
+        finaleUnlocked = data.getBoolean("server.finale-unlocked", false);
 
         if (data.isConfigurationSection("players")) {
             for (String key : data.getConfigurationSection("players").getKeys(false)) {
@@ -88,6 +91,7 @@ public final class HalloweenDataManager {
     public void save() {
         YamlConfiguration data = new YamlConfiguration();
         data.set("server.total-fragments", serverFragments);
+        data.set("server.finale-unlocked", finaleUnlocked);
 
         Set<UUID> players = new HashSet<>();
         players.addAll(fragments.keySet());
@@ -201,6 +205,14 @@ public final class HalloweenDataManager {
 
     public long getServerFragments() {
         return serverFragments;
+    }
+
+    public boolean isFinaleUnlocked() {
+        return finaleUnlocked;
+    }
+
+    public void unlockFinale() {
+        finaleUnlocked = true;
     }
 
     public Map<UUID, Long> getAllFragments() {
