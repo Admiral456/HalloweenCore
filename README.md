@@ -54,6 +54,10 @@ Král upírů je navázaný na samostatný model gate. Konfigurace drží `provi
 
 Král upírů má připravený vlastní boss bar: HP bar, jméno bosse, automatické zobrazování hráčům v nastaveném radiusu a automatické skrytí po opuštění oblasti nebo smrti bosse. Spawn a finální mechaniky bosse zůstávají oddělené od této vrstvy.
 
+## Vampire encounter assets
+
+V základním repozitáři je připravený dormantní MythicMobs definition `mythicmobs/mobs/vampire-king.yml`. Vlastní 3D model je řízen odděleně přes ModelEngine; dokud není `model.ready: true` a ModelEngine nainstalovaný, finální encounter se nespustí. MythicMobs boss bar je záměrně vypnutý, protože HP/účast/fáze řídí HalloweenCore vlastním boss barem.
+
 ## PlaceholderAPI
 
 Pokud je na serveru nainstalovaný PlaceholderAPI, HalloweenCore registruje vlastní expansion bez dalšího JARu.
