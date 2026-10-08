@@ -1,0 +1,17 @@
+name: HalloweenCore
+version: 0.1.0-SNAPSHOT
+main: cz.halloween.core.HalloweenCore
+api-version: '1.21'
+author: Admiral456
+description: Halloween event core for a Minecraft server.
+commands:
+  halloween:
+    description: Opens the Halloween menu and manages the event.
+    usage: /halloween [stats|top|reload|give]
+    aliases: [hallow]
+    permission: halloweencore.use
+permissions:
+  halloweencore.use:
+    default: true
+  halloweencore.admin:
+    default: op
