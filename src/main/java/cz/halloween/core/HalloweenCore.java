@@ -79,6 +79,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
+        if (atmosphere != null) atmosphere.stopPlayback();
         if (dataManager != null) dataManager.save();
     }
 
@@ -113,6 +114,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void setEventEnabled(boolean enabled) {
         if (eventEnabled == enabled) return;
         eventEnabled = enabled;
+        getConfig().set("enabled", enabled);
+        saveConfig();
 
         if (eventManager != null) {
             if (enabled) eventManager.reloadSchedule();
