@@ -89,6 +89,44 @@ rewards:
         - "&7Unikátní památeční předmět."
         - "&8Po skončení eventu už nebude v obchodu."
 
+special-mobs:
+  enabled: true
+  chance: 0.04
+  bonus-fragments: 12
+  relic-drop-chance: 0.12
+  types:
+    cursed-zombie:
+      name: "&5&lProkletý zombie"
+      glowing: true
+      health-multiplier: 1.35
+      speed-level: 0
+      strength-level: 0
+    gravekeeper:
+      name: "&8&lHrobník"
+      glowing: true
+      health-multiplier: 1.45
+      speed-level: 0
+      strength-level: 0
+    blood-spider:
+      name: "&c&lKrvavý pavouk"
+      glowing: true
+      health-multiplier: 1.25
+      speed-level: 1
+      strength-level: 0
+    pumpkin-wraith:
+      name: "&6&lDýňový přízrak"
+      glowing: true
+      health-multiplier: 1.60
+      speed-level: 0
+      strength-level: 1
+      explosion-radius: 3
+    hex-witch:
+      name: "&5&lHexová čarodějka"
+      glowing: true
+      health-multiplier: 1.30
+      speed-level: 0
+      strength-level: 0
+
 notifications:
   fragment-gain: true
 
