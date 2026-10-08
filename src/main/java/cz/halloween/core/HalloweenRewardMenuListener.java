@@ -23,8 +23,9 @@ public final class HalloweenRewardMenuListener implements Listener {
         String rewardId = holder.getRewardId(event.getRawSlot());
         if (rewardId == null) return;
 
-        plugin.getRewardManager().claim(player, rewardId);
-        player.closeInventory();
+        if (plugin.getRewardManager().claim(player, rewardId)) {
+            player.closeInventory();
+        }
     }
 
     @EventHandler(ignoreCancelled = false)
