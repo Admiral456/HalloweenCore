@@ -8,6 +8,7 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/item/cursed_talisman.png
 - resourcepack/assets/warriorland_halloween/textures/item/halloween_token.png
 - resourcepack/assets/warriorland_halloween/textures/item/cursed_candy.png
+- resourcepack/assets/warriorland_halloween/textures/item/haunted_map.png
 
 Planned world/audio assets:
 - resourcepack/assets/minecraft/shaders/core/sky.fsh
@@ -19,5 +20,6 @@ The Java plugin uses these IDs:
 - warriorland_halloween:cursed_talisman
 - warriorland_halloween:halloween_token
 - warriorland_halloween:cursed_candy
+- warriorland_halloween:haunted_map
 
 After adding or changing ItemsAdder content, rebuild the server resource pack with /iazip.
