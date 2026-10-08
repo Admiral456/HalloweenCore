@@ -7,7 +7,7 @@ description: Halloween event core for Purpur/Paper 1.21.10.
 commands:
   halloween:
     description: Halloween event statistics and administration.
-    usage: /halloween [stats|progress|top|reload|give|on|off]
+    usage: /halloween [stats|progress|curse|event|challenge|rewards|claim|top|reload|give|on|off]
     aliases: [hallow]
     permission: halloweencore.use
 permissions:
