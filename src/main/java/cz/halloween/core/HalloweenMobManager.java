@@ -104,9 +104,11 @@ public final class HalloweenMobManager implements Listener {
             event.getDrops().add(item);
         }
 
+        boolean villageConfigured = plugin.getConfig().getBoolean("haunted-village.enabled", false)
+                && !plugin.getConfig().getString("haunted-village.world", "").isBlank();
         double mapChance = Math.max(0.0D, Math.min(1.0D,
                 plugin.getConfig().getDouble("special-mobs.map-drop-chance", 0.03D)));
-        if (ThreadLocalRandom.current().nextDouble() <= mapChance) {
+        if (villageConfigured && ThreadLocalRandom.current().nextDouble() <= mapChance) {
             String mapItemId = plugin.getConfig().getString("special-mobs.map-item-id", "");
             ItemStack mapItem = plugin.getItemManager().getItemsAdderItem(mapItemId, 1);
             if (mapItem == null) {
