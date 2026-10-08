@@ -34,6 +34,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private final Map<UUID, Integer> participationSeconds = new HashMap<>();
     private long startedAt;
     private int phase;
+    private long lastAbilityAt;
 
     public HalloweenVampireEncounterManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -92,6 +93,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         boss.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 1);
         startedAt = System.currentTimeMillis();
         phase = 1;
+        lastAbilityAt = 0L;
         participants.clear();
         participationSeconds.clear();
         plugin.getBossManager().trackVampireBoss(boss);
@@ -119,6 +121,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         bossUuid = null;
         startedAt = 0L;
         phase = 0;
+        lastAbilityAt = 0L;
         participants.clear();
         participationSeconds.clear();
         if (plugin.getBossManager() != null) {
@@ -149,6 +152,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         trackNearbyPlayers();
         enforceArena();
         updatePhase();
+        runSpecialAbility();
     }
 
     private void trackNearbyPlayers() {
@@ -203,6 +207,123 @@ public final class HalloweenVampireEncounterManager implements Listener {
         phase = nextPhase;
         broadcastPhase(phase);
         maintainPhaseEffects();
+    }
+
+    private void runSpecialAbility() {
+        if (boss == null || phase < 2) return;
+        if (!plugin.getConfig().getBoolean("bosses.vampire.encounter.abilities.enabled", true)) return;
+
+        long now = System.currentTimeMillis();
+        long cooldownSeconds = switch (phase) {
+            case 2 -> Math.max(4L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-2-cooldown-seconds", 8L));
+            case 3 -> Math.max(4L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-3-cooldown-seconds", 7L));
+            default -> Math.max(3L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-4-cooldown-seconds", 5L));
+        };
+        if (now - lastAbilityAt < cooldownSeconds * 1000L) return;
+
+        Player target = selectTarget();
+        if (target == null) return;
+
+        if (phase == 2) {
+            bloodPulse(target);
+        } else if (phase == 3) {
+            shadowStrike(target);
+        } else {
+            nightfall();
+        }
+
+        lastAbilityAt = now;
+    }
+
+    private Player selectTarget() {
+        Player selected = null;
+        double bestDistance = Double.MAX_VALUE;
+        double maxDistance = Math.max(16.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.target-radius-blocks", 48.0D));
+        for (UUID uuid : participants) {
+            Player player = Bukkit.getPlayer(uuid);
+            if (player == null || !player.isOnline() || !plugin.isEligibleGameplayPlayer(player)) continue;
+            if (!player.getWorld().getUID().equals(boss.getWorld().getUID())) continue;
+            double distance = player.getLocation().distanceSquared(boss.getLocation());
+            if (distance > maxDistance * maxDistance) continue;
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                selected = player;
+            }
+        }
+        return selected;
+    }
+
+    private void bloodPulse(Player center) {
+        double radius = Math.max(3.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-2-radius", 7.0D));
+        double damage = Math.max(0.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-2-damage", 4.0D));
+
+        boss.getWorld().spawnParticle(
+                org.bukkit.Particle.DUST_PLUME,
+                center.getLocation().add(0, 1, 0),
+                30, radius * 0.45D, 0.8D, radius * 0.45D, 0.03D
+        );
+        boss.getWorld().playSound(center.getLocation(), "minecraft:entity.generic.explode", 0.55f, 0.55f);
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player)) continue;
+            if (!player.getWorld().getUID().equals(boss.getWorld().getUID())) continue;
+            if (player.getLocation().distanceSquared(center.getLocation()) > radius * radius) continue;
+            if (damage > 0.0D) player.damage(damage, boss);
+        }
+    }
+
+    private void shadowStrike(Player target) {
+        Location from = target.getLocation();
+        double distance = Math.max(3.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-3-teleport-distance", 5.0D));
+        double angle = Math.random() * Math.PI * 2.0D;
+        Location destination = from.clone().add(Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
+        destination.setY(target.getWorld().getHighestBlockYAt(destination) + 1.0D);
+
+        if (!destination.getBlock().isPassable()) return;
+        boss.getWorld().spawnParticle(
+                org.bukkit.Particle.PORTAL,
+                boss.getLocation().add(0, 1, 0),
+                35, 0.7D, 1.5D, 0.7D, 0.05D
+        );
+        if (boss.teleport(destination)) {
+            boss.getWorld().spawnParticle(
+                    org.bukkit.Particle.PORTAL,
+                    destination.clone().add(0, 1, 0),
+                    45, 0.8D, 1.5D, 0.8D, 0.05D
+            );
+            boss.getWorld().playSound(destination, "minecraft:entity.enderman.teleport", 0.9f, 0.55f);
+            double damage = Math.max(1.0D,
+                    plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-3-damage", 6.0D));
+            target.damage(damage, boss);
+        }
+    }
+
+    private void nightfall() {
+        double radius = Math.max(4.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-4-radius", 10.0D));
+        double damage = Math.max(0.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-4-damage", 6.0D));
+
+        Location origin = boss.getLocation().add(0, 1, 0);
+        boss.getWorld().spawnParticle(
+                org.bukkit.Particle.DUST_PLUME,
+                origin, 80, radius * 0.45D, 1.0D, radius * 0.45D, 0.04D
+        );
+        boss.getWorld().playSound(origin, "minecraft:entity.warden.sonic_boom", 0.6f, 0.65f);
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player)) continue;
+            if (!player.getWorld().getUID().equals(boss.getWorld().getUID())) continue;
+            if (player.getLocation().distanceSquared(origin) > radius * radius) continue;
+            if (damage > 0.0D) player.damage(damage, boss);
+            player.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                    org.bukkit.potion.PotionEffectType.BLINDNESS, 40, 0, true, true, true
+            ));
+        }
     }
 
     private void maintainPhaseEffects() {
@@ -266,6 +387,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         bossUuid = null;
         startedAt = 0L;
         phase = 0;
+        lastAbilityAt = 0L;
         participants.clear();
         participationSeconds.clear();
         if (plugin.getBossManager() != null) {
