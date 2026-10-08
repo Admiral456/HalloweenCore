@@ -27,6 +27,7 @@ public final class HalloweenActivityListener implements Listener {
 
         Player player = event.getPlayer();
         if (!plugin.isEligibleGameplayPlayer(player)) return;
+        if (!plugin.isEligibleGameplayWorld(player.getWorld())) return;
         Block block = event.getBlock();
 
         if (isConfiguredBlock(block.getType(), "rewards.mining.blocks")
@@ -59,6 +60,7 @@ public final class HalloweenActivityListener implements Listener {
     public void onFish(PlayerFishEvent event) {
         if (!plugin.isEventEnabled()) return;
         if (!plugin.isEligibleGameplayPlayer(event.getPlayer())) return;
+        if (!plugin.isEligibleGameplayWorld(event.getPlayer().getWorld())) return;
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) return;
         if (!plugin.getConfig().getBoolean("rewards.fishing.enabled", true)) return;
 
