@@ -1,6 +1,7 @@
 package cz.halloween.core;
 
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Player;
 
 import java.util.UUID;
 
@@ -20,6 +21,7 @@ public final class HalloweenServiceImpl implements HalloweenService {
     public long addFragments(UUID playerId, long amount, String source) {
         if (!plugin.isEventEnabled() || amount <= 0L) return getFragments(playerId);
 
+        int previousCurseLevel = getCurseLevel(playerId);
         double multiplier = getFragmentMultiplier(playerId, source);
         long rewardedAmount;
         if (multiplier <= 1.0D) {
@@ -34,6 +36,18 @@ public final class HalloweenServiceImpl implements HalloweenService {
 
         if (plugin.getConfig().getBoolean("notifications.fragment-gain", true)) {
             plugin.notifyFragmentGain(playerId, rewardedAmount);
+        }
+
+        int newCurseLevel = getCurseLevel(playerId);
+        if (newCurseLevel > previousCurseLevel) {
+            Player cursePlayer = plugin.getServer().getPlayer(playerId);
+            if (cursePlayer != null) {
+                String curseName = getCurseName(playerId);
+                String title = plugin.color(plugin.getConfig().getString("messages.curse-title", "&5&lPROKLETÍ SÍLÍ"));
+                String subtitle = plugin.color(plugin.getConfig().getString("messages.curse-subtitle", "&7Nyní jsi: &f" + curseName));
+                cursePlayer.sendTitle(title, subtitle, 10, 50, 20);
+                cursePlayer.playSound(cursePlayer.getLocation(), "minecraft:entity.wither.ambient", 0.7f, 0.8f);
+            }
         }
 
         long after = getServerFragments();
