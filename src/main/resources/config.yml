@@ -276,7 +276,7 @@ bosses:
 atmosphere:
   enabled: true
   sound: "halloween:haunted_theme"
-  fallback-sound: "minecraft:music_disc.11"
+  fallback-sound: ""
   volume: 0.35
   pitch: 1.0
   loop-seconds: 95
