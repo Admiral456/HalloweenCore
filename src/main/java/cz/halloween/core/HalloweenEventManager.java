@@ -30,8 +30,12 @@ public final class HalloweenEventManager {
     }
 
     public void reloadSchedule() {
+        if (activeEventId != null && plugin.getMobManager() != null) {
+            plugin.getMobManager().cleanupEventMobs();
+        }
         activeEventId = null;
         activeUntil = 0L;
+        lastSurgeAt = 0L;
         if (started && plugin.getConfig().getBoolean("random-events.enabled", true)) {
             scheduleNextEvent();
         } else {
