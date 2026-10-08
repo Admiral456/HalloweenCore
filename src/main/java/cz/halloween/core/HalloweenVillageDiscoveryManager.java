@@ -31,6 +31,8 @@ public final class HalloweenVillageDiscoveryManager implements Listener {
         }
 
         Player player = event.getPlayer();
+        if (!plugin.isEligibleGameplayPlayer(player)) return;
+        if (!plugin.isEligibleGameplayWorld(player.getWorld())) return;
         if (plugin.getDataManager().hasDiscoveredVillage(player.getUniqueId())) return;
 
         String worldName = plugin.getConfig().getString("haunted-village.world", "");
