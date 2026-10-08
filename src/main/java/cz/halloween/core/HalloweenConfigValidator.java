@@ -108,6 +108,10 @@ public final class HalloweenConfigValidator {
             if (!vampire.getBoolean("wings-required", false)) {
                 errors.add("vampire wings-required must be true");
             }
+            if (vampire.getBoolean("arena.configured", false)
+                    && vampire.getString("arena.world", "").isBlank()) {
+                errors.add("vampire arena is marked configured but arena.world is blank");
+            }
         }
 
         return List.copyOf(errors);
