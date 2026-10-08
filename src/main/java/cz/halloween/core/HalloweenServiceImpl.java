@@ -19,7 +19,10 @@ public final class HalloweenServiceImpl implements HalloweenService {
 
     @Override
     public long addFragments(UUID playerId, long amount, String source) {
-        if (!plugin.isEventEnabled() || amount <= 0L) return getFragments(playerId);
+        if (amount <= 0L) return getFragments(playerId);
+        if (!plugin.isEventEnabled() && (source == null || !source.equalsIgnoreCase("admin"))) {
+            return getFragments(playerId);
+        }
 
         int previousCurseLevel = getCurseLevel(playerId);
         double multiplier = getFragmentMultiplier(playerId, source);
