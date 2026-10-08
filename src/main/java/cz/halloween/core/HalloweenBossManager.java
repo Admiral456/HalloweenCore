@@ -20,6 +20,7 @@ public final class HalloweenBossManager {
     private BossBar vampireBossBar;
     private LivingEntity trackedVampireBoss;
     private BukkitTask vampireBossBarTask;
+    private String vampireBossBarLabel;
 
     public HalloweenBossManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -94,6 +95,7 @@ public final class HalloweenBossManager {
         if (!plugin.getConfig().getBoolean("bosses.vampire.boss-bar.enabled", true)) return;
 
         trackedVampireBoss = boss;
+        vampireBossBarLabel = null;
         vampireBossBar = Bukkit.createBossBar(
                 formatBossBarTitle(boss),
                 readBarColor(),
@@ -118,10 +120,20 @@ public final class HalloweenBossManager {
         }
         vampireBossBar = null;
         trackedVampireBoss = null;
+        vampireBossBarLabel = null;
     }
 
     public boolean isVampireBossBarActive() {
         return vampireBossBar != null && trackedVampireBoss != null;
+    }
+
+    public void setVampireBossBarLabel(String label) {
+        vampireBossBarLabel = label == null || label.isBlank() ? null : label;
+    }
+
+    public double getVampireBossHealthPercent() {
+        if (trackedVampireBoss == null || trackedVampireBoss.isDead() || !trackedVampireBoss.isValid()) return 0.0D;
+        return healthProgress(trackedVampireBoss);
     }
 
     private void updateVampireBossBar() {
@@ -162,7 +174,8 @@ public final class HalloweenBossManager {
         VampireSpec spec = getVampireSpec();
         double health = Math.max(0.0D, boss.getHealth());
         double max = Math.max(1.0D, boss.getMaxHealth());
-        return plugin.color(spec.displayName() + " &8• &c" + formatNumber(health) + " &7/ &c" + formatNumber(max) + " HP");
+        String label = vampireBossBarLabel == null ? spec.displayName() : plugin.color(vampireBossBarLabel);
+        return plugin.color(label + " &8• &c" + formatNumber(health) + " &7/ &c" + formatNumber(max) + " HP");
     }
 
     private double healthProgress(LivingEntity boss) {
