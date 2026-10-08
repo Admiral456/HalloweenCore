@@ -45,6 +45,21 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween give <hráč> <počet>
 - /halloween on|off
 
+## PlaceholderAPI
+
+Pokud je na serveru nainstalovaný PlaceholderAPI, HalloweenCore registruje vlastní expansion bez dalšího JARu.
+
+Příklady:
+- `%halloween_fragments%` — aktuální fragmenty hráče
+- `%halloween_lifetime_fragments%` — celoživotně získané fragmenty
+- `%halloween_curse_level%` / `%halloween_curse_name%` — prokletí
+- `%halloween_multiplier%` — aktuální násobič zisku
+- `%halloween_streak%` — návratový streak
+- `%halloween_server_fragments%` / `%halloween_global_goal%` / `%halloween_global_percent%` — serverový progress
+- `%halloween_event%` / `%halloween_event_remaining%` — aktivní event
+- `%halloween_finale_unlocked%` — stav finále
+- `%halloween_village_discovered%` — zda hráč objevil Haunted Village
+
 ## Připravené integrace
 
 Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už WarriorLand používá:
