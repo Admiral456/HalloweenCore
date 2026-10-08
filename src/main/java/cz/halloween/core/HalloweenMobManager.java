@@ -53,6 +53,13 @@ public final class HalloweenMobManager implements Listener {
         if (mobId == null) return;
 
         double chance = Math.max(0.0D, Math.min(1.0D, plugin.getConfig().getDouble("special-mobs.chance", 0.04D)));
+        int phase = plugin.getEventManager() == null ? 0 : plugin.getEventManager().getGlobalPhase();
+        double phaseBonus = Math.max(0.0D, plugin.getConfig().getDouble("special-mobs.phase-bonus-chance", 0.005D));
+        chance = Math.min(1.0D, chance + phase * phaseBonus);
+        if (plugin.getEventManager() != null && plugin.getEventManager().getActiveEventId() != null) {
+            chance = Math.min(1.0D, chance * Math.max(1.0D,
+                    plugin.getConfig().getDouble("random-events.special-mob-chance-multiplier", 1.50D)));
+        }
         if (ThreadLocalRandom.current().nextDouble() > chance) return;
 
         configureSpecialMob(entity, mobId);
