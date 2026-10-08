@@ -185,6 +185,7 @@ random-events:
     max: 35
   duration-minutes: 5
   surge-interval-seconds: 45
+  max-event-mobs: 12
   sound: "halloween:haunted_theme"
   types:
     soulstorm:
