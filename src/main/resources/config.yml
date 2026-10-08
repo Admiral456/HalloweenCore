@@ -281,6 +281,18 @@ bosses:
       participation-reward-fragments: 250
       victory-reward-fragments: 2500
       top-contributor-bonus-fragments: 750
+      abilities:
+        enabled: true
+        target-radius-blocks: 48
+        phase-2-cooldown-seconds: 8
+        phase-2-radius: 7
+        phase-2-damage: 4.0
+        phase-3-cooldown-seconds: 7
+        phase-3-teleport-distance: 5
+        phase-3-damage: 6.0
+        phase-4-cooldown-seconds: 5
+        phase-4-radius: 10
+        phase-4-damage: 6.0
 
 atmosphere:
   enabled: true
