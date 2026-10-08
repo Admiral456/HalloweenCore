@@ -44,7 +44,8 @@ public final class HalloweenServiceImpl implements HalloweenService {
             if (cursePlayer != null) {
                 String curseName = getCurseName(playerId);
                 String title = plugin.color(plugin.getConfig().getString("messages.curse-title", "&5&lPROKLETÍ SÍLÍ"));
-                String subtitle = plugin.color(plugin.getConfig().getString("messages.curse-subtitle", "&7Nyní jsi: &f" + curseName));
+                String subtitle = plugin.color(plugin.getConfig().getString("messages.curse-subtitle", "&7Nyní jsi: &f%curse%")
+                        .replace("%curse%", curseName));
                 cursePlayer.sendTitle(title, subtitle, 10, 50, 20);
                 cursePlayer.playSound(cursePlayer.getLocation(), "minecraft:entity.wither.ambient", 0.7f, 0.8f);
             }
