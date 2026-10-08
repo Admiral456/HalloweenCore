@@ -72,6 +72,8 @@ Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový prog
 
 ## ItemsAdder assety
 
+Vlastní PNG jsou v `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/`.
+
 V repozitáři je připravený namespace `warriorland_halloween`:
 
 - `itemsadder/contents/warriorland_halloween/configs/items.yml`
