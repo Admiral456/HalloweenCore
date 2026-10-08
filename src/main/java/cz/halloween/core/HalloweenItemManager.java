@@ -35,6 +35,39 @@ public final class HalloweenItemManager {
         }
     }
 
+    public boolean isSupportedVersion() {
+        String minimum = plugin.getConfig().getString("itemsadder.minimum-version", "4.0.13");
+        var pluginInstance = plugin.getServer().getPluginManager().getPlugin("ItemsAdder");
+        if (pluginInstance == null) return false;
+        return compareVersions(pluginInstance.getDescription().getVersion(), minimum) >= 0;
+    }
+
+    private int compareVersions(String actual, String minimum) {
+        int[] a = versionParts(actual);
+        int[] b = versionParts(minimum);
+        for (int idx = 0; idx < Math.max(a.length, b.length); idx++) {
+            int av = idx < a.length ? a[idx] : 0;
+            int bv = idx < b.length ? b[idx] : 0;
+            if (av != bv) return Integer.compare(av, bv);
+        }
+        return 0;
+    }
+
+    private int[] versionParts(String value) {
+        if (value == null || value.isBlank()) return new int[] {0};
+        String[] parts = value.split("\\.");
+        int[] result = new int[Math.min(parts.length, 3)];
+        for (int idx = 0; idx < result.length; idx++) {
+            String digits = parts[idx].replaceAll("[^0-9].*$", "");
+            try {
+                result[idx] = Integer.parseInt(digits.isBlank() ? "0" : digits);
+            } catch (NumberFormatException ignored) {
+                result[idx] = 0;
+            }
+        }
+        return result;
+    }
+
     public boolean isItemsAdderAvailable() {
         return plugin.getServer().getPluginManager().getPlugin("ItemsAdder") != null;
     }
