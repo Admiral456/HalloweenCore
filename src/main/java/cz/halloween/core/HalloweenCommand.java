@@ -26,7 +26,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge",
-                    "rewards", "claim", "top", "reload", "debug", "give", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "give", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -62,6 +62,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("challenge")) return challenge(sender);
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
+        if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
@@ -75,6 +76,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
         return true;
@@ -270,6 +272,27 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
     private String status(boolean present) {
         return present ? "&aNALEZEN" : "&cNENÍ";
+    }
+
+    private boolean setVillage(CommandSender sender) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz musí použít hráč přímo v Haunted Village."));
+            return true;
+        }
+
+        plugin.getConfig().set("haunted-village.enabled", true);
+        plugin.getConfig().set("haunted-village.world", player.getWorld().getName());
+        plugin.getConfig().set("haunted-village.x", player.getLocation().getX());
+        plugin.getConfig().set("haunted-village.y", player.getLocation().getY());
+        plugin.getConfig().set("haunted-village.z", player.getLocation().getZ());
+        plugin.saveConfig();
+
+        player.sendMessage(plugin.color("&6HALLOWEEN &8» &aHaunted Village nastavena."));
+        player.sendMessage(plugin.color("&7Svět: &e" + player.getWorld().getName()));
+        player.sendMessage(plugin.color("&7Pozice: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
+                player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ())));
+        return true;
     }
 
     private boolean reload(CommandSender sender) {
