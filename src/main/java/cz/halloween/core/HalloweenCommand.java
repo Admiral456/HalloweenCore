@@ -130,7 +130,7 @@ public final class HalloweenCommand implements CommandExecutor {
             return true;
         }
         if (!checkUse(player) || !checkEnabled(player)) return true;
-        plugin.getRewardManager().listRewards(player);
+        plugin.getRewardManager().openMenu(player);
         return true;
     }
 
