@@ -42,6 +42,15 @@ public final class HalloweenServiceImpl implements HalloweenService {
             plugin.broadcastGlobalGoalReached();
         }
 
+        for (long milestone : plugin.getConfig().getLongList("global-milestones")) {
+            if (milestone <= 0L || milestone == goal) continue;
+            if (before < milestone && after >= milestone) {
+                String message = plugin.getConfig().getString("messages.global-milestone",
+                        "&6&lHALLOWEEN &8» &dServer dosáhl milníku &e%milestone% &dfragmentů.");
+                plugin.getServer().broadcastMessage(plugin.color(message.replace("%milestone%", Long.toString(milestone))));
+            }
+        }
+
         return updated;
     }
 
