@@ -99,10 +99,15 @@ Vlastní PNG jsou v `itemsadder/contents/warriorland_halloween/resourcepack/asse
 V repozitáři je připravený namespace `warriorland_halloween`:
 
 - `itemsadder/contents/warriorland_halloween/configs/items.yml`
-- `itemsadder/contents/warriorland_halloween/textures/item/*.png` — očekávané vlastní textury
+- `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/*.png` — vlastní textury
 - `itemsadder/contents/warriorland_halloween/ASSETS.md` — seznam assetů
 
 Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack přes `/iazip`.
+
+
+### Hudba a licence
+
+Halloween soundtrack není AI-generovaný. Připravený sound ID je `halloween:haunted_theme`; pro resource pack počítáme s hudbou pod **CC0** s dohledatelným původem. Momentálně je v repozitáři pouze licence/source záznam, ne samotný audio soubor.
 
 ## Build
 
