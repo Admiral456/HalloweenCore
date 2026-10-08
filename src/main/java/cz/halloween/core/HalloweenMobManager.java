@@ -41,6 +41,7 @@ public final class HalloweenMobManager implements Listener {
         }
 
         LivingEntity entity = event.getEntity();
+        if (!plugin.isEligibleGameplayWorld(entity.getWorld())) return;
         String mobId = switch (entity.getType()) {
             case ZOMBIE -> "cursed-zombie";
             case SKELETON -> "gravekeeper";
@@ -108,6 +109,7 @@ public final class HalloweenMobManager implements Listener {
         if (!plugin.isEventEnabled() || player == null) return false;
 
         World world = player.getWorld();
+        if (!plugin.isEligibleGameplayWorld(world)) return false;
         int maxEventMobs = Math.max(1, plugin.getConfig().getInt("random-events.max-event-mobs", 12));
         if (countEventMobs(world) >= maxEventMobs) return false;
 
