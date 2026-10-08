@@ -267,6 +267,14 @@ bosses:
     spawn-requirements:
       global-progress-percent: 100
       event-completion: true
+    model:
+      provider: MODEL_ENGINE
+      id: vampire_king
+      required: true
+      ready: false
+      min-height-blocks: 10
+      min-width-with-wings-blocks: 8
+      wings-required: true
     boss-bar:
       enabled: true
       radius-blocks: 96
