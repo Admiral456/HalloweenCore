@@ -172,6 +172,18 @@ public final class HalloweenConfigValidator {
                 }
             }
 
+            ConfigurationSection model = vampire.getConfigurationSection("model");
+            if (model != null) {
+                String provider = model.getString("provider", "");
+                String id = model.getString("id", "");
+                if (model.getBoolean("required", true) && provider.isBlank()) {
+                    errors.add("vampire model provider must be configured");
+                }
+                if (model.getBoolean("required", true) && id.isBlank()) {
+                    errors.add("vampire model id must be configured");
+                }
+            }
+
             ConfigurationSection bossBar = vampire.getConfigurationSection("boss-bar");
             if (bossBar != null) {
                 double radius = bossBar.getDouble("radius-blocks", -1.0D);
