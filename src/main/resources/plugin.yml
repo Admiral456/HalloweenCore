@@ -3,11 +3,11 @@ version: 0.1.0-SNAPSHOT
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
-description: Halloween event core for a Minecraft server.
+description: Halloween event core for Purpur/Paper 1.21.10.
 commands:
   halloween:
-    description: Opens the Halloween menu and manages the event.
-    usage: /halloween [stats|top|reload|give]
+    description: Halloween event statistics and administration.
+    usage: /halloween [stats|progress|top|reload|give|on|off]
     aliases: [hallow]
     permission: halloweencore.use
 permissions:
