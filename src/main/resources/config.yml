@@ -116,6 +116,8 @@ haunted-village:
   y: 100
   z: 0
   map-use-cooldown-seconds: 30
+  discovery-radius: 12
+  discovery-reward-fragments: 150
 
 special-mobs:
   enabled: true
