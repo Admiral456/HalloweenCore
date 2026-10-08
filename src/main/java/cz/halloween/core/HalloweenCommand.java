@@ -5,17 +5,49 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public final class HalloweenCommand implements CommandExecutor {
+public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     private final HalloweenCore plugin;
 
     public HalloweenCommand(HalloweenCore plugin) {
         this.plugin = plugin;
+    }
+
+    @Override
+    public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            List<String> subcommands = List.of(
+                    "stats", "progress", "curse", "event", "challenge",
+                    "rewards", "claim", "top", "reload", "debug", "give", "on", "off"
+            );
+            return subcommands.stream()
+                    .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("claim")) {
+            var section = plugin.getConfig().getConfigurationSection("rewards.shop");
+            if (section == null) return List.of();
+            return section.getKeys(false).stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted()
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("give") && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted()
+                    .toList();
+        }
+        return List.of();
     }
 
     @Override
