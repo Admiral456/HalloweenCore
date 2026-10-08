@@ -1,0 +1,24 @@
+enabled: true
+
+# Společný serverový cíl.
+global-goal: 100000
+
+currency:
+  name: "fragmentů"
+
+rewards:
+  mob-kill:
+    enabled: true
+    fragments: 1
+
+notifications:
+  fragment-gain: true
+
+messages:
+  prefix: "&8[&6Halloween&8] &r"
+  no-permission: "&cNa to nemáš oprávnění."
+  disabled: "&cHalloween event je momentálně vypnutý."
+  reloaded: "&aKonfigurace byla načtena."
+  event-enabled: "&aHalloween event byl zapnut."
+  event-disabled: "&cHalloween event byl vypnut."
+  global-goal-reached: "&6&lHALLOWEEN &8» &fServer společně dosáhl Halloween cíle! Něco se probouzí..."
