@@ -10,6 +10,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.GameMode;
+import org.bukkit.World;
 
 import java.util.UUID;
 
@@ -79,6 +80,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
         if (!isEligibleGameplayPlayer(killer)) return;
+        if (!isEligibleGameplayWorld(killer.getWorld())) return;
 
         if (!getConfig().getBoolean("rewards.mob-kill.enabled", true)) return;
 
@@ -163,6 +165,20 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         FileConfiguration config = getConfig();
         String prefix = config.getString("messages.prefix", "");
         return color(prefix + config.getString(key, ""));
+    }
+
+    public boolean isEligibleGameplayWorld(World world) {
+        if (world == null) return false;
+
+        java.util.List<String> worlds = getConfig().getStringList("gameplay.worlds.names");
+        if (worlds.isEmpty()) return true;
+
+        boolean listed = worlds.stream().anyMatch(name -> name.equalsIgnoreCase(world.getName()));
+        String mode = getConfig().getString("gameplay.worlds.mode", "BLACKLIST");
+        if ("WHITELIST".equalsIgnoreCase(mode)) {
+            return listed;
+        }
+        return !listed;
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {
