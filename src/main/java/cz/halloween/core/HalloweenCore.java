@@ -1,0 +1,105 @@
+package cz.halloween.core;
+
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.ChatColor;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.UUID;
+
+public final class HalloweenCore extends JavaPlugin implements Listener {
+    private HalloweenDataManager dataManager;
+    private HalloweenServiceImpl service;
+    private boolean eventEnabled;
+
+    @Override
+    public void onEnable() {
+        saveDefaultConfig();
+
+        dataManager = new HalloweenDataManager(this);
+        dataManager.load();
+
+        eventEnabled = getConfig().getBoolean("enabled", true);
+        service = new HalloweenServiceImpl(this);
+
+        getServer().getPluginManager().registerEvents(this, this);
+        if (getCommand("halloween") != null) {
+            getCommand("halloween").setExecutor(new HalloweenCommand(this));
+        }
+
+        long saveInterval = 20L * 60L * 5L;
+        getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
+
+        getLogger().info("HalloweenCore enabled. Event=" + eventEnabled);
+    }
+
+    @Override
+    public void onDisable() {
+        if (dataManager != null) dataManager.save();
+    }
+
+    @EventHandler
+    public void onEntityDeath(EntityDeathEvent event) {
+        if (!eventEnabled) return;
+
+        Player killer = event.getEntity().getKiller();
+        if (killer == null) return;
+
+        if (!getConfig().getBoolean("rewards.mob-kill.enabled", true)) return;
+
+        long reward = getConfig().getLong("rewards.mob-kill.fragments", 1L);
+        if (reward <= 0L) return;
+
+        service.addFragments(killer.getUniqueId(), reward, "mob-kill");
+    }
+
+    public void reloadEventConfig() {
+        reloadConfig();
+        eventEnabled = getConfig().getBoolean("enabled", true);
+    }
+
+    public void setEventEnabled(boolean enabled) {
+        eventEnabled = enabled;
+    }
+
+    public boolean isEventEnabled() {
+        return eventEnabled;
+    }
+
+    public HalloweenDataManager getDataManager() {
+        return dataManager;
+    }
+
+    public HalloweenService getService() {
+        return service;
+    }
+
+    public void notifyFragmentGain(UUID playerId, long amount) {
+        Player player = getServer().getPlayer(playerId);
+        if (player == null) return;
+
+        String currency = getConfig().getString("currency.name", "fragmentů");
+        player.sendActionBar(Component.text("+" + amount + " " + currency).color(NamedTextColor.GOLD));
+    }
+
+    public void broadcastGlobalGoalReached() {
+        String message = getConfig().getString("messages.global-goal-reached",
+                "&6&lHALLOWEEN &8» &fServer společně dosáhl Halloween cíle! Něco se probouzí...");
+        getServer().broadcastMessage(color(message));
+    }
+
+    public String message(String key) {
+        FileConfiguration config = getConfig();
+        String prefix = config.getString("messages.prefix", "");
+        return color(prefix + config.getString(key, ""));
+    }
+
+    public String color(String text) {
+        return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text);
+    }
+}
