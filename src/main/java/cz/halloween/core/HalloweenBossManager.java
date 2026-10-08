@@ -12,7 +12,7 @@ public final class HalloweenBossManager {
     public VampireSpec getVampireSpec() {
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("bosses.vampire");
         if (section == null) {
-            return new VampireSpec("vampire-king", "KRÁL UPÍRŮ", 10, 8, true, false, true);
+            return new VampireSpec("vampire-king", "KRÁL UPÍRŮ", 10, 8, true, false, true, false);
         }
 
         return new VampireSpec(
@@ -22,7 +22,8 @@ public final class HalloweenBossManager {
                 Math.max(8, section.getInt("min-width-with-wings-blocks", 8)),
                 section.getBoolean("wings-required", true),
                 section.getBoolean("arena-required", true),
-                section.getBoolean("final-boss", true)
+                section.getBoolean("final-boss", true),
+                section.getBoolean("enabled", false)
         );
     }
 
@@ -32,7 +33,8 @@ public final class HalloweenBossManager {
         long goal = plugin.getService().getGlobalGoal();
         double progress = plugin.getService().getGlobalProgressPercent();
         boolean progressReady = goal <= 0L || progress >= Math.max(0, Math.min(100, requiredProgress));
-        return plugin.getDataManager().isFinaleUnlocked()
+        return spec.enabled()
+                && plugin.getDataManager().isFinaleUnlocked()
                 && progressReady
                 && spec.finalBoss()
                 && spec.arenaRequired();
@@ -69,7 +71,8 @@ public final class HalloweenBossManager {
             int minWidthWithWingsBlocks,
             boolean wingsRequired,
             boolean arenaRequired,
-            boolean finalBoss
+            boolean finalBoss,
+            boolean enabled
     ) {
     }
 }
