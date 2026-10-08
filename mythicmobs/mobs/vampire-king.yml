@@ -1,0 +1,31 @@
+# Dormant final boss definition for HalloweenCore.
+# HalloweenCore controls when/where this mob may spawn.
+# The custom 10+ block model and wings are intentionally attached later.
+
+vampire-king:
+  Type: ZOMBIE
+  Display: '&4&lKRÁL UPÍRŮ'
+  Health: 2000
+  Damage: 16
+  Modules:
+    ThreatTable: true
+  Options:
+    Despawn: false
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    KnockbackResistance: 1
+    MovementSpeed: 0.28
+    FollowRange: 64
+    MaxCombatDistance: 64
+    Collidable: false
+    PreventRenaming: true
+  AITargetSelectors:
+  - 0 clear
+  - 1 players
+  BossBar:
+    Enabled: false
+  Skills:
+  - effect:sound{s=entity.wither.ambient;v=0.6;p=0.7} @self ~onTimer:100 0.35
+  - effect:particles{p=soul_fire_flame;amount=6;hS=0.4;vS=0.8;speed=0.02} @self ~onTimer:10
+  - effect:sound{s=entity.phantom.hurt;v=0.7;p=0.55} @self ~onDamaged 0.25
+  - effect:sound{s=entity.wither.death;v=1.0;p=0.65} @self ~onDeath
