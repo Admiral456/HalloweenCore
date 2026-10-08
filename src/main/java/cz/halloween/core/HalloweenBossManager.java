@@ -57,7 +57,10 @@ public final class HalloweenBossManager {
         ConfigurationSection model = plugin.getConfig().getConfigurationSection("bosses.vampire.model");
         boolean modelReady = model == null
                 || !model.getBoolean("required", true)
-                || model.getBoolean("ready", false);
+                || (model.getBoolean("ready", false)
+                && Math.max(0, model.getInt("min-height-blocks", 0)) >= 10
+                && Math.max(0, model.getInt("min-width-with-wings-blocks", 0)) >= 8
+                && model.getBoolean("wings-required", false));
         return spec.enabled()
                 && plugin.getDataManager().isFinaleUnlocked()
                 && progressReady
