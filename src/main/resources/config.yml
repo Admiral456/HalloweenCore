@@ -11,8 +11,70 @@ rewards:
     enabled: true
     fragments: 1
 
+  mining:
+    enabled: true
+    fragments: 1
+    blocks:
+      - COAL_ORE
+      - DEEPSLATE_COAL_ORE
+      - COPPER_ORE
+      - DEEPSLATE_COPPER_ORE
+      - IRON_ORE
+      - DEEPSLATE_IRON_ORE
+      - GOLD_ORE
+      - DEEPSLATE_GOLD_ORE
+      - REDSTONE_ORE
+      - DEEPSLATE_REDSTONE_ORE
+      - LAPIS_ORE
+      - DEEPSLATE_LAPIS_ORE
+      - DIAMOND_ORE
+      - DEEPSLATE_DIAMOND_ORE
+      - EMERALD_ORE
+      - DEEPSLATE_EMERALD_ORE
+      - ANCIENT_DEBRIS
+
+  farming:
+    enabled: true
+    fragments: 2
+    require-mature: true
+    blocks:
+      - WHEAT
+      - CARROTS
+      - POTATOES
+      - BEETROOTS
+      - NETHER_WART
+      - COCOA
+      - SWEET_BERRY_BUSH
+
+  fishing:
+    enabled: true
+    fragments: 2
+
 notifications:
   fragment-gain: true
+
+curse:
+  levels:
+    level-0:
+      level: 0
+      threshold: 0
+      name: "Beze jména"
+    level-1:
+      level: 1
+      threshold: 100
+      name: "Dotčený"
+    level-2:
+      level: 2
+      threshold: 500
+      name: "Prokletý"
+    level-3:
+      level: 3
+      threshold: 1500
+      name: "Zkažený"
+    level-4:
+      level: 4
+      threshold: 5000
+      name: "Posedlý"
 
 messages:
   prefix: "&8[&6Halloween&8] &r"
