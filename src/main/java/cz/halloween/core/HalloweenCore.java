@@ -16,6 +16,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenDataManager dataManager;
     private HalloweenServiceImpl service;
     private boolean eventEnabled;
+    private HalloweenEventManager eventManager;
+    private HalloweenRewardManager rewardManager;
 
     @Override
     public void onEnable() {
@@ -26,9 +28,12 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         eventEnabled = getConfig().getBoolean("enabled", true);
         service = new HalloweenServiceImpl(this);
+        eventManager = new HalloweenEventManager(this);
+        rewardManager = new HalloweenRewardManager(this);
 
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new HalloweenActivityListener(this), this);
+        getServer().getPluginManager().registerEvents(new HalloweenJoinListener(this), this);
 
         if (getCommand("halloween") != null) {
             getCommand("halloween").setExecutor(new HalloweenCommand(this));
@@ -36,12 +41,14 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
+        eventManager.start();
 
         getLogger().info("HalloweenCore enabled. Event=" + eventEnabled);
     }
 
     @Override
     public void onDisable() {
+        if (eventManager != null) eventManager.stop();
         if (dataManager != null) dataManager.save();
     }
 
@@ -71,6 +78,14 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public boolean isEventEnabled() {
         return eventEnabled;
+    }
+
+    public HalloweenEventManager getEventManager() {
+        return eventManager;
+    }
+
+    public HalloweenRewardManager getRewardManager() {
+        return rewardManager;
     }
 
     public HalloweenDataManager getDataManager() {
