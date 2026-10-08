@@ -47,6 +47,11 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 
 ## Boss bar
 
+### Model readiness
+
+Král upírů je navázaný na samostatný model gate. Konfigurace drží `provider`, `id`, minimální rozměry a hlavně `ready: false`; dokud nebude skutečný 3D model s křídly o minimálně 10 blocích výšky a 8 blocích šířky připravený a otestovaný, encounter se nespustí.
+
+
 Král upírů má připravený vlastní boss bar: HP bar, jméno bosse, automatické zobrazování hráčům v nastaveném radiusu a automatické skrytí po opuštění oblasti nebo smrti bosse. Spawn a finální mechaniky bosse zůstávají oddělené od této vrstvy.
 
 ## PlaceholderAPI
