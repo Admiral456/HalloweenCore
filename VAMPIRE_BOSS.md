@@ -23,3 +23,37 @@ Před samotným modelem budou samostatně řešeny:
 - případné zbraně a efekty
 
 Při výrobě modelu budou současně dodané jeho textury a potřebné resource-pack soubory.
+
+
+## Encounter lifecycle
+
+1. Server dosáhne globálního cíle a trvale odemkne finále.
+2. Admin nastaví arénu přes `/halloween setvampirearena`.
+3. MythicMobs musí obsahovat `vampire-king`.
+4. Model provider musí být přítomný a `bosses.vampire.model.ready` musí být `true`.
+5. Encounter lze spustit přes `/halloween boss start`.
+6. HalloweenCore označí skutečnou Bukkit entitu PDC klíčem a převezme správu HP baru, účastníků, leash a rewardů.
+7. Po smrti proběhne jednorázová výplata odměn; při timeoutu nebo stopu se boss odstraní bez victory rewardu.
+
+## Boss bar contract
+
+- červený bar, defaultně `SEGMENTED_20`
+- zobrazení do 96 bloků
+- automatický update HP
+- automatické odebrání po smrti, stopu, reloadu nebo vypnutí eventu
+- na stejné obrazovce nepoužívat druhý MythicMobs boss bar; dormantní MythicMobs definice ho má vypnutý
+
+## Fáze souboje
+
+- Fáze I: základní lov.
+- Fáze II (70 % HP): Speed/Resistance, krvavý plošný výboj a slabý vampirický sustain.
+- Fáze III (40 % HP): silnější efekty, shadow strike/teleport a vyšší sustain.
+- Fáze IV (15 % HP): enrage, silnější odpor, plošný Nightfall a Blindness.
+
+Prahové hodnoty a síla schopností jsou záměrně v `config.yml`, aby šly ladit bez změny základního modelu.
+
+## MythicMobs / ModelEngine
+
+MythicMobs dodává základní mob definition `mythicmobs/mobs/vampire-king.yml`. ModelEngine hook není aktivovaný, dokud není hotový vlastní model; připravená specifikace je v `docs/VAMPIRE_MODEL_ENGINE.md`.
+
+Oficiální MythicMobs API podporuje získání MythicMob přes MobManager a spawn pomocí Bukkit adaptéru, což je důvod, proč HalloweenCore používá API bridge místo spouštění shellového příkazu. citeturn967112search0turn610413search0
