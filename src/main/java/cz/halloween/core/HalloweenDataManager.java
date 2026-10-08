@@ -19,6 +19,10 @@ public final class HalloweenDataManager {
     private final Map<UUID, Long> lastJoin = new HashMap<>();
     private final Map<UUID, Integer> streaks = new HashMap<>();
     private final Map<UUID, Set<String>> claimedRewards = new HashMap<>();
+    private final Map<UUID, String> challengeDay = new HashMap<>();
+    private final Map<UUID, String> challengeType = new HashMap<>();
+    private final Map<UUID, Integer> challengeProgress = new HashMap<>();
+    private final Set<UUID> challengeClaimed = new HashSet<>();
     private long serverFragments;
 
     public HalloweenDataManager(HalloweenCore plugin) {
@@ -31,6 +35,10 @@ public final class HalloweenDataManager {
         lastJoin.clear();
         streaks.clear();
         claimedRewards.clear();
+        challengeDay.clear();
+        challengeType.clear();
+        challengeProgress.clear();
+        challengeClaimed.clear();
         serverFragments = 0L;
         if (!file.exists()) return;
 
@@ -55,6 +63,15 @@ public final class HalloweenDataManager {
                     if (!rewards.isEmpty()) {
                         claimedRewards.put(uuid, new HashSet<>(rewards));
                     }
+
+                    String day = data.getString(base + ".challenge.day", "");
+                    String type = data.getString(base + ".challenge.type", "");
+                    int progress = Math.max(0, data.getInt(base + ".challenge.progress", 0));
+                    boolean claimed = data.getBoolean(base + ".challenge.claimed", false);
+                    if (!day.isBlank()) challengeDay.put(uuid, day);
+                    if (!type.isBlank()) challengeType.put(uuid, type);
+                    if (progress > 0) challengeProgress.put(uuid, progress);
+                    if (claimed) challengeClaimed.add(uuid);
                 } catch (IllegalArgumentException ignored) {
                     plugin.getLogger().warning("Ignoring invalid player UUID in data.yml: " + key);
                 }
@@ -86,6 +103,11 @@ public final class HalloweenDataManager {
             if (rewards != null && !rewards.isEmpty()) {
                 data.set(base + ".claimed-rewards", new ArrayList<>(rewards));
             }
+
+            if (challengeDay.containsKey(uuid)) data.set(base + ".challenge.day", challengeDay.get(uuid));
+            if (challengeType.containsKey(uuid)) data.set(base + ".challenge.type", challengeType.get(uuid));
+            if (challengeProgress.containsKey(uuid)) data.set(base + ".challenge.progress", challengeProgress.get(uuid));
+            if (challengeClaimed.contains(uuid)) data.set(base + ".challenge.claimed", true);
         }
 
         try {
@@ -159,6 +181,40 @@ public final class HalloweenDataManager {
     public void recordJoin(UUID uuid, long timestamp, int streak) {
         lastJoin.put(uuid, timestamp);
         streaks.put(uuid, Math.max(1, streak));
+    }
+
+    public String getChallengeDay(UUID uuid) {
+        return challengeDay.getOrDefault(uuid, "");
+    }
+
+    public String getChallengeType(UUID uuid) {
+        return challengeType.getOrDefault(uuid, "");
+    }
+
+    public int getChallengeProgress(UUID uuid) {
+        return challengeProgress.getOrDefault(uuid, 0);
+    }
+
+    public boolean isChallengeClaimed(UUID uuid) {
+        return challengeClaimed.contains(uuid);
+    }
+
+    public void setChallenge(UUID uuid, String day, String type) {
+        challengeDay.put(uuid, day);
+        challengeType.put(uuid, type);
+        challengeProgress.put(uuid, 0);
+        challengeClaimed.remove(uuid);
+    }
+
+    public int incrementChallengeProgress(UUID uuid, int amount) {
+        if (amount <= 0) return getChallengeProgress(uuid);
+        int updated = Math.min(Integer.MAX_VALUE, getChallengeProgress(uuid) + amount);
+        challengeProgress.put(uuid, updated);
+        return updated;
+    }
+
+    public void markChallengeClaimed(UUID uuid) {
+        challengeClaimed.add(uuid);
     }
 
     public boolean hasClaimedReward(UUID uuid, String rewardId) {
