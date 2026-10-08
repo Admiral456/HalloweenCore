@@ -1,9 +1,25 @@
 package cz.halloween.core;
 
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 public final class HalloweenBossManager {
     private final HalloweenCore plugin;
+    private BossBar vampireBossBar;
+    private LivingEntity trackedVampireBoss;
+    private BukkitTask vampireBossBarTask;
 
     public HalloweenBossManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -70,6 +86,112 @@ public final class HalloweenBossManager {
                 + spec.minHeightBlocks() + " blocks high, "
                 + spec.minWidthWithWingsBlocks() + " blocks wide with wings."
                 + " Arena=" + (arenaConfigured && !arenaWorld.isBlank() ? arenaWorld : "not configured") + ".");
+    }
+
+    public void trackVampireBoss(LivingEntity boss) {
+        stopVampireBossBar();
+        if (boss == null || boss.isDead() || !boss.isValid()) return;
+        if (!plugin.getConfig().getBoolean("bosses.vampire.boss-bar.enabled", true)) return;
+
+        trackedVampireBoss = boss;
+        vampireBossBar = Bukkit.createBossBar(
+                formatBossBarTitle(boss),
+                readBarColor(),
+                readBarStyle(),
+                org.bukkit.boss.BarFlag.CREATE_FOG
+        );
+        vampireBossBar.setProgress(healthProgress(boss));
+        vampireBossBar.setVisible(true);
+
+        vampireBossBarTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::updateVampireBossBar, 1L, 10L);
+        updateVampireBossBar();
+    }
+
+    public void stopVampireBossBar() {
+        if (vampireBossBarTask != null) {
+            vampireBossBarTask.cancel();
+            vampireBossBarTask = null;
+        }
+        if (vampireBossBar != null) {
+            vampireBossBar.removeAll();
+            vampireBossBar.setVisible(false);
+        }
+        vampireBossBar = null;
+        trackedVampireBoss = null;
+    }
+
+    public boolean isVampireBossBarActive() {
+        return vampireBossBar != null && trackedVampireBoss != null;
+    }
+
+    private void updateVampireBossBar() {
+        if (vampireBossBar == null || trackedVampireBoss == null) return;
+        if (trackedVampireBoss.isDead() || !trackedVampireBoss.isValid()) {
+            stopVampireBossBar();
+            return;
+        }
+
+        vampireBossBar.setTitle(formatBossBarTitle(trackedVampireBoss));
+        vampireBossBar.setProgress(healthProgress(trackedVampireBoss));
+
+        double radius = Math.max(16.0D,
+                plugin.getConfig().getDouble("bosses.vampire.boss-bar.radius-blocks", 96.0D));
+        double radiusSquared = radius * radius;
+        Set<Player> nearby = new HashSet<>();
+
+        Location bossLocation = trackedVampireBoss.getLocation();
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player)) continue;
+            if (!player.getWorld().getUID().equals(bossLocation.getWorld().getUID())) continue;
+            if (player.getLocation().distanceSquared(bossLocation) <= radiusSquared) {
+                nearby.add(player);
+                if (!vampireBossBar.getPlayers().contains(player)) {
+                    vampireBossBar.addPlayer(player);
+                }
+            }
+        }
+
+        for (Player viewer : new HashSet<>(vampireBossBar.getPlayers())) {
+            if (!nearby.contains(viewer)) {
+                vampireBossBar.removePlayer(viewer);
+            }
+        }
+    }
+
+    private String formatBossBarTitle(LivingEntity boss) {
+        VampireSpec spec = getVampireSpec();
+        double health = Math.max(0.0D, boss.getHealth());
+        double max = Math.max(1.0D, boss.getMaxHealth());
+        return plugin.color(spec.displayName() + " &8• &c" + formatNumber(health) + " &7/ &c" + formatNumber(max) + " HP");
+    }
+
+    private double healthProgress(LivingEntity boss) {
+        double max = Math.max(1.0D, boss.getMaxHealth());
+        return Math.max(0.0D, Math.min(1.0D, boss.getHealth() / max));
+    }
+
+    private BarColor readBarColor() {
+        try {
+            return BarColor.valueOf(plugin.getConfig()
+                    .getString("bosses.vampire.boss-bar.color", "RED")
+                    .toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return BarColor.RED;
+        }
+    }
+
+    private BarStyle readBarStyle() {
+        try {
+            return BarStyle.valueOf(plugin.getConfig()
+                    .getString("bosses.vampire.boss-bar.style", "SEGMENTED_20")
+                    .toUpperCase(java.util.Locale.ROOT));
+        } catch (IllegalArgumentException ignored) {
+            return BarStyle.SEGMENTED_20;
+        }
+    }
+
+    private String formatNumber(double value) {
+        return String.format(java.util.Locale.ROOT, "%.0f", value);
     }
 
     public record VampireSpec(
