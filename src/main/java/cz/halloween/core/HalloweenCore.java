@@ -112,6 +112,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         reloadConfig();
         eventEnabled = getConfig().getBoolean("enabled", true);
         if (eventManager != null) eventManager.reloadSchedule();
+        if (bossManager != null) bossManager.stopVampireBossBar();
         if (!eventEnabled && atmosphere != null) atmosphere.stopPlayback();
         for (String error : HalloweenConfigValidator.validate(this)) {
             getLogger().severe("[CONFIG] " + error);
