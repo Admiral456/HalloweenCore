@@ -50,6 +50,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new HalloweenJoinListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenQuitListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenItemListener(this), this);
+        getServer().getPluginManager().registerEvents(new HalloweenRewardMenuListener(this), this);
         getServer().getPluginManager().registerEvents(mobManager, this);
 
         if (getCommand("halloween") != null) {
