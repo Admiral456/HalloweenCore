@@ -55,19 +55,27 @@ public final class HalloweenBossManager {
                 && plugin.getServer().getWorlds().stream().anyMatch(world -> world.getName().equalsIgnoreCase(arenaWorld))
                 && plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false);
         ConfigurationSection model = plugin.getConfig().getConfigurationSection("bosses.vampire.model");
+        boolean modelPluginReady = true;
         boolean modelReady = model == null
                 || !model.getBoolean("required", true)
                 || (model.getBoolean("ready", false)
                 && Math.max(0, model.getInt("min-height-blocks", 0)) >= 10
                 && Math.max(0, model.getInt("min-width-with-wings-blocks", 0)) >= 8
                 && model.getBoolean("wings-required", false));
+        if (model != null && model.getBoolean("plugin-required", true)) {
+            String provider = model.getString("provider", "");
+            if ("MODEL_ENGINE".equalsIgnoreCase(provider)) {
+                modelPluginReady = plugin.getServer().getPluginManager().getPlugin("ModelEngine") != null;
+            }
+        }
         return spec.enabled()
                 && plugin.getDataManager().isFinaleUnlocked()
                 && progressReady
                 && spec.finalBoss()
                 && spec.arenaRequired()
                 && arenaReady
-                && modelReady;
+                && modelReady
+                && modelPluginReady;
     }
 
     public boolean isVampireSpecificationValid() {
