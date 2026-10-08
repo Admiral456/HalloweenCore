@@ -3,7 +3,7 @@ info:
 
 items:
   hunter_mask:
-    display_name: "&6&lMaska nočního lovce &8[Halloween 2026]"
+    name: "&6&lMaska nočního lovce &8[Halloween 2026]"
     lore:
       - "&7Limitovaná Halloween odměna."
       - "&7Připomínka eventu WarriorLand 2026."
@@ -12,7 +12,7 @@ items:
       texture: item/hunter_mask
 
   cursed_talisman:
-    display_name: "&5&lProkletý talisman &8[2026]"
+    name: "&5&lProkletý talisman &8[2026]"
     lore:
       - "&7Relikvie vysokého prokletí."
       - "&7Odemčená až na vyšší úrovni prokletí."
@@ -21,7 +21,7 @@ items:
       texture: item/cursed_talisman
 
   halloween_token:
-    display_name: "&c&lHalloween 2026"
+    name: "&c&lHalloween 2026"
     lore:
       - "&7Jedinečná památka."
       - "&8Po skončení eventu už nebude běžně dostupná."
@@ -30,10 +30,13 @@ items:
       texture: item/halloween_token
 
   cursed_candy:
-    display_name: "&6&lProkleté cukroví &8[Halloween 2026]"
+    name: "&6&lProkleté cukroví &8[Halloween 2026]"
     lore:
       - "&7Padá ze speciálních Halloween mobů."
       - "&7Po snězení tě na chvíli poznačí prokletí."
     material: PUMPKIN_PIE
     graphics:
       texture: item/cursed_candy
+    consumable:
+      nutrition: 1
+      saturation: 0.2
