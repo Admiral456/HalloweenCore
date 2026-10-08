@@ -1,0 +1,419 @@
+package cz.halloween.core;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.NamespacedKey;
+import org.bukkit.scheduler.BukkitTask;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+
+public final class HalloweenVampireEncounterManager implements Listener {
+    private final HalloweenCore plugin;
+    private final NamespacedKey bossKey;
+
+    private LivingEntity boss;
+    private UUID bossUuid;
+    private BukkitTask tickTask;
+    private final Set<UUID> participants = new HashSet<>();
+    private final Map<UUID, Integer> participationSeconds = new HashMap<>();
+    private long startedAt;
+    private int phase;
+
+    public HalloweenVampireEncounterManager(HalloweenCore plugin) {
+        this.plugin = plugin;
+        this.bossKey = new NamespacedKey(plugin, "vampire_boss");
+    }
+
+    public boolean isActive() {
+        return boss != null && bossUuid != null && !boss.isDead() && boss.isValid();
+    }
+
+    public LivingEntity getBoss() {
+        return boss;
+    }
+
+    public int getPhase() {
+        return phase;
+    }
+
+    public int getParticipantCount() {
+        return participants.size();
+    }
+
+    public boolean isTrackedVampireBoss(Entity entity) {
+        return entity != null
+                && bossUuid != null
+                && bossUuid.equals(entity.getUniqueId());
+    }
+
+    public boolean startEncounter() {
+        if (!plugin.isEventEnabled()) return false;
+        if (isActive()) return false;
+        if (!plugin.getConfig().getBoolean("bosses.vampire.enabled", false)) return false;
+        if (!plugin.getBossManager().isVampireReady()) return false;
+
+        String worldName = plugin.getConfig().getString("bosses.vampire.arena.world", "");
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) {
+            plugin.getLogger().warning("Cannot start Vampire encounter: arena world is not loaded: " + worldName);
+            return false;
+        }
+
+        double x = plugin.getConfig().getDouble("bosses.vampire.arena.x", 0.0D);
+        double y = plugin.getConfig().getDouble("bosses.vampire.arena.y", 100.0D);
+        double z = plugin.getConfig().getDouble("bosses.vampire.arena.z", 0.0D);
+        Location location = new Location(world, x, y, z);
+
+        LivingEntity spawned = spawnMythicMob(location);
+        if (spawned == null) {
+            plugin.getLogger().severe("Cannot start Vampire encounter: MythicMobs mob '" 
+                    + plugin.getBossManager().getVampireSpec().id() + "' could not be spawned.");
+            return false;
+        }
+
+        boss = spawned;
+        bossUuid = spawned.getUniqueId();
+        boss.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 1);
+        startedAt = System.currentTimeMillis();
+        phase = 1;
+        participants.clear();
+        participationSeconds.clear();
+
+        try {
+            if (boss.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE) != null) {
+                boss.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
+            }
+        } catch (Exception ignored) {
+        }
+
+        plugin.getBossManager().trackVampireBoss(boss);
+        Bukkit.broadcastMessage(plugin.color(
+                plugin.getConfig().getString("messages.vampire-start",
+                        "&4&lHALLOWEEN &8» &fKrál upírů sestoupil do arény. &7Poražte ho společně.")
+        ));
+        broadcastPhase(1);
+
+        tickTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
+        return true;
+    }
+
+    public void stopEncounter() {
+        if (tickTask != null) {
+            tickTask.cancel();
+            tickTask = null;
+        }
+
+        if (boss != null && !boss.isDead()) {
+            boss.remove();
+        }
+
+        boss = null;
+        bossUuid = null;
+        startedAt = 0L;
+        phase = 0;
+        participants.clear();
+        participationSeconds.clear();
+        if (plugin.getBossManager() != null) {
+            plugin.getBossManager().stopVampireBossBar();
+        }
+    }
+
+    private void tick() {
+        if (!plugin.isEventEnabled()) {
+            stopEncounter();
+            return;
+        }
+        if (!isActive()) {
+            finishNoReward();
+            return;
+        }
+
+        int maxMinutes = Math.max(1, plugin.getConfig().getInt("bosses.vampire.encounter.max-duration-minutes", 20));
+        if (System.currentTimeMillis() - startedAt >= maxMinutes * 60_000L) {
+            Bukkit.broadcastMessage(plugin.color(
+                    plugin.getConfig().getString("messages.vampire-timeout",
+                            "&4&lHALLOWEEN &8» &cKrál upírů zmizel v temnotě. Aréna je zticha.")
+            ));
+            stopEncounter();
+            return;
+        }
+
+        trackNearbyPlayers();
+        enforceArena();
+        updatePhase();
+    }
+
+    private void trackNearbyPlayers() {
+        Location center = getArenaLocation();
+        if (center == null || boss == null) return;
+
+        double radius = Math.max(16.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.participation-radius-blocks", 96.0D));
+        double radiusSquared = radius * radius;
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player)) continue;
+            if (!player.getWorld().getUID().equals(center.getWorld().getUID())) continue;
+            if (player.getLocation().distanceSquared(center) > radiusSquared) continue;
+
+            participants.add(player.getUniqueId());
+            participationSeconds.merge(player.getUniqueId(), 1, Integer::sum);
+        }
+    }
+
+    private void enforceArena() {
+        if (boss == null) return;
+        if (!plugin.getConfig().getBoolean("bosses.vampire.encounter.leash-to-arena", true)) return;
+
+        Location center = getArenaLocation();
+        if (center == null || !boss.getWorld().getUID().equals(center.getWorld().getUID())) return;
+
+        double radius = Math.max(12.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.arena-radius-blocks", 48.0D));
+        if (boss.getLocation().distanceSquared(center) <= radius * radius) return;
+
+        boss.teleport(center);
+    }
+
+    private void updatePhase() {
+        if (boss == null) return;
+
+        double max = Math.max(1.0D, boss.getMaxHealth());
+        double hp = Math.max(0.0D, boss.getHealth()) / max;
+
+        int nextPhase;
+        if (hp <= 0.15D) nextPhase = 4;
+        else if (hp <= 0.40D) nextPhase = 3;
+        else if (hp <= 0.70D) nextPhase = 2;
+        else nextPhase = 1;
+
+        if (nextPhase == phase) {
+            maintainPhaseEffects();
+            return;
+        }
+
+        phase = nextPhase;
+        broadcastPhase(phase);
+        maintainPhaseEffects();
+    }
+
+    private void maintainPhaseEffects() {
+        if (boss == null) return;
+
+        switch (phase) {
+            case 2 -> {
+                addEffect("SPEED", 20 * 12, 0);
+                addEffect("DAMAGE_RESISTANCE", 20 * 8, 0);
+            }
+            case 3 -> {
+                addEffect("SPEED", 20 * 12, 1);
+                addEffect("DAMAGE_RESISTANCE", 20 * 8, 0);
+                addEffect("STRENGTH", 20 * 12, 0);
+            }
+            case 4 -> {
+                addEffect("SPEED", 20 * 12, 1);
+                addEffect("DAMAGE_RESISTANCE", 20 * 8, 1);
+                addEffect("STRENGTH", 20 * 12, 1);
+            }
+            default -> {
+            }
+        }
+    }
+
+    private void addEffect(String typeName, int duration, int amplifier) {
+        try {
+            org.bukkit.potion.PotionEffectType type = org.bukkit.potion.PotionEffectType.getByName(typeName);
+            if (type != null) {
+                boss.addPotionEffect(new org.bukkit.potion.PotionEffect(type, duration, amplifier, true, false, false));
+            }
+        } catch (Exception ignored) {
+        }
+    }
+
+    private void broadcastPhase(int currentPhase) {
+        String message = switch (currentPhase) {
+            case 2 -> "&5&lKRÁL UPÍRŮ &8» &dFÁZE II &7— krev se probouzí.";
+            case 3 -> "&4&lKRÁL UPÍRŮ &8» &cFÁZE III &7— jeho křídla se otevírají.";
+            case 4 -> "&4&lKRÁL UPÍRŮ &8» &4FÁZE IV &7— poslední odpor.";
+            default -> "&5&lKRÁL UPÍRŮ &8» &7FÁZE I — lov začíná.";
+        };
+        Bukkit.broadcastMessage(plugin.color(message));
+    }
+
+    private void finishNoReward() {
+        if (tickTask != null) {
+            tickTask.cancel();
+            tickTask = null;
+        }
+        boss = null;
+        bossUuid = null;
+        startedAt = 0L;
+        phase = 0;
+        participants.clear();
+        participationSeconds.clear();
+        if (plugin.getBossManager() != null) {
+            plugin.getBossManager().stopVampireBossBar();
+        }
+    }
+
+    private void finishVictory(Player killer) {
+        if (tickTask != null) {
+            tickTask.cancel();
+            tickTask = null;
+        }
+
+        int minSeconds = Math.max(0,
+                plugin.getConfig().getInt("bosses.vampire.encounter.min-participation-seconds", 60));
+        long participationReward = Math.max(0L,
+                plugin.getConfig().getLong("bosses.vampire.encounter.participation-reward-fragments", 250L));
+        long victoryReward = Math.max(0L,
+                plugin.getConfig().getLong("bosses.vampire.encounter.victory-reward-fragments", 2500L));
+        long topBonus = Math.max(0L,
+                plugin.getConfig().getLong("bosses.vampire.encounter.top-contributor-bonus-fragments", 750L));
+
+        Bukkit.broadcastMessage(plugin.color(
+                plugin.getConfig().getString("messages.vampire-victory",
+                        "&4&lHALLOWEEN &8» &6Král upírů byl poražen! Temnota ustupuje.")
+        ));
+
+        UUID topPlayer = null;
+        int topSeconds = -1;
+        for (UUID uuid : participants) {
+            int seconds = participationSeconds.getOrDefault(uuid, 0);
+            if (seconds < minSeconds) continue;
+
+            Player player = Bukkit.getPlayer(uuid);
+            if (player != null) {
+                if (participationReward > 0L) {
+                    plugin.getService().addFragments(uuid, participationReward, "boss-participation");
+                }
+                player.sendMessage(plugin.color("&6HALLOWEEN &8» &fZa účast v boji získáváš &e+"
+                        + participationReward + " &ffragmentů."));
+            }
+            if (seconds > topSeconds) {
+                topSeconds = seconds;
+                topPlayer = uuid;
+            }
+        }
+
+        if (killer != null && participants.contains(killer.getUniqueId()) && victoryReward > 0L) {
+            plugin.getService().addFragments(killer.getUniqueId(), victoryReward, "boss-victory");
+            killer.sendMessage(plugin.color("&6HALLOWEEN &8» &6Vražda Krále upírů: &e+"
+                    + victoryReward + " &ffragmentů."));
+        }
+
+        if (topPlayer != null && topBonus > 0L) {
+            plugin.getService().addFragments(topPlayer, topBonus, "boss-top-contributor");
+            Player top = Bukkit.getPlayer(topPlayer);
+            if (top != null) {
+                top.sendMessage(plugin.color("&5HALLOWEEN &8» &dNejvětší podíl na pádu bosse: &e+"
+                        + topBonus + " &dfragmentů."));
+            }
+        }
+
+        plugin.getDataManager().save();
+        stopEncounter();
+    }
+
+    private LivingEntity spawnMythicMob(Location location) {
+        try {
+            Class<?> mythicBukkitClass = Class.forName("io.lumine.mythic.bukkit.MythicBukkit");
+            Object mythic = mythicBukkitClass.getMethod("inst").invoke(null);
+            Object mobManager = mythic.getClass().getMethod("getMobManager").invoke(mythic);
+
+            String mobId = plugin.getBossManager().getVampireSpec().id();
+            Method getMythicMob = mobManager.getClass().getMethod("getMythicMob", String.class);
+            Object optional = getMythicMob.invoke(mobManager, mobId);
+            if (!(optional instanceof Optional<?> maybe) || maybe.isEmpty()) {
+                return null;
+            }
+
+            Object mythicMob = maybe.get();
+            Class<?> adapterClass = Class.forName("io.lumine.mythic.bukkit.BukkitAdapter");
+            Object abstractLocation = adapterClass.getMethod("adapt", Location.class).invoke(null, location);
+
+            Method spawn = findSpawnMethod(mythicMob.getClass());
+            if (spawn == null) return null;
+
+            Object activeMob = spawn.invoke(mythicMob, abstractLocation, 1.0D);
+            if (activeMob == null) return null;
+
+            Object entityRef = activeMob.getClass().getMethod("getEntity").invoke(activeMob);
+            Object bukkitEntity = entityRef.getClass().getMethod("getBukkitEntity").invoke(entityRef);
+            return bukkitEntity instanceof LivingEntity living ? living : null;
+        } catch (ReflectiveOperationException | RuntimeException ex) {
+            plugin.getLogger().warning("MythicMobs API spawn failed: " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
+            return null;
+        }
+    }
+
+    private Method findSpawnMethod(Class<?> type) {
+        for (Method method : type.getMethods()) {
+            if (!method.getName().equals("spawn") || method.getParameterCount() != 2) continue;
+            Class<?> second = method.getParameterTypes()[1];
+            if (second == double.class || second == Double.class || Number.class.isAssignableFrom(second)) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    private Location getArenaLocation() {
+        String worldName = plugin.getConfig().getString("bosses.vampire.arena.world", "");
+        World world = Bukkit.getWorld(worldName);
+        if (world == null) return null;
+        return new Location(
+                world,
+                plugin.getConfig().getDouble("bosses.vampire.arena.x", 0.0D),
+                plugin.getConfig().getDouble("bosses.vampire.arena.y", 100.0D),
+                plugin.getConfig().getDouble("bosses.vampire.arena.z", 0.0D)
+        );
+    }
+
+    private Player resolvePlayer(EntityDamageByEntityEvent event) {
+        Entity damager = event.getDamager();
+        if (damager instanceof Player player) return player;
+        if (damager instanceof Projectile projectile && projectile.getShooter() instanceof Player player) {
+            return player;
+        }
+        return null;
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBossDamaged(EntityDamageByEntityEvent event) {
+        if (!isTrackedVampireBoss(event.getEntity())) return;
+        Player player = resolvePlayer(event);
+        if (player != null && plugin.isEligibleGameplayPlayer(player)) {
+            participants.add(player.getUniqueId());
+        }
+    }
+
+    @EventHandler(ignoreCancelled = true)
+    public void onBossDeath(EntityDeathEvent event) {
+        if (!isTrackedVampireBoss(event.getEntity())) return;
+        finishVictory(event.getEntity().getKiller());
+    }
+
+    @EventHandler
+    public void onQuit(PlayerQuitEvent event) {
+        // Participation is retained by UUID so reconnecting players remain eligible for rewards.
+    }
+}
