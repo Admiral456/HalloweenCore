@@ -2,6 +2,8 @@ package cz.halloween.core;
 
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
+import org.bukkit.World;
+import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -19,11 +21,13 @@ public final class HalloweenMobManager implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey cursedKey;
     private final NamespacedKey relicKey;
+    private final NamespacedKey eventMobKey;
 
     public HalloweenMobManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.cursedKey = new NamespacedKey(plugin, "cursed_mob");
         this.relicKey = new NamespacedKey(plugin, "halloween_relic");
+        this.eventMobKey = new NamespacedKey(plugin, "event_mob");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -89,16 +93,15 @@ public final class HalloweenMobManager implements Listener {
     public boolean spawnEventMob(Player player) {
         if (!plugin.isEventEnabled() || player == null) return false;
 
+        World world = player.getWorld();
+        int maxEventMobs = Math.max(1, plugin.getConfig().getInt("random-events.max-event-mobs", 12));
+        if (countEventMobs(world) >= maxEventMobs) return false;
+
         String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "hex-witch"};
         String mobId = ids[ThreadLocalRandom.current().nextInt(ids.length)];
 
-        int radius = ThreadLocalRandom.current().nextInt(12, 29);
-        double angle = ThreadLocalRandom.current().nextDouble(0.0D, Math.PI * 2.0D);
-        int x = player.getLocation().getBlockX() + (int) Math.round(Math.cos(angle) * radius);
-        int z = player.getLocation().getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
-        int y = player.getWorld().getHighestBlockYAt(x, z) + 1;
-
-        if (y < player.getWorld().getMinHeight() || y >= player.getWorld().getMaxHeight()) return false;
+        org.bukkit.Location spawnLocation = findSafeEventLocation(player);
+        if (spawnLocation == null) return false;
 
         EntityType type = switch (mobId) {
             case "gravekeeper" -> EntityType.SKELETON;
@@ -107,13 +110,14 @@ public final class HalloweenMobManager implements Listener {
             default -> EntityType.ZOMBIE;
         };
 
-        Entity entity = player.getWorld().spawnEntity(new org.bukkit.Location(player.getWorld(), x + 0.5D, y, z + 0.5D), type);
+        Entity entity = world.spawnEntity(spawnLocation, type);
         if (!(entity instanceof LivingEntity living)) {
             entity.remove();
             return false;
         }
 
         configureSpecialMob(living, mobId);
+        living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
         return true;
     }
 
@@ -138,6 +142,42 @@ public final class HalloweenMobManager implements Listener {
         if (entity instanceof Creeper creeper) {
             creeper.setExplosionRadius(Math.max(1, section.getInt("explosion-radius", 3)));
         }
+    }
+
+    private org.bukkit.Location findSafeEventLocation(Player player) {
+        World world = player.getWorld();
+
+        for (int attempt = 0; attempt < 6; attempt++) {
+            int radius = ThreadLocalRandom.current().nextInt(12, 29);
+            double angle = ThreadLocalRandom.current().nextDouble(0.0D, Math.PI * 2.0D);
+            int x = player.getLocation().getBlockX() + (int) Math.round(Math.cos(angle) * radius);
+            int z = player.getLocation().getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
+            int y = world.getHighestBlockYAt(x, z) + 1;
+
+            if (y < world.getMinHeight() || y >= world.getMaxHeight() - 1) continue;
+
+            org.bukkit.Location location = new org.bukkit.Location(world, x + 0.5D, y, z + 0.5D);
+            if (!world.getWorldBorder().isInside(location)) continue;
+
+            Block feet = location.getBlock();
+            Block head = feet.getRelative(0, 1, 0);
+            Block below = feet.getRelative(0, -1, 0);
+
+            if (!feet.isPassable() || !head.isPassable() || below.isPassable()
+                    || below.isLiquid() || feet.isLiquid() || head.isLiquid()) {
+                continue;
+            }
+
+            return location;
+        }
+
+        return null;
+    }
+
+    private long countEventMobs(World world) {
+        return world.getLivingEntities().stream()
+                .filter(entity -> entity.getPersistentDataContainer().has(eventMobKey, PersistentDataType.BYTE))
+                .count();
     }
 
     public boolean isSpecial(LivingEntity entity) {
