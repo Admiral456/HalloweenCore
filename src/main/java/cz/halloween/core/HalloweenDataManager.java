@@ -26,6 +26,7 @@ public final class HalloweenDataManager {
     private final Map<UUID, String> challengeType = new HashMap<>();
     private final Map<UUID, Integer> challengeProgress = new HashMap<>();
     private final Set<UUID> challengeClaimed = new HashSet<>();
+    private final Set<UUID> villageDiscovered = new HashSet<>();
     private long serverFragments;
     private boolean finaleUnlocked;
 
@@ -44,6 +45,7 @@ public final class HalloweenDataManager {
         challengeType.clear();
         challengeProgress.clear();
         challengeClaimed.clear();
+        villageDiscovered.clear();
         serverFragments = 0L;
         finaleUnlocked = false;
         if (!file.exists()) return;
@@ -81,6 +83,9 @@ public final class HalloweenDataManager {
                     if (!type.isBlank()) challengeType.put(uuid, type);
                     if (progress > 0) challengeProgress.put(uuid, progress);
                     if (claimed) challengeClaimed.add(uuid);
+                    if (data.getBoolean(base + ".haunted-village-discovered", false)) {
+                        villageDiscovered.add(uuid);
+                    }
                 } catch (IllegalArgumentException ignored) {
                     plugin.getLogger().warning("Ignoring invalid player UUID in data.yml: " + key);
                 }
@@ -103,6 +108,7 @@ public final class HalloweenDataManager {
         players.addAll(challengeType.keySet());
         players.addAll(challengeProgress.keySet());
         players.addAll(challengeClaimed);
+        players.addAll(villageDiscovered);
 
         for (UUID uuid : players) {
             String base = "players." + uuid;
@@ -125,6 +131,7 @@ public final class HalloweenDataManager {
             if (challengeType.containsKey(uuid)) data.set(base + ".challenge.type", challengeType.get(uuid));
             if (challengeProgress.containsKey(uuid)) data.set(base + ".challenge.progress", challengeProgress.get(uuid));
             if (challengeClaimed.contains(uuid)) data.set(base + ".challenge.claimed", true);
+            if (villageDiscovered.contains(uuid)) data.set(base + ".haunted-village-discovered", true);
         }
 
         try {
@@ -277,6 +284,14 @@ public final class HalloweenDataManager {
 
     public void markChallengeClaimed(UUID uuid) {
         challengeClaimed.add(uuid);
+    }
+
+    public boolean hasDiscoveredVillage(UUID uuid) {
+        return villageDiscovered.contains(uuid);
+    }
+
+    public void markVillageDiscovered(UUID uuid) {
+        villageDiscovered.add(uuid);
     }
 
     public boolean hasClaimedReward(UUID uuid, String rewardId) {
