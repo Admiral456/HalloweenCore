@@ -3,9 +3,12 @@ package cz.halloween.core;
 import org.bukkit.inventory.ItemStack;
 
 import java.lang.reflect.Method;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class HalloweenItemManager {
     private final HalloweenCore plugin;
+    private final Set<String> warnedMissing = new HashSet<>();
 
     public HalloweenItemManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -45,7 +48,10 @@ public final class HalloweenItemManager {
             return;
         }
 
-        plugin.getLogger().warning("ItemsAdder item '" + namespacedId + "' is unavailable for " + context
-                + ". HalloweenCore will use the configured vanilla fallback.");
+        String warningKey = namespacedId + "|" + context;
+        if (warnedMissing.add(warningKey)) {
+            plugin.getLogger().warning("ItemsAdder item '" + namespacedId + "' is unavailable for " + context
+                    + ". HalloweenCore will use the configured vanilla fallback.");
+        }
     }
 }
