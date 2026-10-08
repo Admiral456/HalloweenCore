@@ -46,8 +46,11 @@ public final class HalloweenEventManager {
     }
 
     private void scheduleNextEvent() {
-        int min = Math.max(1, plugin.getConfig().getInt("random-events.interval-minutes.min", 20));
-        int max = Math.max(min, plugin.getConfig().getInt("random-events.interval-minutes.max", 35));
+        int phase = getGlobalPhase();
+        int baseMin = Math.max(1, plugin.getConfig().getInt("random-events.interval-minutes.min", 20));
+        int baseMax = Math.max(baseMin, plugin.getConfig().getInt("random-events.interval-minutes.max", 35));
+        int min = Math.max(8, baseMin - phase * 2);
+        int max = Math.max(min, baseMax - phase * 2);
         int minutes = ThreadLocalRandom.current().nextInt(min, max + 1);
         nextEventAt = System.currentTimeMillis() + minutes * 60_000L;
     }
@@ -56,7 +59,8 @@ public final class HalloweenEventManager {
         String[] events = {"soulstorm", "witching-hour", "cursed-harvest"};
         activeEventId = events[ThreadLocalRandom.current().nextInt(events.length)];
 
-        int duration = Math.max(1, plugin.getConfig().getInt("random-events.duration-minutes", 5));
+        int phase = getGlobalPhase();
+        int duration = Math.max(1, plugin.getConfig().getInt("random-events.duration-minutes", 5) + Math.min(3, phase / 2));
         activeUntil = System.currentTimeMillis() + duration * 60_000L;
 
         String path = "random-events.types." + activeEventId;
@@ -90,6 +94,15 @@ public final class HalloweenEventManager {
                 player.playSound(player.getLocation(), Sound.ENTITY_WITCH_AMBIENT, 1.0f, 0.7f);
             }
         }
+    }
+
+    private int getGlobalPhase() {
+        int phase = 0;
+        long total = plugin.getService().getServerFragments();
+        for (long milestone : plugin.getConfig().getLongList("global-milestones")) {
+            if (milestone > 0L && total >= milestone) phase++;
+        }
+        return phase;
     }
 
     public boolean isActive(String id) {
