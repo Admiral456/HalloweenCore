@@ -27,8 +27,31 @@ public final class HalloweenAtmosphere {
         }
     }
 
+    public void stopPlayback() {
+        String custom = plugin.getConfig().getString("atmosphere.sound", "");
+        String fallback = plugin.getConfig().getString("atmosphere.fallback-sound", "");
+
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (custom != null && !custom.isBlank()) {
+                try {
+                    player.stopSound(custom);
+                } catch (Exception ignored) {
+                }
+            }
+            if (fallback != null && !fallback.isBlank()) {
+                try {
+                    player.stopSound(fallback);
+                } catch (Exception ignored) {
+                }
+            }
+        }
+    }
+
     private void tick() {
-        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("atmosphere.enabled", true)) return;
+        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("atmosphere.enabled", true)) {
+            stopPlayback();
+            return;
+        }
         for (Player player : Bukkit.getOnlinePlayers()) {
             play(player);
         }
