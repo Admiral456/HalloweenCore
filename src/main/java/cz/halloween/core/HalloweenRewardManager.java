@@ -165,17 +165,15 @@ public final class HalloweenRewardManager {
         if (isEquippedReward(player, "hunter-mask")) {
             bonus += Math.max(0.0D, shop.getDouble("hunter-mask.bonus-multiplier", 0.05D));
         }
-        if (hasRewardInInventory(player, "cursed-talisman")) {
+        if (isHeldReward(player, "cursed-talisman")) {
             bonus += Math.max(0.0D, shop.getDouble("cursed-talisman.bonus-multiplier", 0.10D));
         }
         return Math.max(1.0D, 1.0D + bonus);
     }
 
-    private boolean hasRewardInInventory(Player player, String rewardId) {
-        for (ItemStack item : player.getInventory().getContents()) {
-            if (isRewardItem(item, rewardId)) return true;
-        }
-        return false;
+    private boolean isHeldReward(Player player, String rewardId) {
+        return isRewardItem(player.getInventory().getItemInMainHand(), rewardId)
+                || isRewardItem(player.getInventory().getItemInOffHand(), rewardId);
     }
 
     private boolean isEquippedReward(Player player, String rewardId) {
