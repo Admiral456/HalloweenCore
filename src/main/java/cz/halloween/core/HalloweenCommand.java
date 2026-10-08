@@ -207,7 +207,12 @@ public final class HalloweenCommand implements CommandExecutor {
             return true;
         }
 
+        long before = plugin.getService().getFragments(target.getUniqueId());
         long newBalance = plugin.getService().addFragments(target.getUniqueId(), amount, "admin");
+        if (newBalance < before + amount && before <= Long.MAX_VALUE - amount) {
+            sender.sendMessage(plugin.color("&cFragmenty se nepodařilo přidat."));
+            return true;
+        }
         sender.sendMessage(plugin.color("&aPřidáno &e" + amount + " &afragmentů hráči &f" + target.getName() + "&a."));
         target.sendMessage(plugin.color("&6Získal jsi &e" + amount + " &6Halloween fragmentů. Celkem: &e" + newBalance));
         return true;
