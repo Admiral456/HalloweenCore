@@ -26,7 +26,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "give", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "boss", "give", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -38,6 +38,11 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return section.getKeys(false).stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .sorted()
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("boss") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("status", "start", "stop").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("give") && sender.hasPermission("halloweencore.admin")) {
@@ -64,6 +69,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
+        if (args[0].equalsIgnoreCase("boss")) return boss(sender, args);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
@@ -79,6 +85,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween boss <status|start|stop> &7- finální encounter (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
         return true;
@@ -305,6 +312,57 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean setVampireArena(CommandSender sender) {
+    private boolean boss(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+
+        HalloweenVampireEncounterManager encounter = plugin.getVampireEncounterManager();
+        if (encounter == null) {
+            sender.sendMessage(plugin.color("&cVampire encounter manager není dostupný."));
+            return true;
+        }
+
+        String action = args.length >= 2 ? args[1].toLowerCase(java.util.Locale.ROOT) : "status";
+        switch (action) {
+            case "status" -> {
+                var spec = plugin.getBossManager().getVampireSpec();
+                sender.sendMessage(plugin.color("&4&lKRÁL UPÍRŮ &8» &7status"));
+                sender.sendMessage(plugin.color("&7Konfigurace: " + (spec.enabled() ? "&aZAPNUTA" : "&eVYPNUTA")));
+                sender.sendMessage(plugin.color("&7Specifikace: " + (plugin.getBossManager().isVampireSpecificationValid() ? "&aOK" : "&cNEPLATNÁ")));
+                sender.sendMessage(plugin.color("&7Finále: " + (plugin.getDataManager().isFinaleUnlocked() ? "&aODEMČENO" : "&cNEODEMČENO")));
+                sender.sendMessage(plugin.color("&7Aréna: " + (plugin.getBossManager().isVampireReady() ? "&aPŘIPRAVENA" : "&eČEKÁ")));
+                sender.sendMessage(plugin.color("&7Encounter: " + (encounter.isActive() ? "&aAKTIVNÍ" : "&eNEBĚŽÍ")));
+                if (encounter.isActive()) {
+                    sender.sendMessage(plugin.color("&7Fáze: &e" + encounter.getPhase() + " &7• hráči: &e" + encounter.getParticipantCount()));
+                }
+            }
+            case "start" -> {
+                if (encounter.isActive()) {
+                    sender.sendMessage(plugin.color("&eEncounter už běží."));
+                    return true;
+                }
+                if (!plugin.getBossManager().isVampireReady()) {
+                    sender.sendMessage(plugin.color("&cKrál upírů zatím není připraven. Zkontroluj finale/progress, arénu a enabled."));
+                    return true;
+                }
+                if (encounter.startEncounter()) {
+                    sender.sendMessage(plugin.color("&aEncounter Krále upírů byl spuštěn."));
+                } else {
+                    sender.sendMessage(plugin.color("&cEncounter se nepodařilo spustit. Zkontroluj konzoli a /halloween debug."));
+                }
+            }
+            case "stop" -> {
+                if (!encounter.isActive()) {
+                    sender.sendMessage(plugin.color("&7Encounter neběží."));
+                    return true;
+                }
+                encounter.stopEncounter();
+                sender.sendMessage(plugin.color("&aEncounter Krále upírů byl zastaven."));
+            }
+            default -> sender.sendMessage(plugin.color("&cPoužití: /halloween boss <status|start|stop>"));
+        }
+        return true;
+    }
+
         if (!checkAdmin(sender)) return true;
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.color("&cTento příkaz musí použít hráč přímo v aréně Krále upírů."));
