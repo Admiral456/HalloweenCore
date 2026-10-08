@@ -123,6 +123,15 @@ public final class HalloweenConfigValidator {
                     && vampire.getString("arena.world", "").isBlank()) {
                 errors.add("vampire arena is marked configured but arena.world is blank");
             }
+            if (vampire.getBoolean("arena.configured", false)) {
+                String arenaWorld = vampire.getString("arena.world", "");
+                double arenaX = vampire.getDouble("arena.x", Double.NaN);
+                double arenaY = vampire.getDouble("arena.y", Double.NaN);
+                double arenaZ = vampire.getDouble("arena.z", Double.NaN);
+                if (arenaWorld.isBlank() || Double.isNaN(arenaX) || Double.isNaN(arenaY) || Double.isNaN(arenaZ)) {
+                    errors.add("vampire arena coordinates must be configured when arena.configured is true");
+                }
+            }
         }
 
         return List.copyOf(errors);
