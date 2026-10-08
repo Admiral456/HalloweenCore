@@ -133,6 +133,45 @@ public final class HalloweenConfigValidator {
                 }
             }
 
+            ConfigurationSection encounter = vampire.getConfigurationSection("encounter");
+            if (encounter != null) {
+                int maxDuration = encounter.getInt("max-duration-minutes", -1);
+                double arenaRadius = encounter.getDouble("arena-radius-blocks", -1.0D);
+                double participationRadius = encounter.getDouble("participation-radius-blocks", -1.0D);
+                int minParticipation = encounter.getInt("min-participation-seconds", -1);
+                long participationReward = encounter.getLong("participation-reward-fragments", -1L);
+                long victoryReward = encounter.getLong("victory-reward-fragments", -1L);
+                long topBonus = encounter.getLong("top-contributor-bonus-fragments", -1L);
+                if (maxDuration < 1 || maxDuration > 120) {
+                    errors.add("vampire encounter max-duration-minutes must be between 1 and 120");
+                }
+                if (arenaRadius < 12.0D || arenaRadius > 128.0D) {
+                    errors.add("vampire encounter arena-radius-blocks must be between 12 and 128");
+                }
+                if (participationRadius < arenaRadius || participationRadius > 256.0D) {
+                    errors.add("vampire encounter participation-radius-blocks must be >= arena radius and <= 256");
+                }
+                if (minParticipation < 0 || minParticipation > maxDuration * 60) {
+                    errors.add("vampire encounter min-participation-seconds is outside encounter duration");
+                }
+                if (participationReward < 0L || victoryReward < 0L || topBonus < 0L) {
+                    errors.add("vampire encounter rewards must be >= 0");
+                }
+
+                ConfigurationSection abilities = encounter.getConfigurationSection("abilities");
+                if (abilities != null) {
+                    long phase2Cooldown = abilities.getLong("phase-2-cooldown-seconds", -1L);
+                    long phase3Cooldown = abilities.getLong("phase-3-cooldown-seconds", -1L);
+                    long phase4Cooldown = abilities.getLong("phase-4-cooldown-seconds", -1L);
+                    if (phase2Cooldown < 4L || phase3Cooldown < 4L || phase4Cooldown < 3L) {
+                        errors.add("vampire encounter ability cooldowns are too low");
+                    }
+                    if (abilities.getDouble("target-radius-blocks", -1.0D) < 16.0D) {
+                        errors.add("vampire encounter abilities target-radius-blocks must be >= 16");
+                    }
+                }
+            }
+
             ConfigurationSection bossBar = vampire.getConfigurationSection("boss-bar");
             if (bossBar != null) {
                 double radius = bossBar.getDouble("radius-blocks", -1.0D);
