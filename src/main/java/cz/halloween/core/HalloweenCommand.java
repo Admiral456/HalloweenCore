@@ -217,6 +217,14 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         boolean battlePass = plugin.getServer().getPluginManager().getPlugin("BattlePass") != null;
         boolean worldGuard = plugin.getServer().getPluginManager().getPlugin("WorldGuard") != null;
         boolean papi = plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
+        boolean hunterMask = plugin.getItemManager().isCustomItemAvailable(
+                plugin.getConfig().getString("rewards.shop.hunter-mask.itemsadder-id", ""));
+        boolean cursedTalisman = plugin.getItemManager().isCustomItemAvailable(
+                plugin.getConfig().getString("rewards.shop.cursed-talisman.itemsadder-id", ""));
+        boolean halloweenToken = plugin.getItemManager().isCustomItemAvailable(
+                plugin.getConfig().getString("rewards.shop.halloween-token.itemsadder-id", ""));
+        boolean cursedCandy = plugin.getItemManager().isCustomItemAvailable(
+                plugin.getConfig().getString("special-mobs.relic-item-id", ""));
 
         long total = plugin.getService().getServerFragments();
         long goal = plugin.getService().getGlobalGoal();
@@ -230,6 +238,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7Server progress: &e" + total + " &7/ &e" + goal + " &8(" + String.format("%.1f", progress) + "%)"));
         sender.sendMessage(plugin.color("&7Online hráči: &e" + Bukkit.getOnlinePlayers().size()));
         sender.sendMessage(plugin.color("&7ItemsAdder: " + status(itemsAdder)));
+        sender.sendMessage(plugin.color("&7  hunter_mask: " + status(hunterMask)));
+        sender.sendMessage(plugin.color("&7  cursed_talisman: " + status(cursedTalisman)));
+        sender.sendMessage(plugin.color("&7  halloween_token: " + status(halloweenToken)));
+        sender.sendMessage(plugin.color("&7  cursed_candy: " + status(cursedCandy)));
         sender.sendMessage(plugin.color("&7MythicMobs: " + status(mythicMobs)));
         sender.sendMessage(plugin.color("&7BattlePass: " + status(battlePass)));
         sender.sendMessage(plugin.color("&7WorldGuard: " + status(worldGuard)));
