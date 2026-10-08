@@ -9,6 +9,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.GameMode;
 
 import java.util.UUID;
 
@@ -70,6 +71,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
+        if (!isEligibleGameplayPlayer(killer)) return;
 
         if (!getConfig().getBoolean("rewards.mob-kill.enabled", true)) return;
 
@@ -149,6 +151,26 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         FileConfiguration config = getConfig();
         String prefix = config.getString("messages.prefix", "");
         return color(prefix + config.getString(key, ""));
+    }
+
+    public boolean isEligibleGameplayPlayer(Player player) {
+        if (player == null) return false;
+
+        java.util.List<String> allowed = getConfig().getStringList("gameplay.allowed-gamemodes");
+        if (allowed.isEmpty()) {
+            return player.getGameMode() == GameMode.SURVIVAL || player.getGameMode() == GameMode.ADVENTURE;
+        }
+
+        for (String mode : allowed) {
+            try {
+                if (player.getGameMode() == GameMode.valueOf(mode.toUpperCase(java.util.Locale.ROOT))) {
+                    return true;
+                }
+            } catch (IllegalArgumentException ignored) {
+                // Ignore invalid config entries.
+            }
+        }
+        return false;
     }
 
     public String color(String text) {
