@@ -13,6 +13,11 @@ global-milestones:
 currency:
   name: "fragmentů"
 
+gameplay:
+  allowed-gamemodes:
+    - SURVIVAL
+    - ADVENTURE
+
 rewards:
   mob-kill:
     enabled: true
