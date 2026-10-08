@@ -3,6 +3,7 @@ package cz.halloween.core;
 import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
+import org.bukkit.Particle;
 
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
@@ -13,6 +14,7 @@ public final class HalloweenEventManager {
     private long activeUntil;
     private long nextEventAt;
     private boolean started;
+    private long lastSurgeAt;
 
     public HalloweenEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -53,6 +55,11 @@ public final class HalloweenEventManager {
         long now = System.currentTimeMillis();
         if (activeEventId != null && now >= activeUntil) {
             endEvent();
+            return;
+        }
+
+        if (activeEventId != null) {
+            runActiveEventEffects(now);
         }
 
         if (activeEventId == null && now >= nextEventAt && !Bukkit.getOnlinePlayers().isEmpty()) {
@@ -77,6 +84,7 @@ public final class HalloweenEventManager {
         int phase = getGlobalPhase();
         int duration = Math.max(1, plugin.getConfig().getInt("random-events.duration-minutes", 5) + Math.min(3, phase / 2));
         activeUntil = System.currentTimeMillis() + duration * 60_000L;
+        lastSurgeAt = 0L;
 
         String path = "random-events.types." + activeEventId;
         String name = plugin.getConfig().getString(path + ".name", activeEventId);
@@ -109,6 +117,30 @@ public final class HalloweenEventManager {
                 player.playSound(player.getLocation(), Sound.ENTITY_WITCH_AMBIENT, 1.0f, 0.7f);
             }
         }
+    }
+
+    private void runActiveEventEffects(long now) {
+        if (now - lastSurgeAt < 45_000L) return;
+        if (Bukkit.getOnlinePlayers().isEmpty()) return;
+
+        Player[] players = Bukkit.getOnlinePlayers().toArray(new Player[0]);
+        Player target = players[ThreadLocalRandom.current().nextInt(players.length)];
+
+        if (activeEventId.equalsIgnoreCase("soulstorm")) {
+            if (plugin.getMobManager().spawnEventMob(target)) {
+                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().add(0, 1, 0), 16, 1.0, 1.0, 1.0, 0.02);
+                target.sendMessage(plugin.color("&5Duše se shlukují... &7Nedaleko se objevil prokletý lovec."));
+            }
+        } else if (activeEventId.equalsIgnoreCase("witching-hour")) {
+            if (plugin.getMobManager().spawnEventMob(target)) {
+                target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().add(0, 1, 0), 18, 1.0, 1.0, 1.0, 0.05);
+                target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7něco se k tobě blíží."));
+            }
+        } else if (activeEventId.equalsIgnoreCase("cursed-harvest")) {
+            target.getWorld().spawnParticle(Particle.COMPOSTER, target.getLocation().add(0, 1, 0), 14, 0.8, 0.6, 0.8, 0.03);
+        }
+
+        lastSurgeAt = now;
     }
 
     private int getGlobalPhase() {
