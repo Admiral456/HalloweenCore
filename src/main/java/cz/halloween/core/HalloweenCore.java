@@ -44,6 +44,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         bossManager = new HalloweenBossManager(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
+
+        for (String error : HalloweenConfigValidator.validate(this)) {
+            getLogger().severe("[CONFIG] " + error);
+        }
         bossManager.validateConfiguration();
 
         getServer().getPluginManager().registerEvents(this, this);
@@ -96,6 +100,9 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         reloadConfig();
         eventEnabled = getConfig().getBoolean("enabled", true);
         if (eventManager != null) eventManager.reloadSchedule();
+        for (String error : HalloweenConfigValidator.validate(this)) {
+            getLogger().severe("[CONFIG] " + error);
+        }
         if (bossManager != null) bossManager.validateConfiguration();
     }
 
