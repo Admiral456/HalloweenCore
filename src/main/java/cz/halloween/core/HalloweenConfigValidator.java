@@ -177,6 +177,9 @@ public final class HalloweenConfigValidator {
                 String provider = model.getString("provider", "");
                 String id = model.getString("id", "");
                 boolean required = model.getBoolean("required", true);
+                if (required && !provider.equalsIgnoreCase("MODEL_ENGINE")) {
+                    errors.add("vampire model provider must be MODEL_ENGINE for the current contract");
+                }
                 if (required && provider.isBlank()) {
                     errors.add("vampire model provider must be configured");
                 }
