@@ -17,6 +17,9 @@ public final class HalloweenJoinListener implements Listener {
         if (!plugin.isEventEnabled()) return;
 
         Player player = event.getPlayer();
+        if (plugin.getAtmosphere() != null) {
+            plugin.getAtmosphere().onJoin(player);
+        }
         long now = System.currentTimeMillis();
         long last = plugin.getDataManager().getLastJoin(player.getUniqueId());
 
