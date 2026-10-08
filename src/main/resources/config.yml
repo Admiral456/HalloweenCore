@@ -105,6 +105,7 @@ rewards:
 special-mobs:
   enabled: true
   chance: 0.04
+  phase-bonus-chance: 0.005
   bonus-fragments: 12
   relic-drop-chance: 0.12
   relic-item-id: "warriorland_halloween:cursed_candy"
@@ -192,6 +193,7 @@ random-events:
   duration-minutes: 5
   surge-interval-seconds: 45
   max-event-mobs: 12
+  special-mob-chance-multiplier: 1.50
   sound: "halloween:haunted_theme"
   types:
     soulstorm:
