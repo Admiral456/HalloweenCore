@@ -25,6 +25,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - Maska nočního lovce dává při nošení +5 % k zisku fragmentů
 - Prokletý talisman dává při držení +10 % k zisku fragmentů
 - po dosažení globálního cíle se natrvalo odemkne serverové finále pro budoucího hlavního bosse
+- hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
 
 ## Příkazy
 
