@@ -120,6 +120,7 @@ Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack p�
 - `%halloween_vampire_boss_phase%` — aktuální fáze 1–4
 - `%halloween_vampire_boss_hp_percent%` — zbývající HP v procentech
 - `%halloween_vampire_boss_participants%` — počet účastníků encounteru
+- `%halloween_vampire_boss_defeated%` — zda už byl finální boss poražen
 
 ### Hudba a licence
 
