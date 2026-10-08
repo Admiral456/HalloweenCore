@@ -176,11 +176,21 @@ public final class HalloweenConfigValidator {
             if (model != null) {
                 String provider = model.getString("provider", "");
                 String id = model.getString("id", "");
-                if (model.getBoolean("required", true) && provider.isBlank()) {
+                boolean required = model.getBoolean("required", true);
+                if (required && provider.isBlank()) {
                     errors.add("vampire model provider must be configured");
                 }
-                if (model.getBoolean("required", true) && id.isBlank()) {
+                if (required && id.isBlank()) {
                     errors.add("vampire model id must be configured");
+                }
+                if (required && model.getInt("min-height-blocks", 0) < 10) {
+                    errors.add("vampire model min-height-blocks must be >= 10");
+                }
+                if (required && model.getInt("min-width-with-wings-blocks", 0) < 8) {
+                    errors.add("vampire model min-width-with-wings-blocks must be >= 8");
+                }
+                if (required && !model.getBoolean("wings-required", false)) {
+                    errors.add("vampire model wings-required must be true");
                 }
             }
 
