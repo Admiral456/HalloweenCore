@@ -29,6 +29,7 @@ public final class HalloweenDataManager {
     private final Set<UUID> villageDiscovered = new HashSet<>();
     private long serverFragments;
     private boolean finaleUnlocked;
+    private boolean vampireDefeated;
 
     public HalloweenDataManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -48,11 +49,13 @@ public final class HalloweenDataManager {
         villageDiscovered.clear();
         serverFragments = 0L;
         finaleUnlocked = false;
+        vampireDefeated = false;
         if (!file.exists()) return;
 
         YamlConfiguration data = YamlConfiguration.loadConfiguration(file);
         serverFragments = Math.max(0L, data.getLong("server.total-fragments", 0L));
         finaleUnlocked = data.getBoolean("server.finale-unlocked", false);
+        vampireDefeated = data.getBoolean("server.vampire-defeated", false);
 
         if (data.isConfigurationSection("players")) {
             for (String key : data.getConfigurationSection("players").getKeys(false)) {
@@ -97,6 +100,7 @@ public final class HalloweenDataManager {
         YamlConfiguration data = new YamlConfiguration();
         data.set("server.total-fragments", serverFragments);
         data.set("server.finale-unlocked", finaleUnlocked);
+        data.set("server.vampire-defeated", vampireDefeated);
 
         Set<UUID> players = new HashSet<>();
         players.addAll(fragments.keySet());
@@ -220,6 +224,14 @@ public final class HalloweenDataManager {
 
     public void unlockFinale() {
         finaleUnlocked = true;
+    }
+
+    public boolean isVampireDefeated() {
+        return vampireDefeated;
+    }
+
+    public void markVampireDefeated() {
+        vampireDefeated = true;
     }
 
     public Map<UUID, Long> getAllFragments() {
