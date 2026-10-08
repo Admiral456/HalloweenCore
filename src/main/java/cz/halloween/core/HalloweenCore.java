@@ -27,6 +27,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
     private HalloweenVillageDiscoveryManager villageDiscoveryManager;
+    private HalloweenVampireEncounterManager vampireEncounterManager;
 
     @Override
     public void onEnable() {
@@ -46,6 +47,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
         villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
+        vampireEncounterManager = new HalloweenVampireEncounterManager(this);
 
         for (String error : HalloweenConfigValidator.validate(this)) {
             getLogger().severe("[CONFIG] " + error);
@@ -59,6 +61,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new HalloweenItemListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenRewardMenuListener(this), this);
         getServer().getPluginManager().registerEvents(villageDiscoveryManager, this);
+        getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
 
         if (getCommand("halloween") != null) {
@@ -87,6 +90,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
+        if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
         if (atmosphere != null) atmosphere.stopPlayback();
         if (dataManager != null) dataManager.save();
     }
@@ -94,6 +98,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
         if (!eventEnabled) return;
+        if (vampireEncounterManager != null && vampireEncounterManager.isTrackedVampireBoss(event.getEntity())) return;
 
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
@@ -112,6 +117,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         reloadConfig();
         eventEnabled = getConfig().getBoolean("enabled", true);
         if (eventManager != null) eventManager.reloadSchedule();
+        if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
         if (bossManager != null) bossManager.stopVampireBossBar();
         if (!eventEnabled && atmosphere != null) atmosphere.stopPlayback();
         for (String error : HalloweenConfigValidator.validate(this)) {
@@ -130,6 +136,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             if (enabled) eventManager.reloadSchedule();
             else {
                 eventManager.stop();
+                if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
                 if (bossManager != null) bossManager.stopVampireBossBar();
                 if (atmosphere != null) atmosphere.stopPlayback();
             }
@@ -174,6 +181,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenService getService() {
         return service;
+    }
+
+    public HalloweenVampireEncounterManager getVampireEncounterManager() {
+        return vampireEncounterManager;
     }
 
     public void notifyFragmentGain(UUID playerId, long amount) {
