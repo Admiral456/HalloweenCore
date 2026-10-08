@@ -77,6 +77,16 @@ public final class HalloweenDataManager {
         return updated;
     }
 
+    public boolean removeFragments(UUID uuid, long amount) {
+        if (amount <= 0L) return false;
+        long current = getFragments(uuid);
+        if (current < amount) return false;
+        long updated = current - amount;
+        if (updated == 0L) fragments.remove(uuid);
+        else fragments.put(uuid, updated);
+        return true;
+    }
+
     public long getServerFragments() {
         return serverFragments;
     }
