@@ -151,7 +151,7 @@ public final class HalloweenEventManager {
         lastSurgeAt = now;
     }
 
-    private int getGlobalPhase() {
+    public int getGlobalPhase() {
         int phase = 0;
         long total = plugin.getService().getServerFragments();
         for (long milestone : plugin.getConfig().getLongList("global-milestones")) {
