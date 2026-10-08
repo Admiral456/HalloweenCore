@@ -101,6 +101,9 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
             return Integer.toString(plugin.getVampireEncounterManager() == null
                     ? 0 : plugin.getVampireEncounterManager().getParticipantCount());
         }
+        if (key.equals("vampire_boss_defeated")) {
+            return Boolean.toString(plugin.getDataManager().isVampireDefeated());
+        }
         if (key.equals("vampire_boss_active")) {
             return Boolean.toString(plugin.getVampireEncounterManager() != null
                     && plugin.getVampireEncounterManager().isActive());
