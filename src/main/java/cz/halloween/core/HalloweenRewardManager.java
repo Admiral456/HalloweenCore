@@ -76,16 +76,24 @@ public final class HalloweenRewardManager {
             return false;
         }
 
-        Material material;
-        try {
-            material = Material.valueOf(section.getString("material", "PAPER").toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ex) {
-            player.sendMessage(plugin.color("&cOdměna má špatně nastavený materiál: " + normalizedId));
-            return false;
-        }
-
         int amount = Math.max(1, section.getInt("amount", 1));
-        ItemStack item = new ItemStack(material, amount);
+        String itemsAdderId = section.getString("itemsadder-id", "");
+        ItemStack item = itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount);
+
+        if (item == null) {
+            Material material;
+            try {
+                material = Material.valueOf(section.getString("material", "PAPER").toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                player.sendMessage(plugin.color("&cOdměna má špatně nastavený materiál: " + normalizedId));
+                return false;
+            }
+            item = new ItemStack(material, amount);
+
+            if (!itemsAdderId.isBlank()) {
+                plugin.getItemManager().warnIfMissing(itemsAdderId, "reward " + normalizedId);
+            }
+        }
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(plugin.color(section.getString("name", normalizedId)));
