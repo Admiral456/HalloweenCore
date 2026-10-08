@@ -11,4 +11,5 @@ public interface HalloweenService {
     double getGlobalProgressPercent();
     int getCurseLevel(UUID playerId);
     String getCurseName(UUID playerId);
+    double getFragmentMultiplier(UUID playerId, String source);
 }
