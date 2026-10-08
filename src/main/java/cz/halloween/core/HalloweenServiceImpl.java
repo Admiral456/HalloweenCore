@@ -96,11 +96,15 @@ public final class HalloweenServiceImpl implements HalloweenService {
         }
 
         Player onlinePlayer = plugin.getServer().getPlayer(playerId);
-        if (onlinePlayer != null && plugin.getRewardManager() != null) {
+        boolean gameplaySource = source != null && switch (source.toLowerCase(java.util.Locale.ROOT)) {
+            case "mob-kill", "mining", "farming", "fishing", "special-mob" -> true;
+            default -> false;
+        };
+        if (gameplaySource && onlinePlayer != null && plugin.getRewardManager() != null) {
             multiplier *= plugin.getRewardManager().getBonusMultiplier(onlinePlayer);
         }
 
-        boolean curseBoostedSource = source != null && switch (source.toLowerCase()) {
+        boolean curseBoostedSource = source != null && switch (source.toLowerCase(java.util.Locale.ROOT)) {
             case "mob-kill", "mining", "farming", "fishing", "special-mob" -> true;
             default -> false;
         };
