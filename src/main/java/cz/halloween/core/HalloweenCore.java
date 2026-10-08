@@ -19,6 +19,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenEventManager eventManager;
     private HalloweenRewardManager rewardManager;
     private HalloweenAtmosphere atmosphere;
+    private HalloweenMobManager mobManager;
 
     @Override
     public void onEnable() {
@@ -32,10 +33,12 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         eventManager = new HalloweenEventManager(this);
         rewardManager = new HalloweenRewardManager(this);
         atmosphere = new HalloweenAtmosphere(this);
+        mobManager = new HalloweenMobManager(this);
 
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new HalloweenActivityListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenJoinListener(this), this);
+        getServer().getPluginManager().registerEvents(mobManager, this);
 
         if (getCommand("halloween") != null) {
             getCommand("halloween").setExecutor(new HalloweenCommand(this));
@@ -93,6 +96,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenAtmosphere getAtmosphere() {
         return atmosphere;
+    }
+
+    public HalloweenMobManager getMobManager() {
+        return mobManager;
     }
 
     public HalloweenDataManager getDataManager() {
