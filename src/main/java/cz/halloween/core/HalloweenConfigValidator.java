@@ -132,6 +132,26 @@ public final class HalloweenConfigValidator {
                     errors.add("vampire arena coordinates must be configured when arena.configured is true");
                 }
             }
+
+            ConfigurationSection bossBar = vampire.getConfigurationSection("boss-bar");
+            if (bossBar != null) {
+                double radius = bossBar.getDouble("radius-blocks", -1.0D);
+                if (radius < 16.0D || radius > 256.0D) {
+                    errors.add("vampire boss-bar radius-blocks must be between 16 and 256");
+                }
+                String color = bossBar.getString("color", "RED");
+                try {
+                    org.bukkit.boss.BarColor.valueOf(color.toUpperCase(java.util.Locale.ROOT));
+                } catch (IllegalArgumentException ex) {
+                    errors.add("vampire boss-bar color is invalid");
+                }
+                String style = bossBar.getString("style", "SEGMENTED_20");
+                try {
+                    org.bukkit.boss.BarStyle.valueOf(style.toUpperCase(java.util.Locale.ROOT));
+                } catch (IllegalArgumentException ex) {
+                    errors.add("vampire boss-bar style is invalid");
+                }
+            }
         }
 
         return List.copyOf(errors);
