@@ -67,7 +67,7 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - serverové finále a hlavní boss
 - upíří boss má už nyní pevnou minimální specifikaci: 10 bloků výšky a 8 bloků šířky včetně křídel
 
-Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový progres, milníky a eventový systém. Jeho technická specifikace je ale už zamčená v konfiguraci: upír nesmí být menší než 10 bloků na výšku a 8 bloků na šířku včetně křídel.
+Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový progres, milníky a eventový systém. Rozměrové minimum je už zamčené v konfiguraci i v dokumentu `VAMPIRE_BOSS.md`: minimálně 10 bloků výšky a 8 bloků šířky včetně křídel. Mechaniky a finální vzhled zatím nejsou předčasně uzamčené.
 
 ## ItemsAdder assety
 
