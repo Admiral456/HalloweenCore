@@ -29,6 +29,15 @@ items:
     graphics:
       texture: item/halloween_token
 
+  haunted_map:
+    name: "&5&lProkletá mapa &8[Halloween 2026]"
+    lore:
+      - "&7Ukazuje cestu k Haunted Village."
+      - "&8Vzácný nález z prokletých mobů."
+    material: PAPER
+    graphics:
+      texture: item/haunted_map
+
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"
     lore:
