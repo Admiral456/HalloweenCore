@@ -265,10 +265,15 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             }
         }
         sender.sendMessage(plugin.color("&7Finále odemčeno: " + (plugin.getDataManager().isFinaleUnlocked() ? "&aANO" : "&cNE")));
+        String arenaWorld = plugin.getConfig().getString("bosses.vampire.arena.world", "");
+        boolean arenaConfigured = plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false);
+        boolean arenaWorldLoaded = !arenaWorld.isBlank() && Bukkit.getWorld(arenaWorld) != null;
         sender.sendMessage(plugin.color("&7Upíří boss: &e" + vampire.id()
                 + " &7min. &e" + vampire.minHeightBlocks() + " &7h / &e" + vampire.minWidthWithWingsBlocks()
                 + " &7w+křídla " + (plugin.getBossManager().isVampireSpecificationValid() ? "&aOK" : "&cNE")
                 + " &8• připravenost: " + (plugin.getBossManager().isVampireReady() ? "&aANO" : "&eČEKÁ")));
+        sender.sendMessage(plugin.color("&7Upíří aréna: " + (arenaConfigured ? "&aNASTAVENA" : "&eNENÍ")
+                + (arenaConfigured ? " &8• svět: " + (arenaWorldLoaded ? "&aNAČTEN" : "&cNENAČTEN") : "")));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
         return true;
     }
