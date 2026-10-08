@@ -150,6 +150,7 @@ public final class HalloweenMobManager implements Listener {
         EntityType type = switch (mobId) {
             case "gravekeeper" -> EntityType.SKELETON;
             case "blood-spider" -> EntityType.SPIDER;
+            case "pumpkin-wraith" -> EntityType.CREEPER;
             case "hex-witch" -> EntityType.WITCH;
             default -> EntityType.ZOMBIE;
         };
