@@ -64,6 +64,10 @@ rewards:
     enabled: true
     fragments: 2
 
+  passive-effects:
+    enabled: true
+    hunter-mask-night-vision-seconds: 5
+
   shop:
     hunter-mask:
       cost: 1500
