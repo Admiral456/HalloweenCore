@@ -90,7 +90,20 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
             return Boolean.toString(plugin.getDataManager().hasDiscoveredVillage(player.getUniqueId()));
         }
         if (key.equals("vampire_boss_active")) {
-            return Boolean.toString(plugin.getBossManager().isVampireBossBarActive());
+            return Boolean.toString(plugin.getVampireEncounterManager() != null
+                    && plugin.getVampireEncounterManager().isActive());
+        }
+        if (key.equals("vampire_boss_phase")) {
+            return Integer.toString(plugin.getVampireEncounterManager() == null
+                    ? 0 : plugin.getVampireEncounterManager().getPhase());
+        }
+        if (key.equals("vampire_boss_hp_percent")) {
+            double health = plugin.getBossManager() == null ? 0.0D : plugin.getBossManager().getVampireBossHealthPercent();
+            return String.format(Locale.ROOT, "%.1f", health * 100.0D);
+        }
+        if (key.equals("vampire_boss_participants")) {
+            return Integer.toString(plugin.getVampireEncounterManager() == null
+                    ? 0 : plugin.getVampireEncounterManager().getParticipantCount());
         }
 
         return null;
