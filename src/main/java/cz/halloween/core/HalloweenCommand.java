@@ -246,6 +246,13 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7BattlePass: " + status(battlePass)));
         sender.sendMessage(plugin.color("&7WorldGuard: " + status(worldGuard)));
         sender.sendMessage(plugin.color("&7PlaceholderAPI: " + status(papi)));
+        var configErrors = HalloweenConfigValidator.validate(plugin);
+        sender.sendMessage(plugin.color("&7Config preflight: " + (configErrors.isEmpty() ? "&aOK" : "&c" + configErrors.size() + " chyba/chyb")));
+        if (!configErrors.isEmpty()) {
+            for (String error : configErrors) {
+                sender.sendMessage(plugin.color("&c  • " + error));
+            }
+        }
         sender.sendMessage(plugin.color("&7Finále odemčeno: " + (plugin.getDataManager().isFinaleUnlocked() ? "&aANO" : "&cNE")));
         sender.sendMessage(plugin.color("&7Upíří boss: &e" + vampire.id() + " &7min. &e" + vampire.minHeightBlocks() + " &7h / &e" + vampire.minWidthWithWingsBlocks() + " &7w+křídla " + (plugin.getBossManager().isVampireSpecificationValid() ? "&aOK" : "&cNE") + " &8• připravenost: " + (plugin.getBossManager().isVampireReady() ? "&aANO" : "&eČEKÁ"));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
