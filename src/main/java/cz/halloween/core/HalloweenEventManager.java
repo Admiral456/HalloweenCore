@@ -40,9 +40,13 @@ public final class HalloweenEventManager {
     }
 
     public void stop() {
+        if (activeEventId != null && plugin.getMobManager() != null) {
+            plugin.getMobManager().cleanupEventMobs();
+        }
         activeEventId = null;
         activeUntil = 0L;
         nextEventAt = 0L;
+        lastSurgeAt = 0L;
     }
 
     private void tick() {
@@ -100,6 +104,9 @@ public final class HalloweenEventManager {
         String message = plugin.getConfig().getString(path + ".end-message",
                 "&6&lHALLOWEEN &8» &7Halloween událost skončila.");
         Bukkit.broadcastMessage(plugin.color(message));
+        if (plugin.getMobManager() != null) {
+            plugin.getMobManager().cleanupEventMobs();
+        }
 
         activeEventId = null;
         activeUntil = 0L;
