@@ -338,7 +338,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(plugin.color("&7Aréna: " + (plugin.getBossManager().isVampireReady() ? "&aPŘIPRAVENA" : "&eČEKÁ")));
                 sender.sendMessage(plugin.color("&7Encounter: " + (encounter.isActive() ? "&aAKTIVNÍ" : "&eNEBĚŽÍ")));
                 if (encounter.isActive()) {
-                    sender.sendMessage(plugin.color("&7Fáze: &e" + encounter.getPhase() + " &7• hráči: &e" + encounter.getParticipantCount()));
+                    sender.sendMessage(plugin.color("&7Fáze: &e" + encounter.getPhase() + " &7• hráči: &e" + encounter.getParticipantCount()
+                            + " &7• HP: &e" + String.format(java.util.Locale.ROOT, "%.1f", plugin.getBossManager().getVampireBossHealthPercent() * 100.0D) + "%"));
                 }
             }
             case "start" -> {
