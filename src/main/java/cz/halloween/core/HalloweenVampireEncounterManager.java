@@ -67,6 +67,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         if (!plugin.isEventEnabled()) return false;
         if (isActive()) return false;
         if (!plugin.getConfig().getBoolean("bosses.vampire.enabled", false)) return false;
+        if (plugin.getDataManager().isVampireDefeated()) return false;
         if (!plugin.getBossManager().isVampireReady()) return false;
 
         String worldName = plugin.getConfig().getString("bosses.vampire.arena.world", "");
@@ -279,7 +280,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         Location from = target.getLocation();
         double distance = Math.max(3.0D,
                 plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-3-teleport-distance", 5.0D));
-        double angle = Math.random() * Math.PI * 2.0D;
+        double angle = java.util.concurrent.ThreadLocalRandom.current().nextDouble(0.0D, Math.PI * 2.0D);
         Location destination = from.clone().add(Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
         destination.setY(target.getWorld().getHighestBlockYAt(destination) + 1.0D);
 
@@ -450,6 +451,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
             }
         }
 
+        plugin.getDataManager().markVampireDefeated();
         plugin.getDataManager().save();
         stopEncounter();
     }
