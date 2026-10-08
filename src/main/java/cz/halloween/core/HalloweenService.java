@@ -9,4 +9,6 @@ public interface HalloweenService {
     long getGlobalGoal();
     boolean isEventEnabled();
     double getGlobalProgressPercent();
+    int getCurseLevel(UUID playerId);
+    String getCurseName(UUID playerId);
 }
