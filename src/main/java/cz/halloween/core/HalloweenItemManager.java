@@ -36,6 +36,10 @@ public final class HalloweenItemManager {
         return plugin.getServer().getPluginManager().getPlugin("ItemsAdder") != null;
     }
 
+    public boolean isCustomItemAvailable(String namespacedId) {
+        return getItemsAdderItem(namespacedId, 1) != null;
+    }
+
     public void warnIfMissing(String namespacedId, String context) {
         if (namespacedId == null || namespacedId.isBlank() || isItemsAdderAvailable() && getItemsAdderItem(namespacedId, 1) != null) {
             return;
