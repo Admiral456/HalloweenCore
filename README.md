@@ -22,6 +22,8 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - během eventu běží atmosférická smyčka zvuku
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
+- Maska nočního lovce dává při nošení +5 % k zisku fragmentů
+- Prokletý talisman dává při držení +10 % k zisku fragmentů
 - po dosažení globálního cíle se natrvalo odemkne serverové finále pro budoucího hlavního bosse
 
 ## Příkazy
