@@ -261,7 +261,16 @@ public final class HalloweenDataManager {
 
     public int incrementChallengeProgress(UUID uuid, int amount) {
         if (amount <= 0) return getChallengeProgress(uuid);
-        int updated = Math.min(Integer.MAX_VALUE, getChallengeProgress(uuid) + amount);
+
+        int current = getChallengeProgress(uuid);
+        int updated;
+        try {
+            updated = Math.addExact(current, amount);
+        } catch (ArithmeticException ex) {
+            updated = Integer.MAX_VALUE;
+        }
+        if (updated < current) updated = Integer.MAX_VALUE;
+
         challengeProgress.put(uuid, updated);
         return updated;
     }
