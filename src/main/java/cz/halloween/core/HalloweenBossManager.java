@@ -64,9 +64,12 @@ public final class HalloweenBossManager {
             return;
         }
 
+        String arenaWorld = plugin.getConfig().getString("bosses.vampire.arena.world", "");
+        boolean arenaConfigured = plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false);
         plugin.getLogger().info("Vampire boss specification locked: "
                 + spec.minHeightBlocks() + " blocks high, "
-                + spec.minWidthWithWingsBlocks() + " blocks wide with wings.");
+                + spec.minWidthWithWingsBlocks() + " blocks wide with wings."
+                + " Arena=" + (arenaConfigured && !arenaWorld.isBlank() ? arenaWorld : "not configured") + ".");
     }
 
     public record VampireSpec(
