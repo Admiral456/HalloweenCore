@@ -3,7 +3,7 @@
 Namespace:
 - warriorland_halloween
 
-Required item textures:
+Included item textures (32x32 PNG):
 - textures/item/hunter_mask.png
 - textures/item/cursed_talisman.png
 - textures/item/halloween_token.png
