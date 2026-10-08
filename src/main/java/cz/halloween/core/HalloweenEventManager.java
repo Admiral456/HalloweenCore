@@ -12,20 +12,34 @@ public final class HalloweenEventManager {
     private String activeEventId;
     private long activeUntil;
     private long nextEventAt;
+    private boolean started;
 
     public HalloweenEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
     }
 
     public void start() {
+        if (started) return;
+        started = true;
         if (!plugin.getConfig().getBoolean("random-events.enabled", true)) return;
         scheduleNextEvent();
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
     }
 
+    public void reloadSchedule() {
+        activeEventId = null;
+        activeUntil = 0L;
+        if (started && plugin.getConfig().getBoolean("random-events.enabled", true)) {
+            scheduleNextEvent();
+        } else {
+            nextEventAt = 0L;
+        }
+    }
+
     public void stop() {
         activeEventId = null;
         activeUntil = 0L;
+        nextEventAt = 0L;
     }
 
     private void tick() {
