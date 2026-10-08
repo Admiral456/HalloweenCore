@@ -21,6 +21,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - odměny jsou navíc gated podle úrovně prokletí, takže nejlepší věci vyžadují aktivní hraní
 - během eventu běží atmosférická smyčka zvuku
 - při připojení se zobrazí Halloween title/subtitle
+- custom odměny a relikvie mají připravené ItemsAdder ID a bezpečný vanilla fallback
 
 ## Příkazy
 
@@ -42,7 +43,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už WarriorLand používá:
 
 - MythicMobs
-- ItemsAdder
+- ItemsAdder (custom item ID + resource-pack content)
 - BattlePass
 - PyroFishingPro
 - PyroFarming
@@ -64,6 +65,16 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - upíří boss má už nyní pevnou minimální specifikaci: 10 bloků výšky a 8 bloků šířky včetně křídel
 
 Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový progres, milníky a eventový systém. Jeho technická specifikace je ale už zamčená v konfiguraci: upír nesmí být menší než 10 bloků na výšku a 8 bloků na šířku včetně křídel.
+
+## ItemsAdder assety
+
+V repozitáři je připravený namespace `warriorland_halloween`:
+
+- `itemsadder/contents/warriorland_halloween/configs/items.yml`
+- `itemsadder/contents/warriorland_halloween/textures/item/*.png` — očekávané vlastní textury
+- `itemsadder/contents/warriorland_halloween/ASSETS.md` — seznam assetů
+
+Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack přes `/iazip`.
 
 ## Build
 
