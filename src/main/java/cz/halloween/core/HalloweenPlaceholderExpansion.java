@@ -89,6 +89,9 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
         if (key.equals("village_discovered")) {
             return Boolean.toString(plugin.getDataManager().hasDiscoveredVillage(player.getUniqueId()));
         }
+        if (key.equals("vampire_boss_active")) {
+            return Boolean.toString(plugin.getBossManager().isVampireBossBarActive());
+        }
 
         return null;
     }
