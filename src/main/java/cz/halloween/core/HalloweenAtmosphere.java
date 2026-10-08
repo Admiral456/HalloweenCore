@@ -41,8 +41,12 @@ public final class HalloweenAtmosphere {
         float pitch = (float) Math.max(0.1D, plugin.getConfig().getDouble("atmosphere.pitch", 1.0D));
 
         if (custom != null && !custom.isBlank() && hasItemsAdder()) {
-            player.playSound(player.getLocation(), custom, volume, pitch);
-            return;
+            try {
+                player.playSound(player.getLocation(), custom, volume, pitch);
+                return;
+            } catch (Exception ignored) {
+                // Invalid/missing custom sound: continue to the vanilla fallback.
+            }
         }
 
         if (fallback != null && !fallback.isBlank()) {
