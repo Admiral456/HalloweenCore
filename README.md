@@ -1,50 +1,76 @@
 # HalloweenCore
 
-Core plugin pro Halloween update na Purpur/Paper 1.21.10.
+HalloweenCore je herní core pro Halloween update WarriorLandu na Purpur/Paper 1.21.10.
 
-## Aktuální stav
+Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje běžné hraní s Halloween progresí a serverovým finále.
 
-- Zapnutí a vypnutí eventu
-- Trvalé ukládání fragmentů hráčů
-- Společný serverový progress
+## Aktuální herní smyčka
+
+- hráč získává Halloween fragmenty za PvE, těžbu, farmení a rybaření
+- každý hráč má vlastní úroveň prokletí
+- vyšší prokletí zvyšuje základní zisk fragmentů
+- celý server má společný fragmentový progress a milníky
+- náhodně se spouští dočasné Halloween události
+- události dávají různé násobiče podle aktivity
+- serverové milníky zkracují interval mezi náhodnými událostmi a postupně je zesilují
+- speciální Halloween mobové se mohou přirozeně objevit a dávají bonusové fragmenty
+- speciální mobové mohou dropnout limitované „Prokleté cukroví“
+- při návratu na server funguje denní streak a comeback bonus
+- každý den má hráč vlastní Halloween lov
+- limitované odměny pro Halloween 2026 lze získat pouze jednou za hráče
+- během eventu běží atmosférická smyčka zvuku
+- při připojení se zobrazí Halloween title/subtitle
+
+## Příkazy
+
 - /halloween
 - /halloween stats
 - /halloween progress
 - /halloween curse
+- /halloween event
+- /halloween challenge
+- /halloween rewards
+- /halloween claim <id>
 - /halloween top
 - /halloween reload
 - /halloween give <hráč> <počet>
 - /halloween on|off
-- veřejné API pro přidávání fragmentů z dalších pluginů
-- fragmenty za zabití mobů
-- fragmenty za těžbu rud a Ancient Debris
-- fragmenty za sklizeň plodin
-- fragmenty za úspěšný lov ryb
-- první konfigurovatelná úroveň prokletí
 
-## Směr vývoje
+## Připravené integrace
 
-HalloweenCore má fungovat jako herní vrstva Halloween updatu WarriorLandu, která se zapojuje do běžného hraní a postupně odemyká další obsah.
+Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už WarriorLand používá:
 
-### Připravované systémy
+- MythicMobs
+- ItemsAdder
+- BattlePass
+- PyroFishingPro
+- PyroFarming
+- ExcellentCrates
+- DiscordSRV
+- PlaceholderAPI
+- FancyNPCs / hologramy
+- WorldGuard / FAWE
 
-- odemykání Halloween mechanik podle prokletí
-- náhodné Halloween eventy a invaze
+## Směr dalšího vývoje
+
 - Haunted Village
-- Halloween relikvie a limitované odměny pro rok 2026
-- speciální mobové a minibossové
-- serverové finále a hlavní boss
-- BattlePass integrace
-- ItemsAdder a MythicMobs integrace
-- DiscordSRV integrace
-- 24/7 Halloween obloha během eventu
-- nepřetržitá Halloween hudba během eventu
+- hlubší systém relikvií
+- resource-pack Halloween obloha
+- plnohodnotný Halloween soundtrack přes ItemsAdder resource pack
 - tajné úkoly a easter eggy
+- větší eventové invaze
+- serverové finále a hlavní boss
+
+Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový progres, milníky a eventový systém.
 
 ## Build
 
 Java 21 + Maven.
 
-Příkaz: mvn clean package
+```
+mvn clean package
+```
 
-Výstup: target/HalloweenCore.jar
+Výstup:
+
+`target/HalloweenCore.jar`
