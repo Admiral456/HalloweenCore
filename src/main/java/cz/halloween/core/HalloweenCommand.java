@@ -27,6 +27,7 @@ public final class HalloweenCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("event")) return event(sender);
         if (args[0].equalsIgnoreCase("rewards")) return rewards(sender);
         if (args[0].equalsIgnoreCase("claim")) return claim(sender, args);
+        if (args[0].equalsIgnoreCase("challenge")) return challenge(sender);
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
@@ -36,6 +37,7 @@ public final class HalloweenCommand implements CommandExecutor {
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
         sender.sendMessage(plugin.color("&6/halloween event &7- aktuální Halloween událost"));
         sender.sendMessage(plugin.color("&6/halloween rewards &7- limitované odměny 2026"));
+        sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní Halloween lov"));
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
@@ -140,6 +142,16 @@ public final class HalloweenCommand implements CommandExecutor {
             return true;
         }
         plugin.getRewardManager().claim(player, args[1]);
+        return true;
+    }
+
+    private boolean challenge(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz může použít jen hráč."));
+            return true;
+        }
+        if (!checkUse(player) || !checkEnabled(player)) return true;
+        plugin.getChallengeManager().show(player);
         return true;
     }
 
