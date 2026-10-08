@@ -262,5 +262,6 @@ messages:
   event-enabled: "&aHalloween event byl zapnut."
   event-disabled: "&cHalloween event byl vypnut."
   global-goal-reached: "&6&lHALLOWEEN &8» &fServer společně dosáhl hlavního cíle! Něco se probouzí..."
+  finale-unlocked: "&6&lHALLOWEEN &8» &4Finále je odemčeno. Něco čeká za branou..."
   global-milestone: "&6&lHALLOWEEN &8» &dCelý WarriorLand dosáhl milníku &e%milestone% &dfragmentů."
 
