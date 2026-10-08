@@ -17,6 +17,9 @@ gameplay:
   allowed-gamemodes:
     - SURVIVAL
     - ADVENTURE
+  worlds:
+    mode: BLACKLIST
+    names: []
 
 rewards:
   mob-kill:
