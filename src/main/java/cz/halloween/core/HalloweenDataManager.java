@@ -18,6 +18,7 @@ public final class HalloweenDataManager {
     private final HalloweenCore plugin;
     private final File file;
     private final Map<UUID, Long> fragments = new HashMap<>();
+    private final Map<UUID, Long> lifetimeFragments = new HashMap<>();
     private final Map<UUID, Long> lastJoin = new HashMap<>();
     private final Map<UUID, Integer> streaks = new HashMap<>();
     private final Map<UUID, Set<String>> claimedRewards = new HashMap<>();
@@ -34,6 +35,7 @@ public final class HalloweenDataManager {
 
     public void load() {
         fragments.clear();
+        lifetimeFragments.clear();
         lastJoin.clear();
         streaks.clear();
         claimedRewards.clear();
@@ -54,10 +56,12 @@ public final class HalloweenDataManager {
                     String base = "players." + key;
 
                     long amount = Math.max(0L, data.getLong(base + ".fragments", 0L));
+                    long lifetime = Math.max(0L, data.getLong(base + ".lifetime-fragments", amount));
                     long join = Math.max(0L, data.getLong(base + ".last-join", 0L));
                     int streak = Math.max(0, data.getInt(base + ".streak", 0));
 
                     if (amount > 0L) fragments.put(uuid, amount);
+                    if (lifetime > 0L) lifetimeFragments.put(uuid, lifetime);
                     if (join > 0L) lastJoin.put(uuid, join);
                     if (streak > 0) streaks.put(uuid, streak);
 
@@ -87,6 +91,7 @@ public final class HalloweenDataManager {
 
         Set<UUID> players = new HashSet<>();
         players.addAll(fragments.keySet());
+        players.addAll(lifetimeFragments.keySet());
         players.addAll(lastJoin.keySet());
         players.addAll(streaks.keySet());
         players.addAll(claimedRewards.keySet());
@@ -102,6 +107,8 @@ public final class HalloweenDataManager {
             int streak = streaks.getOrDefault(uuid, 0);
 
             if (amount > 0L) data.set(base + ".fragments", amount);
+            long lifetime = lifetimeFragments.getOrDefault(uuid, 0L);
+            if (lifetime > 0L) data.set(base + ".lifetime-fragments", lifetime);
             if (join > 0L) data.set(base + ".last-join", join);
             if (streak > 0) data.set(base + ".streak", streak);
 
@@ -154,6 +161,12 @@ public final class HalloweenDataManager {
         }
 
         fragments.put(uuid, updated);
+        long currentLifetime = lifetimeFragments.getOrDefault(uuid, current);
+        try {
+            lifetimeFragments.put(uuid, Math.addExact(currentLifetime, amount));
+        } catch (ArithmeticException ex) {
+            lifetimeFragments.put(uuid, Long.MAX_VALUE);
+        }
         return updated;
     }
 
@@ -167,6 +180,10 @@ public final class HalloweenDataManager {
         if (updated == 0L) fragments.remove(uuid);
         else fragments.put(uuid, updated);
         return true;
+    }
+
+    public long getLifetimeFragments(UUID uuid) {
+        return lifetimeFragments.getOrDefault(uuid, getFragments(uuid));
     }
 
     public long getServerFragments() {
