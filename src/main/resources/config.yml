@@ -62,6 +62,7 @@ rewards:
   shop:
     hunter-mask:
       cost: 1500
+      min-curse: 1
       material: CARVED_PUMPKIN
       amount: 1
       name: "&6&lMaska nočního lovce &8[Halloween 2026]"
@@ -72,6 +73,7 @@ rewards:
 
     cursed-talisman:
       cost: 5000
+      min-curse: 4
       material: NETHER_STAR
       amount: 1
       name: "&5&lProkletý talisman &8[2026]"
@@ -82,6 +84,7 @@ rewards:
 
     halloween-token:
       cost: 10000
+      min-curse: 5
       material: NAME_TAG
       amount: 1
       name: "&c&lHalloween 2026"
@@ -201,6 +204,25 @@ random-events:
       multipliers:
         farming: 3.0
         fishing: 1.25
+
+
+# Hlavní boss – specifikace je záměrně připravená před samotnou implementací.
+# U upíra je pevně dané minimum: 10 bloků výšky a 8 bloků šířky včetně křídel.
+# Později bude napojený na MythicMobs a vlastní model/resource pack.
+bosses:
+  vampire:
+    enabled: false
+    id: "vampire-king"
+    display-name: "&4&lKRÁL UPÍRŮ"
+    min-height-blocks: 10
+    min-width-with-wings-blocks: 8
+    wings-required: true
+    arena-required: true
+    final-boss: true
+    limited-to-event: true
+    spawn-requirements:
+      global-progress-percent: 100
+      event-completion: true
 
 atmosphere:
   enabled: true
