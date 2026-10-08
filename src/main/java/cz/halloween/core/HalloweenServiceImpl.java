@@ -1,5 +1,7 @@
 package cz.halloween.core;
 
+import org.bukkit.configuration.ConfigurationSection;
+
 import java.util.UUID;
 
 public final class HalloweenServiceImpl implements HalloweenService {
@@ -54,5 +56,40 @@ public final class HalloweenServiceImpl implements HalloweenService {
         long goal = getGlobalGoal();
         if (goal <= 0L) return 100.0D;
         return Math.min(100.0D, (getServerFragments() * 100.0D) / goal);
+    }
+
+    @Override
+    public int getCurseLevel(UUID playerId) {
+        long fragments = getFragments(playerId);
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("curse.levels");
+        if (section == null) return 0;
+
+        int highestLevel = 0;
+        for (String key : section.getKeys(false)) {
+            long threshold = Math.max(0L, section.getLong(key + ".threshold", Long.MAX_VALUE));
+            int level = section.getInt(key + ".level", 0);
+            if (fragments >= threshold && level >= highestLevel) {
+                highestLevel = level;
+            }
+        }
+        return highestLevel;
+    }
+
+    @Override
+    public String getCurseName(UUID playerId) {
+        int level = getCurseLevel(playerId);
+        ConfigurationSection section = plugin.getConfig().getConfigurationSection("curse.levels");
+        if (section == null) return "Beze jména";
+
+        String fallback = "Beze jména";
+        String selected = fallback;
+        for (String key : section.getKeys(false)) {
+            int configuredLevel = section.getInt(key + ".level", 0);
+            if (configuredLevel == level) {
+                selected = section.getString(key + ".name", fallback);
+                break;
+            }
+        }
+        return selected;
     }
 }
