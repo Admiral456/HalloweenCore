@@ -187,6 +187,18 @@ public final class HalloweenMobManager implements Listener {
                 .count();
     }
 
+    public int cleanupEventMobs() {
+        int removed = 0;
+        for (World world : plugin.getServer().getWorlds()) {
+            for (LivingEntity entity : world.getLivingEntities()) {
+                if (!entity.getPersistentDataContainer().has(eventMobKey, PersistentDataType.BYTE)) continue;
+                entity.remove();
+                removed++;
+            }
+        }
+        return removed;
+    }
+
     public boolean isSpecial(LivingEntity entity) {
         return entity.getPersistentDataContainer().has(cursedKey, PersistentDataType.STRING);
     }
