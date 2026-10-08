@@ -110,6 +110,13 @@ V repozitáři je připravený namespace `warriorland_halloween`:
 Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack přes `/iazip`.
 
 
+### Boss placeholders
+
+- `%halloween_vampire_boss_active%` — běží encounter
+- `%halloween_vampire_boss_phase%` — aktuální fáze 1–4
+- `%halloween_vampire_boss_hp_percent%` — zbývající HP v procentech
+- `%halloween_vampire_boss_participants%` — počet účastníků encounteru
+
 ### Hudba a licence
 
 Halloween soundtrack není AI-generovaný. Připravený sound ID je `halloween:haunted_theme`; pro resource pack počítáme s hudbou pod **CC0** s dohledatelným původem. Momentálně je v repozitáři pouze licence/source záznam, ne samotný audio soubor.
