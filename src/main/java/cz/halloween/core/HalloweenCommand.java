@@ -281,6 +281,12 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 + " &8• připravenost: " + (plugin.getBossManager().isVampireReady() ? "&aANO" : "&eČEKÁ")));
         sender.sendMessage(plugin.color("&7Upíří aréna: " + (arenaConfigured ? "&aNASTAVENA" : "&eNENÍ")
                 + (arenaConfigured ? " &8• svět: " + (arenaWorldLoaded ? "&aNAČTEN" : "&cNENAČTEN") : "")));
+        var modelSection = plugin.getConfig().getConfigurationSection("bosses.vampire.model");
+        boolean modelRequired = modelSection == null || modelSection.getBoolean("required", true);
+        boolean modelReady = modelSection != null && modelSection.getBoolean("ready", false);
+        String modelId = modelSection == null ? "" : modelSection.getString("id", "");
+        sender.sendMessage(plugin.color("&7Model: " + (modelRequired ? (modelReady ? "&aPŘIPRAVEN" : "&eČEKÁ") : "&7VOLITELNÝ")
+                + (modelId.isBlank() ? "" : " &8• " + modelId)));
         sender.sendMessage(plugin.color("&7Boss bar: " + (plugin.getBossManager().isVampireBossBarActive() ? "&aAKTIVNÍ" : "&eČEKÁ NA BOSSE")));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
         return true;
