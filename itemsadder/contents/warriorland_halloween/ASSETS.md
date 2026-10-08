@@ -4,10 +4,10 @@ Namespace:
 - warriorland_halloween
 
 Required item textures:
-- resourcepack/warriorland_halloween/textures/item/hunter_mask.png
-- resourcepack/warriorland_halloween/textures/item/cursed_talisman.png
-- resourcepack/warriorland_halloween/textures/item/halloween_token.png
-- resourcepack/warriorland_halloween/textures/item/cursed_candy.png
+- textures/item/hunter_mask.png
+- textures/item/cursed_talisman.png
+- textures/item/halloween_token.png
+- textures/item/cursed_candy.png
 
 Planned world/audio assets:
 - resourcepack/warriorland_halloween/textures/sky/halloween_sky.png
