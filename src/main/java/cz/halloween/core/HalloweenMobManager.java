@@ -75,7 +75,14 @@ public final class HalloweenMobManager implements Listener {
 
         double dropChance = Math.max(0.0D, Math.min(1.0D, plugin.getConfig().getDouble("special-mobs.relic-drop-chance", 0.12D)));
         if (ThreadLocalRandom.current().nextDouble() <= dropChance) {
-            ItemStack item = new ItemStack(Material.PUMPKIN_PIE);
+            String configuredItemId = plugin.getConfig().getString("special-mobs.relic-item-id", "");
+            ItemStack item = plugin.getItemManager().getItemsAdderItem(configuredItemId, 1);
+            if (item == null) {
+                item = new ItemStack(Material.PUMPKIN_PIE);
+                if (!configuredItemId.isBlank()) {
+                    plugin.getItemManager().warnIfMissing(configuredItemId, "special mob relic");
+                }
+            }
             ItemMeta meta = item.getItemMeta();
             if (meta != null) {
                 meta.setDisplayName(plugin.color("&6&lProkleté cukroví &8[Halloween 2026]"));
