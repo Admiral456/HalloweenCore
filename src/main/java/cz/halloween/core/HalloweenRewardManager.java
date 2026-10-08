@@ -1,5 +1,6 @@
 package cz.halloween.core;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.entity.Player;
@@ -18,6 +19,116 @@ public final class HalloweenRewardManager {
     public HalloweenRewardManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.rewardKey = new NamespacedKey(plugin, "halloween_reward");
+    }
+
+    public void openMenu(Player player) {
+        if (player == null) return;
+
+        var section = plugin.getConfig().getConfigurationSection("rewards.shop");
+        if (section == null) {
+            listRewards(player);
+            return;
+        }
+
+        HalloweenRewardMenuHolder holder = new HalloweenRewardMenuHolder();
+        var inventory = Bukkit.createInventory(holder, 27, plugin.color("&6&lHALLOWEEN ODMĚNY &8• &72026"));
+        holder.bind(inventory);
+
+        ItemStack filler = namedItem(Material.BLACK_STAINED_GLASS_PANE, "&0");
+        for (int slot = 0; slot < inventory.getSize(); slot++) {
+            inventory.setItem(slot, filler);
+        }
+
+        ItemStack balance = namedItem(Material.GOLD_NUGGET,
+                "&6&lTvoje fragmenty");
+        ItemMeta balanceMeta = balance.getItemMeta();
+        if (balanceMeta != null) {
+            balanceMeta.setLore(List.of(
+                    plugin.color("&7K dispozici: &e" + plugin.getService().getFragments(player.getUniqueId())),
+                    plugin.color("&7Celoživotně získáno: &e" + plugin.getDataManager().getLifetimeFragments(player.getUniqueId()))
+            ));
+            balance.setItemMeta(balanceMeta);
+        }
+        inventory.setItem(22, balance);
+
+        ItemStack progress = namedItem(Material.CLOCK, "&6&lServerový progress");
+        ItemMeta progressMeta = progress.getItemMeta();
+        if (progressMeta != null) {
+            progressMeta.setLore(List.of(
+                    plugin.color("&7" + plugin.getService().getServerFragments() + " &8/ &7" + plugin.getService().getGlobalGoal()),
+                    plugin.color("&7" + String.format("%.1f", plugin.getService().getGlobalProgressPercent()) + "%")
+            ));
+            progress.setItemMeta(progressMeta);
+        }
+        inventory.setItem(4, progress);
+
+        int[] slots = {11, 13, 15};
+        int index = 0;
+        for (String id : section.getKeys(false)) {
+            if (index >= slots.length) break;
+            int slot = slots[index++];
+            holder.bindReward(slot, id);
+            inventory.setItem(slot, createRewardIcon(player, id, section.getConfigurationSection(id)));
+        }
+
+        player.openInventory(inventory);
+    }
+
+    private ItemStack createRewardIcon(Player player, String id, org.bukkit.configuration.ConfigurationSection section) {
+        if (section == null) return namedItem(Material.BARRIER, "&cChybná odměna");
+
+        int amount = Math.max(1, section.getInt("amount", 1));
+        String itemsAdderId = section.getString("itemsadder-id", "");
+        ItemStack item = itemsAdderId.isBlank()
+                ? null
+                : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount);
+
+        if (item == null) {
+            Material material;
+            try {
+                material = Material.valueOf(section.getString("material", "PAPER").toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                return namedItem(Material.BARRIER, "&cChybný materiál");
+            }
+            item = new ItemStack(material, 1);
+        } else {
+            item.setAmount(1);
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(plugin.color(section.getString("name", id)));
+            List<String> lore = new ArrayList<>();
+            lore.add(plugin.color("&7Cena: &e" + Math.max(0L, section.getLong("cost", 0L)) + " fragmentů"));
+            int minCurse = Math.max(0, section.getInt("min-curse", 0));
+            if (minCurse > 0) {
+                lore.add(plugin.color("&7Vyžaduje prokletí: &5" + minCurse));
+            }
+            lore.add("");
+            boolean claimed = plugin.getDataManager().hasClaimedReward(player.getUniqueId(), id);
+            if (claimed) {
+                lore.add(plugin.color("&8UŽ VYZVEDNUTO"));
+            } else if (plugin.getService().getFragments(player.getUniqueId()) < Math.max(0L, section.getLong("cost", 0L))) {
+                lore.add(plugin.color("&cNemáš dost fragmentů."));
+            } else if (plugin.getService().getCurseLevel(player.getUniqueId()) < minCurse) {
+                lore.add(plugin.color("&5Nemáš dostatečné prokletí."));
+            } else {
+                lore.add(plugin.color("&aKlikni pro vyzvednutí"));
+            }
+            meta.setLore(lore);
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private ItemStack namedItem(Material material, String name) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(plugin.color(name));
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     public void listRewards(Player player) {
