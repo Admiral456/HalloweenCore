@@ -1,7 +1,14 @@
 enabled: true
 
-# Společný serverový cíl.
 global-goal: 100000
+
+# Milníky odemykají další intenzitu eventu a dávají serveru společný cíl.
+global-milestones:
+  - 10000
+  - 25000
+  - 50000
+  - 75000
+  - 100000
 
 currency:
   name: "fragmentů"
@@ -45,15 +52,57 @@ rewards:
       - NETHER_WART
       - COCOA
       - SWEET_BERRY_BUSH
+      - PUMPKIN
+      - MELON
 
   fishing:
     enabled: true
     fragments: 2
 
+  shop:
+    hunter-mask:
+      cost: 1500
+      material: CARVED_PUMPKIN
+      amount: 1
+      name: "&6&lMaska nočního lovce &8[Halloween 2026]"
+      lore:
+        - "&7Limitovaná odměna."
+        - "&7Během eventu 2026 ji můžeš získat"
+        - "&7jen jednou."
+
+    cursed-talisman:
+      cost: 5000
+      material: NETHER_STAR
+      amount: 1
+      name: "&5&lProkletý talisman &8[2026]"
+      lore:
+        - "&7Vzpomínka na Halloween 2026."
+        - "&7Limitovaná odměna pro hráče,"
+        - "&7kteří se dostanou až na vysoké prokletí."
+
+    halloween-token:
+      cost: 10000
+      material: NAME_TAG
+      amount: 1
+      name: "&c&lHalloween 2026"
+      lore:
+        - "&7Unikátní památeční předmět."
+        - "&8Po skončení eventu už nebude v obchodu."
+
 notifications:
   fragment-gain: true
 
+return-rewards:
+  claim-delay-hours: 20
+  streak-window-hours: 48
+  comeback-after-hours: 72
+  daily-base: 10
+  daily-streak-step: 5
+  daily-cap: 50
+  comeback-bonus: 15
+
 curse:
+  bonus-per-level: 0.05
   levels:
     level-0:
       level: 0
@@ -75,6 +124,53 @@ curse:
       level: 4
       threshold: 5000
       name: "Posedlý"
+    level-5:
+      level: 5
+      threshold: 12000
+      name: "Zasvěcený temnotě"
+
+random-events:
+  enabled: true
+  interval-minutes:
+    min: 20
+    max: 35
+  duration-minutes: 5
+  sound: "halloween:haunted_theme"
+  types:
+    soulstorm:
+      name: "Duševní bouře"
+      start-message: "&6&lHALLOWEEN &8» &dDuše mrtvých se probudily. Po dobu &e%duration% minut &ddostáváš zvýšený zisk fragmentů z lovu."
+      end-message: "&6&lHALLOWEEN &8» &7Duševní bouře utichla."
+      multipliers:
+        mob-kill: 2.0
+        fishing: 1.5
+
+    witching-hour:
+      name: "Čarodějnická hodina"
+      start-message: "&6&lHALLOWEEN &8» &5Čarodějnická hodina začala. &fTěžba &5a lov &fzískávají více fragmentů."
+      end-message: "&6&lHALLOWEEN &8» &7Čarodějnická hodina skončila."
+      multipliers:
+        mining: 1.75
+        mob-kill: 1.5
+
+    cursed-harvest:
+      name: "Prokletá sklizeň"
+      start-message: "&6&lHALLOWEEN &8» &aPole jsou prokletá. &fSklizeň &azískává několikanásobně více fragmentů."
+      end-message: "&6&lHALLOWEEN &8» &7Prokletá sklizeň skončila."
+      multipliers:
+        farming: 3.0
+        fishing: 1.25
+
+atmosphere:
+  enabled: true
+  sound: "halloween:haunted_theme"
+  fallback-sound: "minecraft:music_disc.11"
+  volume: 0.35
+  pitch: 1.0
+  loop-seconds: 95
+  send-title-on-join: true
+  title: "&6&lHALLOWEEN 2026"
+  subtitle: "&7Něco se probudilo..."
 
 messages:
   prefix: "&8[&6Halloween&8] &r"
@@ -83,4 +179,6 @@ messages:
   reloaded: "&aKonfigurace byla načtena."
   event-enabled: "&aHalloween event byl zapnut."
   event-disabled: "&cHalloween event byl vypnut."
-  global-goal-reached: "&6&lHALLOWEEN &8» &fServer společně dosáhl Halloween cíle! Něco se probouzí..."
+  global-goal-reached: "&6&lHALLOWEEN &8» &fServer společně dosáhl hlavního cíle! Něco se probouzí..."
+  global-milestone: "&6&lHALLOWEEN &8» &dCelý WarriorLand dosáhl milníku &e%milestone% &dfragmentů."
+
