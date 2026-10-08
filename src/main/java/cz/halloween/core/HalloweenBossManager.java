@@ -35,6 +35,11 @@ public final class HalloweenBossManager {
 
     public void validateConfiguration() {
         VampireSpec spec = getVampireSpec();
+        int requiredProgress = plugin.getConfig().getInt("bosses.vampire.spawn-requirements.global-progress-percent", 100);
+        if (requiredProgress < 0 || requiredProgress > 100) {
+            plugin.getLogger().warning("Vampire boss global-progress-percent must be between 0 and 100; using 100.");
+            requiredProgress = 100;
+        }
         if (!isVampireSpecificationValid()) {
             plugin.getLogger().severe("Vampire boss specification is invalid. Required minimum: 10 blocks high, 8 blocks wide with wings.");
             return;
