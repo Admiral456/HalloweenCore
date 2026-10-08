@@ -18,6 +18,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - při návratu na server funguje denní streak a comeback bonus
 - každý den má hráč vlastní Halloween lov
 - limitované odměny pro Halloween 2026 lze získat pouze jednou za hráče
+- odměny jsou navíc gated podle úrovně prokletí, takže nejlepší věci vyžadují aktivní hraní
 - během eventu běží atmosférická smyčka zvuku
 - při připojení se zobrazí Halloween title/subtitle
 
@@ -60,8 +61,9 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - tajné úkoly a easter eggy
 - větší eventové invaze
 - serverové finále a hlavní boss
+- upíří boss má už nyní pevnou minimální specifikaci: 10 bloků výšky a 8 bloků šířky včetně křídel
 
-Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový progres, milníky a eventový systém.
+Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový progres, milníky a eventový systém. Jeho technická specifikace je ale už zamčená v konfiguraci: upír nesmí být menší než 10 bloků na výšku a 8 bloků na šířku včetně křídel.
 
 ## Build
 
