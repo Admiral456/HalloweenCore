@@ -103,6 +103,31 @@ public final class HalloweenMobManager implements Listener {
             }
             event.getDrops().add(item);
         }
+
+        double mapChance = Math.max(0.0D, Math.min(1.0D,
+                plugin.getConfig().getDouble("special-mobs.map-drop-chance", 0.03D)));
+        if (ThreadLocalRandom.current().nextDouble() <= mapChance) {
+            String mapItemId = plugin.getConfig().getString("special-mobs.map-item-id", "");
+            ItemStack mapItem = plugin.getItemManager().getItemsAdderItem(mapItemId, 1);
+            if (mapItem == null) {
+                mapItem = new ItemStack(Material.PAPER);
+                if (!mapItemId.isBlank()) {
+                    plugin.getItemManager().warnIfMissing(mapItemId, "Haunted Village map");
+                }
+            }
+
+            ItemMeta mapMeta = mapItem.getItemMeta();
+            if (mapMeta != null) {
+                mapMeta.setDisplayName(plugin.color("&5&lProkletá mapa &8[Halloween 2026]"));
+                mapMeta.setLore(java.util.List.of(
+                        plugin.color("&7Ukazuje cestu k Haunted Village."),
+                        plugin.color("&8Vzácný nález z prokletých mobů.")
+                ));
+                mapMeta.getPersistentDataContainer().set(relicKey, PersistentDataType.STRING, "haunted-map-2026");
+                mapItem.setItemMeta(mapMeta);
+            }
+            event.getDrops().add(mapItem);
+        }
     }
 
     public boolean spawnEventMob(Player player) {
