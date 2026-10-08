@@ -20,6 +20,12 @@ public final class HalloweenJoinListener implements Listener {
         if (plugin.getAtmosphere() != null) {
             plugin.getAtmosphere().onJoin(player);
         }
+        if (plugin.getDataManager().isFinaleUnlocked()) {
+            player.sendMessage(plugin.color(plugin.getConfig().getString(
+                    "messages.finale-unlocked",
+                    "&6&lHALLOWEEN &8» &4Finále je odemčeno. Něco čeká za branou..."
+            )));
+        }
         long now = System.currentTimeMillis();
         long last = plugin.getDataManager().getLastJoin(player.getUniqueId());
 
