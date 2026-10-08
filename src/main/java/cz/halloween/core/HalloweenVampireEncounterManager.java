@@ -3,7 +3,6 @@ package cz.halloween.core;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
-import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -12,7 +11,6 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.NamespacedKey;
 import org.bukkit.scheduler.BukkitTask;
@@ -96,14 +94,6 @@ public final class HalloweenVampireEncounterManager implements Listener {
         phase = 1;
         participants.clear();
         participationSeconds.clear();
-
-        try {
-            if (boss.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE) != null) {
-                boss.getAttribute(Attribute.GENERIC_KNOCKBACK_RESISTANCE).setBaseValue(1.0D);
-            }
-        } catch (Exception ignored) {
-        }
-
         plugin.getBossManager().trackVampireBoss(boss);
         Bukkit.broadcastMessage(plugin.color(
                 plugin.getConfig().getString("messages.vampire-start",
@@ -220,32 +210,26 @@ public final class HalloweenVampireEncounterManager implements Listener {
 
         switch (phase) {
             case 2 -> {
-                addEffect("SPEED", 20 * 12, 0);
-                addEffect("DAMAGE_RESISTANCE", 20 * 8, 0);
+                addEffect(org.bukkit.potion.PotionEffectType.SPEED, 20 * 12, 0);
+                addEffect(org.bukkit.potion.PotionEffectType.RESISTANCE, 20 * 8, 0);
             }
             case 3 -> {
-                addEffect("SPEED", 20 * 12, 1);
-                addEffect("DAMAGE_RESISTANCE", 20 * 8, 0);
-                addEffect("STRENGTH", 20 * 12, 0);
+                addEffect(org.bukkit.potion.PotionEffectType.SPEED, 20 * 12, 1);
+                addEffect(org.bukkit.potion.PotionEffectType.RESISTANCE, 20 * 8, 0);
+                addEffect(org.bukkit.potion.PotionEffectType.STRENGTH, 20 * 12, 0);
             }
             case 4 -> {
-                addEffect("SPEED", 20 * 12, 1);
-                addEffect("DAMAGE_RESISTANCE", 20 * 8, 1);
-                addEffect("STRENGTH", 20 * 12, 1);
+                addEffect(org.bukkit.potion.PotionEffectType.SPEED, 20 * 12, 1);
+                addEffect(org.bukkit.potion.PotionEffectType.RESISTANCE, 20 * 8, 1);
+                addEffect(org.bukkit.potion.PotionEffectType.STRENGTH, 20 * 12, 1);
             }
             default -> {
             }
         }
     }
 
-    private void addEffect(String typeName, int duration, int amplifier) {
-        try {
-            org.bukkit.potion.PotionEffectType type = org.bukkit.potion.PotionEffectType.getByName(typeName);
-            if (type != null) {
-                boss.addPotionEffect(new org.bukkit.potion.PotionEffect(type, duration, amplifier, true, false, false));
-            }
-        } catch (Exception ignored) {
-        }
+    private void addEffect(org.bukkit.potion.PotionEffectType type, int duration, int amplifier) {
+        boss.addPotionEffect(new org.bukkit.potion.PotionEffect(type, duration, amplifier, true, false, false));
     }
 
     private void broadcastPhase(int currentPhase) {
@@ -256,6 +240,21 @@ public final class HalloweenVampireEncounterManager implements Listener {
             default -> "&5&lKRÁL UPÍRŮ &8» &7FÁZE I — lov začíná.";
         };
         Bukkit.broadcastMessage(plugin.color(message));
+        if (boss != null) {
+            String barLabel = switch (currentPhase) {
+                case 2 -> "&5&lKRÁL UPÍRŮ &8• &dFÁZE II";
+                case 3 -> "&4&lKRÁL UPÍRŮ &8• &cFÁZE III";
+                case 4 -> "&4&lKRÁL UPÍRŮ &8• &4FÁZE IV";
+                default -> "&5&lKRÁL UPÍRŮ &8• &7FÁZE I";
+            };
+            plugin.getBossManager().setVampireBossBarLabel(barLabel);
+            Location location = boss.getLocation().add(0, 1.0D, 0);
+            boss.getWorld().spawnParticle(
+                    org.bukkit.Particle.SOUL_FIRE_FLAME,
+                    location, 35, 1.5D, 1.8D, 1.5D, 0.03D
+            );
+            boss.getWorld().playSound(location, "minecraft:entity.wither.spawn", 0.65f, 0.75f);
+        }
     }
 
     private void finishNoReward() {
@@ -399,10 +398,23 @@ public final class HalloweenVampireEncounterManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onBossDamaged(EntityDamageByEntityEvent event) {
-        if (!isTrackedVampireBoss(event.getEntity())) return;
-        Player player = resolvePlayer(event);
-        if (player != null && plugin.isEligibleGameplayPlayer(player)) {
-            participants.add(player.getUniqueId());
+        if (isTrackedVampireBoss(event.getEntity())) {
+            Player player = resolvePlayer(event);
+            if (player != null && plugin.isEligibleGameplayPlayer(player)) {
+                participants.add(player.getUniqueId());
+            }
+            return;
+        }
+
+        if (boss == null || boss.isDead() || !boss.isValid()) return;
+        if (!event.getDamager().getUniqueId().equals(boss.getUniqueId())) return;
+        if (phase < 2 || event.isCancelled()) return;
+
+        double maximum = Math.max(1.0D, boss.getMaxHealth());
+        double heal = Math.min(maximum * 0.02D, Math.max(0.25D, event.getFinalDamage() * 0.15D));
+        double missing = Math.max(0.0D, maximum - boss.getHealth());
+        if (missing > 0.0D) {
+            boss.setHealth(Math.min(maximum, boss.getHealth() + Math.min(heal, missing)));
         }
     }
 
@@ -410,10 +422,5 @@ public final class HalloweenVampireEncounterManager implements Listener {
     public void onBossDeath(EntityDeathEvent event) {
         if (!isTrackedVampireBoss(event.getEntity())) return;
         finishVictory(event.getEntity().getKiller());
-    }
-
-    @EventHandler
-    public void onQuit(PlayerQuitEvent event) {
-        // Participation is retained by UUID so reconnecting players remain eligible for rewards.
     }
 }
