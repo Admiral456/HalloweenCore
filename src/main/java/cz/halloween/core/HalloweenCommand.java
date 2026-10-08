@@ -56,14 +56,18 @@ public final class HalloweenCommand implements CommandExecutor {
         long total = plugin.getService().getServerFragments();
         int curse = plugin.getService().getCurseLevel(player.getUniqueId());
         String curseName = plugin.getService().getCurseName(player.getUniqueId());
+        int streak = plugin.getDataManager().getStreak(player.getUniqueId());
 
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
         sender.sendMessage(plugin.color("&6&lHALLOWEEN 2026"));
         sender.sendMessage(plugin.color("&7Tvoje fragmenty: &e" + amount));
         sender.sendMessage(plugin.color("&7Prokletí: &e" + curse + " &8(" + curseName + "&8)"));
+        sender.sendMessage(plugin.color("&7Denní streak: &e" + streak + "&7/7"));
+        sender.sendMessage(plugin.color("&7Tvůj násobič fragmentů: &e" + String.format("%.2f", plugin.getService().getFragmentMultiplier(player.getUniqueId(), "mob-kill")) + "x"));
         String active = plugin.getEventManager() == null ? null : plugin.getEventManager().getActiveEventId();
         if (active != null) {
-            sender.sendMessage(plugin.color("&7Aktivní událost: &6" + active + " &7(" + plugin.getEventManager().getRemainingSeconds() + " s)"));
+            String eventName = plugin.getConfig().getString("random-events.types." + active + ".name", active);
+            sender.sendMessage(plugin.color("&7Aktivní událost: &6" + eventName + " &7(" + plugin.getEventManager().getRemainingSeconds() + " s)"));
         } else {
             sender.sendMessage(plugin.color("&7Další událost přibližně za: &e" + plugin.getEventManager().getNextEventSeconds() + " s"));
         }
@@ -108,7 +112,9 @@ public final class HalloweenCommand implements CommandExecutor {
             return true;
         }
         sender.sendMessage(plugin.color("&6&lHALLOWEEN UDÁLOST"));
-        sender.sendMessage(plugin.color("&7Typ: &e" + plugin.getEventManager().getActiveEventId()));
+        String active = plugin.getEventManager().getActiveEventId();
+        String eventName = plugin.getConfig().getString("random-events.types." + active + ".name", active);
+        sender.sendMessage(plugin.color("&7Typ: &e" + eventName));
         sender.sendMessage(plugin.color("&7Zbývá: &e" + plugin.getEventManager().getRemainingSeconds() + " s"));
         return true;
     }
