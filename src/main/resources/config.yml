@@ -272,6 +272,15 @@ bosses:
       radius-blocks: 96
       color: RED
       style: SEGMENTED_20
+    encounter:
+      max-duration-minutes: 20
+      arena-radius-blocks: 48
+      participation-radius-blocks: 96
+      leash-to-arena: true
+      min-participation-seconds: 60
+      participation-reward-fragments: 250
+      victory-reward-fragments: 2500
+      top-contributor-bonus-fragments: 750
 
 atmosphere:
   enabled: true
