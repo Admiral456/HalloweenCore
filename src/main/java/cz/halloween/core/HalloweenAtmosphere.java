@@ -11,8 +11,6 @@ public final class HalloweenAtmosphere {
     }
 
     public void start() {
-        if (!plugin.getConfig().getBoolean("atmosphere.enabled", true)) return;
-
         long loopSeconds = Math.max(10L, plugin.getConfig().getLong("atmosphere.loop-seconds", 95L));
         long ticks = loopSeconds * 20L;
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, ticks);
