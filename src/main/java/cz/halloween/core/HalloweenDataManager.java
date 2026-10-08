@@ -148,25 +148,38 @@ public final class HalloweenDataManager {
     }
 
     public long addFragments(UUID uuid, long amount) {
+        return addFragments(uuid, amount, true, true);
+    }
+
+    public long addFragments(UUID uuid, long amount, boolean countGlobal, boolean countLifetime) {
         if (amount <= 0L) return getFragments(uuid);
 
         long current = getFragments(uuid);
-        long updated;
+        long updated = current;
         try {
             updated = Math.addExact(current, amount);
-            serverFragments = Math.addExact(serverFragments, amount);
         } catch (ArithmeticException ex) {
             updated = Long.MAX_VALUE;
-            serverFragments = Long.MAX_VALUE;
+        }
+        fragments.put(uuid, updated);
+
+        if (countGlobal) {
+            try {
+                serverFragments = Math.addExact(serverFragments, amount);
+            } catch (ArithmeticException ex) {
+                serverFragments = Long.MAX_VALUE;
+            }
         }
 
-        fragments.put(uuid, updated);
-        long currentLifetime = lifetimeFragments.getOrDefault(uuid, current);
-        try {
-            lifetimeFragments.put(uuid, Math.addExact(currentLifetime, amount));
-        } catch (ArithmeticException ex) {
-            lifetimeFragments.put(uuid, Long.MAX_VALUE);
+        if (countLifetime) {
+            long currentLifetime = lifetimeFragments.getOrDefault(uuid, current);
+            try {
+                lifetimeFragments.put(uuid, Math.addExact(currentLifetime, amount));
+            } catch (ArithmeticException ex) {
+                lifetimeFragments.put(uuid, Long.MAX_VALUE);
+            }
         }
+
         return updated;
     }
 
