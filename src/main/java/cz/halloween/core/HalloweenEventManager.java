@@ -120,7 +120,8 @@ public final class HalloweenEventManager {
     }
 
     private void runActiveEventEffects(long now) {
-        if (now - lastSurgeAt < 45_000L) return;
+        long surgeIntervalSeconds = Math.max(10L, plugin.getConfig().getLong("random-events.surge-interval-seconds", 45L));
+        if (now - lastSurgeAt < surgeIntervalSeconds * 1000L) return;
         if (Bukkit.getOnlinePlayers().isEmpty()) return;
 
         Player[] players = Bukkit.getOnlinePlayers().toArray(new Player[0]);
