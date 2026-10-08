@@ -85,6 +85,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         reloadConfig();
         eventEnabled = getConfig().getBoolean("enabled", true);
         if (eventManager != null) eventManager.reloadSchedule();
+        if (bossManager != null) bossManager.validateConfiguration();
     }
 
     public void setEventEnabled(boolean enabled) {
