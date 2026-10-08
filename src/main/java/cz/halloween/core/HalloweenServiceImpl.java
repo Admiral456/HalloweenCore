@@ -20,11 +20,20 @@ public final class HalloweenServiceImpl implements HalloweenService {
     public long addFragments(UUID playerId, long amount, String source) {
         if (!plugin.isEventEnabled() || amount <= 0L) return getFragments(playerId);
 
+        double multiplier = getFragmentMultiplier(playerId, source);
+        long rewardedAmount;
+        if (multiplier <= 1.0D) {
+            rewardedAmount = amount;
+        } else {
+            double scaled = amount * multiplier;
+            rewardedAmount = scaled >= Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(1L, Math.round(scaled));
+        }
+
         long before = getServerFragments();
-        long updated = plugin.getDataManager().addFragments(playerId, amount);
+        long updated = plugin.getDataManager().addFragments(playerId, rewardedAmount);
 
         if (plugin.getConfig().getBoolean("notifications.fragment-gain", true)) {
-            plugin.notifyFragmentGain(playerId, amount);
+            plugin.notifyFragmentGain(playerId, rewardedAmount);
         }
 
         long after = getServerFragments();
@@ -34,6 +43,23 @@ public final class HalloweenServiceImpl implements HalloweenService {
         }
 
         return updated;
+    }
+
+    @Override
+    public double getFragmentMultiplier(UUID playerId, String source) {
+        if (source != null && source.equalsIgnoreCase("admin")) return 1.0D;
+
+        double multiplier = 1.0D;
+
+        if (plugin.getEventManager() != null) {
+            multiplier *= plugin.getEventManager().getMultiplier(source == null ? "unknown" : source);
+        }
+
+        double curseBonus = plugin.getConfig().getDouble("curse.bonus-per-level", 0.05D);
+        int level = getCurseLevel(playerId);
+        multiplier *= Math.max(0.0D, 1.0D + (level * curseBonus));
+
+        return Math.max(1.0D, multiplier);
     }
 
     @Override
