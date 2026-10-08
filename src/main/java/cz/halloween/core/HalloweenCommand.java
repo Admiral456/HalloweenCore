@@ -318,6 +318,26 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean setVampireArena(CommandSender sender) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz musí použít hráč přímo v aréně Krále upírů."));
+            return true;
+        }
+
+        plugin.getConfig().set("bosses.vampire.arena.configured", true);
+        plugin.getConfig().set("bosses.vampire.arena.world", player.getWorld().getName());
+        plugin.getConfig().set("bosses.vampire.arena.x", player.getLocation().getX());
+        plugin.getConfig().set("bosses.vampire.arena.y", player.getLocation().getY());
+        plugin.getConfig().set("bosses.vampire.arena.z", player.getLocation().getZ());
+        plugin.saveConfig();
+
+        player.sendMessage(plugin.color("&4HALLOWEEN &8» &aAréna Krále upírů nastavena."));
+        player.sendMessage(plugin.color("&7Svět: &e" + player.getWorld().getName()));
+        player.sendMessage(plugin.color("&7Pozice: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
+                player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ())));
+        return true;
+    }
+
     private boolean boss(CommandSender sender, String[] args) {
         if (!checkAdmin(sender)) return true;
 
@@ -339,7 +359,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(plugin.color("&7Encounter: " + (encounter.isActive() ? "&aAKTIVNÍ" : "&eNEBĚŽÍ")));
                 if (encounter.isActive()) {
                     sender.sendMessage(plugin.color("&7Fáze: &e" + encounter.getPhase() + " &7• hráči: &e" + encounter.getParticipantCount()
-                            + " &7• HP: &e" + String.format(java.util.Locale.ROOT, "%.1f", plugin.getBossManager().getVampireBossHealthPercent() * 100.0D) + "%"));
+                            + " &7• HP: &e" + String.format(java.util.Locale.ROOT, "%.1f",
+                            plugin.getBossManager().getVampireBossHealthPercent() * 100.0D) + "%"));
                 }
             }
             case "start" -> {
@@ -348,7 +369,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 if (!plugin.getBossManager().isVampireReady()) {
-                    sender.sendMessage(plugin.color("&cKrál upírů zatím není připraven. Zkontroluj finale/progress, arénu a enabled."));
+                    sender.sendMessage(plugin.color("&cKrál upírů zatím není připraven. Zkontroluj finale/progress, arénu, model a enabled."));
                     return true;
                 }
                 if (encounter.startEncounter()) {
@@ -367,26 +388,6 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             }
             default -> sender.sendMessage(plugin.color("&cPoužití: /halloween boss <status|start|stop>"));
         }
-        return true;
-    }
-
-        if (!checkAdmin(sender)) return true;
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(plugin.color("&cTento příkaz musí použít hráč přímo v aréně Krále upírů."));
-            return true;
-        }
-
-        plugin.getConfig().set("bosses.vampire.arena.configured", true);
-        plugin.getConfig().set("bosses.vampire.arena.world", player.getWorld().getName());
-        plugin.getConfig().set("bosses.vampire.arena.x", player.getLocation().getX());
-        plugin.getConfig().set("bosses.vampire.arena.y", player.getLocation().getY());
-        plugin.getConfig().set("bosses.vampire.arena.z", player.getLocation().getZ());
-        plugin.saveConfig();
-
-        player.sendMessage(plugin.color("&4HALLOWEEN &8» &aAréna Krále upírů nastavena."));
-        player.sendMessage(plugin.color("&7Svět: &e" + player.getWorld().getName()));
-        player.sendMessage(plugin.color("&7Pozice: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
-                player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ())));
         return true;
     }
 
