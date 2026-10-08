@@ -225,6 +225,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
         boolean itemsAdder = plugin.getServer().getPluginManager().getPlugin("ItemsAdder") != null;
         boolean mythicMobs = plugin.getServer().getPluginManager().getPlugin("MythicMobs") != null;
+        boolean modelEngine = plugin.getServer().getPluginManager().getPlugin("ModelEngine") != null;
         boolean battlePass = plugin.getServer().getPluginManager().getPlugin("BattlePass") != null;
         boolean worldGuard = plugin.getServer().getPluginManager().getPlugin("WorldGuard") != null;
         boolean papi = plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
@@ -258,6 +259,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7  cursed_candy: " + status(cursedCandy)));
         sender.sendMessage(plugin.color("&7  haunted_map: " + status(hauntedMap)));
         sender.sendMessage(plugin.color("&7MythicMobs: " + status(mythicMobs)));
+        sender.sendMessage(plugin.color("&7ModelEngine: " + status(modelEngine)));
         sender.sendMessage(plugin.color("&7BattlePass: " + status(battlePass)));
         sender.sendMessage(plugin.color("&7WorldGuard: " + status(worldGuard)));
         sender.sendMessage(plugin.color("&7PlaceholderAPI: " + status(papi)));
