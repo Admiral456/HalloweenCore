@@ -24,6 +24,9 @@ public final class HalloweenCommand implements CommandExecutor {
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
         if (args[0].equalsIgnoreCase("curse")) return curse(sender);
+        if (args[0].equalsIgnoreCase("event")) return event(sender);
+        if (args[0].equalsIgnoreCase("rewards")) return rewards(sender);
+        if (args[0].equalsIgnoreCase("claim")) return claim(sender, args);
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
@@ -31,6 +34,9 @@ public final class HalloweenCommand implements CommandExecutor {
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
+        sender.sendMessage(plugin.color("&6/halloween event &7- aktuální Halloween událost"));
+        sender.sendMessage(plugin.color("&6/halloween rewards &7- limitované odměny 2026"));
+        sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
@@ -55,6 +61,12 @@ public final class HalloweenCommand implements CommandExecutor {
         sender.sendMessage(plugin.color("&6&lHALLOWEEN 2026"));
         sender.sendMessage(plugin.color("&7Tvoje fragmenty: &e" + amount));
         sender.sendMessage(plugin.color("&7Prokletí: &e" + curse + " &8(" + curseName + "&8)"));
+        String active = plugin.getEventManager() == null ? null : plugin.getEventManager().getActiveEventId();
+        if (active != null) {
+            sender.sendMessage(plugin.color("&7Aktivní událost: &6" + active + " &7(" + plugin.getEventManager().getRemainingSeconds() + " s)"));
+        } else {
+            sender.sendMessage(plugin.color("&7Další událost přibližně za: &e" + plugin.getEventManager().getNextEventSeconds() + " s"));
+        }
         sender.sendMessage(plugin.color("&7Serverový progress: &e" + total + " &7/ &e" + goal));
         sender.sendMessage(plugin.color("&7Progress: &e" + String.format("%.1f", plugin.getService().getGlobalProgressPercent()) + "%"));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
@@ -84,6 +96,44 @@ public final class HalloweenCommand implements CommandExecutor {
         sender.sendMessage(plugin.color("&6&lTVÉ PROKLETÍ"));
         sender.sendMessage(plugin.color("&7Úroveň: &e" + level));
         sender.sendMessage(plugin.color("&7Titul: &e" + name));
+        return true;
+    }
+
+    private boolean event(CommandSender sender) {
+        if (!checkUse(sender) || !checkEnabled(sender)) return true;
+        if (plugin.getEventManager() == null || plugin.getEventManager().getActiveEventId() == null) {
+            sender.sendMessage(plugin.color("&7Právě neprobíhá žádná náhodná událost."));
+            long seconds = plugin.getEventManager() == null ? 0L : plugin.getEventManager().getNextEventSeconds();
+            sender.sendMessage(plugin.color("&7Další událost přibližně za &e" + seconds + " s&7."));
+            return true;
+        }
+        sender.sendMessage(plugin.color("&6&lHALLOWEEN UDÁLOST"));
+        sender.sendMessage(plugin.color("&7Typ: &e" + plugin.getEventManager().getActiveEventId()));
+        sender.sendMessage(plugin.color("&7Zbývá: &e" + plugin.getEventManager().getRemainingSeconds() + " s"));
+        return true;
+    }
+
+    private boolean rewards(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz může použít jen hráč."));
+            return true;
+        }
+        if (!checkUse(player) || !checkEnabled(player)) return true;
+        plugin.getRewardManager().listRewards(player);
+        return true;
+    }
+
+    private boolean claim(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz může použít jen hráč."));
+            return true;
+        }
+        if (!checkUse(player) || !checkEnabled(player)) return true;
+        if (args.length < 2) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween claim <id>"));
+            return true;
+        }
+        plugin.getRewardManager().claim(player, args[1]);
         return true;
     }
 
