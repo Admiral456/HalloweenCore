@@ -24,3 +24,6 @@ vampire-king:
   - 1 players
   BossBar:
     Enabled: false
+  # Activate only after the real ModelEngine asset is installed and tested:
+  # Skills:
+  # - model{model=vampire_king;n=name} @self ~onSpawn
