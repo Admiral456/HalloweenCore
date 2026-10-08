@@ -33,11 +33,16 @@ public final class HalloweenBossManager {
         long goal = plugin.getService().getGlobalGoal();
         double progress = plugin.getService().getGlobalProgressPercent();
         boolean progressReady = goal <= 0L || progress >= Math.max(0, Math.min(100, requiredProgress));
+        String arenaWorld = plugin.getConfig().getString("bosses.vampire.arena.world", "");
+        boolean arenaReady = !arenaWorld.isBlank()
+                && plugin.getServer().getWorlds().stream().anyMatch(world -> world.getName().equalsIgnoreCase(arenaWorld))
+                && plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false);
         return spec.enabled()
                 && plugin.getDataManager().isFinaleUnlocked()
                 && progressReady
                 && spec.finalBoss()
-                && spec.arenaRequired();
+                && spec.arenaRequired()
+                && arenaReady;
     }
 
     public boolean isVampireSpecificationValid() {
