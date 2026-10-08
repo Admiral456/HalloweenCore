@@ -34,8 +34,9 @@ public final class HalloweenServiceImpl implements HalloweenService {
             rewardedAmount = scaled >= Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(1L, Math.round(scaled));
         }
 
+        boolean adminSource = source != null && source.equalsIgnoreCase("admin");
         long before = getServerFragments();
-        long updated = plugin.getDataManager().addFragments(playerId, rewardedAmount);
+        long updated = plugin.getDataManager().addFragments(playerId, rewardedAmount, !adminSource, !adminSource);
 
         if (plugin.getConfig().getBoolean("notifications.fragment-gain", true)) {
             plugin.notifyFragmentGain(playerId, rewardedAmount);
