@@ -21,8 +21,9 @@ public final class HalloweenEventManager {
     public void start() {
         if (started) return;
         started = true;
-        if (!plugin.getConfig().getBoolean("random-events.enabled", true)) return;
-        scheduleNextEvent();
+        if (plugin.getConfig().getBoolean("random-events.enabled", true)) {
+            scheduleNextEvent();
+        }
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
     }
 
