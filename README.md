@@ -127,7 +127,7 @@ Náhodné eventy se spouštějí přibližně 15–24 minut od sebe a trvají 6 
 | **Duševní bouře** | Vlny prokletých zombie, hrobníků a krvavých pavouků; duševní částice; 2× odměna za lov a 1,5× za rybaření. |
 | **Čarodějnická hodina** | Hexové čarodějky a pavouci útočí ze stínů; může se objevit efekt Darkness; zvýšené odměny za těžbu, lov a rybaření. |
 | **Prokletá sklizeň** | Temná magie urychlí několik okolních plodin a ze záhonů vyrazí speciální mobové; 3× odměna za sklizeň. |
-| **Krvavý měsíc – invaze** | Silnější vlny až 4 nepřátel každých 25 sekund, nejvýše 36 eventových mobů na svět, unikátní varovné částice, Kapitán invaze v závěrečné části a **3× poškození od nepřátelských monster**. |
+| **Krvavý měsíc – invaze** | Silnější vlny až 4 nepřátel každých 25 sekund, nejvýše 48 eventových mobů na svět, unikátní varovné částice, Kapitán invaze v závěrečné části a **3× poškození od nepřátelských monster**. |
 | **Dýňová apokalypsa** | Husté vlny dýňových přízraků, plameny, popel a lávové částice; 2,5× odměna za lov. |
 | **Hřbitov vstává** | Hrobníci, prokleté zombie a pavouci se objevují ve vlnách z duševní mlhy; 2,25× odměna za lov. |
 
