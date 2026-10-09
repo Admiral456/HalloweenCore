@@ -296,6 +296,11 @@ public final class HalloweenVampireEncounterManager implements Listener {
 
         stopModelPreview();
         LivingEntity spawned = spawnMythicMob(location);
+        boolean fallbackTestBoss = false;
+        if (spawned == null && testMode) {
+            spawned = spawnTestFallback(location);
+            fallbackTestBoss = spawned != null;
+        }
         if (spawned == null) {
             plugin.getLogger().severe("MythicMobs could not spawn boss ID '"
                     + plugin.getBossManager().getVampireSpec().id()
@@ -318,8 +323,9 @@ public final class HalloweenVampireEncounterManager implements Listener {
         summoningWarningStage = 0;
         plugin.getBossManager().trackVampireBoss(boss);
         if (testMode) {
-            Bukkit.broadcastMessage(plugin.color(
-                    "&c&lTEST BOSSE &8» &fKrál upírů byl vyvolán bez progresu. &7Test neodemkne finále a nedává odměny."));
+            Bukkit.broadcastMessage(plugin.color(fallbackTestBoss
+                    ? "&c&lTEST BOSSE &8» &fVyvolán zkušební zombie boss, protože MythicMobs definice nebyla dostupná. &7Bez modelu, progressu a odměn."
+                    : "&c&lTEST BOSSE &8» &fKrál upírů byl vyvolán bez progresu. &7Test neodemkne finále a nedává odměny."));
         } else {
             Bukkit.broadcastMessage(plugin.color(
                     plugin.getConfig().getString("messages.vampire-start",
@@ -1119,6 +1125,36 @@ public final class HalloweenVampireEncounterManager implements Listener {
                 modelAnimationWarningLogged = true;
             }
             return false;
+        }
+    }
+
+    private LivingEntity spawnTestFallback(Location location) {
+        try {
+            org.bukkit.entity.Entity entity = location.getWorld().spawnEntity(
+                    location.clone().add(0.5D, 0.0D, 0.5D), org.bukkit.entity.EntityType.ZOMBIE);
+            if (!(entity instanceof LivingEntity living)) {
+                entity.remove();
+                return null;
+            }
+            living.setCustomName(plugin.color("&4&lKRÁL UPÍRŮ &c[TEST BEZ MODELU]"));
+            living.setCustomNameVisible(true);
+            living.setGlowing(true);
+            living.setPersistent(true);
+            if (living instanceof org.bukkit.entity.Mob mob) {
+                mob.setRemoveWhenFarAway(false);
+                mob.setAware(true);
+            }
+            org.bukkit.attribute.AttributeInstance maxHealth =
+                    living.getAttribute(org.bukkit.attribute.Attribute.MAX_HEALTH);
+            if (maxHealth != null) {
+                maxHealth.setBaseValue(500.0D);
+                living.setHealth(500.0D);
+            }
+            plugin.getLogger().warning("MythicMobs boss definition unavailable; using a vanilla zombie as an admin-only boss test.");
+            return living;
+        } catch (RuntimeException ex) {
+            plugin.getLogger().warning("Could not spawn fallback test boss: " + ex.getMessage());
+            return null;
         }
     }
 
