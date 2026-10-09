@@ -61,7 +61,7 @@ def main():
  height=(y1-y0)/16;width=(x1-x0)/16
  if height<10:fail(f"height {height:.2f} blocks < 10")
  if width<8:fail(f"wing span {width:.2f} blocks < 8")
- print(f"PASS model: {len(vis)-2} visible cubes; {len(bones)} bones; {len(d.get('animations',[]))} animations")
+ print(f"PASS model: {len(vis)} visible cubes; {len(bones)} bones; {len(d.get('animations',[]))} animations")
  print(f"PASS bounds: height {height:.2f} blocks; wing span {width:.2f} blocks")
  print(f"PASS texture: embedded/external {w}x{h} PNGs match and decode")
 if __name__=="__main__":main()
