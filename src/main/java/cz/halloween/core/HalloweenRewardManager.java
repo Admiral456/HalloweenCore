@@ -248,7 +248,8 @@ public final class HalloweenRewardManager {
             item.setItemMeta(meta);
         }
 
-        if (!plugin.getDataManager().removeFragments(player.getUniqueId(), cost)) {
+        // A zero-cost reward is valid in config and must not call removeFragments(0), which rejects non-positive amounts.
+        if (cost > 0L && !plugin.getDataManager().removeFragments(player.getUniqueId(), cost)) {
             player.sendMessage(plugin.color("&cOdměnu se nepodařilo bezpečně odečíst."));
             return false;
         }
@@ -261,6 +262,8 @@ public final class HalloweenRewardManager {
         }
 
         plugin.getDataManager().markRewardClaimed(player.getUniqueId(), normalizedId);
+        // Persist limited claims immediately rather than waiting for the periodic save interval.
+        plugin.getDataManager().save();
         player.sendMessage(plugin.color("&6HALLOWEEN &8» &aZískal jsi limitovanou odměnu &f" + section.getString("name", normalizedId) + "&a."));
         return true;
     }
