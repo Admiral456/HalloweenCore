@@ -179,10 +179,6 @@ rewards:
         - "&7Legendární černo-karmínová zbraň."
         - "&cÚtokový modifier 15 • rychlostní modifier 0,8 • výdrž 5 000."
         - "&aPlně enchantovatelný."
-        - "&7Legendární černo-karmínová zbraň."
-        - "&cÚtok 15+ • vyšší rychlost • výdrž 5 000."
-        - "&7Útokový modifier 15 • rychlostní modifier 0,8 • výdrž 5 000."
-        - "&aPlně enchantovatelný."
 
     crimson-warden-pickaxe:
       cost: 50000
@@ -195,10 +191,6 @@ rewards:
         - "&7Legendární krumpáč pro hluboké doly."
         - "&cTěžba 14 • útokový modifier 10 • rychlostní modifier 0,8."
         - "&7Výdrž 5 000 • Efficiency, Fortune, Silk Touch, Mending."
-        - "&7Legendární krumpáč pro hluboké doly."
-        - "&cTěžba rychlostí 14 • výdrž 5 000."
-        - "&7Útokový modifier 10 • rychlostní modifier 0,8 • výdrž 5 000."
-        - "&aPlně enchantovatelný."
 
     crimson-warden-axe:
       cost: 32000
@@ -211,10 +203,6 @@ rewards:
         - "&7Legendární sekera s krvavým ostřím."
         - "&cÚtokový modifier 14 • rychlostní modifier 0,6 • těžba 14."
         - "&7Výdrž 5 000 • plně enchantovatelná."
-        - "&7Legendární sekera s krvavým ostřím."
-        - "&cÚtok 14+ • rychlejší těžba • výdrž 5 000."
-        - "&7Útokový modifier 14 • rychlostní modifier 0,6 • výdrž 5 000."
-        - "&aPlně enchantovatelná."
 
     crimson-warden-shovel:
       cost: 22000
@@ -227,10 +215,6 @@ rewards:
         - "&7Legendární lopatka na rychlé kopání."
         - "&cTěžba 14 • útokový modifier 10 • rychlostní modifier 0,8."
         - "&7Výdrž 4 500 • plně enchantovatelná."
-        - "&7Legendární nástroj pro rychlé kopání."
-        - "&cTěžba rychlostí 14 • výdrž 4 500."
-        - "&7Útokový modifier 10 • rychlostní modifier 0,8 • výdrž 4 500."
-        - "&aPlně enchantovatelná."
 
     crimson-warden-hoe:
       cost: 26000
@@ -243,10 +227,6 @@ rewards:
         - "&7Legendární motyka se zpevněným ostřím."
         - "&cTěžba 14 • útokový modifier 7 • rychlostní modifier 1,0."
         - "&7Výdrž 4 500 • plně enchantovatelná."
-        - "&7Legendární motyka se zpevněným ostřím."
-        - "&cÚtok 7+ • těžba rychlostí 14 • výdrž 4 500."
-        - "&7Útokový modifier 7 • rychlostní modifier 1,0 • výdrž 4 500."
-        - "&aPlně enchantovatelná."
 
 haunted-village:
   enabled: false
