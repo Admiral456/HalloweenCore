@@ -1,5 +1,7 @@
 package cz.halloween.core;
 
+import org.bukkit.Bukkit;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
@@ -29,10 +31,12 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenVillageDiscoveryManager villageDiscoveryManager;
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
+    private HalloweenWorldDecorator worldDecorator;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        migrateAtmosphereVolume();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -50,6 +54,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
+        worldDecorator = new HalloweenWorldDecorator(this);
 
         for (String error : HalloweenConfigValidator.validate(this)) {
             getLogger().severe("[CONFIG] " + error);
@@ -66,6 +71,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
+        getServer().getPluginManager().registerEvents(worldDecorator, this);
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
@@ -78,6 +84,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         eventManager.start();
         vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
+        worldDecorator.start();
         passiveEffectManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -99,6 +106,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             vampireEncounterManager.stopEncounter();
         }
         if (atmosphere != null) atmosphere.stopPlayback();
+        if (worldDecorator != null) worldDecorator.stop();
         if (dataManager != null) dataManager.save();
     }
 
@@ -134,20 +142,45 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     }
 
     public void setEventEnabled(boolean enabled) {
-        if (eventEnabled == enabled) return;
+        boolean changed = eventEnabled != enabled;
         eventEnabled = enabled;
-        getConfig().set("enabled", enabled);
-        saveConfig();
+        if (changed) {
+            getConfig().set("enabled", enabled);
+            saveConfig();
+        }
 
         if (eventManager != null) {
-            if (enabled) eventManager.reloadSchedule();
-            else {
+            if (enabled) {
+                // Even if the switch was already ON, give the administrator a visible,
+                // near-term event instead of silently retaining a 20–35 minute timer.
+                eventManager.scheduleFirstEvent();
+            } else {
                 eventManager.stop();
                 if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
                 if (bossManager != null) bossManager.stopVampireBossBar();
             }
         }
         if (atmosphere != null) atmosphere.refreshPlayback();
+        if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
+
+        if (changed) {
+            Bukkit.broadcastMessage(color(enabled
+                    ? "&6&lHALLOWEEN &8» &eHalloween je zapnutý. První událost dorazí za chvíli!"
+                    : "&8[HALLOWEEN] &7Halloween event byl vypnut."));
+        } else if (enabled) {
+            getLogger().info("Halloween event is already enabled; next event scheduled shortly.");
+        }
+    }
+
+    private void migrateAtmosphereVolume() {
+        // Upgrade existing server configs once: the prior default 0.35 was too quiet.
+        if (getConfig().getBoolean("atmosphere.volume-triple-migrated", false)) return;
+        double existing = getConfig().getDouble("atmosphere.volume", 0.35D);
+        if (existing <= 0.36D) getConfig().set("atmosphere.volume", 1.0D);
+        getConfig().set("atmosphere.volume-triple-migrated", true);
+        saveConfig();
+        getLogger().info("Halloween soundtrack volume upgraded to " +
+                getConfig().getDouble("atmosphere.volume", 1.0D) + ".");
     }
 
     public boolean isEventEnabled() {
