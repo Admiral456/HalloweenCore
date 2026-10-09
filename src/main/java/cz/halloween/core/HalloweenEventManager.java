@@ -24,13 +24,33 @@ public final class HalloweenEventManager {
     public void start() {
         if (started) return;
         started = true;
-        if (plugin.getConfig().getBoolean("random-events.enabled", true)) {
-            scheduleNextEvent();
+        if (plugin.getConfig().getBoolean("random-events.enabled", true) && plugin.isEventEnabled()) {
+            scheduleFirstEvent();
         }
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
     }
 
     public void reloadSchedule() {
+        clearActiveEvent();
+        if (started && plugin.isEventEnabled() && plugin.getConfig().getBoolean("random-events.enabled", true)) {
+            scheduleNextEvent();
+        } else {
+            nextEventAt = 0L;
+        }
+    }
+
+    /** Schedule a short, visible first event when the administrator turns Halloween on. */
+    public void scheduleFirstEvent() {
+        clearActiveEvent();
+        if (started && plugin.isEventEnabled() && plugin.getConfig().getBoolean("random-events.enabled", true)) {
+            int delay = Math.max(5, plugin.getConfig().getInt("random-events.start-delay-seconds", 30));
+            nextEventAt = System.currentTimeMillis() + delay * 1000L;
+        } else {
+            nextEventAt = 0L;
+        }
+    }
+
+    private void clearActiveEvent() {
         if (activeEventId != null && plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
@@ -38,11 +58,30 @@ public final class HalloweenEventManager {
         activeUntil = 0L;
         lastSurgeAt = 0L;
         invasionCaptainSpawned = false;
-        if (started && plugin.getConfig().getBoolean("random-events.enabled", true)) {
-            scheduleNextEvent();
-        } else {
-            nextEventAt = 0L;
+    }
+
+    public boolean startEventNow(String requestedId) {
+        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)) return false;
+        if (activeEventId != null) return false;
+
+        String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
+        if (eventId.isEmpty() || eventId.equals("random")) {
+            String[] events = {"soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion"};
+            eventId = events[ThreadLocalRandom.current().nextInt(events.length)];
         }
+        if (!getKnownEventIds().contains(eventId)) return false;
+        beginEvent(eventId);
+        return true;
+    }
+
+    public boolean stopActiveEventNow() {
+        if (activeEventId == null) return false;
+        endEvent();
+        return true;
+    }
+
+    public java.util.List<String> getKnownEventIds() {
+        return java.util.List.of("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion");
     }
 
     public void stop() {
@@ -79,6 +118,10 @@ public final class HalloweenEventManager {
     }
 
     private void scheduleNextEvent() {
+        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)) {
+            nextEventAt = 0L;
+            return;
+        }
         int phase = getGlobalPhase();
         int baseMin = Math.max(1, plugin.getConfig().getInt("random-events.interval-minutes.min", 20));
         int baseMax = Math.max(baseMin, plugin.getConfig().getInt("random-events.interval-minutes.max", 35));
@@ -90,10 +133,16 @@ public final class HalloweenEventManager {
 
     private void startRandomEvent() {
         String[] events = {"soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion"};
-        activeEventId = events[ThreadLocalRandom.current().nextInt(events.length)];
+        String selected = events[ThreadLocalRandom.current().nextInt(events.length)];
+        beginEvent(selected);
+    }
 
+    private void beginEvent(String eventId) {
+        if (eventId == null || eventId.isBlank() || activeEventId != null) return;
+        activeEventId = eventId;
         int phase = getGlobalPhase();
-        int duration = Math.max(1, plugin.getConfig().getInt("random-events.duration-minutes", 5) + Math.min(3, phase / 2));
+        int duration = Math.max(1, plugin.getConfig().getInt("random-events.duration-minutes", 5)
+                + Math.min(3, phase / 2));
         activeUntil = System.currentTimeMillis() + duration * 60_000L;
         lastSurgeAt = 0L;
         invasionCaptainSpawned = false;
@@ -102,8 +151,9 @@ public final class HalloweenEventManager {
         String name = plugin.getConfig().getString(path + ".name", activeEventId);
         String message = plugin.getConfig().getString(path + ".start-message",
                 "&6&lHALLOWEEN &8» &f" + name + " začíná!");
-
-        Bukkit.broadcastMessage(plugin.color(message.replace("%duration%", Integer.toString(duration))));
+        String announcement = plugin.color(message.replace("%duration%", Integer.toString(duration)));
+        Bukkit.broadcastMessage(announcement);
+        plugin.getLogger().info("Halloween event started: " + activeEventId + " (duration=" + duration + "m)");
         playEventSound();
     }
 
@@ -216,6 +266,7 @@ public final class HalloweenEventManager {
 
     public long getNextEventSeconds() {
         if (activeEventId != null) return 0L;
+        if (nextEventAt <= 0L) return -1L;
         return Math.max(0L, (nextEventAt - System.currentTimeMillis()) / 1000L);
     }
 }
