@@ -57,3 +57,11 @@ Prahové hodnoty a síla schopností jsou záměrně v `config.yml`, aby šly la
 MythicMobs dodává základní mob definition `mythicmobs/mobs/vampire-king.yml`. ModelEngine hook není aktivovaný, dokud není hotový vlastní model; připravená specifikace je v `docs/VAMPIRE_MODEL_ENGINE.md`.
 
 Oficiální MythicMobs API podporuje získání MythicMob přes MobManager a spawn pomocí Bukkit adaptéru, což je důvod, proč HalloweenCore používá API bridge místo spouštění shellového příkazu. citeturn967112search0turn610413search0
+
+
+## Encounter rewards
+
+- Participation rewards are based on eligible time spent near the arena, not merely joining the encounter.
+- The top-contributor bonus is based on accumulated damage dealt to the boss. Players must also meet the configured minimum participation time.
+- Melee hits and player-fired projectiles contribute. Spectators who only remain nearby cannot receive the top-damage bonus.
+- Victory handling is guarded against duplicate execution, and the defeated flag is persisted before the encounter is cleaned up.
