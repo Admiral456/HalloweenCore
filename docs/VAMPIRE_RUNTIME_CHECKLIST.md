@@ -37,3 +37,8 @@ This is a staging checklist. Production spawn remains disabled until all checks 
 - `/halloween off` and `/halloween reload` safely clean up the boss and bar.
 - Timeout does not grant victory rewards.
 - Regular mob-kill rewards are not paid for the final boss.
+
+
+## Safe model preview command
+
+Before enabling production readiness, use `/halloween modelpreview idle`, then preview each of `walk`, `attack`, `fly`, `false_sigil`, `blood_pulse`, `mirror_strike`, and `nightfall`. The temporary entity is invulnerable, has AI disabled, does not start the encounter, and is automatically removed after 10 seconds. Confirm the model renders in a real client with the resource pack accepted.
