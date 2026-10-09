@@ -46,6 +46,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private final Map<UUID, Integer> participationSeconds = new HashMap<>();
     private final Map<UUID, Double> damageContribution = new HashMap<>();
     private boolean victoryHandled;
+    private boolean testEncounter;
     private long startedAt;
     private int phase;
     private long lastAbilityAt;
@@ -265,14 +266,28 @@ public final class HalloweenVampireEncounterManager implements Listener {
         }
     }
 
+    /** Normal finale start: enforce progression, event, and model readiness. */
     public boolean startEncounter() {
-        if (!plugin.isEventEnabled()) return false;
-        if (isActive()) return false;
-        if (!plugin.getConfig().getBoolean("bosses.vampire.enabled", false)) return false;
-        if (plugin.getDataManager().isVampireDefeated()) return false;
-        if (!plugin.getBossManager().isVampireReady()) return false;
+        return startEncounter(false);
+    }
 
-        // The configured point is the arena's centre block at floor level.
+    /**
+     * Admin-only test start. Skips global progress, finale unlock, one-time defeat,
+     * the normal enable gate and the model-ready gate, but still requires an arena
+     * location and a real MythicMobs mob definition so this tests the actual boss.
+     * Test kills grant no rewards and cannot mark the finale as completed.
+     */
+    public boolean startTestEncounter() {
+        return startEncounter(true);
+    }
+
+    private boolean startEncounter(boolean testMode) {
+        if (isActive()) return false;
+        if (!testMode && !plugin.isEventEnabled()) return false;
+        if (!testMode && !plugin.getConfig().getBoolean("bosses.vampire.enabled", false)) return false;
+        if (!testMode && plugin.getDataManager().isVampireDefeated()) return false;
+        if (!testMode && !plugin.getBossManager().isVampireReady()) return false;
+
         Location location = getArenaLocation();
         if (location == null) {
             plugin.getLogger().warning("Cannot start Vampire encounter: arena centre is not configured or its world is not loaded.");
@@ -282,13 +297,15 @@ public final class HalloweenVampireEncounterManager implements Listener {
         stopModelPreview();
         LivingEntity spawned = spawnMythicMob(location);
         if (spawned == null) {
-            plugin.getLogger().severe("Cannot start Vampire encounter: MythicMobs mob '" 
-                    + plugin.getBossManager().getVampireSpec().id() + "' could not be spawned.");
+            plugin.getLogger().severe("MythicMobs could not spawn boss ID '"
+                    + plugin.getBossManager().getVampireSpec().id()
+                    + "'. Check plugins/MythicMobs/Mobs/vampire-king.yml and /mm reload.");
             return false;
         }
 
         boss = spawned;
         bossUuid = spawned.getUniqueId();
+        testEncounter = testMode;
         boss.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 1);
         startedAt = System.currentTimeMillis();
         phase = 1;
@@ -300,18 +317,23 @@ public final class HalloweenVampireEncounterManager implements Listener {
         summoningDueAt = 0L;
         summoningWarningStage = 0;
         plugin.getBossManager().trackVampireBoss(boss);
-        Bukkit.broadcastMessage(plugin.color(
-                plugin.getConfig().getString("messages.vampire-start",
-                        "&4&lHALLOWEEN &8» &fKrál upírů sestoupil do arény. &7Poražte ho společně.")
-        ));
+        if (testMode) {
+            Bukkit.broadcastMessage(plugin.color(
+                    "&c&lTEST BOSSE &8» &fKrál upírů byl vyvolán bez progresu. &7Test neodemkne finále a nedává odměny."));
+        } else {
+            Bukkit.broadcastMessage(plugin.color(
+                    plugin.getConfig().getString("messages.vampire-start",
+                            "&4&lHALLOWEEN &8» &fKrál upírů sestoupil do středu arény. &7Poražte ho společně.")
+            ));
+        }
         broadcastPhase(1);
-
         tickTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
         return true;
     }
 
     public void stopEncounter() {
         stopModelPreview();
+        testEncounter = false;
         if (tickTask != null) {
             tickTask.cancel();
             tickTask = null;
@@ -335,7 +357,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     }
 
     private void tick() {
-        if (!plugin.isEventEnabled()) {
+        if (!plugin.isEventEnabled() && !testEncounter) {
             stopEncounter();
             return;
         }
@@ -346,11 +368,15 @@ public final class HalloweenVampireEncounterManager implements Listener {
 
         int maxMinutes = Math.max(1, plugin.getConfig().getInt("bosses.vampire.encounter.max-duration-minutes", 20));
         if (System.currentTimeMillis() - startedAt >= maxMinutes * 60_000L) {
-            Bukkit.broadcastMessage(plugin.color(
-                    plugin.getConfig().getString("messages.vampire-timeout",
-                            "&4&lHALLOWEEN &8» &cKrál upírů zmizel v temnotě. Aréna je zticha.")
-            ));
-            delayNaturalSummoningAfterStop();
+            if (testEncounter) {
+                Bukkit.broadcastMessage(plugin.color("&c&lTEST BOSSE &8» &7Testovací souboj skončil časovým limitem; progress ani odměny se nemění."));
+            } else {
+                Bukkit.broadcastMessage(plugin.color(
+                        plugin.getConfig().getString("messages.vampire-timeout",
+                                "&4&lHALLOWEEN &8» &cKrál upírů zmizel v temnotě. Aréna je zticha.")
+                ));
+                delayNaturalSummoningAfterStop();
+            }
             stopEncounter();
             return;
         }
@@ -957,6 +983,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     }
 
     private void finishNoReward() {
+        testEncounter = false;
         if (tickTask != null) {
             tickTask.cancel();
             tickTask = null;
@@ -1189,6 +1216,11 @@ public final class HalloweenVampireEncounterManager implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onBossDeath(EntityDeathEvent event) {
         if (!isTrackedVampireBoss(event.getEntity())) return;
+        if (testEncounter) {
+            Bukkit.broadcastMessage(plugin.color("&a&lTEST BOSSE &8» &7Testovací Král upírů byl poražen. Progress, odměny a finále zůstaly beze změny."));
+            finishNoReward();
+            return;
+        }
         if (!plugin.isEventEnabled()) {
             finishNoReward();
             return;
