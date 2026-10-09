@@ -231,7 +231,7 @@ expected_armor_stats = {
 for item_id, required_stats in expected_armor_stats.items():
     start = config.find(f"  {item_id}:")
     section_tail = config[start + len(f"  {item_id}:"):]
-    next_item = re.search(r"(?m)^  [a-z0-9_]+:\\s*$", section_tail)
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", section_tail)
     end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
     definition = config[start:end]
     for stat in required_stats:
