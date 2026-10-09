@@ -164,7 +164,7 @@ for sound in ("haunted_theme", "event_sting"):
         fail(f"ItemsAdder sound '{sound}' missing from sounds.yml")
 
 runtime_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
-if not re.search(r"(?m)^  volume:\\s*3\\.0\\s*$", runtime_config):
+if not re.search(r"(?m)^  volume:\s*3\.0\s*$", runtime_config):
     fail("Halloween ambient volume must be configured to 3.0 (three times full-volume gain)")
 if "volume-tripled-v2-migrated: true" not in runtime_config:
     fail("Default config must declare the one-time 3x volume migration marker")
