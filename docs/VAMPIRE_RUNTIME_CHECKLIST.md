@@ -32,9 +32,11 @@ This checklist is intentionally for a test/staging server. The production boss s
 9. Pull the boss outside the arena and confirm it is returned.
 10. Check each phase at approximately 70%, 40% and 15% HP.
 11. Confirm phase abilities, sounds and particles.
-12. Kill the boss and verify the victory reward flow.
-13. Confirm the same final boss cannot be started again after victory.
-14. Restart the server and confirm the defeated state is still stored.
+12. Deal damage with melee and projectiles; verify both count toward contribution.
+13. Keep one player in the arena without attacking and confirm they cannot win the top-damage bonus.
+14. Kill the boss and verify participation, killer and top-damage rewards.
+15. Confirm the same final boss cannot be started again after victory.
+16. Restart the server and confirm the defeated state is still stored.
 
 ## Safety checks
 
