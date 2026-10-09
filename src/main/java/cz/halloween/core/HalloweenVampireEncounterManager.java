@@ -16,12 +16,15 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 public final class HalloweenVampireEncounterManager implements Listener {
     private final HalloweenCore plugin;
@@ -30,6 +33,10 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private LivingEntity boss;
     private UUID bossUuid;
     private BukkitTask tickTask;
+    private BukkitTask summoningTask;
+    private long summoningDueAt;
+    private long naturalRetryAfterAt;
+    private int summoningWarningStage;
     private final Set<UUID> participants = new HashSet<>();
     private final Map<UUID, Integer> participationSeconds = new HashMap<>();
     private final Map<UUID, Double> damageContribution = new HashMap<>();
@@ -65,6 +72,129 @@ public final class HalloweenVampireEncounterManager implements Listener {
                 && bossUuid.equals(entity.getUniqueId());
     }
 
+    public void startNaturalSummoningMonitor() {
+        if (summoningTask != null) return;
+        summoningTask = plugin.getServer().getScheduler().runTaskTimer(
+                plugin, this::tickNaturalSummoning, 20L, 20L
+        );
+    }
+
+    public void stopNaturalSummoningMonitor() {
+        if (summoningTask != null) {
+            summoningTask.cancel();
+            summoningTask = null;
+        }
+        summoningDueAt = 0L;
+        summoningWarningStage = 0;
+    }
+
+    public void delayNaturalSummoningAfterStop() {
+        summoningDueAt = 0L;
+        summoningWarningStage = 0;
+        long retryMinutes = Math.max(1L,
+                plugin.getConfig().getLong("bosses.vampire.summoning.retry-delay-minutes", 20L));
+        naturalRetryAfterAt = System.currentTimeMillis() + retryMinutes * 60_000L;
+    }
+
+    private void tickNaturalSummoning() {
+        if (!plugin.getConfig().getBoolean("bosses.vampire.summoning.automatic", true)) {
+            summoningDueAt = 0L;
+            summoningWarningStage = 0;
+            return;
+        }
+        if (!plugin.isEventEnabled()) {
+            summoningDueAt = 0L;
+            summoningWarningStage = 0;
+            return;
+        }
+        if (isActive() || plugin.getDataManager().isVampireDefeated()
+                || !plugin.getDataManager().isFinaleUnlocked()) {
+            summoningDueAt = 0L;
+            summoningWarningStage = 0;
+            return;
+        }
+        if (!plugin.getBossManager().isVampireReady()) {
+            summoningDueAt = 0L;
+            summoningWarningStage = 0;
+            return;
+        }
+
+        long eligibleOnline = Bukkit.getOnlinePlayers().stream()
+                .filter(plugin::isEligibleGameplayPlayer)
+                .count();
+        int minimumPlayers = Math.max(1,
+                plugin.getConfig().getInt("bosses.vampire.summoning.minimum-online-players", 1));
+        if (eligibleOnline < minimumPlayers) {
+            summoningDueAt = 0L;
+            summoningWarningStage = 0;
+            return;
+        }
+
+        long now = System.currentTimeMillis();
+        if (now < naturalRetryAfterAt) return;
+
+        if (summoningDueAt == 0L) {
+            long delaySeconds = Math.max(180L,
+                    plugin.getConfig().getLong("bosses.vampire.summoning.delay-after-readiness-seconds", 300L));
+            summoningDueAt = now + delaySeconds * 1000L;
+            summoningWarningStage = 0;
+            Bukkit.broadcastMessage(plugin.color(plugin.getConfig().getString(
+                    "messages.vampire-omen",
+                    "&5&lHALLOWEEN &8» &7Vzduch ztěžkl. Z hlubin arény se ozývá tlukot, který nepatří živým..."
+            )));
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!plugin.isEligibleGameplayPlayer(player)) continue;
+                player.playSound(player.getLocation(), "minecraft:ambient.cave", 0.8f, 0.55f);
+            }
+            return;
+        }
+
+        long remainingSeconds = Math.max(0L, (summoningDueAt - now + 999L) / 1000L);
+        if (remainingSeconds <= 180L && summoningWarningStage < 1) {
+            announceSummoningWarning("messages.vampire-summoning-3m",
+                    "&4&lHALLOWEEN &8» &cNad arénou se trhá závoj. Král upírů se probudí za 3 minuty.");
+            summoningWarningStage = 1;
+        }
+        if (remainingSeconds <= 60L && summoningWarningStage < 2) {
+            announceSummoningWarning("messages.vampire-summoning-1m",
+                    "&4&lHALLOWEEN &8» &cKřídla se rozevírají. Do probuzení Krále upírů zbývá minuta.");
+            summoningWarningStage = 2;
+        }
+        if (remainingSeconds <= 10L && summoningWarningStage < 3) {
+            announceSummoningWarning("messages.vampire-summoning-10s",
+                    "&4&lHALLOWEEN &8» &c10 sekund. Opusťte runy a připravte se na boj!");
+            summoningWarningStage = 3;
+        }
+        if (remainingSeconds > 0L) return;
+
+        if (startEncounter()) {
+            summoningDueAt = 0L;
+            summoningWarningStage = 0;
+            naturalRetryAfterAt = 0L;
+        } else {
+            summoningDueAt = 0L;
+            summoningWarningStage = 0;
+            long retryMinutes = Math.max(1L,
+                    plugin.getConfig().getLong("bosses.vampire.summoning.retry-delay-minutes", 20L));
+            naturalRetryAfterAt = now + retryMinutes * 60_000L;
+            plugin.getLogger().warning("Natural Vampire summoning failed. Retrying after "
+                    + retryMinutes + " minute(s); inspect /halloween boss status and the MythicMobs definition.");
+        }
+    }
+
+    private void announceSummoningWarning(String path, String fallback) {
+        Bukkit.broadcastMessage(plugin.color(plugin.getConfig().getString(path, fallback)));
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player)) continue;
+            player.sendTitle(
+                    plugin.color("&4&lKRÁL UPÍRŮ"),
+                    plugin.color(plugin.getConfig().getString(path, fallback)),
+                    5, 35, 10
+            );
+            player.playSound(player.getLocation(), "minecraft:block.bell.use", 0.75f, 0.55f);
+        }
+    }
+
     public boolean startEncounter() {
         if (!plugin.isEventEnabled()) return false;
         if (isActive()) return false;
@@ -72,17 +202,12 @@ public final class HalloweenVampireEncounterManager implements Listener {
         if (plugin.getDataManager().isVampireDefeated()) return false;
         if (!plugin.getBossManager().isVampireReady()) return false;
 
-        String worldName = plugin.getConfig().getString("bosses.vampire.arena.world", "");
-        World world = Bukkit.getWorld(worldName);
-        if (world == null) {
-            plugin.getLogger().warning("Cannot start Vampire encounter: arena world is not loaded: " + worldName);
+        // The configured point is the arena's centre block at floor level.
+        Location location = getArenaLocation();
+        if (location == null) {
+            plugin.getLogger().warning("Cannot start Vampire encounter: arena centre is not configured or its world is not loaded.");
             return false;
         }
-
-        double x = plugin.getConfig().getDouble("bosses.vampire.arena.x", 0.0D);
-        double y = plugin.getConfig().getDouble("bosses.vampire.arena.y", 100.0D);
-        double z = plugin.getConfig().getDouble("bosses.vampire.arena.z", 0.0D);
-        Location location = new Location(world, x, y, z);
 
         LivingEntity spawned = spawnMythicMob(location);
         if (spawned == null) {
@@ -101,6 +226,8 @@ public final class HalloweenVampireEncounterManager implements Listener {
         participationSeconds.clear();
         damageContribution.clear();
         victoryHandled = false;
+        summoningDueAt = 0L;
+        summoningWarningStage = 0;
         plugin.getBossManager().trackVampireBoss(boss);
         Bukkit.broadcastMessage(plugin.color(
                 plugin.getConfig().getString("messages.vampire-start",
@@ -151,6 +278,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
                     plugin.getConfig().getString("messages.vampire-timeout",
                             "&4&lHALLOWEEN &8» &cKrál upírů zmizel v temnotě. Aréna je zticha.")
             ));
+            delayNaturalSummoningAfterStop();
             stopEncounter();
             return;
         }
