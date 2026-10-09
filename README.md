@@ -11,7 +11,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - každý hráč má vlastní úroveň prokletí
 - vyšší prokletí zvyšuje základní zisk fragmentů
 - celý server má společný fragmentový progress a milníky
-- náhodně se spouští dočasné Halloween události včetně Krvavého měsíce — invaze s vlnami speciálních mobů a silným kapitánem
+- náhodně se spouští dočasné Halloween události včetně Krvavého měsíce — invaze s vlnami tří speciálních mobů každých 30 sekund (limit 16 současných event mobů v jednom světě) a silným kapitánem
 - události dávají různé násobiče podle aktivity
 - serverové milníky zkracují interval mezi náhodnými událostmi a postupně je zesilují
 - speciální Halloween mobové se mohou přirozeně objevit a dávají bonusové fragmenty
