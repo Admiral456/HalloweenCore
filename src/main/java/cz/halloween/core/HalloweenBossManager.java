@@ -55,6 +55,8 @@ public final class HalloweenBossManager {
                 && plugin.getServer().getWorlds().stream().anyMatch(world -> world.getName().equalsIgnoreCase(arenaWorld))
                 && plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false);
         ConfigurationSection model = plugin.getConfig().getConfigurationSection("bosses.vampire.model");
+        boolean mythicMobsReady = plugin.getServer().getPluginManager().getPlugin("MythicMobs") != null
+                && plugin.getServer().getPluginManager().getPlugin("MythicMobs").isEnabled();
         boolean modelPluginReady = true;
         boolean modelReady = model == null
                 || !model.getBoolean("required", true)
@@ -75,6 +77,7 @@ public final class HalloweenBossManager {
                 && spec.finalBoss()
                 && spec.arenaRequired()
                 && arenaReady
+                && mythicMobsReady
                 && modelReady
                 && modelPluginReady;
     }

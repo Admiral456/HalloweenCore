@@ -328,15 +328,17 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
         plugin.getConfig().set("bosses.vampire.arena.configured", true);
         plugin.getConfig().set("bosses.vampire.arena.world", player.getWorld().getName());
-        plugin.getConfig().set("bosses.vampire.arena.x", player.getLocation().getX());
-        plugin.getConfig().set("bosses.vampire.arena.y", player.getLocation().getY());
-        plugin.getConfig().set("bosses.vampire.arena.z", player.getLocation().getZ());
+        plugin.getConfig().set("bosses.vampire.arena.x", player.getLocation().getBlockX() + 0.5D);
+        plugin.getConfig().set("bosses.vampire.arena.y", player.getLocation().getBlockY());
+        plugin.getConfig().set("bosses.vampire.arena.z", player.getLocation().getBlockZ() + 0.5D);
         plugin.saveConfig();
 
-        player.sendMessage(plugin.color("&4HALLOWEEN &8» &aAréna Krále upírů nastavena."));
+        player.sendMessage(plugin.color("&4HALLOWEEN &8» &aStřed arény Krále upírů nastaven."));
         player.sendMessage(plugin.color("&7Svět: &e" + player.getWorld().getName()));
-        player.sendMessage(plugin.color("&7Pozice: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
-                player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ())));
+        player.sendMessage(plugin.color("&7Středový bod: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
+                player.getLocation().getBlockX() + 0.5D, (double) player.getLocation().getBlockY(),
+                player.getLocation().getBlockZ() + 0.5D)));
+        player.sendMessage(plugin.color("&7Tento blok je přesný spawn point. Příkaz použij uprostřed arény na její podlaze."));
         return true;
     }
 
@@ -387,7 +389,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 encounter.stopEncounter();
-                sender.sendMessage(plugin.color("&aEncounter Krále upírů byl zastaven."));
+                encounter.delayNaturalSummoningAfterStop();
+                sender.sendMessage(plugin.color("&aEncounter Krále upírů byl zastaven. Automatické vyvolání je dočasně odloženo."));
             }
             default -> sender.sendMessage(plugin.color("&cPoužití: /halloween boss <status|start|stop>"));
         }

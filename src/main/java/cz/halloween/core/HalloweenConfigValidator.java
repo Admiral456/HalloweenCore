@@ -157,13 +157,34 @@ public final class HalloweenConfigValidator {
                 if (participationReward < 0L || victoryReward < 0L || topBonus < 0L) {
                     errors.add("vampire encounter rewards must be >= 0");
                 }
+                double minimumDamagePercent = encounter.getDouble("minimum-damage-percent", 2.5D);
+                if (minimumDamagePercent < 0.0D || minimumDamagePercent > 100.0D) {
+                    errors.add("vampire encounter minimum-damage-percent must be between 0 and 100");
+                }
+
+                ConfigurationSection summoning = vampire.getConfigurationSection("summoning");
+                if (summoning != null) {
+                    long delaySeconds = summoning.getLong("delay-after-readiness-seconds", 300L);
+                    long retryMinutes = summoning.getLong("retry-delay-minutes", 20L);
+                    int minimumPlayers = summoning.getInt("minimum-online-players", 1);
+                    if (delaySeconds < 180L || delaySeconds > 3600L) {
+                        errors.add("vampire summoning delay-after-readiness-seconds must be between 180 and 3600");
+                    }
+                    if (retryMinutes < 1L || retryMinutes > 180L) {
+                        errors.add("vampire summoning retry-delay-minutes must be between 1 and 180");
+                    }
+                    if (minimumPlayers < 1 || minimumPlayers > 100) {
+                        errors.add("vampire summoning minimum-online-players must be between 1 and 100");
+                    }
+                }
 
                 ConfigurationSection abilities = encounter.getConfigurationSection("abilities");
                 if (abilities != null) {
+                    long phase1Cooldown = abilities.getLong("phase-1-cooldown-seconds", 14L);
                     long phase2Cooldown = abilities.getLong("phase-2-cooldown-seconds", -1L);
                     long phase3Cooldown = abilities.getLong("phase-3-cooldown-seconds", -1L);
                     long phase4Cooldown = abilities.getLong("phase-4-cooldown-seconds", -1L);
-                    if (phase2Cooldown < 4L || phase3Cooldown < 4L || phase4Cooldown < 3L) {
+                    if (phase1Cooldown < 8L || phase2Cooldown < 6L || phase3Cooldown < 6L || phase4Cooldown < 6L) {
                         errors.add("vampire encounter ability cooldowns are too low");
                     }
                     if (abilities.getDouble("target-radius-blocks", -1.0D) < 16.0D) {

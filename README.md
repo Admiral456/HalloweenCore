@@ -22,9 +22,10 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - během eventu běží atmosférická smyčka zvuku
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
-- Maska nočního lovce dává při nošení +5 % k zisku fragmentů
-- Prokletý talisman dává při držení +10 % k zisku fragmentů
-- po dosažení globálního cíle se natrvalo odemkne serverové finále pro budoucího hlavního bosse
+- Maska nočního lovce dává při nošení +5 % k zisku fragmentů; stojí 4 000 fragmentů a vyžaduje prokletí 3
+- Prokletý talisman dává při držení +10 % k zisku fragmentů; stojí 15 000 fragmentů a vyžaduje prokletí 5
+- limitovaný token Halloween 2026 stojí 30 000 fragmentů a vyžaduje prokletí 5
+- po dosažení globálního cíle se natrvalo odemkne serverové finále
 - hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
 
 ## Příkazy
@@ -56,7 +57,11 @@ Král upírů má připravený vlastní boss bar: HP bar, jméno bosse, automati
 
 ## Vampire encounter assets
 
-V základním repozitáři je připravený dormantní MythicMobs definition `mythicmobs/mobs/vampire-king.yml`. Vlastní 3D model je řízen odděleně přes ModelEngine; dokud není `model.ready: true` a ModelEngine nainstalovaný, finální encounter se nespustí. MythicMobs boss bar je záměrně vypnutý, protože HP/účast/fáze řídí HalloweenCore vlastním boss barem.
+V základním repozitáři je připravený dormantní MythicMobs definition `mythicmobs/mobs/vampire-king.yml`. Vlastní 3D model je řízen přes ModelEngine; dokud není `model.ready: true`, MythicMobs a ModelEngine dostupné a aréna nastavená, finální encounter se nespustí.
+
+Jakmile je finále odemčené a vše připravené, HalloweenCore přirozeně spustí znamení a pětiminutové varování. Potom bosse automaticky vyvolá přesně ve středu arény; příkaz `/halloween boss start` zůstává pouze pro admin testy. Útoky mají výrazné telegraphy a hráč je může přečíst a uhnout jim: Falešná kořist, Krvavý puls, Zrcadlový výpad se třemi klamnými runami a Zatmění s matoucími kruhy.
+
+Odměny jsou nastavené jako výzva: účast vyžaduje nejméně 120 sekund v dosahu i způsobení alespoň 2,5 % maximálního zdraví bosse. Top bonus získá pouze kvalifikovaný hráč s nejvyšším poškozením, nikoliv hráč, který jen stál v aréně.
 
 ## PlaceholderAPI
 

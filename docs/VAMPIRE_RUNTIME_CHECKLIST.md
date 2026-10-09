@@ -21,22 +21,23 @@ This checklist is intentionally for a test/staging server. The production boss s
 
 ## Arena / encounter
 
-1. Set the arena with `/halloween setvampirearena`.
+1. Stand on the central floor block and run `/halloween setvampirearena`; confirm saved X/Z end in .5 and Y is floor-level.
 2. Verify the world is loaded.
-3. Verify `/halloween boss status` says the encounter is waiting for final readiness.
+3. Verify `/halloween boss status` reports final readiness.
 4. Only after the model is verified, enable the boss and set `model.ready: true` in a test environment.
-5. Run `/halloween boss start`.
-6. Confirm exactly one Vampire entity is spawned.
+5. Unlock the global finale and wait through the omen/countdown; no admin spawn command should be needed.
+6. Confirm exactly one Vampire entity spawns at the configured centre; `/halloween boss start` is admin-only test override.
 7. Confirm the custom boss bar appears to nearby eligible players.
 8. Walk outside the boss-bar radius and confirm the bar disappears.
 9. Pull the boss outside the arena and confirm it is returned.
 10. Check each phase at approximately 70%, 40% and 15% HP.
-11. Confirm phase abilities, sounds and particles.
-12. Deal damage with melee and projectiles; verify both count toward contribution.
-13. Keep one player in the arena without attacking and confirm they cannot win the top-damage bonus.
-14. Kill the boss and verify participation, killer and top-damage rewards.
-15. Confirm the same final boss cannot be started again after victory.
-16. Restart the server and confirm the defeated state is still stored.
+11. Confirm phase I sigils, phase II blood pulse, phase III three deceptive runes and phase IV outer-ring telegraph.
+12. Move out of each marked danger zone and confirm the delayed strike misses.
+13. Deal damage with melee and projectiles; verify both count toward contribution.
+14. Keep one player near the arena without attacking and confirm they do not qualify for participation or top-damage rewards.
+15. Kill the boss and verify only players meeting time and damage thresholds are rewarded.
+16. Confirm the same final boss cannot be started again after victory.
+17. Restart the server and confirm the defeated state is still stored.
 
 ## Safety checks
 

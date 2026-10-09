@@ -73,6 +73,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
+        vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
         passiveEffectManager.start();
 
@@ -90,7 +91,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
-        if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
+        if (vampireEncounterManager != null) {
+            vampireEncounterManager.stopNaturalSummoningMonitor();
+            vampireEncounterManager.stopEncounter();
+        }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (dataManager != null) dataManager.save();
     }
