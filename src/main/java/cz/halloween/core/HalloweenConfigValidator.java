@@ -92,6 +92,34 @@ public final class HalloweenConfigValidator {
         if (mapChance < 0.0D || mapChance > 1.0D) {
             errors.add("special-mobs.map-drop-chance must be between 0 and 1");
         }
+        ConfigurationSection specialMobTypes = plugin.getConfig().getConfigurationSection("special-mobs.types");
+        if (specialMobTypes != null) {
+            for (String id : specialMobTypes.getKeys(false)) {
+                ConfigurationSection mob = specialMobTypes.getConfigurationSection(id);
+                if (mob == null) continue;
+                long cooldown = mob.getLong("ability-cooldown-seconds", 8L);
+                if (cooldown < 1L || cooldown > 300L) {
+                    errors.add("special-mobs.types." + id + ".ability-cooldown-seconds must be between 1 and 300");
+                }
+                if (mob.contains("grave-mark-delay-ticks")) {
+                    long delay = mob.getLong("grave-mark-delay-ticks", 24L);
+                    double radius = mob.getDouble("grave-mark-radius-blocks", 1.5D);
+                    if (delay < 10L || delay > 100L) {
+                        errors.add("special-mobs.types." + id + ".grave-mark-delay-ticks must be between 10 and 100");
+                    }
+                    if (radius < 0.5D || radius > 8.0D) {
+                        errors.add("special-mobs.types." + id + ".grave-mark-radius-blocks must be between 0.5 and 8");
+                    }
+                }
+                if (mob.contains("ash-flash-radius-blocks")) {
+                    double radius = mob.getDouble("ash-flash-radius-blocks", 5.0D);
+                    if (radius < 2.0D || radius > 16.0D) {
+                        errors.add("special-mobs.types." + id + ".ash-flash-radius-blocks must be between 2 and 16");
+                    }
+                }
+            }
+        }
+
         String mapItemId = plugin.getConfig().getString("special-mobs.map-item-id", "");
         if (mapItemId.isBlank() || !mapItemId.contains(":")) {
             errors.add("special-mobs.map-item-id should use namespace:id");
