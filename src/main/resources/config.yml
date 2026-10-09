@@ -32,6 +32,8 @@ rewards:
   mining:
     enabled: true
     fragments: 1
+    # Hard cap per player; helps keep block-reset farms and macros from flooding server progress.
+    max-fragment-rewards-per-minute: 45
     blocks:
       - COAL_ORE
       - DEEPSLATE_COAL_ORE
@@ -54,6 +56,7 @@ rewards:
   farming:
     enabled: true
     fragments: 2
+    max-fragment-rewards-per-minute: 80
     require-mature: true
     blocks:
       - WHEAT
@@ -69,6 +72,8 @@ rewards:
   fishing:
     enabled: true
     fragments: 2
+    # Prevents extremely fast automated catch loops from dominating fragment progression.
+    max-fragment-rewards-per-minute: 12
 
   passive-effects:
     enabled: true

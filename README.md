@@ -7,6 +7,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 ## Aktuální herní smyčka
 
 - hráč získává Halloween fragmenty za PvE, těžbu, farmení a rybaření
+- těžba, sklizeň a rybaření mají nastavitelné minutové limity, aby je nešlo snadno zneužít automatizovanými farmami
 - každý hráč má vlastní úroveň prokletí
 - vyšší prokletí zvyšuje základní zisk fragmentů
 - celý server má společný fragmentový progress a milníky
