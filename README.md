@@ -103,6 +103,7 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 ## Halloween hudba a obloha
 
 - `scripts/generate_halloween_audio.py` generuje originální 64sekundovou ambientní smyčku a 5sekundový event cue jako mono OGG/Vorbis; potřebuje Python standard library a `ffmpeg`.
+- Interval přehrávání je nastavitelný přes `atmosphere.loop-milliseconds` (výchozí `64000`); po získání licence ke skladbě „Freaky Halloween“ (2:07) lze nastavit přibližně `127389`. Hudba se přehrává v kategorii MUSIC a jako zdroj navázaný na hráče, aby se při pohybu neztrácela.
 - ItemsAdder zvuky jsou registrované v `itemsadder/contents/warriorland_halloween/configs/sounds.yml`. Plugin používá `warriorland_halloween:haunted_theme` pro atmosféru a `warriorland_halloween:event_sting` na začátku náhodného eventu.
 - Ambientní hudba se spouští hned po připojení a opakuje se samostatně každému hráči podle délky 64sekundového souboru; při odchodu nebo vypnutí eventu se jeho přehrávací úloha zruší, aby nevznikala překrývající se hudba.
 - CI vytvoří ke stažení artefakt `WarriorLand-Halloween-ItemsAdder.zip` včetně zvuků.
