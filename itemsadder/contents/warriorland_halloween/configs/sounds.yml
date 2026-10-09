@@ -1,0 +1,20 @@
+info:
+  namespace: warriorland_halloween
+
+minecraft_lang_overwrite:
+  halloween_sounds:
+    entries:
+      sound.haunted_theme: "Halloween ambient theme"
+      sound.event_sting: "Halloween event sting"
+    languages:
+      - ALL
+
+sounds:
+  haunted_theme:
+    path: haunted_theme
+    settings:
+      subtitle: sound.haunted_theme
+  event_sting:
+    path: event_sting
+    settings:
+      subtitle: sound.event_sting
