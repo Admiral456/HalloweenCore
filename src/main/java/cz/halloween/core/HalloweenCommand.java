@@ -706,8 +706,28 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
     private boolean reload(CommandSender sender) {
         if (!checkAdmin(sender)) return true;
+
         plugin.reloadEventConfig();
         sender.sendMessage(plugin.message("messages.reloaded"));
+        sender.sendMessage(plugin.color(plugin.isEventEnabled()
+                ? "&6HALLOWEEN &8» &aKonfigurace načtena. Hudba a dekorace obnoveny; první event je naplánovaný přibližně za "
+                    + Math.max(5, plugin.getConfig().getInt("random-events.start-delay-seconds", 30)) + " sekund."
+                : "&6HALLOWEEN &8» &eKonfigurace načtena, ale Halloween je vypnutý v config.yml."));
+
+        var itemsAdder = Bukkit.getPluginManager().getPlugin("ItemsAdder");
+        if (itemsAdder != null && itemsAdder.isEnabled()) {
+            Bukkit.getScheduler().runTask(plugin, () -> {
+                boolean started = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
+                if (started) {
+                    sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl spuštěn pro sestavení aktuálního resource packu."));
+                    sender.sendMessage(plugin.color("&7Doručení packu hráčům závisí na funkčním hostingu ItemsAdderu. Pro shader změny se znovu připoj do Minecraftu."));
+                } else {
+                    sender.sendMessage(plugin.color("&cItemsAdder pack se nepodařilo spustit. Spusť /iazip ručně v konzoli."));
+                }
+            });
+        } else {
+            sender.sendMessage(plugin.color("&eItemsAdder není zapnutý; plugin a event konfigurace se načetly, ale resource pack se nesestavil."));
+        }
         return true;
     }
 
