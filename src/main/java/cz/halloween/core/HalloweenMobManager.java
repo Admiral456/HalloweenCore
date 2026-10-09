@@ -8,6 +8,7 @@ import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -20,8 +21,13 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class HalloweenMobManager implements Listener {
@@ -30,6 +36,7 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey relicKey;
     private final NamespacedKey eventMobKey;
     private final NamespacedKey abilityCooldownKey;
+    private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
     public HalloweenMobManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -41,13 +48,10 @@ public final class HalloweenMobManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSpawn(CreatureSpawnEvent event) {
-        if (!plugin.isEventEnabled()) return;
-        if (!plugin.getConfig().getBoolean("special-mobs.enabled", true)) return;
+        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("special-mobs.enabled", true)) return;
         if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.NATURAL
                 && event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.REINFORCEMENTS
-                && event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.PATROL) {
-            return;
-        }
+                && event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.PATROL) return;
 
         LivingEntity entity = event.getEntity();
         if (!plugin.isEligibleGameplayWorld(entity.getWorld())) return;
@@ -59,12 +63,13 @@ public final class HalloweenMobManager implements Listener {
             case WITCH -> "hex-witch";
             default -> null;
         };
-
         if (mobId == null) return;
 
-        double chance = Math.max(0.0D, Math.min(1.0D, plugin.getConfig().getDouble("special-mobs.chance", 0.04D)));
+        double chance = Math.max(0.0D, Math.min(1.0D,
+                plugin.getConfig().getDouble("special-mobs.chance", 0.04D)));
         int phase = plugin.getEventManager() == null ? 0 : plugin.getEventManager().getGlobalPhase();
-        double phaseBonus = Math.max(0.0D, plugin.getConfig().getDouble("special-mobs.phase-bonus-chance", 0.005D));
+        double phaseBonus = Math.max(0.0D,
+                plugin.getConfig().getDouble("special-mobs.phase-bonus-chance", 0.005D));
         chance = Math.min(1.0D, chance + phase * phaseBonus);
         if (plugin.getEventManager() != null && plugin.getEventManager().getActiveEventId() != null) {
             chance = Math.min(1.0D, chance * Math.max(1.0D,
@@ -72,7 +77,31 @@ public final class HalloweenMobManager implements Listener {
         }
         if (ThreadLocalRandom.current().nextDouble() > chance) return;
 
+        // If the ModelEngine pack is installed, replace the natural vanilla mob with
+        // its distinct textured MythicMob at the same location.
+        LivingEntity modeled = spawnMythicModelMob(entity.getLocation(), mobId);
+        if (modeled != null) {
+            configureSpecialMob(modeled, mobId);
+            event.setCancelled(true);
+            return;
+        }
         configureSpecialMob(entity, mobId);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void applyBloodMoonDamageMultiplier(EntityDamageByEntityEvent event) {
+        if (!plugin.isEventEnabled() || plugin.getEventManager() == null
+                || !plugin.getEventManager().isActive("blood-moon-invasion")) return;
+        if (!(event.getEntity() instanceof Player target)
+                || !plugin.isEligibleGameplayPlayer(target)
+                || !plugin.isEligibleGameplayWorld(target.getWorld())) return;
+
+        LivingEntity attacker = resolveLivingAttacker(event.getDamager());
+        if (!(attacker instanceof Monster)) return;
+
+        double multiplier = Math.max(1.0D, Math.min(5.0D,
+                plugin.getConfig().getDouble("random-events.blood-moon-damage-multiplier", 3.0D)));
+        event.setDamage(event.getDamage() * multiplier);
     }
 
 
