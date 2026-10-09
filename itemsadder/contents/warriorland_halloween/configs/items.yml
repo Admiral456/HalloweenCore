@@ -118,8 +118,8 @@ items:
     name: "&4&lKrvavý meč"
     lore:
       - "&7Legendární zbraň Krvavého strážce."
-      - "&c15+ útoku — výrazně nad netheritovým mečem."
-      - "&7Útok 15+ • vyšší rychlost • výdrž 5 000."
+      - "&cÚtokový modifier 15 • rychlostní modifier 0,8."
+      - "&7Výdrž 5 000. Lze enchantovat Sharpness, Looting a Mending."
       - "&aLze enchantovat: Sharpness, Looting, Mending..."
     material: NETHERITE_SWORD
     components_nbt_file: "crimson_warden_sword.json"
@@ -136,8 +136,8 @@ items:
     name: "&4&lKrumpáč Krvavého strážce"
     lore:
       - "&7Legendární krumpáč pro hluboké doly."
-      - "&cRychlost těžby 14 — nad netherit."
-      - "&7Útok 10+ • těžba 14 • výdrž 5 000."
+      - "&cTěžba rychlostí 14 • útokový modifier 10."
+      - "&7Rychlostní modifier 0,8 • výdrž 5 000."
       - "&aLze enchantovat: Efficiency, Fortune, Silk Touch, Mending..."
     material: NETHERITE_PICKAXE
     components_nbt_file: "crimson_warden_pickaxe.json"
@@ -154,8 +154,8 @@ items:
     name: "&4&lSekera Krvavého strážce"
     lore:
       - "&7Legendární sekera s krvavým ostřím."
-      - "&cÚtok 14+ — nad netherit."
-      - "&7Útok 14+ • rychlejší těžba • výdrž 5 000."
+      - "&cÚtokový modifier 14 • rychlostní modifier 0,6."
+      - "&7Těžba rychlostí 14 • výdrž 5 000."
       - "&aLze enchantovat: Sharpness, Efficiency, Unbreaking, Mending..."
     material: NETHERITE_AXE
     components_nbt_file: "crimson_warden_axe.json"
@@ -172,8 +172,8 @@ items:
     name: "&4&lLopatka Krvavého strážce"
     lore:
       - "&7Legendární lopatka na rychlé kopání."
-      - "&cRychlost těžby 14 — nad netherit."
-      - "&7Útok 10+ • těžba 14 • výdrž 4 500."
+      - "&cTěžba rychlostí 14 • útokový modifier 10."
+      - "&7Rychlostní modifier 0,8 • výdrž 4 500."
       - "&aLze enchantovat: Efficiency, Silk Touch, Unbreaking, Mending..."
     material: NETHERITE_SHOVEL
     components_nbt_file: "crimson_warden_shovel.json"
@@ -190,8 +190,8 @@ items:
     name: "&4&lMotyka Krvavého strážce"
     lore:
       - "&7Legendární motyka se zpevněným ostřím."
-      - "&cÚtok 7+ • rychlejší těžba než netherit."
-      - "&7Útok 7+ • těžba 14 • výdrž 4 500."
+      - "&cÚtokový modifier 7 • rychlostní modifier 1,0."
+      - "&7Těžba rychlostí 14 • výdrž 4 500."
       - "&aLze enchantovat: Efficiency, Fortune, Silk Touch, Mending..."
     material: NETHERITE_HOE
     components_nbt_file: "crimson_warden_hoe.json"
