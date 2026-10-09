@@ -165,6 +165,61 @@ rewards:
         - "&c+1 bod brnění, vyšší odolnost."
         - "&8Enchantovatelné jako netherit."
 
+    crimson-warden-sword:
+      cost: 26000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:crimson_warden_sword"
+      material: NETHERITE_SWORD
+      amount: 1
+      name: "&4&lMeč Krvavého strážce"
+      lore:
+        - "&cSilnější a rychlejší než netheritový meč."
+        - "&7Trvanlivost 2700; enchantovatelný."
+
+    crimson-warden-pickaxe:
+      cost: 22000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:crimson_warden_pickaxe"
+      material: NETHERITE_PICKAXE
+      amount: 1
+      name: "&4&lKrvavý krumpáč"
+      lore:
+        - "&cSilnější a odolnější než netheritový krumpáč."
+        - "&7Trvanlivost 3200; enchantovatelný."
+
+    crimson-warden-axe:
+      cost: 19000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:crimson_warden_axe"
+      material: NETHERITE_AXE
+      amount: 1
+      name: "&4&lSekera Krvavého strážce"
+      lore:
+        - "&cVyšší poškození a rychlejší útok než netherit."
+        - "&7Trvanlivost 3000; enchantovatelná."
+
+    crimson-warden-shovel:
+      cost: 14000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:crimson_warden_shovel"
+      material: NETHERITE_SHOVEL
+      amount: 1
+      name: "&4&lLopata Krvavého strážce"
+      lore:
+        - "&cSilnější a odolnější než netheritová lopata."
+        - "&7Trvanlivost 2800; enchantovatelná."
+
+    crimson-warden-hoe:
+      cost: 16000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:crimson_warden_hoe"
+      material: NETHERITE_HOE
+      amount: 1
+      name: "&4&lMotyka Krvavého strážce"
+      lore:
+        - "&cVyšší poškození, svižnější útok a delší výdrž."
+        - "&7Trvanlivost 2700; enchantovatelná."
+
 haunted-village:
   enabled: false
   world: ""
