@@ -47,6 +47,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private long startedAt;
     private int phase;
     private long lastAbilityAt;
+    private boolean modelAnimationWarningLogged;
 
     public HalloweenVampireEncounterManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -342,6 +343,10 @@ public final class HalloweenVampireEncounterManager implements Listener {
         }
 
         phase = nextPhase;
+        if (phase == 4) {
+            // The final phase adds the looping wing/fly animation; attack animations can layer over it.
+            playBossModelAnimation("fly");
+        }
         broadcastPhase(phase);
         maintainPhaseEffects();
     }
@@ -652,6 +657,8 @@ public final class HalloweenVampireEncounterManager implements Listener {
         Player target = selectTarget();
         if (target == null) return;
 
+        // Play the authored one-shot model animation before the matching telegraph and impact callback.
+        playBossModelAnimation("attack");
         switch (phase) {
             case 1 -> falseSigil(target);
             case 2 -> bloodPulse(target);
@@ -958,6 +965,57 @@ public final class HalloweenVampireEncounterManager implements Listener {
         plugin.getDataManager().markVampireDefeated();
         plugin.getDataManager().save();
         stopEncounter();
+    }
+
+    /**
+     * Plays a Blockbench animation on the ModelEngine model attached by the MythicMobs spawn skill.
+     * Reflection keeps HalloweenCore loadable when ModelEngine is not installed; the finale readiness
+     * gate still prevents production spawning until the model has been verified on a real client.
+     */
+    private boolean playBossModelAnimation(String animation) {
+        if (boss == null || !boss.isValid() || boss.isDead()) return false;
+        if (animation == null || animation.isBlank()) return false;
+        if (plugin.getServer().getPluginManager().getPlugin("ModelEngine") == null
+                || !plugin.getServer().getPluginManager().isPluginEnabled("ModelEngine")) {
+            return false;
+        }
+        try {
+            Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
+            Object modeledEntity = apiClass.getMethod("getModeledEntity", Entity.class).invoke(null, boss);
+            if (modeledEntity == null) return false;
+
+            // Invoke methods through public API interfaces rather than implementation classes,
+            // which may be package-private in a given ModelEngine build.
+            Class<?> modeledEntityApi = Class.forName("com.ticxo.modelengine.api.model.ModeledEntity");
+            Object modelResult = modeledEntityApi.getMethod("getModel", String.class)
+                    .invoke(modeledEntity, "vampire_king");
+            if (!(modelResult instanceof Optional<?> modelOptional) || modelOptional.isEmpty()) return false;
+
+            Object activeModel = modelOptional.get();
+            Class<?> activeModelApi = Class.forName("com.ticxo.modelengine.api.model.ActiveModel");
+            Object handler = activeModelApi.getMethod("getAnimationHandler").invoke(activeModel);
+            Class<?> handlerApi = Class.forName("com.ticxo.modelengine.api.animation.handler.AnimationHandler");
+            Method playAnimation;
+            try {
+                playAnimation = handlerApi.getMethod("playAnimation",
+                        String.class, double.class, double.class, double.class, boolean.class);
+            } catch (NoSuchMethodException ex) {
+                if (!modelAnimationWarningLogged) {
+                    plugin.getLogger().warning("ModelEngine is present but its animation API does not expose the expected playAnimation(String,double,double,double,boolean) method.");
+                    modelAnimationWarningLogged = true;
+                }
+                return false;
+            }
+            Object result = playAnimation.invoke(handler, animation, 0.08D, 0.12D, 1.0D, true);
+            return result != null;
+        } catch (ReflectiveOperationException | RuntimeException ex) {
+            if (!modelAnimationWarningLogged) {
+                plugin.getLogger().warning("Could not trigger Vampire King model animation '" + animation
+                        + "': " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
+                modelAnimationWarningLogged = true;
+            }
+            return false;
+        }
     }
 
     private LivingEntity spawnMythicMob(Location location) {
