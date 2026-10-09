@@ -169,3 +169,8 @@ Mezi náhodnými událostmi je nově i invaze. Během ní se v okolí aktivních
 ## Tajné objevy a easter eggy
 
 Tři definice skrytých míst jsou v `secret-discoveries.locations`: `blood-altar`, `witch-den` a `forgotten-grave`. Administrátor se postaví na přesné místo a nastaví ho příkazem `/halloween setsecret <id>`. Hráč příkazem `/halloween secrets` uvidí počet objevených míst a textové nápovědy k dosud nalezeným tajemstvím — nikdy ne jejich souřadnice. Po vstupu do blízkosti místa se tajemství uloží do `plugins/HalloweenCore/data.yml` a hráč obdrží jednorázovou fragmentovou odměnu. Nálezy zůstávají uložené po restartu serveru.
+
+
+## Synchronizace animací bosse
+
+Encounter při každém speciálním útoku vyvolá jednorázovou animaci `attack` na aktivním modelu ModelEngine ještě před dokončením telegraphu a vyhodnocením zásahu. Při vstupu do čtvrté fáze navíc spustí smyčkovou animaci `fly`, která může běžet souběžně s útoky. Volání používá reflexi, takže plugin nemá tvrdou závislost na ModelEngine při startu; pokud API neodpovídá očekávanému rozhraní, zaznamená pouze jedno varování. Produkční test musí potvrdit skutečný klientský render.

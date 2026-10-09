@@ -11,3 +11,7 @@ VampireKingAttack:
 VampireKingBloodMark:
   Skills:
   - effect:particles{p=reddust;color=#7A0019;amount=18;hS=0.6;vS=0.5;speed=0.01} @self
+
+VampireKingFly:
+  Skills:
+  - state{mid=vampire_king;s=fly;li=3;lo=3;loop=LOOP} @self
