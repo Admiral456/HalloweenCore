@@ -161,7 +161,25 @@ V repozitáři je připravený namespace `warriorland_halloween`:
 Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack přes `/iazip`.
 
 
-### Boss placeholders
+### Krvavý strážce — statistiky gearu
+
+Všechny kusy mají vlastní původní černo-karmínové PNG ikony; zbroj navíc používá stávající custom layer_1/layer_2 atlasy.
+
+| Kus | Statistika | Netherite baseline | Nastavení HalloweenCore |
+|---|---|---|---|
+| Helma | Brnění / výdrž | 3 / 407 | 4 / 900 |
+| Kyrys | Brnění / výdrž | 8 / 592 | 9 / 1 300 |
+| Nohavice | Brnění / výdrž | 6 / 555 | 7 / 1 150 |
+| Boty | Brnění / výdrž | 3 / 481 | 4 / 950 |
+| Meč | Útokový modifier / výdrž | vanilla Netherite / 2 031 | 15.0 / 5 000 |
+| Krumpáč | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 10.0 / 14 / 5 000 |
+| Sekera | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 14.0 / 14 / 5 000 |
+| Lopatka | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 10.0 / 14 / 4 500 |
+| Motyka | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 7.0 / 14 / 4 500 |
+
+Každý kus zbroje má navíc +1 bod brnění: celá sada tedy cílí na 24 bodů místo 20 u běžného Netheritu. Meč má attack-damage modifier 15.0 (nad požadovanými 12); přesný výsledný údaj v tooltipu/hit závisí na aplikaci komponent ItemsAdderem, základním atributu hráče a attack cooldownu. Zbroj, meč a nástroje používají moderní item component JSON s enchantability 25; krumpáč, sekera, lopatka a motyka mají navíc tool komponent rychlosti 14 pro správné blokové tagy. Talisman stojí 1 000 000 fragmentů a při držení v ruce nebo offhandu přidává +20 max HP (jeden celý řádek srdcí).
+
+## Boss placeholders
 
 - `%halloween_vampire_boss_active%` — běží encounter
 - `%halloween_vampire_boss_phase%` — aktuální fáze 1–4
@@ -171,7 +189,7 @@ Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack p�
 
 ### Hudba a licence
 
-Halloween soundtrack není AI-generovaný. Připravený sound ID je `halloween:haunted_theme`; pro resource pack počítáme s hudbou pod **CC0** s dohledatelným původem. Momentálně je v repozitáři pouze licence/source záznam, ne samotný audio soubor.
+Halloween soundtrack je **Spooky Fester** od Eldritch Grim z OpenGameArt (CC0); CI jej stáhne a převede do OGG při sestavení packu. Aktuální ID je `warriorland_halloween:haunted_theme`. Hlavní ambient má nakonfigurovaný gain 3.0 (Bukkit volume multiplier), běží v kategorii AMBIENT a server každou sekundu zastavuje vanilla kategorii MUSIC. Resource pack má přepsané 31 běžných událostí vanilla hudby na tichý OGG soubor. Pokud se přesto hraje klasická hudba, nejprve ověř, že hráč skutečně obdržel nový pack přes ItemsAdder — samotný serverový kód nedokáže přepsat zvuk z jiného klientského/resource packu.
 
 ## Build
 
@@ -193,7 +211,7 @@ Repozitář obsahuje editovatelný Blockbench blueprint `mythicmobs/models/vampi
 
 ## Generování upíří arény
 
-Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 45 bloků, obvodovou zeď s průchody, osm věží se soul lanternami a krvavý runový vzor. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, stejné načtené světlo a volný prostor nad podlahou. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Horní vrstva terénu v kruhu se po potvrzení nahradí novou podlahou.
+Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 97 bloků, šest soustředných runových kruhů, obvodové cimbuří, osm gotických věží, čtyři monumentální brány a osm vnitřních obelisků. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, načtené chunky, volný prostor nad podlahou a terén bez hlubokých proláklin. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Po potvrzení se v kruhu o poloměru 48 bloků upraví povrch terénu a vytvoří nová podlaha. Před spuštěním si udělej zálohu světa.
 
 
 ## Krvavý měsíc — invaze
