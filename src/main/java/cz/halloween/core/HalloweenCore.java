@@ -27,6 +27,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
     private HalloweenVillageDiscoveryManager villageDiscoveryManager;
+    private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
 
     @Override
@@ -47,6 +48,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
         villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
+        secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
 
         for (String error : HalloweenConfigValidator.validate(this)) {
@@ -61,6 +63,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new HalloweenItemListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenRewardMenuListener(this), this);
         getServer().getPluginManager().registerEvents(villageDiscoveryManager, this);
+        getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
 
@@ -189,6 +192,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenVampireEncounterManager getVampireEncounterManager() {
         return vampireEncounterManager;
+    }
+
+    public HalloweenSecretDiscoveryManager getSecretDiscoveryManager() {
+        return secretDiscoveryManager;
     }
 
     public void notifyFragmentGain(UUID playerId, long amount) {
