@@ -108,6 +108,91 @@ items:
       slot_attribute_modifiers:
         armor: 1
 
+  crimson_warden_sword:
+    name: "&4&lMeč Krvavého strážce"
+    lore:
+      - "&8Kovaná čepel z černého železa a rudých run."
+      - "&cVyšší poškození a rychlejší úder než netherit."
+      - "&7Trvanlivost: 2700"
+      - "&aLze normálně enchantovat."
+    material: NETHERITE_SWORD
+    graphics:
+      texture: item/crimson_warden_sword
+    durability:
+      max_durability: 2700
+    attribute_modifiers:
+      mainhand:
+        attackDamage: 10
+        attackSpeed: -2.0
+
+  crimson_warden_pickaxe:
+    name: "&4&lKrvavý krumpáč"
+    lore:
+      - "&8Černý hrot protkaný rudými runami."
+      - "&cOdolnější a silnější než netheritový krumpáč."
+      - "&7Trvanlivost: 3200"
+      - "&aLze enchantovat včetně Efficiency, Unbreaking a Mending."
+    material: NETHERITE_PICKAXE
+    graphics:
+      texture: item/crimson_warden_pickaxe
+    durability:
+      max_durability: 3200
+    attribute_modifiers:
+      mainhand:
+        attackDamage: 8
+        attackSpeed: -2.2
+
+  crimson_warden_axe:
+    name: "&4&lSekera Krvavého strážce"
+    lore:
+      - "&8Dvojitá čepel s rubínovým jádrem."
+      - "&cVyšší poškození a svižnější útok než netherit."
+      - "&7Trvanlivost: 3000"
+      - "&aLze normálně enchantovat."
+    material: NETHERITE_AXE
+    graphics:
+      texture: item/crimson_warden_axe
+    durability:
+      max_durability: 3000
+    attribute_modifiers:
+      mainhand:
+        attackDamage: 12
+        attackSpeed: -2.6
+
+  crimson_warden_shovel:
+    name: "&4&lLopata Krvavého strážce"
+    lore:
+      - "&8Rituální rydlo s rubínem na konci rukojeti."
+      - "&cOdolnější a silnější než netheritová lopata."
+      - "&7Trvanlivost: 2800"
+      - "&aLze enchantovat včetně Efficiency, Unbreaking a Mending."
+    material: NETHERITE_SHOVEL
+    graphics:
+      texture: item/crimson_warden_shovel
+    durability:
+      max_durability: 2800
+    attribute_modifiers:
+      mainhand:
+        attackDamage: 8
+        attackSpeed: -2.3
+
+  crimson_warden_hoe:
+    name: "&4&lMotyka Krvavého strážce"
+    lore:
+      - "&8Nástroj k obdělávání prokleté půdy."
+      - "&cVyšší poškození, rychlé údery a větší výdrž."
+      - "&7Trvanlivost: 2700"
+      - "&aLze normálně enchantovat."
+    material: NETHERITE_HOE
+    graphics:
+      texture: item/crimson_warden_hoe
+    durability:
+      max_durability: 2700
+    attribute_modifiers:
+      mainhand:
+        attackDamage: 4
+        attackSpeed: 0.4
+
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"
     lore:
