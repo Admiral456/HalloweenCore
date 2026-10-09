@@ -5,6 +5,7 @@ import re
 import struct
 import subprocess
 import sys
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
@@ -28,17 +29,63 @@ EXPECTED = {
     "crimson_warden_chestplate.png",
     "crimson_warden_leggings.png",
     "crimson_warden_boots.png",
+    "crimson_warden_sword.png",
+    "crimson_warden_shovel.png",
+    "crimson_warden_pickaxe.png",
+    "crimson_warden_axe.png",
+    "crimson_warden_hoe.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
 
 
 def png_size(path: Path) -> tuple[int, int]:
+    """Read dimensions and validate the complete PNG chunk/CRC/IDAT stream."""
     data = path.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError(f"{path} is not a PNG file")
-    if data[12:16] != b"IHDR":
-        raise ValueError(f"{path} has no PNG IHDR chunk")
-    return struct.unpack(">II", data[16:24])
+    offset = 8
+    width = height = 0
+    saw_header = saw_data = saw_end = False
+    idat = bytearray()
+    while offset + 12 <= len(data):
+        length = struct.unpack(">I", data[offset:offset + 4])[0]
+        chunk_type = data[offset + 4:offset + 8]
+        payload_start = offset + 8
+        payload_end = payload_start + length
+        crc_end = payload_end + 4
+        if crc_end > len(data):
+            raise ValueError(f"{path} has a truncated PNG chunk")
+        payload = data[payload_start:payload_end]
+        saved_crc = struct.unpack(">I", data[payload_end:crc_end])[0]
+        actual_crc = zlib.crc32(chunk_type + payload) & 0xFFFFFFFF
+        if saved_crc != actual_crc:
+            raise ValueError(f"{path} has a corrupt PNG chunk {chunk_type.decode('ascii', 'replace')}")
+        if chunk_type == b"IHDR":
+            if saw_header or length != 13:
+                raise ValueError(f"{path} has an invalid IHDR")
+            width, height = struct.unpack(">II", payload[:8])
+            if width <= 0 or height <= 0:
+                raise ValueError(f"{path} has invalid dimensions")
+            saw_header = True
+        elif chunk_type == b"IDAT":
+            if not saw_header or saw_end:
+                raise ValueError(f"{path} has a misplaced IDAT chunk")
+            idat.extend(payload)
+            saw_data = True
+        elif chunk_type == b"IEND":
+            if length != 0 or not saw_data:
+                raise ValueError(f"{path} has an invalid IEND or no image data")
+            saw_end = True
+            offset = crc_end
+            break
+        offset = crc_end
+    if not (saw_header and saw_data and saw_end) or offset != len(data):
+        raise ValueError(f"{path} is incomplete or contains trailing data")
+    try:
+        zlib.decompress(bytes(idat))
+    except zlib.error as exc:
+        raise ValueError(f"{path} has a broken compressed image stream: {exc}") from exc
+    return width, height
 
 def fail(message: str) -> None:
     print(f"ERROR: {message}", file=sys.stderr)
@@ -49,7 +96,10 @@ if missing:
     fail("Missing item textures: " + ", ".join(missing))
 
 for name in sorted(EXPECTED):
-    width, height = png_size(TEXTURES / name)
+    try:
+        width, height = png_size(TEXTURES / name)
+    except (OSError, ValueError, struct.error) as exc:
+        fail(f"Invalid item texture {name}: {exc}")
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
 
@@ -57,7 +107,10 @@ for layer in ("layer_1.png", "layer_2.png"):
     path = ARMOR_TEXTURES / layer
     if not path.is_file():
         fail("Missing Crimson Warden armor layer: " + str(path.relative_to(ROOT)))
-    width, height = png_size(path)
+    try:
+        width, height = png_size(path)
+    except (OSError, ValueError, struct.error) as exc:
+        fail(f"Invalid armor texture {layer}: {exc}")
     if (width, height) != (64, 32):
         fail(f"{layer} must be 64x32, got {width}x{height}")
 
@@ -162,9 +215,63 @@ if "namespace: warriorland_halloween" not in config:
 
 for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_candy", "haunted_map",
                 "crimson_warden_helmet", "crimson_warden_chestplate",
-                "crimson_warden_leggings", "crimson_warden_boots"):
+                "crimson_warden_leggings", "crimson_warden_boots",
+                "crimson_warden_sword", "crimson_warden_shovel", "crimson_warden_pickaxe",
+                "crimson_warden_axe", "crimson_warden_hoe"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
+
+# Audit custom gear definitions: every item must use its matching texture and keep vanilla enchantability.
+TOOL_SPECS = {
+    "crimson_warden_sword": ("NETHERITE_SWORD", 2500, "10", "-2.0"),
+    "crimson_warden_shovel": ("NETHERITE_SHOVEL", 2500, "8", "-2.3"),
+    "crimson_warden_pickaxe": ("NETHERITE_PICKAXE", 3000, "8", "-2.2"),
+    "crimson_warden_axe": ("NETHERITE_AXE", 2800, "12", "-2.6"),
+    "crimson_warden_hoe": ("NETHERITE_HOE", 2500, "4", "0.4"),
+}
+for item_id, (material, min_durability, damage, speed) in TOOL_SPECS.items():
+    match = re.search(
+        rf"(?ms)^  {re.escape(item_id)}:\\n(.*?)(?=^  [a-z0-9_]+:\\n|\\Z)",
+        config,
+    )
+    if not match:
+        fail(f"Tool item '{item_id}' missing from items.yml")
+    block = match.group(1)
+    for required in (f"material: {material}", f"texture: item/{item_id}", "attribute_modifiers:", "mainhand:"):
+        if required not in block:
+            fail(f"Tool item '{item_id}' is missing {required}")
+    if re.search(r"(?m)^\\s*blocked_enchants:", block):
+        fail(f"Tool item '{item_id}' must not block normal enchantments")
+    durability = re.search(r"(?m)^\\s*max_durability:\\s*(\\d+)", block)
+    if not durability or int(durability.group(1)) < min_durability:
+        fail(f"Tool item '{item_id}' durability must be at least {min_durability}")
+    if not re.search(rf"(?m)^\\s*attackDamage:\\s*{re.escape(damage)}(?:\\.0)?\\s*$", block):
+        fail(f"Tool item '{item_id}' has an unexpected attack-damage modifier")
+    if not re.search(rf"(?m)^\\s*attackSpeed:\\s*{re.escape(speed)}\\s*$", block):
+        fail(f"Tool item '{item_id}' has an unexpected attack-speed modifier")
+
+SHOP_CONFIG = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
+SHOP_IDS = {
+    "crimson-warden-sword": "crimson_warden_sword",
+    "crimson-warden-shovel": "crimson_warden_shovel",
+    "crimson-warden-pickaxe": "crimson_warden_pickaxe",
+    "crimson-warden-axe": "crimson_warden_axe",
+    "crimson-warden-hoe": "crimson_warden_hoe",
+}
+for shop_id, item_id in SHOP_IDS.items():
+    match = re.search(
+        rf"(?ms)^    {re.escape(shop_id)}:\\n(.*?)(?=^    [a-z0-9-]+:\\n|^haunted-village:|\\Z)",
+        SHOP_CONFIG,
+    )
+    if not match or f'itemsadder-id: "warriorland_halloween:{item_id}"' not in match.group(1):
+        fail(f"Shop entry '{shop_id}' does not point to ItemsAdder item '{item_id}'")
+
+REWARD_MANAGER = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenRewardManager.java").read_text(encoding="utf-8")
+if 'Bukkit.createInventory(holder, 54,' not in REWARD_MANAGER:
+    fail("Halloween shop must use a 54-slot inventory so all gear is visible")
+slots_match = re.search(r"(?m)^\\s*int\\[\\] slots = \\{([^}]+)\\};", REWARD_MANAGER)
+if not slots_match or len(re.findall(r"\\d+", slots_match.group(1))) < 12:
+    fail("Halloween shop needs at least 12 reward slots for the full gear set")
 
 # ItemsAdder equipment layers are source assets at contents/<namespace>/textures/armor,
 # while item icons and vanilla overrides are emitted from the resourcepack/assets tree.
@@ -184,7 +291,9 @@ if root_textures.exists():
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
 print("Halloween asset validation passed.")
-print("9 item textures: 32x32 PNG; 2 armor layers: 64x32 PNG")
+print(f"{len(EXPECTED)} item textures: valid 32x32 PNGs; 2 armor layers: valid 64x32 PNGs")
+print("Crimson Warden set: 4 armor pieces + 5 enchantable netherite-based tools verified")
+print("Halloween shop: 54-slot GUI and all 5 custom tools are configured")
 print("ItemsAdder namespace: warriorland_halloween")
 print("Sky shader: Minecraft 1.21.10 entry point present")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms) + 5s event cue, mono OGG/Vorbis containers")
