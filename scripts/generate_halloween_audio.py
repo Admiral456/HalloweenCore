@@ -153,6 +153,27 @@ def generate_haunted_theme() -> None:
     )
 
 
+def generate_silent_music_asset() -> None:
+    """Create the silent OGG used to replace vanilla music events in sounds.json."""
+    target = (
+        ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "resourcepack"
+        / "assets" / "warriorland_halloween" / "sounds" / "halloween_silence.ogg"
+    )
+    target.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        [
+            "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+            "-f", "lavfi", "-i", "anullsrc=r=22050:cl=mono",
+            "-t", "1.0", "-vn", "-ac", "1", "-ar", str(SAMPLE_RATE),
+            "-c:a", "libvorbis", "-q:a", "0", str(target),
+        ],
+        check=True,
+    )
+    if not target.is_file() or target.read_bytes()[:4] != b"OggS":
+        raise RuntimeError("ffmpeg did not create a valid silent OGG for music replacement")
+    print(f"Generated silent music replacement: {target.relative_to(ROOT)}")
+
+
 def generate_event_sting() -> None:
     duration = 5.0
     count = int(SAMPLE_RATE * duration)
@@ -188,6 +209,7 @@ def main() -> None:
         raise SystemExit("ffmpeg is required to encode Halloween OGG assets")
     generate_haunted_theme()
     generate_event_sting()
+    generate_silent_music_asset()
 
 
 if __name__ == "__main__":

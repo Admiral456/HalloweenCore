@@ -315,6 +315,8 @@ curse:
 
 random-events:
   enabled: true
+  # After /halloween on, make the first event visible after a short delay.
+  start-delay-seconds: 30
   interval-minutes:
     min: 20
     max: 35
@@ -429,11 +431,21 @@ bosses:
         phase-4-radius: 10
         phase-4-damage: 7.0
 
+world-decorations:
+  enabled: true
+  # Add-only decoration: natural terrain chunks only; never replaces a solid block.
+  pumpkins-per-chunk: 3
+  cobwebs-per-chunk: 1
+  attempts-per-placement: 24
+  chunks-per-tick: 2
+
 atmosphere:
   enabled: true
   sound: "warriorland_halloween:haunted_theme"
   fallback-sound: ""
-  volume: 0.35
+  # Formerly 0.35; now near the practical maximum (~2.9x louder).
+  volume: 1.0
+  volume-triple-migrated: true
   pitch: 1.0
   loop-milliseconds: 76136
   send-title-on-join: true

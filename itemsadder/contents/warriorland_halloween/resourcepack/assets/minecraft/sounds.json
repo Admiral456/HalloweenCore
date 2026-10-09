@@ -1,0 +1,443 @@
+{
+  "music.menu": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.game": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.creative": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.credits": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.dragon": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.end": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.endboss": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.under_water": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.nether.basalt_deltas": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.nether.crimson_forest": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.nether.nether_wastes": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.nether.soul_sand_valley": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.nether.warped_forest": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.deep_dark": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.dripstone_caves": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.grove": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.jagged_peaks": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.lush_caves": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.meadow": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.old_growth_taiga": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.snowy_slopes": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.stony_peaks": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.swamp": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.cherry_grove": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.forest": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.badlands": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.bamboo_jungle": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.desert": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.flower_forest": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.jungle": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.sparse_jungle": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.stony_shore": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.snowy_taiga": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.taiga": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.savanna": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.plains": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.river": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.ocean": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.mushroom_fields": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.windswept_hills": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.beach": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.frozen_ocean": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.warm_ocean": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.lukewarm_ocean": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.cold_ocean": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.deep_ocean": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.deep_lukewarm_ocean": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.deep_cold_ocean": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  },
+  "music.overworld.deep_frozen_ocean": {
+    "replace": true,
+    "sounds": [
+      {
+        "name": "warriorland_halloween:halloween_silence",
+        "type": "file"
+      }
+    ]
+  }
+}

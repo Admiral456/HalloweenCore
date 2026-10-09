@@ -38,6 +38,10 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween progress
 - /halloween curse
 - /halloween event
+- /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin, testovací okamžité spuštění)
+- /halloween event stop (admin)
+- /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
+- /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
 - /halloween challenge
 - /halloween rewards
 - /halloween claim <id>
@@ -109,15 +113,24 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - Ambientní hudba se spouští hned po připojení a opakuje se samostatně každému hráči podle délky skladby; při odchodu nebo vypnutí eventu se jeho přehrávací úloha zruší, aby nevznikala překrývající se hudba.
 - CI vytvoří ke stažení artefakt `WarriorLand-Halloween-ItemsAdder.zip` včetně zvuků.
 - Shader oblohy je v `itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh`; zachovává základní cyklus dne/noci a přidává oranžovo-karmínový filtr.
-- Po nasazení obsahu na server spusť `/iazip` a zajisti, že hráči obdrží nový resource pack. Vizuální vzhled je potřeba potvrdit v klientu; shaderový mod jej může přepsat.
+- Po nasazení obsahu na server spusť `/iazip` a zajisti, že hráči obdrží nový resource pack. ItemsAdder sloučí obsahy do jednoho packu; `warriorland_halloween` je namespace, ne druhý pack v seznamu Minecraftu. V `/iainfo` ověř hlavně hosting URL/status. Pro ItemsAdder 4.0.17+ je obvykle nejjednodušší `resource-pack.hosting.simple_self_host.enabled: true` a `server_address: auto`; dostupnost doručení na Hostify je nutné ověřit na skutečném serveru. V language souboru ItemsAdder lze nastavit `resourcepack-popup-message` na značkovaný text `&6WarriorLand Halloween 2026`. Vizuální vzhled shaderu je potřeba potvrdit v klientu; shaderový mod jej může přepsat.
+- Hlavní hudba má hlasitost zvýšenou z 0.35 na 1.0. Při první aktualizaci se existující konfigurace převede jednou, pokud chybí `atmosphere.volume-triple-migrated: true`. Soubor `resourcepack/assets/minecraft/sounds.json` mapuje známé vanilla music eventy na tichý OGG, takže pack potlačí běžnou Minecraft hudbu a ponechá Halloween ambient.
 - Custom shop obsahuje čtyři kusy zbroje Krvavého strážce. Každý používá vlastní PNG ikonu, společný armor layer_1/layer_2 set, základní netheritový materiál, +1 armor navíc na kus a zvýšenou odolnost. Běžné enchantování zůstává povolené.
 - Pokud se pack hráčům vůbec neukáže, spusť `/iainfo` a ověř, že ItemsAdder hlásí dosažitelnou URL resource packu. `/iazip` pouze sestaví ZIP; doručování vyžaduje funkční hosting v `plugins/ItemsAdder/config.yml`. Na ItemsAdder 4.0.17+ lze použít `simple_self_host`; u starších verzí je třeba podporovaný self-host s otevřeným portem nebo externí hosting. Nezaměňuj tento serverový pack s ručně přidávaným packem v seznamu Minecraftu.
+
+## Eventy, test bosse a dekorace světa
+
+- `/halloween on` aktivuje atmosféru a naplánuje první náhodný event přibližně za 30 sekund; další eventy se spouštějí v běžném intervalovém nastavení.
+- `/halloween event` zobrazuje stav; admin může spustit `/halloween event start random` nebo určit `soulstorm`, `witching-hour`, `cursed-harvest` či `blood-moon-invasion`. `/halloween event stop` event ukončí.
+- `/halloween boss test` vyvolá testovacího Krále upírů bez globálního progressu, odemčení finále a model-ready gate. Vyžaduje uložený střed arény a funkční MythicMobs mob `vampire-king`; testovací zabití nedává odměny ani neoznačí finále za splněné.
+- Při zapnutém eventu se při načítání chunků na přirozeném terénu postupně objeví dýně, jack-o-lanterny a ojedinělé pavučiny. Jednotlivé chunky se označí, aby se dekorace při restartu neopakovaly. Dekorace nepřepisují existující bloky, ale na přírodně vypadající trávě u staveb je vhodné zkontrolovat výsledek.
 
 ## Návod: aréna, obchod a resource pack
 
 - Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
-- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění bloky v kruhu o poloměru 22 bloků; před potvrzením je vhodná záloha světa.
+- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
+- `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
 - `/halloween rewards` otevře shop; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
 - Po nahrání obsahu do `plugins/ItemsAdder/contents/warriorland_halloween` restartuj server, spusť `/iazip` a ověř `/iainfo`. Pokud není URL resource packu dosažitelná nebo se žádná výzva neobjeví, je nutné opravit hosting resource packu v ItemsAdder, ne plugin HalloweenCore.
 

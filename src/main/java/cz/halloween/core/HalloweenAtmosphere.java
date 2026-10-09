@@ -81,7 +81,7 @@ public final class HalloweenAtmosphere {
 
         // Milliseconds allow a 2:07 soundtrack to repeat at its actual length.
         // Preserve the older seconds option as a backwards-compatible fallback.
-        long fallbackMillis = Math.max(10L, plugin.getConfig().getLong("atmosphere.loop-seconds", 64L)) * 1000L;
+        long fallbackMillis = Math.max(10L, plugin.getConfig().getLong("atmosphere.loop-seconds", 76L)) * 1000L;
         long loopMillis = Math.max(10_000L, plugin.getConfig().getLong("atmosphere.loop-milliseconds", fallbackMillis));
         long periodTicks = Math.max(1L, Math.round(loopMillis / 50.0D));
         UUID playerId = player.getUniqueId();
@@ -126,8 +126,18 @@ public final class HalloweenAtmosphere {
     private void play(Player player) {
         String custom = plugin.getConfig().getString("atmosphere.sound", "");
         String fallback = plugin.getConfig().getString("atmosphere.fallback-sound", "");
-        float volume = (float) Math.max(0.0D, plugin.getConfig().getDouble("atmosphere.volume", 0.35D));
+        float volume = (float) Math.max(0.0D, Math.min(1.0D,
+                plugin.getConfig().getDouble("atmosphere.volume", 1.0D)));
         float pitch = (float) Math.max(0.1D, plugin.getConfig().getDouble("atmosphere.pitch", 1.0D));
+
+        // Stop anything already playing in the Music slider category before starting
+        // the Halloween theme. The pack also maps vanilla music events to a silent OGG,
+        // so normal biome/menu tracks don't start again while this pack is installed.
+        try {
+            player.stopSound(SoundCategory.MUSIC);
+        } catch (Exception ignored) {
+            // Older server API: fall back to stopping the configured sound IDs below.
+        }
 
         if (custom != null && !custom.isBlank() && hasItemsAdder()) {
             try {
