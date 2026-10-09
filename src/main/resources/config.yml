@@ -127,6 +127,44 @@ haunted-village:
   discovery-radius: 12
   discovery-reward-fragments: 150
 
+# Hidden discoveries are tied to real in-world locations set by an admin with /halloween setsecret <id>.
+# Player hints deliberately omit coordinates; each discovery is stored once per UUID in data.yml.
+secret-discoveries:
+  enabled: true
+  default-radius-blocks: 4.5
+  default-reward-fragments: 250
+  locations:
+    blood-altar:
+      name: "Krvavý oltář"
+      hint: "Někde poblíž starých kamenů se v noci ozývá tlukot."
+      configured: false
+      world: ""
+      x: 0
+      y: 0
+      z: 0
+      radius-blocks: 4.5
+      reward-fragments: 250
+    witch-den:
+      name: "Doupě hexové čarodějky"
+      hint: "Hledej místo, kde popel zůstává teplý i po dešti."
+      configured: false
+      world: ""
+      x: 0
+      y: 0
+      z: 0
+      radius-blocks: 4.5
+      reward-fragments: 300
+    forgotten-grave:
+      name: "Zapomenutý hrob"
+      hint: "Za posledním náhrobkem může něco čekat pod zemí."
+      configured: false
+      world: ""
+      x: 0
+      y: 0
+      z: 0
+      radius-blocks: 4.5
+      reward-fragments: 350
+
 special-mobs:
   enabled: true
   chance: 0.04

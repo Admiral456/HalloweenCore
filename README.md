@@ -45,6 +45,8 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween reload
 - /halloween debug
 - /halloween setvillage (admin)
+- /halloween setsecret <id> (admin, nastaví polohu tajného místa)
+- /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
 - /halloween setvampirearena (admin)
 - /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
@@ -104,7 +106,7 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - hlubší systém relikvií
 - resource-pack Halloween obloha
 - plnohodnotný Halloween soundtrack přes ItemsAdder resource pack
-- tajné úkoly a easter eggy
+- rozšiřování tajných úkolů a easter eggů (základ skrytých lokací už je připraven)
 - větší eventové invaze
 - serverové finále a hlavní boss
 - upíří boss má už nyní pevnou minimální specifikaci: 10 bloků výšky a 8 bloků šířky včetně křídel
@@ -162,3 +164,8 @@ Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prosto
 ## Krvavý měsíc — invaze
 
 Mezi náhodnými událostmi je nově i invaze. Během ní se v okolí aktivních hráčů objevují vlny speciálních mobů, jejich počet v jedné vlně lze nastavit přes `random-events.invasion-mobs-per-surge` (1–4) a celkový limit hlídá `random-events.max-event-mobs`. V závěrečné části se pokusí objevit silnější Kapitán krvavé invaze. Eventové moby jsou označené a po skončení invaze se uklidí; invaze sama o sobě neodemkne ani nespustí finálního bosse.
+
+
+## Tajné objevy a easter eggy
+
+Tři definice skrytých míst jsou v `secret-discoveries.locations`: `blood-altar`, `witch-den` a `forgotten-grave`. Administrátor se postaví na přesné místo a nastaví ho příkazem `/halloween setsecret <id>`. Hráč příkazem `/halloween secrets` uvidí počet objevených míst a textové nápovědy k dosud nalezeným tajemstvím — nikdy ne jejich souřadnice. Po vstupu do blízkosti místa se tajemství uloží do `plugins/HalloweenCore/data.yml` a hráč obdrží jednorázovou fragmentovou odměnu. Nálezy zůstávají uložené po restartu serveru.

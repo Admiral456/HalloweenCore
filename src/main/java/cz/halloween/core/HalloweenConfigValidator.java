@@ -97,6 +97,42 @@ public final class HalloweenConfigValidator {
             }
         }
 
+        boolean secretDiscoveriesEnabled = plugin.getConfig().getBoolean("secret-discoveries.enabled", true);
+        ConfigurationSection secrets = plugin.getConfig().getConfigurationSection("secret-discoveries.locations");
+        if (secretDiscoveriesEnabled && (secrets == null || secrets.getKeys(false).isEmpty())) {
+            errors.add("secret-discoveries.locations must contain at least one configured secret definition");
+        }
+        if (secrets != null) {
+            for (String id : secrets.getKeys(false)) {
+                ConfigurationSection secret = secrets.getConfigurationSection(id);
+                if (secret == null) {
+                    errors.add("secret-discoveries.locations." + id + " must be a section");
+                    continue;
+                }
+                if (!id.matches("[a-z0-9][a-z0-9_-]*")) {
+                    errors.add("secret-discoveries.locations." + id + " id must use lowercase letters, digits, '-' or '_'");
+                }
+                String name = secret.getString("name", "");
+                String hint = secret.getString("hint", "");
+                if (name.isBlank()) errors.add("secret-discoveries.locations." + id + ".name must not be blank");
+                if (hint.isBlank()) errors.add("secret-discoveries.locations." + id + ".hint must not be blank");
+                if (secret.getBoolean("configured", false)) {
+                    String world = secret.getString("world", "");
+                    if (world.isBlank()) errors.add("secret-discoveries.locations." + id + ".world must be set");
+                    double radius = secret.getDouble("radius-blocks",
+                            plugin.getConfig().getDouble("secret-discoveries.default-radius-blocks", 4.5D));
+                    if (radius < 1.0D || radius > 32.0D) {
+                        errors.add("secret-discoveries.locations." + id + ".radius-blocks must be between 1 and 32");
+                    }
+                    long reward = secret.getLong("reward-fragments",
+                            plugin.getConfig().getLong("secret-discoveries.default-reward-fragments", 250L));
+                    if (reward <= 0L) {
+                        errors.add("secret-discoveries.locations." + id + ".reward-fragments must be > 0");
+                    }
+                }
+            }
+        }
+
         boolean villageEnabled = plugin.getConfig().getBoolean("haunted-village.enabled", false);
         String villageWorld = plugin.getConfig().getString("haunted-village.world", "");
         if (villageEnabled && villageWorld.isBlank()) {
