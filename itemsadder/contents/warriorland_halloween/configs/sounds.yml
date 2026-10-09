@@ -14,7 +14,12 @@ sounds:
     path: haunted_theme
     settings:
       subtitle: sound.haunted_theme
+      stream: true
+      volume: 1.0
+      pitch: 1.0
   event_sting:
     path: event_sting
     settings:
       subtitle: sound.event_sting
+      volume: 1.0
+      pitch: 1.0
