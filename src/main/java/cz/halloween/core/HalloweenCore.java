@@ -128,17 +128,42 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         service.addFragments(killer.getUniqueId(), reward, "mob-kill");
     }
 
+    /**
+     * Reload runtime state after config edits. This cannot load changed Java classes;
+     * updating the plugin JAR itself still requires one server restart.
+     */
     public void reloadEventConfig() {
         reloadConfig();
+        migrateAtmosphereVolume();
         eventEnabled = getConfig().getBoolean("enabled", true);
-        if (eventManager != null) eventManager.reloadSchedule();
+
+        if (eventManager != null) {
+            if (eventEnabled && getConfig().getBoolean("random-events.enabled", true)) {
+                // Make the refreshed state visible shortly after /halloween reload.
+                eventManager.scheduleFirstEvent();
+            } else {
+                eventManager.stop();
+            }
+        }
         if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
         if (bossManager != null) bossManager.stopVampireBossBar();
+
         if (atmosphere != null) atmosphere.refreshPlayback();
+        if (worldDecorator != null) {
+            worldDecorator.stop();
+            if (eventEnabled && getConfig().getBoolean("world-decorations.enabled", true)) {
+                worldDecorator.scanLoadedChunks();
+            }
+        }
+
         for (String error : HalloweenConfigValidator.validate(this)) {
             getLogger().severe("[CONFIG] " + error);
         }
         if (bossManager != null) bossManager.validateConfiguration();
+        getLogger().info("HalloweenCore runtime state reloaded. enabled=" + eventEnabled
+                + ", random-events=" + getConfig().getBoolean("random-events.enabled", true)
+                + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", true)
+                + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", true));
     }
 
     public void setEventEnabled(boolean enabled) {
