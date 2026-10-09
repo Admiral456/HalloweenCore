@@ -1867,6 +1867,174 @@
           "texture": 0
         }
       }
+    },
+    {
+      "name": "hitbox_volume",
+      "uuid": "a8970000-0000-4000-8000-0004b7a68e10",
+      "type": "cube",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "render_order": "default",
+      "allow_mirror_modeling": true,
+      "from": [
+        -9.5,
+        0,
+        -8.5
+      ],
+      "to": [
+        11.9,
+        51,
+        8.5
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "east": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "south": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "west": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "down": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        }
+      }
+    },
+    {
+      "name": "shadow_caster",
+      "uuid": "a8970000-0000-4000-8000-0004b7a68e11",
+      "type": "cube",
+      "box_uv": false,
+      "rescale": false,
+      "locked": false,
+      "light_emission": 0,
+      "render_order": "default",
+      "allow_mirror_modeling": true,
+      "from": [
+        -12,
+        0,
+        -11
+      ],
+      "to": [
+        14.4,
+        0.2,
+        11
+      ],
+      "autouv": 0,
+      "color": 0,
+      "origin": [
+        0,
+        0,
+        0
+      ],
+      "faces": {
+        "north": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "east": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "south": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "west": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "up": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        },
+        "down": {
+          "uv": [
+            2,
+            2,
+            30,
+            30
+          ],
+          "texture": null
+        }
+      }
     }
   ],
   "outliner": [
@@ -2131,6 +2299,62 @@
           "children": [
             "a8970000-0000-4000-8000-0004b7a68df4",
             "a8970000-0000-4000-8000-0004b7a68df5"
+          ]
+        },
+        {
+          "name": "hitbox",
+          "origin": [
+            0,
+            48,
+            0
+          ],
+          "color": 0,
+          "uuid": "a8970000-0000-4000-8000-0004b7a68e12",
+          "export": true,
+          "locked": false,
+          "shade": true,
+          "mirror_uv": false,
+          "reset": false,
+          "visibility": true,
+          "autouv": 0,
+          "isOpen": true,
+          "selected": false,
+          "primary_selected": false,
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "children": [
+            "a8970000-0000-4000-8000-0004b7a68e10"
+          ]
+        },
+        {
+          "name": "shadow",
+          "origin": [
+            0,
+            0,
+            0
+          ],
+          "color": 0,
+          "uuid": "a8970000-0000-4000-8000-0004b7a68e13",
+          "export": true,
+          "locked": false,
+          "shade": true,
+          "mirror_uv": false,
+          "reset": false,
+          "visibility": true,
+          "autouv": 0,
+          "isOpen": true,
+          "selected": false,
+          "primary_selected": false,
+          "rotation": [
+            0,
+            0,
+            0
+          ],
+          "children": [
+            "a8970000-0000-4000-8000-0004b7a68e11"
           ]
         }
       ]
