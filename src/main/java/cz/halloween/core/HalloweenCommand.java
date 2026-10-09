@@ -766,7 +766,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         try {
             String source = Files.readString(shaderPath, StandardCharsets.UTF_8);
             java.util.regex.Pattern tintPattern = java.util.regex.Pattern.compile(
-                    "sky\\\\.rgb\\\\s*=\\\\s*mix\\\\(sky\\\\.rgb,\\\\s*sky\\\\.rgb\\\\s*\\\\*\\\\s*halloweenTint,\\\\s*[0-9.]+\\\\s*\\\\);");
+                    "sky\\.rgb\\s*=\\s*mix\\(sky\\.rgb,\\s*sky\\.rgb\\s*\\*\\s*halloweenTint,\\s*[0-9.]+\\s*\\);");");
             java.util.regex.Matcher matcher = tintPattern.matcher(source);
             if (!matcher.find()) {
                 sender.sendMessage(plugin.color("&cV souboru sky.fsh jsem nenašel očekávaný Halloween tint."));
