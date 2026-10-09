@@ -76,8 +76,8 @@ rewards:
 
   shop:
     hunter-mask:
-      cost: 1500
-      min-curse: 1
+      cost: 4000
+      min-curse: 3
       itemsadder-id: "warriorland_halloween:hunter_mask"
       bonus-multiplier: 0.05
       material: CARVED_PUMPKIN
@@ -89,8 +89,8 @@ rewards:
         - "&7jen jednou."
 
     cursed-talisman:
-      cost: 5000
-      min-curse: 4
+      cost: 15000
+      min-curse: 5
       itemsadder-id: "warriorland_halloween:cursed_talisman"
       bonus-multiplier: 0.10
       material: NETHER_STAR
@@ -102,7 +102,7 @@ rewards:
         - "&7kteří se dostanou až na vysoké prokletí."
 
     halloween-token:
-      cost: 10000
+      cost: 30000
       min-curse: 5
       itemsadder-id: "warriorland_halloween:halloween_token"
       material: NAME_TAG
@@ -267,6 +267,12 @@ bosses:
     spawn-requirements:
       global-progress-percent: 100
       event-completion: true
+    summoning:
+      automatic: true
+      # The natural countdown starts only when the finale, arena and real model are ready.
+      delay-after-readiness-seconds: 300
+      retry-delay-minutes: 20
+      minimum-online-players: 1
     model:
       provider: MODEL_ENGINE
       id: vampire_king
@@ -286,22 +292,27 @@ bosses:
       arena-radius-blocks: 48
       participation-radius-blocks: 96
       leash-to-arena: true
-      min-participation-seconds: 60
-      participation-reward-fragments: 250
-      victory-reward-fragments: 2500
-      top-contributor-bonus-fragments: 750
+      min-participation-seconds: 120
+      minimum-damage-percent: 2.5
+      participation-reward-fragments: 500
+      victory-reward-fragments: 5000
+      top-contributor-bonus-fragments: 2000
       abilities:
         enabled: true
         target-radius-blocks: 48
-        phase-2-cooldown-seconds: 8
+        phase-1-cooldown-seconds: 14
+        phase-1-radius: 2.5
+        phase-1-damage: 3.0
+        phase-2-cooldown-seconds: 11
         phase-2-radius: 7
-        phase-2-damage: 4.0
-        phase-3-cooldown-seconds: 7
+        phase-2-damage: 5.0
+        phase-3-cooldown-seconds: 10
         phase-3-teleport-distance: 5
-        phase-3-damage: 6.0
-        phase-4-cooldown-seconds: 5
+        phase-3-radius: 2.75
+        phase-3-damage: 7.0
+        phase-4-cooldown-seconds: 9
         phase-4-radius: 10
-        phase-4-damage: 6.0
+        phase-4-damage: 7.0
 
 atmosphere:
   enabled: true
@@ -324,7 +335,11 @@ messages:
   global-goal-reached: "&6&lHALLOWEEN &8» &fServer společně dosáhl hlavního cíle! Něco se probouzí..."
   finale-unlocked: "&6&lHALLOWEEN &8» &4Finále je odemčeno. Něco čeká za branou..."
   global-milestone: "&6&lHALLOWEEN &8» &dCelý WarriorLand dosáhl milníku &e%milestone% &dfragmentů."
-  vampire-start: "&4&lHALLOWEEN &8» &fKrál upírů sestoupil do arény. &7Poražte ho společně."
+  vampire-omen: "&5&lHALLOWEEN &8» &7Vzduch ztěžkl. Z hlubin arény se ozývá tlukot, který nepatří živým..."
+  vampire-summoning-3m: "&4&lHALLOWEEN &8» &cNad arénou se trhá závoj. Král upírů se probudí za 3 minuty."
+  vampire-summoning-1m: "&4&lHALLOWEEN &8» &cKřídla se rozevírají. Do probuzení Krále upírů zbývá minuta."
+  vampire-summoning-10s: "&4&lHALLOWEEN &8» &c10 sekund. Opusťte runy a připravte se na boj!"
+  vampire-start: "&4&lHALLOWEEN &8» &fKrál upírů sestoupil do středu arény. &7Poražte ho společně."
   vampire-timeout: "&4&lHALLOWEEN &8» &cKrál upírů zmizel v temnotě. Aréna je zticha."
   vampire-victory: "&4&lHALLOWEEN &8» &6Král upírů byl poražen! Temnota ustupuje."
 
