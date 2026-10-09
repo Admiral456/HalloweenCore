@@ -178,7 +178,7 @@ rewards:
       lore:
         - "&7Legendární černo-karmínová zbraň."
         - "&cÚtok 15+ • vyšší rychlost • výdrž 5 000."
-        - "&7Zesílený útok a rychlost; výdrž 4 200."
+        - "&7Útokový modifier 15 • rychlostní modifier 0,8 • výdrž 5 000."
         - "&aPlně enchantovatelný."
 
     crimson-warden-pickaxe:
@@ -191,7 +191,7 @@ rewards:
       lore:
         - "&7Legendární krumpáč pro hluboké doly."
         - "&cTěžba rychlostí 14 • výdrž 5 000."
-        - "&7Zesílený útok a rychlost; výdrž 4 000."
+        - "&7Útokový modifier 10 • rychlostní modifier 0,8 • výdrž 5 000."
         - "&aPlně enchantovatelný."
 
     crimson-warden-axe:
@@ -204,7 +204,7 @@ rewards:
       lore:
         - "&7Legendární sekera s krvavým ostřím."
         - "&cÚtok 14+ • rychlejší těžba • výdrž 5 000."
-        - "&7Zesílený útok a rychlost; výdrž 4 000."
+        - "&7Útokový modifier 14 • rychlostní modifier 0,6 • výdrž 5 000."
         - "&aPlně enchantovatelná."
 
     crimson-warden-shovel:
@@ -217,7 +217,7 @@ rewards:
       lore:
         - "&7Legendární nástroj pro rychlé kopání."
         - "&cTěžba rychlostí 14 • výdrž 4 500."
-        - "&7Zesílený útok a rychlost; výdrž 3 500."
+        - "&7Útokový modifier 10 • rychlostní modifier 0,8 • výdrž 4 500."
         - "&aPlně enchantovatelná."
 
     crimson-warden-hoe:
@@ -230,7 +230,7 @@ rewards:
       lore:
         - "&7Legendární motyka se zpevněným ostřím."
         - "&cÚtok 7+ • těžba rychlostí 14 • výdrž 4 500."
-        - "&7Zesílený útok a rychlost; výdrž 3 500."
+        - "&7Útokový modifier 7 • rychlostní modifier 1,0 • výdrž 4 500."
         - "&aPlně enchantovatelná."
 
 haunted-village:
