@@ -87,8 +87,8 @@ runtime_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(
 for sound_id in ("warriorland_halloween:event_sting", "warriorland_halloween:haunted_theme"):
     if sound_id not in runtime_config:
         fail(f"Plugin configuration is missing sound ID: {sound_id}")
-if "loop-seconds: 64" not in runtime_config:
-    fail("Ambient playback interval must match the 64-second theme loop")
+if "loop-milliseconds: 64000" not in runtime_config:
+    fail("Ambient playback interval must match the 64-second generated theme loop")
 
 config = CONFIG.read_text(encoding="utf-8")
 if "namespace: warriorland_halloween" not in config:
