@@ -343,6 +343,95 @@ public final class HalloweenVampireEncounterManager implements Listener {
         maintainPhaseEffects();
     }
 
+
+    /**
+     * Shows the boss attack telegraphs at a player's location without spawning a boss or damaging anyone.
+     * This is intentionally usable while the real model is still locked behind its readiness gate.
+     */
+    public boolean previewAbility(Player player, int previewPhase) {
+        if (player == null || !player.isOnline() || previewPhase < 1 || previewPhase > 4) return false;
+
+        Location anchor = player.getLocation().clone();
+        switch (previewPhase) {
+            case 1 -> {
+                double radius = Math.max(1.5D,
+                        plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-1-radius", 2.5D));
+                drawRing(anchor, radius, org.bukkit.Particle.SOUL_FIRE_FLAME, 28);
+                anchor.getWorld().spawnParticle(org.bukkit.Particle.SOUL, anchor.clone().add(0, 0.35D, 0),
+                        20, radius * 0.3D, 0.35D, radius * 0.3D, 0.02D);
+                anchor.getWorld().playSound(anchor, "minecraft:block.amethyst_block.chime", 0.9f, 0.55f);
+                player.sendTitle(plugin.color("&5&lFALEŠNÁ KOŘIST"),
+                        plugin.color("&7Náhled: runy pod tebou se chystají vybuchnout."), 0, 30, 5);
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    anchor.getWorld().spawnParticle(org.bukkit.Particle.SOUL, anchor.clone().add(0, 0.2D, 0),
+                            45, radius * 0.35D, 0.35D, radius * 0.35D, 0.02D);
+                    anchor.getWorld().playSound(anchor, "minecraft:entity.generic.explode", 0.6f, 0.65f);
+                }, 30L);
+            }
+            case 2 -> {
+                double radius = Math.max(3.0D,
+                        plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-2-radius", 7.0D));
+                drawRing(anchor, radius, org.bukkit.Particle.DUST_PLUME, 36);
+                anchor.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, anchor.clone().add(0, 0.25D, 0),
+                        30, radius * 0.35D, 0.25D, radius * 0.35D, 0.02D);
+                anchor.getWorld().playSound(anchor, "minecraft:entity.warden.heartbeat", 0.8f, 0.55f);
+                player.sendTitle(plugin.color("&5&lKRVAVÝ PULS"),
+                        plugin.color("&7Náhled: červená zóna se za chvíli uzavře."), 0, 35, 5);
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    anchor.getWorld().spawnParticle(org.bukkit.Particle.DUST_PLUME, anchor.clone().add(0, 0.5D, 0),
+                            70, radius * 0.45D, 0.8D, radius * 0.45D, 0.02D);
+                    anchor.getWorld().playSound(anchor, "minecraft:entity.generic.explode", 0.75f, 0.45f);
+                }, 35L);
+            }
+            case 3 -> {
+                double markerDistance = Math.max(3.5D,
+                        plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-3-teleport-distance", 5.0D));
+                double radius = Math.max(1.5D,
+                        plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-3-radius", 2.75D));
+                List<Location> markers = new ArrayList<>();
+                for (int i = 0; i < 3; i++) {
+                    double angle = (2.0D * Math.PI * i / 3.0D);
+                    Location marker = anchor.clone().add(Math.cos(angle) * markerDistance, 0.0D,
+                            Math.sin(angle) * markerDistance);
+                    markers.add(marker);
+                    drawRing(marker, radius, org.bukkit.Particle.PORTAL, 24);
+                    marker.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, marker.clone().add(0, 0.7D, 0),
+                            16, 0.65D, 0.8D, 0.65D, 0.02D);
+                }
+                anchor.getWorld().playSound(anchor, "minecraft:entity.enderman.stare", 0.9f, 0.45f);
+                player.sendTitle(plugin.color("&5&lZRCADLOVÝ VÝPAD"),
+                        plugin.color("&7Náhled: tři podobné runy, jeden skutečný úder."), 0, 35, 5);
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    Location impact = markers.get(ThreadLocalRandom.current().nextInt(markers.size()));
+                    impact.getWorld().spawnParticle(org.bukkit.Particle.CRIT, impact.clone().add(0, 0.8D, 0),
+                            55, 0.9D, 1.1D, 0.9D, 0.15D);
+                    impact.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, impact.clone().add(0, 0.4D, 0),
+                            40, 0.65D, 0.6D, 0.65D, 0.02D);
+                    impact.getWorld().playSound(impact, "minecraft:entity.player.attack.sweep", 1.0f, 0.45f);
+                }, 35L);
+            }
+            case 4 -> {
+                double radius = Math.max(4.0D,
+                        plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-4-radius", 10.0D));
+                drawRing(anchor, radius * 0.55D, org.bukkit.Particle.SOUL_FIRE_FLAME, 32);
+                drawRing(anchor, radius * 0.78D, org.bukkit.Particle.SOUL_FIRE_FLAME, 40);
+                drawRing(anchor, radius, org.bukkit.Particle.SOUL_FIRE_FLAME, 52);
+                anchor.getWorld().playSound(anchor, "minecraft:entity.warden.sonic_boom", 0.8f, 0.45f);
+                player.sendTitle(plugin.color("&4&lZATMĚNÍ"),
+                        plugin.color("&7Náhled: vnitřní kruhy klamou, vnější značí dosah."), 0, 40, 5);
+                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                    anchor.getWorld().spawnParticle(org.bukkit.Particle.DUST_PLUME, anchor.clone().add(0, 0.8D, 0),
+                            100, radius * 0.42D, 1.0D, radius * 0.42D, 0.05D);
+                    anchor.getWorld().playSound(anchor, "minecraft:entity.warden.sonic_boom", 0.9f, 0.65f);
+                }, 40L);
+            }
+            default -> {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void runSpecialAbility() {
         if (boss == null || phase < 1) return;
         if (!plugin.getConfig().getBoolean("bosses.vampire.encounter.abilities.enabled", true)) return;
