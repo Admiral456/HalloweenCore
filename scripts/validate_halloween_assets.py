@@ -61,6 +61,13 @@ for sound in ("haunted_theme", "event_sting"):
     if f"  {sound}:" not in sounds_text:
         fail(f"ItemsAdder sound '{sound}' missing from sounds.yml")
 
+runtime_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
+for sound_id in ("warriorland_halloween:event_sting", "warriorland_halloween:haunted_theme"):
+    if sound_id not in runtime_config:
+        fail(f"Plugin configuration is missing sound ID: {sound_id}")
+if "loop-seconds: 64" not in runtime_config:
+    fail("Ambient playback interval must match the 64-second theme loop")
+
 config = CONFIG.read_text(encoding="utf-8")
 if "namespace: warriorland_halloween" not in config:
     fail("ItemsAdder namespace missing from items.yml")
