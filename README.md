@@ -38,6 +38,10 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween progress
 - /halloween curse
 - /halloween event
+- /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin)
+- /halloween event stop (admin)
+- /halloween boss test (admin; bez progressu, bez odměn)
+- /halloween shader <on|off|reload> (admin)
 - /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin, testovací okamžité spuštění)
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
@@ -147,17 +151,17 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 
 Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový progres, milníky a eventový systém. Rozměrové minimum je už zamčené v konfiguraci i v dokumentu `VAMPIRE_BOSS.md`: minimálně 10 bloků výšky a 8 bloků šířky včetně křídel. Mechaniky a finální vzhled zatím nejsou předčasně uzamčené.
 
-## ItemsAdder assety
+## ItemsAdder assety a zbrojnice
 
-Vlastní PNG jsou v `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/`.
+Vlastní 32×32 PNG ikony jsou v `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/`. Obsah zahrnuje dýňovou masku, talisman, token, mapu, cukroví, čtyři kusy zbroje Krvavého strážce a pět nových nástrojů: meč, lopatu, krumpáč, sekeru a motyku.
 
-V repozitáři je připravený namespace `warriorland_halloween`:
+Zbroj používá dva 64×32 armor atlasy, plus +1 bod brnění na každý kus a zvýšenou odolnost. Každý kus zbraně/nástroje používá netheritový základ, vlastní ikonu, vyšší poškození (u motyky pro boj), přidanou odolnost a běžné enchantování bez zakázaných enchantů. Shop je rozšířen na 54 slotů, takže se zobrazí všechny odměny.
+
+Po nasazení obsahu do ItemsAdder spusť `/iazip` nebo `/halloween reload`.
 
 - `itemsadder/contents/warriorland_halloween/configs/items.yml`
-- `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/*.png` — vlastní textury
-- `itemsadder/contents/warriorland_halloween/ASSETS.md` — seznam assetů
-
-Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack přes `/iazip`.
+- `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/*.png`
+- `itemsadder/contents/warriorland_halloween/ASSETS.md` — manifest assetů
 
 
 ### Boss placeholders
@@ -170,7 +174,7 @@ Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack p�
 
 ### Hudba a licence
 
-Halloween soundtrack není AI-generovaný. Připravený sound ID je `halloween:haunted_theme`; pro resource pack počítáme s hudbou pod **CC0** s dohledatelným původem. Momentálně je v repozitáři pouze licence/source záznam, ne samotný audio soubor.
+Halloween soundtrack je `Spooky Fester` od Eldritch Grim z OpenGameArt (CC0). CI stáhne zdroj a převede jej do `haunted_theme.ogg`; plugin smyčkuje skladbu podle změřené délky. Pětisekundový event cue se generuje samostatně.
 
 ## Build
 
@@ -192,7 +196,7 @@ Repozitář obsahuje editovatelný Blockbench blueprint `mythicmobs/models/vampi
 
 ## Generování upíří arény
 
-Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 45 bloků, obvodovou zeď s průchody, osm věží se soul lanternami a krvavý runový vzor. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, stejné načtené světlo a volný prostor nad podlahou. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Horní vrstva terénu v kruhu se po potvrzení nahradí novou podlahou.
+Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 97 bloků, šest runových kruhů, obvodovou zeď se čtyřmi pětiblokovými vstupy, osm gothic věží se soul lanternami, čtyři monumentální brány a osm vnitřních obelisků. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, stejné načtené světlo a volný prostor nad podlahou. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Horní vrstva terénu v kruhu se po potvrzení nahradí novou podlahou.
 
 
 ## Krvavý měsíc — invaze
