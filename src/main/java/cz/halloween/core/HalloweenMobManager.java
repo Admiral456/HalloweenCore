@@ -376,7 +376,7 @@ public final class HalloweenMobManager implements Listener {
         World world = player.getWorld();
         if (!plugin.isEligibleGameplayWorld(world)) return false;
         int maxEventMobs = Math.max(1, Math.min(80,
-                plugin.getConfig().getInt("random-events.max-event-mobs", 36)));
+                plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
         if (countEventMobs(world) >= maxEventMobs) return false;
 
         Location spawnLocation = findSafeEventLocation(player);
@@ -408,7 +408,7 @@ public final class HalloweenMobManager implements Listener {
         if (!plugin.isEligibleGameplayWorld(world)) return false;
 
         int maxEventMobs = Math.max(1, Math.min(80,
-                plugin.getConfig().getInt("random-events.max-event-mobs", 36)));
+                plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
         if (countEventMobs(world) >= maxEventMobs) return false;
         Location spawnLocation = findSafeEventLocation(player);
         if (spawnLocation == null) return false;
