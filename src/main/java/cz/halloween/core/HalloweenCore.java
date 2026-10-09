@@ -15,6 +15,13 @@ import org.bukkit.GameMode;
 import org.bukkit.World;
 
 import java.util.UUID;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -40,6 +47,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void onEnable() {
         saveDefaultConfig();
         migrateAtmosphereVolume();
+        migrateCrimsonWardenShopDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -138,6 +146,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void reloadEventConfig() {
         reloadConfig();
         migrateAtmosphereVolume();
+        migrateCrimsonWardenShopDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -208,6 +217,79 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         saveConfig();
         getLogger().info("Halloween soundtrack gain migration complete; volume=" +
                 getConfig().getDouble("atmosphere.volume", 3.0D) + ".");
+    }
+
+    /**
+     * Existing plugin configs are deliberately not replaced by saveDefaultConfig().
+     * On the first run of this gear release, migrate only shop item data so existing
+     * arena coordinates, event settings and other server customizations survive.
+     */
+    private void migrateCrimsonWardenShopDefaults() {
+        if (getConfig().getBoolean("migrations.crimson-warden-gear-v2", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml is unavailable; Crimson Warden shop migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection defaultShop = defaults.getConfigurationSection("rewards.shop");
+            if (defaultShop == null) {
+                getLogger().warning("Default rewards.shop section is missing; Crimson Warden shop migration was skipped.");
+                return;
+            }
+
+            String root = "rewards.shop.";
+            for (String id : defaultShop.getKeys(false)) {
+                ConfigurationSection source = defaultShop.getConfigurationSection(id);
+                if (source == null) continue;
+                String targetPath = root + id;
+                if (!getConfig().isConfigurationSection(targetPath)) {
+                    for (String key : source.getKeys(true)) {
+                        if (!source.isConfigurationSection(key)) {
+                            getConfig().set(targetPath + "." + key, source.get(key));
+                        }
+                    }
+                    continue;
+                }
+
+                // For the new gear, update presentation/IA identity but preserve any
+                // owner-defined price and minimum curse requirement where already set.
+                if (id.startsWith("crimson-warden-")) {
+                    for (String key : List.of("itemsadder-id", "material", "amount", "name", "lore")) {
+                        if (source.contains(key)) {
+                            getConfig().set(targetPath + "." + key, source.get(key));
+                        }
+                    }
+                    for (String key : List.of("cost", "min-curse")) {
+                        if (!getConfig().contains(targetPath + "." + key) && source.contains(key)) {
+                            getConfig().set(targetPath + "." + key, source.get(key));
+                        }
+                    }
+                }
+            }
+
+            // Explicit user-requested talisman balance. This one-time migration does
+            // not keep forcing it on later reloads if the administrator later changes it.
+            getConfig().set(root + "cursed-talisman.cost", 1_000_000L);
+            getConfig().set(root + "cursed-talisman.bonus-health", 20.0D);
+            getConfig().set(root + "cursed-talisman.bonus-multiplier", 0.10D);
+            ConfigurationSection defaultTalisman = defaultShop.getConfigurationSection("cursed-talisman");
+            if (defaultTalisman != null) {
+                for (String key : List.of("name", "lore", "itemsadder-id", "material", "amount")) {
+                    if (defaultTalisman.contains(key)) {
+                        getConfig().set(root + "cursed-talisman." + key, defaultTalisman.get(key));
+                    }
+                }
+            }
+
+            getConfig().set("migrations.crimson-warden-gear-v2", true);
+            saveConfig();
+            getLogger().info("Crimson Warden shop defaults migrated once; existing arena and server settings were preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Crimson Warden shop migration failed: " + ex.getClass().getSimpleName());
+        }
     }
 
     private void logConfigValidationIssues() {
