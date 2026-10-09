@@ -1,36 +1,19 @@
-# Král upírů — ModelEngine integration
+# Vampire King — ModelEngine integration
 
-## Locked dimensions
+The repo contains an editable Blockbench Generic Model blueprint:
+- `mythicmobs/models/vampire_king.bbmodel`
+- matching 128×128 atlas `mythicmobs/models/vampire_king.png` (also embedded in the model)
+- model ID `vampire_king`
+- animation tracks `idle`, `walk`, `attack` and `fly`
 
-The final model must preserve:
+The design uses obsidian armour, crimson cloth, a gilded crown, skeletal face and red eyes, claws, ceremonial blade, split cape and wide articulated bat wings. Static dimensions are validated against the 10-block height / 8-block wingspan contract.
 
-- minimum full height: **10 blocks**
-- minimum full width including both wings: **8 blocks**
-- wings are mandatory
-- the minimum must remain true in the smallest animated pose
+Install on staging only:
+1. Copy the blueprint to `plugins/ModelEngine/blueprints/vampire_king.bbmodel` (or a MythicMobs pack's `models/` folder).
+2. Run `/meg reload models` and inspect parse logs.
+3. Distribute and accept the generated resource pack on a client.
+4. Install the mob and skill YAML in MythicMobs, then run `/mm reload`.
+5. Spawn the mob in a staging world and verify scale, wing pose, blade, texture, hitbox and animation playback.
+6. Keep `bosses.vampire.model.ready: false` until the runtime check passes.
 
-## Provider
-
-HalloweenCore expects:
-
-- provider: `MODEL_ENGINE`
-- model id: `vampire_king`
-- `required: true`
-- `plugin-required: true`
-- `ready: false` until the actual model is installed and tested
-
-## MythicMobs hook
-
-The dormant mob is `vampire-king`. A ModelEngine skill hook can be attached after the model is finalized. ModelEngine/MythicMobs examples use a model skill in the form of `model{model=...}`; do not enable the hook before the real model exists.
-
-## Asset policy
-
-When the model is made, commit together:
-
-- model/blueprint data
-- every texture used by the model
-- animation data required by the model
-- any required resource-pack metadata
-- a preview/reference image
-
-The boss must never ship with a fake placeholder model while `ready: true`.
+The four live attacks and `/halloween bosseffects <1|2|3|4>` share animated telegraphs: charging runic rings, expanding blood shockwave, three mirror portals and pulsing eclipse circles with flame pillars. Damage resolves at the animation impact. CI validates files and Java compilation, not client-side resource-pack delivery.

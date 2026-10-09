@@ -18,5 +18,7 @@ jobs:
           cache: maven
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
+      - name: Validate Vampire King model
+        run: python3 scripts/validate_vampire_model.py
       - name: Build
         run: mvn -B clean package
