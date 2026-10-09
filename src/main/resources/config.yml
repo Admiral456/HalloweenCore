@@ -511,9 +511,10 @@ atmosphere:
   enabled: true
   sound: "warriorland_halloween:haunted_theme"
   fallback-sound: ""
-  # Formerly 0.35; now near the practical maximum (~2.9x louder).
-  volume: 1.0
+  # 3x the previous full-volume value; Halloween is played outside the MUSIC category.
+  volume: 3.0
   volume-triple-migrated: true
+  volume-tripled-v2-migrated: true
   pitch: 1.0
   loop-milliseconds: 76136
   send-title-on-join: true
