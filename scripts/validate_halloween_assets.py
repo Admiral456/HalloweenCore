@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
 import json
+import re
 import struct
 import subprocess
 import sys
@@ -50,7 +51,8 @@ for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "halloweenTin
     if marker not in shader_text:
         fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
 
-for audio, expected_duration in ((THEME, 64.0), (EVENT_STING, 5.0)):
+theme_duration = 0.0
+for audio, expected_duration in ((THEME, None), (EVENT_STING, 5.0)):
     if not audio.is_file():
         fail("Missing Halloween audio asset: " + str(audio.relative_to(ROOT)))
     if audio.read_bytes()[:4] != b"OggS":
@@ -73,7 +75,12 @@ for audio, expected_duration in ((THEME, 64.0), (EVENT_STING, 5.0)):
         fail(f"{audio.name} must use 22050 Hz sample rate")
     if int(stream.get("channels", 0)) != 1:
         fail(f"{audio.name} must be mono")
-    if abs(float(stream.get("duration", 0)) - expected_duration) > 0.06:
+    actual_duration = float(stream.get("duration", 0))
+    if audio == THEME:
+        theme_duration = actual_duration
+        if actual_duration < 10.0:
+            fail("Spooky Fester ambient theme is unexpectedly short")
+    elif expected_duration is not None and abs(actual_duration - expected_duration) > 0.06:
         fail(f"{audio.name} must be {expected_duration:.0f} seconds long")
 
 if not SOUNDS_CONFIG.is_file():
@@ -87,8 +94,15 @@ runtime_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(
 for sound_id in ("warriorland_halloween:event_sting", "warriorland_halloween:haunted_theme"):
     if sound_id not in runtime_config:
         fail(f"Plugin configuration is missing sound ID: {sound_id}")
-if "loop-milliseconds: 64000" not in runtime_config:
-    fail("Ambient playback interval must match the 64-second generated theme loop")
+loop_match = re.search(r"(?m)^  loop-milliseconds:\s*(\d+)\s*$", runtime_config)
+if not loop_match:
+    fail("Runtime config must define atmosphere.loop-milliseconds")
+configured_loop_ms = int(loop_match.group(1))
+if abs(configured_loop_ms - round(theme_duration * 1000)) > 100:
+    fail(
+        f"Ambient playback interval ({configured_loop_ms} ms) does not match "
+        f"Spooky Fester duration ({round(theme_duration * 1000)} ms)"
+    )
 
 config = CONFIG.read_text(encoding="utf-8")
 if "namespace: warriorland_halloween" not in config:
@@ -106,6 +120,6 @@ print("Halloween asset validation passed.")
 print("5 textures: 32x32 PNG")
 print("ItemsAdder namespace: warriorland_halloween")
 print("Sky shader: Minecraft 1.21.10 entry point present")
-print("Audio: 64s ambience + 5s event cue, mono OGG/Vorbis containers")
+print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms) + 5s event cue, mono OGG/Vorbis containers")
 print("ItemsAdder sound definitions: present")
 print("Content layout: structure method 2")
