@@ -126,7 +126,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (eventManager != null) eventManager.reloadSchedule();
         if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
         if (bossManager != null) bossManager.stopVampireBossBar();
-        if (!eventEnabled && atmosphere != null) atmosphere.stopPlayback();
+        if (atmosphere != null) atmosphere.refreshPlayback();
         for (String error : HalloweenConfigValidator.validate(this)) {
             getLogger().severe("[CONFIG] " + error);
         }
@@ -145,9 +145,9 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 eventManager.stop();
                 if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
                 if (bossManager != null) bossManager.stopVampireBossBar();
-                if (atmosphere != null) atmosphere.stopPlayback();
             }
         }
+        if (atmosphere != null) atmosphere.refreshPlayback();
     }
 
     public boolean isEventEnabled() {
