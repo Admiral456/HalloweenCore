@@ -129,7 +129,7 @@ rewards:
       name: "&4&lHelma Krvavého strážce"
       lore:
         - "&7Vlastní černo-karmínová zbroj."
-        - "&c+1 bod brnění, vyšší odolnost."
+        - "&c6 bodů brnění (netherit 3) • výdrž 900."
         - "&8Enchantovatelná jako netherit."
 
     crimson-warden-chestplate:
@@ -141,7 +141,7 @@ rewards:
       name: "&4&lKyrys Krvavého strážce"
       lore:
         - "&7Vlastní černo-karmínová zbroj."
-        - "&c+1 bod brnění, vyšší odolnost."
+        - "&c12 bodů brnění (netherit 8) • výdrž 1 300."
         - "&8Enchantovatelný jako netherit."
 
     crimson-warden-leggings:
@@ -153,7 +153,7 @@ rewards:
       name: "&4&lNohavice Krvavého strážce"
       lore:
         - "&7Vlastní černo-karmínová zbroj."
-        - "&c+1 bod brnění, vyšší odolnost."
+        - "&c9 bodů brnění (netherit 6) • výdrž 1 150."
         - "&8Enchantovatelné jako netherit."
 
     crimson-warden-boots:
@@ -165,7 +165,7 @@ rewards:
       name: "&4&lBoty Krvavého strážce"
       lore:
         - "&7Vlastní černo-karmínová zbroj."
-        - "&c+1 bod brnění, vyšší odolnost."
+        - "&c6 bodů brnění (netherit 3) • výdrž 950."
         - "&8Enchantovatelné jako netherit."
 
     crimson-warden-sword:
