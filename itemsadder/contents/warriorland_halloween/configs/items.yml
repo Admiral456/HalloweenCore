@@ -1,6 +1,12 @@
 info:
   namespace: warriorland_halloween
 
+equipments:
+  crimson_warden:
+    type: armor
+    layer_1: armor/crimson_warden/layer_1
+    layer_2: armor/crimson_warden/layer_2
+
 items:
   hunter_mask:
     name: "&6&lMaska nočního lovce &8[Halloween 2026]"
@@ -37,6 +43,70 @@ items:
     material: PAPER
     graphics:
       texture: item/haunted_map
+
+  crimson_warden_helmet:
+    name: "&4&lHelma Krvavého strážce"
+    lore:
+      - "&7Relikvie elitní výbavy WarriorLandu."
+      - "&c+1 bod brnění nad běžný netherit."
+      - "&8Lze enchantovat běžnými enchanty."
+    material: NETHERITE_HELMET
+    graphics:
+      texture: item/crimson_warden_helmet
+    durability:
+      max_durability: 900
+    equipment:
+      id: warriorland_halloween:crimson_warden
+      slot_attribute_modifiers:
+        armor: 1
+
+  crimson_warden_chestplate:
+    name: "&4&lKyrys Krvavého strážce"
+    lore:
+      - "&7Relikvie elitní výbavy WarriorLandu."
+      - "&c+1 bod brnění nad běžný netherit."
+      - "&8Lze enchantovat běžnými enchanty."
+    material: NETHERITE_CHESTPLATE
+    graphics:
+      texture: item/crimson_warden_chestplate
+    durability:
+      max_durability: 1300
+    equipment:
+      id: warriorland_halloween:crimson_warden
+      slot_attribute_modifiers:
+        armor: 1
+
+  crimson_warden_leggings:
+    name: "&4&lNohavice Krvavého strážce"
+    lore:
+      - "&7Relikvie elitní výbavy WarriorLandu."
+      - "&c+1 bod brnění nad běžný netherit."
+      - "&8Lze enchantovat běžnými enchanty."
+    material: NETHERITE_LEGGINGS
+    graphics:
+      texture: item/crimson_warden_leggings
+    durability:
+      max_durability: 1150
+    equipment:
+      id: warriorland_halloween:crimson_warden
+      slot_attribute_modifiers:
+        armor: 1
+
+  crimson_warden_boots:
+    name: "&4&lBoty Krvavého strážce"
+    lore:
+      - "&7Relikvie elitní výbavy WarriorLandu."
+      - "&c+1 bod brnění nad běžný netherit."
+      - "&8Lze enchantovat běžnými enchanty."
+    material: NETHERITE_BOOTS
+    graphics:
+      texture: item/crimson_warden_boots
+    durability:
+      max_durability: 950
+    equipment:
+      id: warriorland_halloween:crimson_warden
+      slot_attribute_modifiers:
+        armor: 1
 
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"
