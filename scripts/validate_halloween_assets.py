@@ -339,7 +339,7 @@ for marker in ("scheduleFirstEvent()", "startEventNow(String requestedId)", "beg
     if marker not in EVENT_SOURCE:
         fail(f"Event manager is missing required behavior: {marker}")
 for setting, expected in (
-    ("random-events.start-delay-seconds: 30", True),
+    ("start-delay-seconds: 30", True),
     ("surge-interval-seconds: 30", True),
     ("max-event-mobs: 16", True),
     ("invasion-mobs-per-surge: 3", True),
