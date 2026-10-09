@@ -6,6 +6,12 @@ minecraft_lang_overwrite:
     entries:
       sound.haunted_theme: "Halloween ambient theme"
       sound.event_sting: "Halloween event sting"
+      sound.soulstorm_sting: "Soulstorm event sting"
+      sound.witching_sting: "Witching Hour event sting"
+      sound.harvest_sting: "Cursed Harvest event sting"
+      sound.blood_moon_rise: "Blood Moon invasion cue"
+      sound.pumpkin_apocalypse: "Pumpkin Apocalypse cue"
+      sound.graveyard_rising: "Graveyard Rising cue"
     languages:
       - ALL
 
@@ -21,5 +27,41 @@ sounds:
     path: event_sting
     settings:
       subtitle: sound.event_sting
+      volume: 1.0
+      pitch: 1.0
+  soulstorm_sting:
+    path: soulstorm_sting
+    settings:
+      subtitle: sound.soulstorm_sting
+      volume: 1.0
+      pitch: 1.0
+  witching_sting:
+    path: witching_sting
+    settings:
+      subtitle: sound.witching_sting
+      volume: 1.0
+      pitch: 1.0
+  harvest_sting:
+    path: harvest_sting
+    settings:
+      subtitle: sound.harvest_sting
+      volume: 1.0
+      pitch: 1.0
+  blood_moon_rise:
+    path: blood_moon_rise
+    settings:
+      subtitle: sound.blood_moon_rise
+      volume: 1.0
+      pitch: 1.0
+  pumpkin_apocalypse:
+    path: pumpkin_apocalypse
+    settings:
+      subtitle: sound.pumpkin_apocalypse
+      volume: 1.0
+      pitch: 1.0
+  graveyard_rising:
+    path: graveyard_rising
+    settings:
+      subtitle: sound.graveyard_rising
       volume: 1.0
       pitch: 1.0
