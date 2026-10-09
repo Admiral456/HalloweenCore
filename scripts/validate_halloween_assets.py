@@ -223,11 +223,11 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
         fail(f"Custom gear '{item_id}' must remain enchantable")
 
 expected_gear_stats = {
-    "crimson_warden_sword": ("attackDamage: 11.0", "attackSpeed: -2.0"),
-    "crimson_warden_pickaxe": ("attackDamage: 8.0", "attackSpeed: -1.8"),
-    "crimson_warden_axe": ("attackDamage: 12.0", "attackSpeed: -2.4"),
-    "crimson_warden_shovel": ("attackDamage: 8.0", "attackSpeed: -1.8"),
-    "crimson_warden_hoe": ("attackDamage: 4.0", "attackSpeed: 0.0"),
+    "crimson_warden_sword": ("attackDamage: 11.0", "attackSpeed: 0.2"),
+    "crimson_warden_pickaxe": ("attackDamage: 8.0", "attackSpeed: 0.4"),
+    "crimson_warden_axe": ("attackDamage: 12.0", "attackSpeed: 0.3"),
+    "crimson_warden_shovel": ("attackDamage: 8.0", "attackSpeed: 0.5"),
+    "crimson_warden_hoe": ("attackDamage: 4.0", "attackSpeed: 0.7"),
 }
 for item_id, expected_stats in expected_gear_stats.items():
     for stat in expected_stats:
