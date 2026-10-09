@@ -344,29 +344,75 @@ public final class HalloweenVampireEncounterManager implements Listener {
     }
 
     private void runSpecialAbility() {
-        if (boss == null || phase < 2) return;
+        if (boss == null || phase < 1) return;
         if (!plugin.getConfig().getBoolean("bosses.vampire.encounter.abilities.enabled", true)) return;
 
         long now = System.currentTimeMillis();
         long cooldownSeconds = switch (phase) {
-            case 2 -> Math.max(4L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-2-cooldown-seconds", 8L));
-            case 3 -> Math.max(4L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-3-cooldown-seconds", 7L));
-            default -> Math.max(3L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-4-cooldown-seconds", 5L));
+            case 1 -> Math.max(8L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-1-cooldown-seconds", 14L));
+            case 2 -> Math.max(6L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-2-cooldown-seconds", 11L));
+            case 3 -> Math.max(6L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-3-cooldown-seconds", 10L));
+            default -> Math.max(6L, plugin.getConfig().getLong("bosses.vampire.encounter.abilities.phase-4-cooldown-seconds", 9L));
         };
         if (now - lastAbilityAt < cooldownSeconds * 1000L) return;
 
         Player target = selectTarget();
         if (target == null) return;
 
-        if (phase == 2) {
-            bloodPulse(target);
-        } else if (phase == 3) {
-            shadowStrike(target);
-        } else {
-            nightfall();
+        switch (phase) {
+            case 1 -> falseSigil(target);
+            case 2 -> bloodPulse(target);
+            case 3 -> mirrorStrike(target);
+            default -> nightfall();
         }
-
         lastAbilityAt = now;
+    }
+
+    private void falseSigil(Player target) {
+        if (boss == null) return;
+        Location mark = target.getLocation().clone();
+        UUID encounterId = bossUuid;
+        double radius = Math.max(1.5D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-1-radius", 2.5D));
+        double damage = Math.max(0.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-1-damage", 3.0D));
+
+        drawRing(mark, radius, org.bukkit.Particle.SOUL_FIRE_FLAME, 28);
+        target.sendTitle(plugin.color("&5&lFALEŠNÁ KOŘIST"),
+                plugin.color("&7Runy pod tebou vybuchnou. Uteč!"), 0, 28, 5);
+        target.playSound(target.getLocation(), "minecraft:block.amethyst_block.chime", 0.9f, 0.55f);
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!isSameEncounter(encounterId)) return;
+            mark.getWorld().spawnParticle(org.bukkit.Particle.SOUL, mark.clone().add(0, 0.15D, 0),
+                    45, radius * 0.35D, 0.35D, radius * 0.35D, 0.02D);
+            mark.getWorld().playSound(mark, "minecraft:entity.generic.explode", 0.6f, 0.65f);
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!plugin.isEligibleGameplayPlayer(player)) continue;
+                if (!player.getWorld().getUID().equals(mark.getWorld().getUID())) continue;
+                if (player.getLocation().distanceSquared(mark) > radius * radius) continue;
+                if (damage > 0.0D) player.damage(damage, boss);
+                player.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.SLOWNESS, 25, 0, true, true, true
+                ));
+            }
+        }, 30L);
+    }
+
+    private void drawRing(Location center, double radius, org.bukkit.Particle particle, int points) {
+        if (center == null || center.getWorld() == null || radius <= 0.0D || points < 3) return;
+        for (int i = 0; i < points; i++) {
+            double angle = 2.0D * Math.PI * i / points;
+            Location point = center.clone().add(
+                    Math.cos(angle) * radius, 0.12D, Math.sin(angle) * radius
+            );
+            center.getWorld().spawnParticle(particle, point, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
+    private boolean isSameEncounter(UUID encounterId) {
+        return encounterId != null && encounterId.equals(bossUuid)
+                && boss != null && boss.isValid() && !boss.isDead();
     }
 
     private Player selectTarget() {
@@ -388,76 +434,126 @@ public final class HalloweenVampireEncounterManager implements Listener {
         return selected;
     }
 
-    private void bloodPulse(Player center) {
+    private void bloodPulse(Player target) {
+        if (boss == null) return;
+        Location mark = target.getLocation().clone();
+        UUID encounterId = bossUuid;
         double radius = Math.max(3.0D,
                 plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-2-radius", 7.0D));
         double damage = Math.max(0.0D,
-                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-2-damage", 4.0D));
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-2-damage", 5.0D));
 
-        boss.getWorld().spawnParticle(
-                org.bukkit.Particle.DUST_PLUME,
-                center.getLocation().add(0, 1, 0),
-                30, radius * 0.45D, 0.8D, radius * 0.45D, 0.03D
-        );
-        boss.getWorld().playSound(center.getLocation(), "minecraft:entity.generic.explode", 0.55f, 0.55f);
+        drawRing(mark, radius, org.bukkit.Particle.DUST_PLUME, 36);
+        mark.getWorld().playSound(mark, "minecraft:entity.warden.heartbeat", 0.8f, 0.55f);
+        target.sendMessage(plugin.color("&5Krvavý puls &8» &cKruh se uzavírá. Značenému místu se vyhni!"));
 
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!plugin.isEligibleGameplayPlayer(player)) continue;
-            if (!player.getWorld().getUID().equals(boss.getWorld().getUID())) continue;
-            if (player.getLocation().distanceSquared(center.getLocation()) > radius * radius) continue;
-            if (damage > 0.0D) player.damage(damage, boss);
-        }
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!isSameEncounter(encounterId)) return;
+            mark.getWorld().spawnParticle(org.bukkit.Particle.DUST_PLUME, mark.clone().add(0, 0.5D, 0),
+                    70, radius * 0.45D, 0.8D, radius * 0.45D, 0.02D);
+            mark.getWorld().playSound(mark, "minecraft:entity.generic.explode", 0.75f, 0.45f);
+
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!plugin.isEligibleGameplayPlayer(player)) continue;
+                if (!player.getWorld().getUID().equals(mark.getWorld().getUID())) continue;
+                if (player.getLocation().distanceSquared(mark) > radius * radius) continue;
+                if (damage > 0.0D) player.damage(damage, boss);
+                player.setVelocity(player.getVelocity().add(new org.bukkit.util.Vector(
+                        (player.getLocation().getX() - mark.getX()) * 0.04D, 0.22D,
+                        (player.getLocation().getZ() - mark.getZ()) * 0.04D
+                )));
+            }
+        }, 35L);
     }
 
-    private void shadowStrike(Player target) {
-        Location from = target.getLocation();
-        double distance = Math.max(3.0D,
+    private void mirrorStrike(Player target) {
+        if (boss == null) return;
+        Location anchor = target.getLocation().clone();
+        UUID encounterId = bossUuid;
+        double markerDistance = Math.max(3.5D,
                 plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-3-teleport-distance", 5.0D));
-        double angle = java.util.concurrent.ThreadLocalRandom.current().nextDouble(0.0D, Math.PI * 2.0D);
-        Location destination = from.clone().add(Math.cos(angle) * distance, 0.0D, Math.sin(angle) * distance);
-        destination.setY(target.getWorld().getHighestBlockYAt(destination) + 1.0D);
+        double radius = Math.max(1.5D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-3-radius", 2.75D));
+        double damage = Math.max(0.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-3-damage", 7.0D));
+        List<Location> markers = new ArrayList<>();
 
-        if (!destination.getBlock().isPassable()) return;
-        boss.getWorld().spawnParticle(
-                org.bukkit.Particle.PORTAL,
-                boss.getLocation().add(0, 1, 0),
-                35, 0.7D, 1.5D, 0.7D, 0.05D
-        );
-        if (boss.teleport(destination)) {
-            boss.getWorld().spawnParticle(
-                    org.bukkit.Particle.PORTAL,
-                    destination.clone().add(0, 1, 0),
-                    45, 0.8D, 1.5D, 0.8D, 0.05D
-            );
-            boss.getWorld().playSound(destination, "minecraft:entity.enderman.teleport", 0.9f, 0.55f);
-            double damage = Math.max(1.0D,
-                    plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-3-damage", 6.0D));
-            target.damage(damage, boss);
+        for (int i = 0; i < 3; i++) {
+            double angle = (2.0D * Math.PI * i / 3.0D) + (ThreadLocalRandom.current().nextDouble(-0.12D, 0.12D));
+            Location marker = anchor.clone().add(Math.cos(angle) * markerDistance, 0.0D,
+                    Math.sin(angle) * markerDistance);
+            markers.add(marker);
+            drawRing(marker, radius, org.bukkit.Particle.PORTAL, 24);
+            marker.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, marker.clone().add(0, 0.7D, 0),
+                    16, 0.65D, 0.8D, 0.65D, 0.02D);
         }
+        anchor.getWorld().playSound(anchor, "minecraft:entity.enderman.stare", 0.9f, 0.45f);
+        target.sendTitle(plugin.color("&5&lZRCADLOVÝ VÝPAD"),
+                plugin.color("&7Tři stíny, jedna čepel. Nezůstávej u run!"), 0, 35, 5);
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!isSameEncounter(encounterId)) return;
+            Location impact = markers.get(ThreadLocalRandom.current().nextInt(markers.size()));
+            if (impact.getBlock().isPassable()
+                    && impact.clone().add(0, 1, 0).getBlock().isPassable()) {
+                boss.teleport(impact);
+            }
+            impact.getWorld().spawnParticle(org.bukkit.Particle.CRIT, impact.clone().add(0, 0.8D, 0),
+                    55, 0.9D, 1.1D, 0.9D, 0.15D);
+            impact.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, impact.clone().add(0, 0.4D, 0),
+                    40, 0.65D, 0.6D, 0.65D, 0.02D);
+            impact.getWorld().playSound(impact, "minecraft:entity.player.attack.sweep", 1.0f, 0.45f);
+
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!plugin.isEligibleGameplayPlayer(player)) continue;
+                if (!player.getWorld().getUID().equals(impact.getWorld().getUID())) continue;
+                if (player.getLocation().distanceSquared(impact) > radius * radius) continue;
+                if (damage > 0.0D) player.damage(damage, boss);
+                player.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.BLINDNESS, 30, 0, true, true, true
+                ));
+            }
+        }, 35L);
     }
 
     private void nightfall() {
+        if (boss == null) return;
+        Location origin = boss.getLocation().clone();
+        UUID encounterId = bossUuid;
         double radius = Math.max(4.0D,
                 plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-4-radius", 10.0D));
         double damage = Math.max(0.0D,
-                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-4-damage", 6.0D));
+                plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-4-damage", 7.0D));
 
-        Location origin = boss.getLocation().add(0, 1, 0);
-        boss.getWorld().spawnParticle(
-                org.bukkit.Particle.DUST_PLUME,
-                origin, 80, radius * 0.45D, 1.0D, radius * 0.45D, 0.04D
-        );
-        boss.getWorld().playSound(origin, "minecraft:entity.warden.sonic_boom", 0.6f, 0.65f);
-
+        // Inner circles are deceptive echoes; only the outer circle marks the actual blast radius.
+        drawRing(origin, radius * 0.55D, org.bukkit.Particle.SOUL_FIRE_FLAME, 32);
+        drawRing(origin, radius * 0.78D, org.bukkit.Particle.SOUL_FIRE_FLAME, 40);
+        drawRing(origin, radius, org.bukkit.Particle.SOUL_FIRE_FLAME, 52);
+        origin.getWorld().playSound(origin, "minecraft:entity.warden.sonic_boom", 0.8f, 0.45f);
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!plugin.isEligibleGameplayPlayer(player)) continue;
-            if (!player.getWorld().getUID().equals(boss.getWorld().getUID())) continue;
-            if (player.getLocation().distanceSquared(origin) > radius * radius) continue;
-            if (damage > 0.0D) player.damage(damage, boss);
-            player.addPotionEffect(new org.bukkit.potion.PotionEffect(
-                    org.bukkit.potion.PotionEffectType.BLINDNESS, 40, 0, true, true, true
-            ));
+            if (!player.getWorld().getUID().equals(origin.getWorld().getUID())) continue;
+            if (player.getLocation().distanceSquared(origin) <= radius * radius * 1.5D) {
+                player.sendMessage(plugin.color("&4ZATMĚNÍ &8» &7Vnitřní kruhy klamou. Skutečný dosah ukazuje vnější runa!"));
+            }
         }
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!isSameEncounter(encounterId)) return;
+            origin.getWorld().spawnParticle(org.bukkit.Particle.DUST_PLUME, origin.clone().add(0, 0.8D, 0),
+                    100, radius * 0.42D, 1.0D, radius * 0.42D, 0.05D);
+            origin.getWorld().playSound(origin, "minecraft:entity.warden.sonic_boom", 0.9f, 0.65f);
+
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!plugin.isEligibleGameplayPlayer(player)) continue;
+                if (!player.getWorld().getUID().equals(origin.getWorld().getUID())) continue;
+                if (player.getLocation().distanceSquared(origin) > radius * radius) continue;
+                if (damage > 0.0D) player.damage(damage, boss);
+                player.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                        org.bukkit.potion.PotionEffectType.BLINDNESS, 60, 0, true, true, true
+                ));
+            }
+        }, 40L);
     }
 
     private void maintainPhaseEffects() {
@@ -546,7 +642,11 @@ public final class HalloweenVampireEncounterManager implements Listener {
         long victoryReward = Math.max(0L,
                 plugin.getConfig().getLong("bosses.vampire.encounter.victory-reward-fragments", 2500L));
         long topBonus = Math.max(0L,
-                plugin.getConfig().getLong("bosses.vampire.encounter.top-contributor-bonus-fragments", 750L));
+                plugin.getConfig().getLong("bosses.vampire.encounter.top-contributor-bonus-fragments", 2000L));
+        double minimumDamagePercent = Math.max(0.0D, Math.min(100.0D,
+                plugin.getConfig().getDouble("bosses.vampire.encounter.minimum-damage-percent", 2.5D)));
+        double maximumHealth = boss == null ? 1.0D : Math.max(1.0D, boss.getMaxHealth());
+        double minimumDamage = maximumHealth * minimumDamagePercent / 100.0D;
 
         Bukkit.broadcastMessage(plugin.color(
                 plugin.getConfig().getString("messages.vampire-victory",
@@ -555,32 +655,34 @@ public final class HalloweenVampireEncounterManager implements Listener {
 
         UUID topPlayer = null;
         double topDamage = 0.0D;
+        Set<UUID> qualifiedParticipants = new HashSet<>();
         for (UUID uuid : participants) {
             int seconds = participationSeconds.getOrDefault(uuid, 0);
-            if (seconds < minSeconds) continue;
+            double damageDealt = damageContribution.getOrDefault(uuid, 0.0D);
+            if (seconds < minSeconds || !Double.isFinite(damageDealt) || damageDealt < minimumDamage) continue;
 
+            qualifiedParticipants.add(uuid);
             Player player = Bukkit.getPlayer(uuid);
             if (participationReward > 0L) {
                 plugin.getService().addFragments(uuid, participationReward, "boss-participation");
             }
             if (player != null) {
-                player.sendMessage(plugin.color("&6HALLOWEEN &8» &fZa účast v boji získáváš &e+"
+                player.sendMessage(plugin.color("&6HALLOWEEN &8» &fZa aktivní účast získáváš &e+"
                         + participationReward + " &ffragmentů."));
             }
-            double damageDealt = damageContribution.getOrDefault(uuid, 0.0D);
-            if (Double.isFinite(damageDealt) && damageDealt > topDamage) {
+            if (damageDealt > topDamage) {
                 topDamage = damageDealt;
                 topPlayer = uuid;
             }
         }
 
-        if (killer != null && participants.contains(killer.getUniqueId()) && victoryReward > 0L) {
+        if (killer != null && qualifiedParticipants.contains(killer.getUniqueId()) && victoryReward > 0L) {
             plugin.getService().addFragments(killer.getUniqueId(), victoryReward, "boss-victory");
             killer.sendMessage(plugin.color("&6HALLOWEEN &8» &6Vražda Krále upírů: &e+"
                     + victoryReward + " &ffragmentů."));
         }
 
-        if (topPlayer != null && topBonus > 0L) {
+        if (topPlayer != null && qualifiedParticipants.contains(topPlayer) && topBonus > 0L) {
             plugin.getService().addFragments(topPlayer, topBonus, "boss-top-contributor");
             Player top = Bukkit.getPlayer(topPlayer);
             if (top != null) {
