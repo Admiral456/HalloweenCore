@@ -38,6 +38,10 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween progress
 - /halloween curse
 - /halloween event
+- /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin, testovací okamžité spuštění)
+- /halloween event stop (admin)
+- /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
+- /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
 - /halloween challenge
 - /halloween rewards
 - /halloween claim <id>
@@ -124,8 +128,9 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 ## Návod: aréna, obchod a resource pack
 
 - Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
-- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění bloky v kruhu o poloměru 22 bloků; před potvrzením je vhodná záloha světa.
+- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
+- `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
 - `/halloween rewards` otevře shop; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
 - Po nahrání obsahu do `plugins/ItemsAdder/contents/warriorland_halloween` restartuj server, spusť `/iazip` a ověř `/iainfo`. Pokud není URL resource packu dosažitelná nebo se žádná výzva neobjeví, je nutné opravit hosting resource packu v ItemsAdder, ne plugin HalloweenCore.
 
