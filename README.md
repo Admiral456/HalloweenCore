@@ -155,7 +155,7 @@ Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový prog
 
 Vlastní 32×32 PNG ikony jsou v `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/`. Obsah zahrnuje dýňovou masku, talisman, token, mapu, cukroví, čtyři kusy zbroje Krvavého strážce a pět nových nástrojů: meč, lopatu, krumpáč, sekeru a motyku.
 
-Zbroj používá dva 64×32 armor atlasy, plus +1 bod brnění na každý kus a zvýšenou odolnost. Každý kus zbraně/nástroje používá netheritový základ, vlastní ikonu, vyšší poškození (u motyky pro boj), přidanou odolnost a běžné enchantování bez zakázaných enchantů. Shop je rozšířen na 54 slotů, takže se zobrazí všechny odměny.
+Zbroj používá dva vlastní 64×32 armor atlasy s černo-karmínovými pláty a zlatými okraji, plus +1 bod brnění na každý kus a zvýšenou odolnost. Každý kus zbraně/nástroje používá netheritový základ, vlastní 32×32 ikonu a vyšší odolnost; atributy zvyšují poškození a rychlost útoku. Pět nástrojů má vlastní modely `minecraft:item/handheld`, aby se v ruce zobrazovaly jako skutečné nástroje. Žádný z těchto itemů neblokuje běžné enchanty. Shop je rozšířen na 54 slotů, takže se zobrazí všechny odměny.
 
 Po nasazení obsahu do ItemsAdder spusť `/iazip` nebo `/halloween reload`.
 
