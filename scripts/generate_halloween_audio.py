@@ -96,8 +96,9 @@ def generate_haunted_theme() -> None:
             pad += (1.0 - blend) * [0.16, 0.075, 0.060, 0.025][j] * (
                 s(f, t, duration, phase) + 0.18 * s(f * 2.0, t, duration, phase * 0.7)
             )
+        next_section = (section + 1) % len(chords)
         for j, f in enumerate(chord_b):
-            phase = (section + 1) * 0.41 + j * 1.17
+            phase = next_section * 0.41 + j * 1.17
             pad += blend * [0.16, 0.075, 0.060, 0.025][j] * (
                 s(f, t, duration, phase) + 0.18 * s(f * 2.0, t, duration, phase * 0.7)
             )
