@@ -97,7 +97,7 @@ public final class HalloweenMobManager implements Listener {
                 || !plugin.isEligibleGameplayWorld(target.getWorld())) return;
 
         LivingEntity attacker = resolveLivingAttacker(event.getDamager());
-        if (!(attacker instanceof Monster)) return;
+        if (!isHostileDamageSource(attacker)) return;
 
         double multiplier = Math.max(1.0D, Math.min(5.0D,
                 plugin.getConfig().getDouble("random-events.blood-moon-damage-multiplier", 3.0D)));
@@ -135,6 +135,19 @@ public final class HalloweenMobManager implements Listener {
             default -> {
             }
         }
+    }
+
+    private boolean isHostileDamageSource(LivingEntity attacker) {
+        if (attacker == null) return false;
+        // Most hostile mobs implement Monster; include hostile types which don't share
+        // that interface in Bukkit (notably the Ender Dragon, Wither and Shulker).
+        return attacker instanceof Monster
+                || attacker instanceof EnderDragon
+                || attacker instanceof Wither
+                || attacker instanceof Shulker
+                || attacker instanceof Ghast
+                || attacker instanceof Phantom
+                || attacker instanceof Slime;
     }
 
     private LivingEntity resolveLivingAttacker(Entity damager) {
