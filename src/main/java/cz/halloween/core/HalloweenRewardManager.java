@@ -31,7 +31,7 @@ public final class HalloweenRewardManager {
         }
 
         HalloweenRewardMenuHolder holder = new HalloweenRewardMenuHolder();
-        var inventory = Bukkit.createInventory(holder, 27, plugin.color("&6&lHALLOWEEN ODMĚNY &8• &72026"));
+        var inventory = Bukkit.createInventory(holder, 54, plugin.color("&6&lHALLOWEEN ARMORY &8• &72026"));
         holder.bind(inventory);
 
         ItemStack filler = namedItem(Material.BLACK_STAINED_GLASS_PANE, "&0");
@@ -49,7 +49,7 @@ public final class HalloweenRewardManager {
             ));
             balance.setItemMeta(balanceMeta);
         }
-        inventory.setItem(22, balance);
+        inventory.setItem(49, balance);
 
         ItemStack progress = namedItem(Material.CLOCK, "&6&lServerový progress");
         ItemMeta progressMeta = progress.getItemMeta();
@@ -62,7 +62,7 @@ public final class HalloweenRewardManager {
         }
         inventory.setItem(4, progress);
 
-        int[] slots = {10, 11, 12, 13, 14, 15, 16};
+        int[] slots = {10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34, 37, 38, 39, 40, 41, 42, 43};
         int index = 0;
         for (String id : section.getKeys(false)) {
             if (index >= slots.length) break;
