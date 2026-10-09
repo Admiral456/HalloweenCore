@@ -6,12 +6,15 @@ import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public final class HalloweenPassiveEffectManager {
+public final class HalloweenPassiveEffectManager implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey rewardKey;
     private final NamespacedKey talismanHealthKey;
@@ -25,6 +28,19 @@ public final class HalloweenPassiveEffectManager {
     public void start() {
         long period = 20L;
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, period, period);
+    }
+
+    public void stop() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            removeTalismanHealthModifier(player);
+        }
+    }
+
+    @EventHandler
+    public void onPlayerQuit(PlayerQuitEvent event) {
+        // Do not leave a health modifier on the player data when the talisman
+        // might no longer be held after they reconnect.
+        removeTalismanHealthModifier(event.getPlayer());
     }
 
     private void tick() {
@@ -81,6 +97,18 @@ public final class HalloweenPassiveEffectManager {
             maxHealth.addModifier(new AttributeModifier(
                     talismanHealthKey, bonusHealth, AttributeModifier.Operation.ADD_NUMBER));
         }
+    }
+
+    private void removeTalismanHealthModifier(Player player) {
+        AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth == null) return;
+        var modifiers = maxHealth.getModifiers().stream()
+                .filter(modifier -> modifier.getKey().equals(talismanHealthKey))
+                .toList();
+        for (AttributeModifier modifier : modifiers) {
+            maxHealth.removeModifier(modifier);
+        }
+        player.setHealth(Math.min(player.getHealth(), Math.max(1.0D, maxHealth.getValue())));
     }
 
     private boolean isReward(ItemStack item, String rewardId) {
