@@ -236,6 +236,8 @@ random-events:
   surge-interval-seconds: 45
   max-event-mobs: 12
   event-mobs-enabled: true
+  # Number of special mobs in each Blood Moon invasion wave (1–4).
+  invasion-mobs-per-surge: 2
   special-mob-chance-multiplier: 1.50
   sound: "halloween:haunted_theme"
   types:
@@ -262,6 +264,13 @@ random-events:
       multipliers:
         farming: 3.0
         fishing: 1.25
+    
+    blood-moon-invasion:
+      name: "Krvavý měsíc — invaze"
+      start-message: "&4&lKRVAVÝ MĚSÍC &8» &cObloha zrudla! Vlny speciálních mobů se blíží. Zvládnete přežít invazi po dobu &e%duration% minut&c?"
+      end-message: "&4&lKRVAVÝ MĚSÍC &8» &7Poslední stíny ustoupily. Invaze skončila."
+      multipliers:
+        mob-kill: 2.25
 
 
 # Hlavní boss – specifikace je záměrně připravená před samotnou implementací.

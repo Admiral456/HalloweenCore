@@ -11,7 +11,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - každý hráč má vlastní úroveň prokletí
 - vyšší prokletí zvyšuje základní zisk fragmentů
 - celý server má společný fragmentový progress a milníky
-- náhodně se spouští dočasné Halloween události
+- náhodně se spouští dočasné Halloween události včetně Krvavého měsíce — invaze s vlnami speciálních mobů a silným kapitánem
 - události dávají různé násobiče podle aktivity
 - serverové milníky zkracují interval mezi náhodnými událostmi a postupně je zesilují
 - speciální Halloween mobové se mohou přirozeně objevit a dávají bonusové fragmenty
@@ -157,3 +157,8 @@ Repozitář obsahuje editovatelný Blockbench blueprint `mythicmobs/models/vampi
 ## Generování upíří arény
 
 Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 45 bloků, obvodovou zeď s průchody, osm věží se soul lanternami a krvavý runový vzor. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, stejné načtené světlo a volný prostor nad podlahou. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Horní vrstva terénu v kruhu se po potvrzení nahradí novou podlahou.
+
+
+## Krvavý měsíc — invaze
+
+Mezi náhodnými událostmi je nově i invaze. Během ní se v okolí aktivních hráčů objevují vlny speciálních mobů, jejich počet v jedné vlně lze nastavit přes `random-events.invasion-mobs-per-surge` (1–4) a celkový limit hlídá `random-events.max-event-mobs`. V závěrečné části se pokusí objevit silnější Kapitán krvavé invaze. Eventové moby jsou označené a po skončení invaze se uklidí; invaze sama o sobě neodemkne ani nespustí finálního bosse.
