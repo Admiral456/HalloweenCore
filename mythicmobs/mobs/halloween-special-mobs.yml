@@ -17,8 +17,7 @@ halloween_cursed_zombie:
     PreventRenaming: true
   Skills:
   - model{mid=halloween_cursed_zombie;n=false} @self ~onSpawn
-  - state{mid=halloween_cursed_zombie;s=idle;loop=true} @self ~onSpawn
-  - state{mid=halloween_cursed_zombie;s=walk;loop=true} @self ~onMove
+  - state{mid=halloween_cursed_zombie;s=idle;} @self ~onSpawn
   - state{mid=halloween_cursed_zombie;s=attack} @self ~onAttack
 
 halloween_gravekeeper:
@@ -36,8 +35,7 @@ halloween_gravekeeper:
     PreventRenaming: true
   Skills:
   - model{mid=halloween_gravekeeper;n=false} @self ~onSpawn
-  - state{mid=halloween_gravekeeper;s=idle;loop=true} @self ~onSpawn
-  - state{mid=halloween_gravekeeper;s=walk;loop=true} @self ~onMove
+  - state{mid=halloween_gravekeeper;s=idle;} @self ~onSpawn
   - state{mid=halloween_gravekeeper;s=attack} @self ~onAttack
 
 halloween_blood_spider:
@@ -55,8 +53,7 @@ halloween_blood_spider:
     PreventRenaming: true
   Skills:
   - model{mid=halloween_blood_spider;n=false} @self ~onSpawn
-  - state{mid=halloween_blood_spider;s=idle;loop=true} @self ~onSpawn
-  - state{mid=halloween_blood_spider;s=walk;loop=true} @self ~onMove
+  - state{mid=halloween_blood_spider;s=idle;} @self ~onSpawn
   - state{mid=halloween_blood_spider;s=attack} @self ~onAttack
 
 halloween_pumpkin_wraith:
@@ -74,8 +71,7 @@ halloween_pumpkin_wraith:
     PreventRenaming: true
   Skills:
   - model{mid=halloween_pumpkin_wraith;n=false} @self ~onSpawn
-  - state{mid=halloween_pumpkin_wraith;s=idle;loop=true} @self ~onSpawn
-  - state{mid=halloween_pumpkin_wraith;s=walk;loop=true} @self ~onMove
+  - state{mid=halloween_pumpkin_wraith;s=idle;} @self ~onSpawn
   - state{mid=halloween_pumpkin_wraith;s=attack} @self ~onAttack
 
 halloween_hex_witch:
@@ -93,6 +89,5 @@ halloween_hex_witch:
     PreventRenaming: true
   Skills:
   - model{mid=halloween_hex_witch;n=false} @self ~onSpawn
-  - state{mid=halloween_hex_witch;s=idle;loop=true} @self ~onSpawn
-  - state{mid=halloween_hex_witch;s=walk;loop=true} @self ~onMove
+  - state{mid=halloween_hex_witch;s=idle;} @self ~onSpawn
   - state{mid=halloween_hex_witch;s=attack} @self ~onAttack
