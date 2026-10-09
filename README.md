@@ -14,17 +14,23 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - události dávají různé násobiče podle aktivity
 - serverové milníky zkracují interval mezi náhodnými událostmi a postupně je zesilují
 - speciální Halloween mobové se mohou přirozeně objevit a dávají bonusové fragmenty
+- každý typ elitního moba má vlastní schopnost: vysátí síly, odloženou značku hrobu, krvavou síť, popelavou explozi nebo náhodnou kletbu
+- výbuch Dýňového přízraku nepoškozuje stavby
 - speciální mobové mohou dropnout limitované „Prokleté cukroví“
 - při návratu na server funguje denní streak a comeback bonus
 - každý den má hráč vlastní Halloween lov
 - limitované odměny pro Halloween 2026 lze získat pouze jednou za hráče
-- odměny jsou navíc gated podle úrovně prokletí, takže nejlepší věci vyžadují aktivní hraní
+- obchod kombinuje vysokou cenu a požadovanou úroveň prokletí; nejvzácnější památeční token stojí 40 000 fragmentů
+- nejvyšší úroveň prokletí vyžaduje 25 000 celoživotně získaných fragmentů
+- účastnická odměna bosse vyžaduje alespoň 5 minut účasti, největší příspěvek se určuje podle uděleného poškození
 - během eventu běží atmosférická smyčka zvuku
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
 - Maska nočního lovce dává při nošení +5 % k zisku fragmentů
 - Prokletý talisman dává při držení +10 % k zisku fragmentů
-- po dosažení globálního cíle se natrvalo odemkne serverové finále pro budoucího hlavního bosse
+- po dosažení globálního cíle se natrvalo odemkne serverové finále; po pěti minutách se připraví automatické vyvolání, až bude model připravený a hráč dorazí k aréně
+- před spawnem proběhne třicetisekundové varování se souřadnicemi středu arény
+- finále se spustí přirozeně příchodem hráče do oblasti; administrátorský příkaz zůstává jako testovací možnost
 - hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
 
 ## Příkazy
