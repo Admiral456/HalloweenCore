@@ -27,13 +27,14 @@ Při výrobě modelu budou současně dodané jeho textury a potřebné resource
 
 ## Encounter lifecycle
 
-1. Server dosáhne globálního cíle a trvale odemkne finále.
-2. Admin nastaví arénu přes `/halloween setvampirearena`.
-3. MythicMobs musí obsahovat `vampire-king`.
-4. Model provider musí být přítomný a `bosses.vampire.model.ready` musí být `true`.
-5. Encounter lze spustit přes `/halloween boss start`.
-6. HalloweenCore označí skutečnou Bukkit entitu PDC klíčem a převezme správu HP baru, účastníků, leash a rewardů.
-7. Po smrti proběhne jednorázová výplata odměn; při timeoutu nebo stopu se boss odstraní bez victory rewardu.
+1. Server dosáhne globálního cíle; okamžik odemčení se trvale uloží.
+2. Admin jednou nastaví střed arény přes `/halloween setvampirearena` (stoupne na podlahu uprostřed; souřadnice X/Z se zarovnají do středu bloku).
+3. Po pěti minutách systém čeká na připravený model a na vhodného hráče v okolí arény.
+4. Hráči dostanou třicetisekundové varování se souřadnicemi; pokud zůstanou poblíž, boss se objeví přesně v uloženém středu.
+5. MythicMobs musí obsahovat `vampire-king` a skutečný ModelEngine model musí mít `bosses.vampire.model.ready: true`.
+6. Admin příkazy `/halloween boss start|stop|status` zůstávají pouze pro testování a zásah obsluhy.
+7. HalloweenCore převezme HP bar, účastníky, ochranu arény a odměny.
+8. Po smrti proběhne jednorázová výplata; při timeoutu nebo ručním stopu se boss odstraní bez victory odměn.
 
 ## Boss bar contract
 
@@ -65,3 +66,12 @@ Oficiální MythicMobs API podporuje získání MythicMob přes MobManager a spa
 - The top-contributor bonus is based on accumulated damage dealt to the boss. Players must also meet the configured minimum participation time.
 - Melee hits and player-fired projectiles contribute. Spectators who only remain nearby cannot receive the top-damage bonus.
 - Victory handling is guarded against duplicate execution, and the defeated flag is persisted before the encounter is cleaned up.
+
+
+## Obtížnost a odměny
+
+- Encounter trvá nejvýše 20 minut.
+- Účastnická odměna vyžaduje alespoň 5 minut v okolí arény během souboje.
+- Bonus za největší příspěvek se určuje podle reálně uděleného poškození, ne podle samotné přítomnosti.
+- Výchozí fragmentové odměny: 1 000 za způsobilou účast, 5 000 pro způsobilého účastníka, který bosse dorazí, a 2 500 za nejvyšší poškození.
+- Finální boss je jednorázový pro Halloween 2026.
