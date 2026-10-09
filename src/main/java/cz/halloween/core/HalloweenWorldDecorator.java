@@ -38,10 +38,8 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     public void start() {
-        if (task != null) return;
-        if (!isEnabled()) return;
+        if (task != null || !isEnabled()) return;
         scanLoadedChunks();
-        task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::processQueue, 1L, 10L);
     }
 
     public void stop() {
