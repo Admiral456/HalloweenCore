@@ -1,7 +1,13 @@
-# Reserved skill namespace for future expansion.
-# Primary phase mechanics currently live in HalloweenCore so the encounter can
-# stay synchronized with the Paper boss bar, participation and arena rules.
-
+# Model animation helpers; HalloweenCore still owns the encounter and damage.
+VampireKingIdle:
+  Skills:
+  - state{mid=vampire_king;s=idle;} @self
+VampireKingWalk:
+  Skills:
+  - state{mid=vampire_king;s=walk;} @self
+VampireKingAttack:
+  Skills:
+  - state{mid=vampire_king;s=attack;} @self
 VampireKingBloodMark:
   Skills:
   - effect:particles{p=reddust;color=#7A0019;amount=18;hS=0.6;vS=0.5;speed=0.01} @self

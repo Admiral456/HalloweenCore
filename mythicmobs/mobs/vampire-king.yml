@@ -1,7 +1,3 @@
-# Dormant final boss definition for HalloweenCore.
-# HalloweenCore controls when/where this mob may spawn.
-# The custom 10+ block model and wings are intentionally attached later.
-
 vampire-king:
   Type: ZOMBIE
   Display: '&4&lKRÁL UPÍRŮ'
@@ -13,6 +9,7 @@ vampire-king:
     Despawn: false
     PreventOtherDrops: true
     PreventMobKillDrops: true
+    Silent: true
     KnockbackResistance: 1
     MovementSpeed: 0.28
     FollowRange: 64
@@ -22,8 +19,7 @@ vampire-king:
   AITargetSelectors:
   - 0 clear
   - 1 players
-  BossBar:
-    Enabled: false
-  # Activate only after the real ModelEngine asset is installed and tested:
-  # Skills:
-  # - model{model=vampire_king;n=name} @self ~onSpawn
+  Skills:
+  - model{mid=vampire_king;n=false} @self ~onSpawn
+  - state{mid=vampire_king;s=idle;} @self ~onSpawn
+  - state{mid=vampire_king;s=attack;} @self ~onAttack
