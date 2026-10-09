@@ -76,8 +76,8 @@ rewards:
 
   shop:
     hunter-mask:
-      cost: 1500
-      min-curse: 1
+      cost: 3000
+      min-curse: 2
       itemsadder-id: "warriorland_halloween:hunter_mask"
       bonus-multiplier: 0.05
       material: CARVED_PUMPKIN
@@ -89,7 +89,7 @@ rewards:
         - "&7jen jednou."
 
     cursed-talisman:
-      cost: 5000
+      cost: 16000
       min-curse: 4
       itemsadder-id: "warriorland_halloween:cursed_talisman"
       bonus-multiplier: 0.10
@@ -102,7 +102,7 @@ rewards:
         - "&7kteří se dostanou až na vysoké prokletí."
 
     halloween-token:
-      cost: 10000
+      cost: 40000
       min-curse: 5
       itemsadder-id: "warriorland_halloween:halloween_token"
       material: NAME_TAG
@@ -126,8 +126,8 @@ special-mobs:
   enabled: true
   chance: 0.04
   phase-bonus-chance: 0.005
-  bonus-fragments: 12
-  relic-drop-chance: 0.12
+  bonus-fragments: 20
+  relic-drop-chance: 0.08
   relic-item-id: "warriorland_halloween:cursed_candy"
   map-drop-chance: 0.03
   map-item-id: "warriorland_halloween:haunted_map"
@@ -138,18 +138,28 @@ special-mobs:
       health-multiplier: 1.35
       speed-level: 0
       strength-level: 0
+      ability-cooldown-seconds: 12
+      soul-siphon-blindness-ticks: 35
+      soul-siphon-weakness-ticks: 80
     gravekeeper:
       name: "&8&lHrobník"
       glowing: true
       health-multiplier: 1.45
       speed-level: 0
       strength-level: 0
+      ability-cooldown-seconds: 9
+      grave-mark-delay-ticks: 24
+      grave-mark-radius-blocks: 1.5
+      grave-mark-damage: 3.0
     blood-spider:
       name: "&c&lKrvavý pavouk"
       glowing: true
       health-multiplier: 1.25
       speed-level: 1
       strength-level: 0
+      ability-cooldown-seconds: 8
+      blood-web-poison-ticks: 80
+      blood-web-slowness-ticks: 45
     pumpkin-wraith:
       name: "&6&lDýňový přízrak"
       glowing: true
@@ -157,12 +167,17 @@ special-mobs:
       speed-level: 0
       strength-level: 1
       explosion-radius: 3
+      ash-flash-radius-blocks: 5.0
+      ash-flash-nausea-ticks: 70
+      ash-flash-blindness-ticks: 30
     hex-witch:
       name: "&5&lHexová čarodějka"
       glowing: true
       health-multiplier: 1.30
       speed-level: 0
       strength-level: 0
+      ability-cooldown-seconds: 10
+      random-hex-duration-ticks: 65
 
 notifications:
   fragment-gain: true
@@ -188,23 +203,23 @@ curse:
       name: "Beze jména"
     level-1:
       level: 1
-      threshold: 100
+      threshold: 250
       name: "Dotčený"
     level-2:
       level: 2
-      threshold: 500
+      threshold: 1000
       name: "Prokletý"
     level-3:
       level: 3
-      threshold: 1500
+      threshold: 3500
       name: "Zkažený"
     level-4:
       level: 4
-      threshold: 5000
+      threshold: 10000
       name: "Posedlý"
     level-5:
       level: 5
-      threshold: 12000
+      threshold: 25000
       name: "Zasvěcený temnotě"
 
 random-events:
@@ -249,7 +264,8 @@ random-events:
 # Později bude napojený na MythicMobs a vlastní model/resource pack.
 bosses:
   vampire:
-    enabled: false
+    # No spawn occurs until the real model passes its readiness gate.
+    enabled: true
     id: "vampire-king"
     display-name: "&4&lKRÁL UPÍRŮ"
     min-height-blocks: 10
@@ -267,6 +283,12 @@ bosses:
     spawn-requirements:
       global-progress-percent: 100
       event-completion: true
+    auto-start:
+      enabled: true
+      delay-after-finale-seconds: 300
+      omen-countdown-seconds: 30
+      nearby-radius-blocks: 64
+      minimum-nearby-players: 1
     model:
       provider: MODEL_ENGINE
       id: vampire_king
@@ -286,10 +308,10 @@ bosses:
       arena-radius-blocks: 48
       participation-radius-blocks: 96
       leash-to-arena: true
-      min-participation-seconds: 60
-      participation-reward-fragments: 250
-      victory-reward-fragments: 2500
-      top-contributor-bonus-fragments: 750
+      min-participation-seconds: 300
+      participation-reward-fragments: 1000
+      victory-reward-fragments: 5000
+      top-contributor-bonus-fragments: 2500
       abilities:
         enabled: true
         target-radius-blocks: 48
@@ -324,6 +346,7 @@ messages:
   global-goal-reached: "&6&lHALLOWEEN &8» &fServer společně dosáhl hlavního cíle! Něco se probouzí..."
   finale-unlocked: "&6&lHALLOWEEN &8» &4Finále je odemčeno. Něco čeká za branou..."
   global-milestone: "&6&lHALLOWEEN &8» &dCelý WarriorLand dosáhl milníku &e%milestone% &dfragmentů."
+  vampire-omen: "&5&lHALLOWEEN &8» &dZemě se zachvěla. Ve světě &e%world% &7na souřadnicích &e%x% %y% %z% &7se probouzí Král upírů. Máte &e%countdown% sekund &7na přípravu."
   vampire-start: "&4&lHALLOWEEN &8» &fKrál upírů sestoupil do arény. &7Poražte ho společně."
   vampire-timeout: "&4&lHALLOWEEN &8» &cKrál upírů zmizel v temnotě. Aréna je zticha."
   vampire-victory: "&4&lHALLOWEEN &8» &6Král upírů byl poražen! Temnota ustupuje."
