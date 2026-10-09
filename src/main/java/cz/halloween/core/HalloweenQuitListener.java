@@ -15,6 +15,9 @@ public final class HalloweenQuitListener implements Listener {
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        if (plugin.getAtmosphere() != null) {
+            plugin.getAtmosphere().stop(player);
+        }
         if (plugin.getDataManager() != null) {
             plugin.getDataManager().save();
         }

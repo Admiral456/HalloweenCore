@@ -16,12 +16,32 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Ensure audio encoder
+        run: |
+          if ! command -v ffmpeg >/dev/null 2>&1; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+      - name: Generate Halloween audio
+        run: python3 scripts/generate_halloween_audio.py
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
       - name: Validate Vampire King model
         run: python3 scripts/validate_vampire_model.py
       - name: Build
         run: mvn -B clean package
+      - name: Package ItemsAdder content
+        run: |
+          mkdir -p target
+          cd itemsadder/contents
+          zip -qr ../../target/WarriorLand-Halloween-ItemsAdder.zip warriorland_halloween
+      - name: Upload ItemsAdder content pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: WarriorLand-Halloween-ItemsAdder
+          path: target/WarriorLand-Halloween-ItemsAdder.zip
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload plugin JAR
         uses: actions/upload-artifact@v4
         with:

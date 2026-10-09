@@ -20,10 +20,10 @@ void main() {
         FogColor
     );
 
-    // Halloween tint: keeps the vanilla time-of-day gradient, moon and stars,
-    // while shifting the entire sky toward a darker orange/crimson palette.
-    vec3 halloweenTint = vec3(1.12, 0.72, 0.48);
-    sky.rgb = mix(sky.rgb, sky.rgb * halloweenTint, 0.28);
+    // Preserve the vanilla sky's time-of-day base, then give it a clearly visible
+    // seasonal orange/crimson cast without replacing the day/night gradient.
+    vec3 halloweenTint = vec3(1.24, 0.52, 0.24);
+    sky.rgb = mix(sky.rgb, sky.rgb * halloweenTint, 0.55);
 
     fragColor = sky;
 }

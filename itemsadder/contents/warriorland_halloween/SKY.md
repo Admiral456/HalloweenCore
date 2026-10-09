@@ -1,8 +1,8 @@
-# Halloween sky
+# Halloween sky — Minecraft Java 1.21.10
 
-Path in the ItemsAdder content pack:
-resourcepack/assets/minecraft/shaders/core/sky.fsh
+Shader path:
+`resourcepack/assets/minecraft/shaders/core/sky.fsh`
 
-The shader keeps the vanilla sky calculation and applies a restrained orange/crimson tint. The normal time-of-day cycle remains visible, so morning, day, sunset and night still change naturally.
+This is the vanilla core-shader entry point for the sky in Minecraft Java 1.21.10. The shader keeps the version-matched fog/dynamic-transform imports and the vanilla time-of-day color as its base, then applies a stronger orange/crimson tint. It does not change the world time, sun/moon schedule, or server-side gameplay.
 
-This is a seasonal client-side resource-pack layer. Turning the Java event off does not automatically remove a resource pack already delivered to a player.
+This is a client-side resource-pack change. The shader has been checked against the 1.21.10 vanilla shader interface and the repository validator, but an actual Minecraft client/resource-pack test is still required before calling the visual result verified. Shader-replacing client mods may override this file.
