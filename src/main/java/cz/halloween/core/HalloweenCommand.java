@@ -502,8 +502,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 plugin.getConfig().getDouble("bosses.vampire.arena.y"),
                 plugin.getConfig().getDouble("bosses.vampire.arena.z")
         );
-        if (player.getLocation().distanceSquared(center) > 48.0D * 48.0D) {
-            sender.sendMessage(plugin.color("&cJsi příliš daleko od středu arény. Přijď blíž, aby byly načtené potřebné chunky."));
+        double allowedDistance = (VampireArenaBuilder.RADIUS + 8.0D) * (VampireArenaBuilder.RADIUS + 8.0D);
+        if (player.getLocation().distanceSquared(center) > allowedDistance) {
+            sender.sendMessage(plugin.color("&cJsi příliš daleko od středu 97blokové arény. Přijď blíž, aby byly načtené potřebné chunky."));
             return true;
         }
 
@@ -523,10 +524,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(plugin.color("&4&lNÁHLED STAVBY ARÉNY"));
             sender.sendMessage(plugin.color("&7Svět: &e" + world.getName()));
             sender.sendMessage(plugin.color("&7Střed: &e" + center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ()));
-            sender.sendMessage(plugin.color("&7Průměr arény: &e45 bloků &8• &78 věží, obvodová zeď a runový kruh"));
-            sender.sendMessage(plugin.color("&7Prostor nad podlahou je volný. Vrchní vrstva terénu v kruhu bude nahrazena podlahou."));
+            sender.sendMessage(plugin.color("&7Průměr arény: &e97 bloků &8• &78 věží, 4 monumentální brány, 8 vnitřních obelisků, obvodová zeď a runový kruh"));
+            sender.sendMessage(plugin.color("&7Kontrola prošla: nad podlahou je 20 bloků volného prostoru. Vrchní vrstva terénu v kruhu bude nahrazena podlahou."));
             sender.sendMessage(plugin.color("&ePokud je místo správné, potvrď stavbu: &6/halloween buildvampirearena confirm"));
-            sender.sendMessage(plugin.color("&cPotvrzení změní bloky v kruhu o poloměru 22 bloků."));
+            sender.sendMessage(plugin.color("&cPotvrzení změní povrch v kruhu o poloměru 48 bloků a přestaví arénu až do 15 bloků výšky. Předem zazálohuj svět!"));
             return true;
         }
 
@@ -534,7 +535,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         plugin.getConfig().set("bosses.vampire.arena.generated", true);
         plugin.saveConfig();
         sender.sendMessage(plugin.color("&aGotovo! Upíří aréna byla postavena."));
-        sender.sendMessage(plugin.color("&7Změněné bloky: &e" + changed + " &8• &7Průměr: &e45 bloků"));
+        sender.sendMessage(plugin.color("&7Změněné bloky: &e" + changed + " &8• &7Průměr arény: &e97 bloků"));
         sender.sendMessage(plugin.color("&7Finální boss zůstává vypnutý, dokud nebude model ověřen přes ModelEngine a resource pack."));
         return true;
     }
