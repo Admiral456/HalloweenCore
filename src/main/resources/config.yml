@@ -376,11 +376,11 @@ random-events:
     min: 20
     max: 35
   duration-minutes: 5
-  surge-interval-seconds: 45
-  max-event-mobs: 12
+  surge-interval-seconds: 30
+  max-event-mobs: 16
   event-mobs-enabled: true
   # Number of special mobs in each Blood Moon invasion wave (1–4).
-  invasion-mobs-per-surge: 2
+  invasion-mobs-per-surge: 3
   special-mob-chance-multiplier: 1.50
   sound: "warriorland_halloween:event_sting"
   types:
