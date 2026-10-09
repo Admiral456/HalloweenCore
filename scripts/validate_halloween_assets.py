@@ -214,7 +214,7 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
     if start < 0:
         fail(f"Custom gear '{item_id}' missing from ItemsAdder config")
     section_tail = config[start + len(f"  {item_id}:"):]
-    next_item = re.search(r"(?m)^  [a-z0-9_]+:\\s*$", section_tail)
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", section_tail)
     end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
     definition = config[start:end]
     if "material: NETHERITE_" not in definition or "attribute_modifiers:" not in definition or "durability:" not in definition:
