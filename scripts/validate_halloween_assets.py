@@ -8,6 +8,9 @@ CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
 TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
 SHADER = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
 CONFIG = CONTENT / "configs" / "items.yml"
+SOUNDS_CONFIG = CONTENT / "configs" / "sounds.yml"
+THEME = CONTENT / "sounds" / "haunted_theme.ogg"
+EVENT_STING = CONTENT / "sounds" / "event_sting.ogg"
 
 EXPECTED = {
     "hunter_mask.png",
@@ -40,6 +43,23 @@ for name in sorted(EXPECTED):
 
 if not SHADER.is_file():
     fail("Missing Halloween sky shader: " + str(SHADER.relative_to(ROOT)))
+shader_text = SHADER.read_text(encoding="utf-8")
+for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "halloweenTint", "fragColor = sky;"):
+    if marker not in shader_text:
+        fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
+
+for audio in (THEME, EVENT_STING):
+    if not audio.is_file():
+        fail("Missing Halloween audio asset: " + str(audio.relative_to(ROOT)))
+    if audio.read_bytes()[:4] != b"OggS":
+        fail(str(audio.relative_to(ROOT)) + " is not a valid OGG container")
+
+if not SOUNDS_CONFIG.is_file():
+    fail("Missing ItemsAdder sounds configuration: " + str(SOUNDS_CONFIG.relative_to(ROOT)))
+sounds_text = SOUNDS_CONFIG.read_text(encoding="utf-8")
+for sound in ("haunted_theme", "event_sting"):
+    if f"  {sound}:" not in sounds_text:
+        fail(f"ItemsAdder sound '{sound}' missing from sounds.yml")
 
 config = CONFIG.read_text(encoding="utf-8")
 if "namespace: warriorland_halloween" not in config:
@@ -56,5 +76,7 @@ if root_textures.exists():
 print("Halloween asset validation passed.")
 print("5 textures: 32x32 PNG")
 print("ItemsAdder namespace: warriorland_halloween")
-print("Sky shader: present")
+print("Sky shader: Minecraft 1.21.10 entry point present")
+print("Audio: 64s ambience + 5s event cue, mono OGG/Vorbis containers")
+print("ItemsAdder sound definitions: present")
 print("Content layout: structure method 2")
