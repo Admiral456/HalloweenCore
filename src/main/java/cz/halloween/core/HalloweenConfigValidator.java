@@ -52,6 +52,16 @@ public final class HalloweenConfigValidator {
             errors.add("gameplay.worlds.mode must be BLACKLIST or WHITELIST");
         }
 
+        for (String source : List.of("mining", "farming", "fishing")) {
+            String key = "rewards." + source + ".max-fragment-rewards-per-minute";
+            if (plugin.getConfig().contains(key)) {
+                int limit = plugin.getConfig().getInt(key, -1);
+                if (limit < 1 || limit > 600) {
+                    errors.add(key + " must be between 1 and 600 when configured");
+                }
+            }
+        }
+
         ConfigurationSection rewards = plugin.getConfig().getConfigurationSection("rewards.shop");
         if (rewards == null || rewards.getKeys(false).isEmpty()) {
             errors.add("rewards.shop must contain at least one reward");
