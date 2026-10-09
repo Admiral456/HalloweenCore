@@ -72,6 +72,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
+        getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
@@ -107,6 +108,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
 
