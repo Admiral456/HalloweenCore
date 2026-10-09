@@ -26,10 +26,15 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "boss", "bosseffects", "give", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "boss", "bosseffects", "give", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("buildvampirearena") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("confirm").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("claim")) {
@@ -326,6 +331,75 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean buildVampireArena(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz musíš použít přímo ve světě, ve kterém stavíš arénu."));
+            return true;
+        }
+        if (args.length > 2 || (args.length == 2 && !args[1].equalsIgnoreCase("confirm"))) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween buildvampirearena [confirm]"));
+            return true;
+        }
+        if (!plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false)) {
+            sender.sendMessage(plugin.color("&cNejdřív stoupni na střed podlahy a použij /halloween setvampirearena."));
+            return true;
+        }
+
+        String worldName = plugin.getConfig().getString("bosses.vampire.arena.world", "");
+        org.bukkit.World world = worldName == null || worldName.isBlank() ? null : Bukkit.getWorld(worldName);
+        if (world == null) {
+            sender.sendMessage(plugin.color("&cSvět uložené arény není načtený."));
+            return true;
+        }
+        if (!player.getWorld().getUID().equals(world.getUID())) {
+            sender.sendMessage(plugin.color("&cPřejdi do světa uložené upíří arény a příkaz spusť z jejího okolí."));
+            return true;
+        }
+
+        org.bukkit.Location center = new org.bukkit.Location(
+                world,
+                plugin.getConfig().getDouble("bosses.vampire.arena.x"),
+                plugin.getConfig().getDouble("bosses.vampire.arena.y"),
+                plugin.getConfig().getDouble("bosses.vampire.arena.z")
+        );
+        if (player.getLocation().distanceSquared(center) > 48.0D * 48.0D) {
+            sender.sendMessage(plugin.color("&cJsi příliš daleko od středu arény. Přijď blíž, aby byly načtené potřebné chunky."));
+            return true;
+        }
+
+        VampireArenaBuilder builder = new VampireArenaBuilder();
+        VampireArenaBuilder.Inspection inspection = builder.inspect(center);
+        if (!inspection.clear()) {
+            sender.sendMessage(plugin.color("&cArénu nelze bezpečně postavit: " + inspection.problem()));
+            if (inspection.obstructions() > 0) {
+                sender.sendMessage(plugin.color("&7Nalezené překážky v prostoru: &e" + inspection.obstructions()
+                        + " &7; první: &e" + inspection.firstObstruction()));
+            }
+            sender.sendMessage(plugin.color("&7Odstraň stavby/stromy nad budoucí arénou, načti oblast a zkus to znovu."));
+            return true;
+        }
+
+        if (args.length < 2) {
+            sender.sendMessage(plugin.color("&4&lNÁHLED STAVBY ARÉNY"));
+            sender.sendMessage(plugin.color("&7Svět: &e" + world.getName()));
+            sender.sendMessage(plugin.color("&7Střed: &e" + center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ()));
+            sender.sendMessage(plugin.color("&7Průměr arény: &e45 bloků &8• &78 věží, obvodová zeď a runový kruh"));
+            sender.sendMessage(plugin.color("&7Prostor nad podlahou je volný. Vrchní vrstva terénu v kruhu bude nahrazena podlahou."));
+            sender.sendMessage(plugin.color("&ePokud je místo správné, potvrď stavbu: &6/halloween buildvampirearena confirm"));
+            sender.sendMessage(plugin.color("&cPotvrzení změní bloky v kruhu o poloměru 22 bloků."));
+            return true;
+        }
+
+        int changed = builder.build(center);
+        plugin.getConfig().set("bosses.vampire.arena.generated", true);
+        plugin.saveConfig();
+        sender.sendMessage(plugin.color("&aGotovo! Upíří aréna byla postavena."));
+        sender.sendMessage(plugin.color("&7Změněné bloky: &e" + changed + " &8• &7Průměr: &e45 bloků"));
+        sender.sendMessage(plugin.color("&7Finální boss zůstává vypnutý, dokud nebude model ověřen přes ModelEngine a resource pack."));
+        return true;
+    }
+
     private boolean setVampireArena(CommandSender sender) {
         if (!checkAdmin(sender)) return true;
         if (!(sender instanceof Player player)) {
@@ -334,6 +408,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         plugin.getConfig().set("bosses.vampire.arena.configured", true);
+        plugin.getConfig().set("bosses.vampire.arena.generated", false);
         plugin.getConfig().set("bosses.vampire.arena.world", player.getWorld().getName());
         plugin.getConfig().set("bosses.vampire.arena.x", player.getLocation().getBlockX() + 0.5D);
         plugin.getConfig().set("bosses.vampire.arena.y", player.getLocation().getBlockY());
