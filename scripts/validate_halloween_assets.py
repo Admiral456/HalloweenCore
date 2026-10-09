@@ -230,6 +230,13 @@ expected_gear_stats = {
     "crimson_warden_hoe": ("attackDamage: 4.0", "attackSpeed: 0.7"),
 }
 for item_id, expected_stats in expected_gear_stats.items():
+    start = config.find(f"  {item_id}:")
+    if start < 0:
+        fail(f"Custom gear '{item_id}' missing from ItemsAdder config")
+    section_tail = config[start + len(f"  {item_id}:"):]
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", section_tail)
+    end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
+    definition = config[start:end]
     for stat in expected_stats:
         if stat not in definition:
             fail(f"Custom gear '{item_id}' is missing expected stronger-than-netherite stat: {stat}")
