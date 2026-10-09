@@ -1,6 +1,8 @@
 package cz.halloween.core;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Particle;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
@@ -354,34 +356,20 @@ public final class HalloweenVampireEncounterManager implements Listener {
         Location anchor = player.getLocation().clone();
         switch (previewPhase) {
             case 1 -> {
-                double radius = Math.max(1.5D,
+                double radius = Math.max(2.5D,
                         plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-1-radius", 2.5D));
-                drawRing(anchor, radius, org.bukkit.Particle.SOUL_FIRE_FLAME, 28);
-                anchor.getWorld().spawnParticle(org.bukkit.Particle.SOUL, anchor.clone().add(0, 0.35D, 0),
-                        20, radius * 0.3D, 0.35D, radius * 0.3D, 0.02D);
-                anchor.getWorld().playSound(anchor, "minecraft:block.amethyst_block.chime", 0.9f, 0.55f);
                 player.sendTitle(plugin.color("&5&lFALEŠNÁ KOŘIST"),
-                        plugin.color("&7Náhled: runy pod tebou se chystají vybuchnout."), 0, 30, 5);
-                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                    anchor.getWorld().spawnParticle(org.bukkit.Particle.SOUL, anchor.clone().add(0, 0.2D, 0),
-                            45, radius * 0.35D, 0.35D, radius * 0.35D, 0.02D);
-                    anchor.getWorld().playSound(anchor, "minecraft:entity.generic.explode", 0.6f, 0.65f);
-                }, 30L);
+                        plugin.color("&7Runy se rozžhaví, energie se stáhne a kruh exploduje."), 0, 34, 6);
+                anchor.getWorld().playSound(anchor, "minecraft:block.amethyst_block.chime", 0.9f, 0.55f);
+                animateFalseLoot(anchor, radius);
             }
             case 2 -> {
                 double radius = Math.max(3.0D,
                         plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-2-radius", 7.0D));
-                drawRing(anchor, radius, org.bukkit.Particle.DUST_PLUME, 36);
-                anchor.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, anchor.clone().add(0, 0.25D, 0),
-                        30, radius * 0.35D, 0.25D, radius * 0.35D, 0.02D);
+                player.sendTitle(plugin.color("&4&lKRVAVÝ PULS"),
+                        plugin.color("&7Energetická vlna se šíří od středu. Připrav se na náraz."), 0, 38, 6);
                 anchor.getWorld().playSound(anchor, "minecraft:entity.warden.heartbeat", 0.8f, 0.55f);
-                player.sendTitle(plugin.color("&5&lKRVAVÝ PULS"),
-                        plugin.color("&7Náhled: červená zóna se za chvíli uzavře."), 0, 35, 5);
-                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                    anchor.getWorld().spawnParticle(org.bukkit.Particle.DUST_PLUME, anchor.clone().add(0, 0.5D, 0),
-                            70, radius * 0.45D, 0.8D, radius * 0.45D, 0.02D);
-                    anchor.getWorld().playSound(anchor, "minecraft:entity.generic.explode", 0.75f, 0.45f);
-                }, 35L);
+                animateBloodPulse(anchor, radius);
             }
             case 3 -> {
                 double markerDistance = Math.max(3.5D,
@@ -391,45 +379,236 @@ public final class HalloweenVampireEncounterManager implements Listener {
                 List<Location> markers = new ArrayList<>();
                 for (int i = 0; i < 3; i++) {
                     double angle = (2.0D * Math.PI * i / 3.0D);
-                    Location marker = anchor.clone().add(Math.cos(angle) * markerDistance, 0.0D,
-                            Math.sin(angle) * markerDistance);
-                    markers.add(marker);
-                    drawRing(marker, radius, org.bukkit.Particle.PORTAL, 24);
-                    marker.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, marker.clone().add(0, 0.7D, 0),
-                            16, 0.65D, 0.8D, 0.65D, 0.02D);
+                    markers.add(anchor.clone().add(Math.cos(angle) * markerDistance, 0.0D,
+                            Math.sin(angle) * markerDistance));
                 }
+                player.sendTitle(plugin.color("&d&lZRCADLOVÝ VÝPAD"),
+                        plugin.color("&7Tři magické portály. Jeden z nich provede skutečný výpad."), 0, 38, 6);
                 anchor.getWorld().playSound(anchor, "minecraft:entity.enderman.stare", 0.9f, 0.45f);
-                player.sendTitle(plugin.color("&5&lZRCADLOVÝ VÝPAD"),
-                        plugin.color("&7Náhled: tři podobné runy, jeden skutečný úder."), 0, 35, 5);
-                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                    Location impact = markers.get(ThreadLocalRandom.current().nextInt(markers.size()));
-                    impact.getWorld().spawnParticle(org.bukkit.Particle.CRIT, impact.clone().add(0, 0.8D, 0),
-                            55, 0.9D, 1.1D, 0.9D, 0.15D);
-                    impact.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, impact.clone().add(0, 0.4D, 0),
-                            40, 0.65D, 0.6D, 0.65D, 0.02D);
-                    impact.getWorld().playSound(impact, "minecraft:entity.player.attack.sweep", 1.0f, 0.45f);
-                }, 35L);
+                animateMirrorStrike(anchor, markers, radius);
             }
             case 4 -> {
                 double radius = Math.max(4.0D,
                         plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-4-radius", 10.0D));
-                drawRing(anchor, radius * 0.55D, org.bukkit.Particle.SOUL_FIRE_FLAME, 32);
-                drawRing(anchor, radius * 0.78D, org.bukkit.Particle.SOUL_FIRE_FLAME, 40);
-                drawRing(anchor, radius, org.bukkit.Particle.SOUL_FIRE_FLAME, 52);
-                anchor.getWorld().playSound(anchor, "minecraft:entity.warden.sonic_boom", 0.8f, 0.45f);
                 player.sendTitle(plugin.color("&4&lZATMĚNÍ"),
-                        plugin.color("&7Náhled: vnitřní kruhy klamou, vnější značí dosah."), 0, 40, 5);
-                plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-                    anchor.getWorld().spawnParticle(org.bukkit.Particle.DUST_PLUME, anchor.clone().add(0, 0.8D, 0),
-                            100, radius * 0.42D, 1.0D, radius * 0.42D, 0.05D);
-                    anchor.getWorld().playSound(anchor, "minecraft:entity.warden.sonic_boom", 0.9f, 0.65f);
-                }, 40L);
+                        plugin.color("&7Tři runové kruhy pulzují. Temná energie vrcholí silným výbojem."), 0, 42, 6);
+                anchor.getWorld().playSound(anchor, "minecraft:entity.warden.sonic_boom", 0.8f, 0.45f);
+                animateEclipse(anchor, radius);
             }
             default -> {
                 return false;
             }
         }
         return true;
+    }
+
+    private void animateFalseLoot(Location anchor, double maxRadius) {
+        final int totalFrames = 20;
+        final int[] frame = {0};
+        final BukkitTask[] task = new BukkitTask[1];
+        task[0] = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (anchor.getWorld() == null) {
+                task[0].cancel();
+                return;
+            }
+            int f = frame[0]++;
+            double progress = f / (double) totalFrames;
+            double radius = maxRadius * (0.48D + 0.52D * progress);
+            World world = anchor.getWorld();
+
+            drawDustRing(anchor, radius, 48, Color.fromRGB(255, 42, 30), 1.25F, 0.12D);
+            drawDustRing(anchor, radius * 0.68D, 36, Color.fromRGB(255, 126, 36), 0.9F, 0.10D);
+            drawRing(anchor, radius * 0.38D, Particle.SOUL_FIRE_FLAME, 20);
+
+            for (int i = 0; i < 8; i++) {
+                double angle = i * Math.PI / 4.0D - f * 0.075D;
+                Location rune = anchor.clone().add(Math.cos(angle) * radius * 0.82D, 0.18D,
+                        Math.sin(angle) * radius * 0.82D);
+                world.spawnParticle(Particle.ENCHANT, rune, 3, 0.07D, 0.03D, 0.07D, 0.02D);
+                if (f % 2 == 0) {
+                    world.spawnParticle(Particle.SOUL_FIRE_FLAME, rune, 1, 0.0D, 0.04D, 0.0D, 0.005D);
+                }
+            }
+
+            for (int i = 0; i < 5; i++) {
+                double angle = f * 0.20D + i * Math.PI * 2.0D / 5.0D;
+                double spiralRadius = radius * (0.15D + 0.025D * f);
+                double y = 0.18D + (f % 8) * 0.12D;
+                Location spiral = anchor.clone().add(Math.cos(angle) * spiralRadius, y,
+                        Math.sin(angle) * spiralRadius);
+                world.spawnParticle(Particle.SOUL, spiral, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+            }
+
+            if (f >= totalFrames) {
+                drawDustRing(anchor, maxRadius * 1.04D, 64, Color.fromRGB(255, 210, 105), 1.5F, 0.16D);
+                drawRing(anchor, maxRadius * 0.78D, Particle.SOUL, 44);
+                world.spawnParticle(Particle.SOUL_FIRE_FLAME, anchor.clone().add(0, 0.5D, 0),
+                        65, maxRadius * 0.42D, 0.65D, maxRadius * 0.42D, 0.025D);
+                world.spawnParticle(Particle.FLASH, anchor.clone().add(0, 0.6D, 0), 1, 0, 0, 0, 0);
+                world.playSound(anchor, "minecraft:entity.generic.explode", 0.8f, 0.65f);
+                task[0].cancel();
+            }
+        }, 0L, 2L);
+    }
+
+    private void animateBloodPulse(Location anchor, double maxRadius) {
+        final int totalFrames = 28;
+        final int[] frame = {0};
+        final BukkitTask[] task = new BukkitTask[1];
+        task[0] = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (anchor.getWorld() == null) {
+                task[0].cancel();
+                return;
+            }
+            int f = frame[0]++;
+            double progress = f / (double) totalFrames;
+            double radius = maxRadius * (0.08D + 0.92D * progress);
+            World world = anchor.getWorld();
+
+            drawDustRing(anchor, radius, 64, Color.fromRGB(255, 32, 28), 1.35F, 0.12D);
+            drawRing(anchor, radius * 0.94D, Particle.DUST_PLUME, 36);
+            drawDustRing(anchor, Math.max(0.25D, radius * 0.56D), 36,
+                    Color.fromRGB(255, 104, 38), 0.8F, 0.18D);
+
+            for (int i = 0; i < 10; i++) {
+                double angle = i * Math.PI * 2.0D / 10.0D + f * 0.06D;
+                Location spark = anchor.clone().add(Math.cos(angle) * radius, 0.20D + (i % 3) * 0.12D,
+                        Math.sin(angle) * radius);
+                world.spawnParticle(Particle.SOUL_FIRE_FLAME, spark, 1, 0.03D, 0.12D, 0.03D, 0.01D);
+            }
+
+            world.spawnParticle(Particle.ASH, anchor.clone().add(0, 0.3D, 0),
+                    8, radius * 0.24D, 0.08D, radius * 0.24D, 0.01D);
+            if (f >= totalFrames) {
+                drawDustRing(anchor, maxRadius, 88, Color.fromRGB(255, 190, 92), 1.45F, 0.15D);
+                drawRing(anchor, maxRadius * 0.72D, Particle.FLAME, 64);
+                world.spawnParticle(Particle.DUST_PLUME, anchor.clone().add(0, 0.55D, 0),
+                        95, maxRadius * 0.45D, 0.75D, maxRadius * 0.45D, 0.035D);
+                world.playSound(anchor, "minecraft:entity.generic.explode", 0.85f, 0.45f);
+                task[0].cancel();
+            }
+        }, 0L, 2L);
+    }
+
+    private void animateMirrorStrike(Location anchor, List<Location> markers, double radius) {
+        final int totalFrames = 18;
+        final int[] frame = {0};
+        final BukkitTask[] task = new BukkitTask[1];
+        task[0] = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (anchor.getWorld() == null) {
+                task[0].cancel();
+                return;
+            }
+            int f = frame[0]++;
+            World world = anchor.getWorld();
+            for (int index = 0; index < markers.size(); index++) {
+                Location marker = markers.get(index);
+                double pulse = 0.88D + 0.12D * Math.sin(f * 0.55D + index);
+                drawDustRing(marker, radius * pulse, 36, Color.fromRGB(178, 70, 255), 1.05F, 0.12D);
+                drawRing(marker, radius * 0.76D, Particle.PORTAL, 26);
+
+                for (int i = 0; i < 5; i++) {
+                    double angle = f * 0.22D + i * Math.PI * 2.0D / 5.0D + index;
+                    double spiralRadius = radius * (0.15D + (f % 9) * 0.045D);
+                    double y = 0.25D + (f % 9) * 0.16D;
+                    Location spiral = marker.clone().add(Math.cos(angle) * spiralRadius, y,
+                            Math.sin(angle) * spiralRadius);
+                    world.spawnParticle(Particle.SOUL_FIRE_FLAME, spiral, 1, 0.0D, 0.03D, 0.0D, 0.005D);
+                    if (i % 2 == 0) world.spawnParticle(Particle.PORTAL, spiral, 2, 0.05D, 0.08D, 0.05D, 0.01D);
+                }
+            }
+
+            if (f >= totalFrames) {
+                task[0].cancel();
+                Location impact = markers.get(ThreadLocalRandom.current().nextInt(markers.size()));
+                animateMirrorImpact(impact, radius);
+            }
+        }, 0L, 2L);
+    }
+
+    private void animateMirrorImpact(Location impact, double maxRadius) {
+        final int totalFrames = 12;
+        final int[] frame = {0};
+        final BukkitTask[] task = new BukkitTask[1];
+        task[0] = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (impact.getWorld() == null) {
+                task[0].cancel();
+                return;
+            }
+            int f = frame[0]++;
+            double radius = maxRadius * (0.15D + 0.85D * (f / (double) totalFrames));
+            World world = impact.getWorld();
+
+            drawDustRing(impact, radius, 48, Color.fromRGB(255, 86, 220), 1.2F, 0.15D);
+            drawRing(impact, radius * 0.7D, Particle.CRIT, 36);
+            world.spawnParticle(Particle.SOUL_FIRE_FLAME, impact.clone().add(0, 0.6D, 0),
+                    35, radius * 0.35D, 0.65D, radius * 0.35D, 0.03D);
+
+            if (f >= totalFrames) {
+                world.spawnParticle(Particle.FLASH, impact.clone().add(0, 0.75D, 0), 1, 0, 0, 0, 0);
+                world.spawnParticle(Particle.CRIT, impact.clone().add(0, 0.7D, 0),
+                        50, 0.8D, 0.95D, 0.8D, 0.12D);
+                world.playSound(impact, "minecraft:entity.player.attack.sweep", 1.0f, 0.45f);
+                task[0].cancel();
+            }
+        }, 0L, 2L);
+    }
+
+    private void animateEclipse(Location anchor, double maxRadius) {
+        final int totalFrames = 26;
+        final int[] frame = {0};
+        final BukkitTask[] task = new BukkitTask[1];
+        task[0] = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (anchor.getWorld() == null) {
+                task[0].cancel();
+                return;
+            }
+            int f = frame[0]++;
+            World world = anchor.getWorld();
+            double pulse = 0.78D + 0.22D * Math.sin(f * 0.42D);
+
+            double inner = maxRadius * 0.34D * pulse;
+            double middle = maxRadius * 0.66D * (0.90D + 0.10D * Math.sin(f * 0.42D + 1.1D));
+            double outer = maxRadius * pulse;
+            drawDustRing(anchor, inner, 40, Color.fromRGB(130, 15, 25), 1.15F, 0.12D);
+            drawDustRing(anchor, middle, 48, Color.fromRGB(255, 68, 25), 1.0F, 0.15D);
+            drawDustRing(anchor, outer, 64, Color.fromRGB(255, 150, 65), 1.25F, 0.18D);
+            drawRing(anchor, outer * 0.91D, Particle.SOUL_FIRE_FLAME, 34);
+
+            for (int i = 0; i < 12; i++) {
+                double angle = i * Math.PI * 2.0D / 12.0D + f * 0.035D;
+                double x = Math.cos(angle) * outer;
+                double z = Math.sin(angle) * outer;
+                double height = 0.3D + 1.7D * Math.abs(Math.sin(f * 0.18D + i * 0.75D));
+                Location pillar = anchor.clone().add(x, height, z);
+                world.spawnParticle(Particle.SOUL_FIRE_FLAME, pillar, 2, 0.07D, height * 0.22D, 0.07D, 0.015D);
+                if (i % 3 == 0) {
+                    world.spawnParticle(Particle.DUST_PLUME, pillar, 2, 0.12D, height * 0.30D, 0.12D, 0.015D);
+                }
+            }
+
+            world.spawnParticle(Particle.SOUL, anchor.clone().add(0, 0.35D, 0),
+                    4, inner * 0.28D, 0.12D, inner * 0.28D, 0.01D);
+            if (f >= totalFrames) {
+                drawDustRing(anchor, maxRadius, 72, Color.fromRGB(255, 210, 120), 1.6F, 0.18D);
+                drawRing(anchor, maxRadius * 0.67D, Particle.FLAME, 58);
+                world.spawnParticle(Particle.DUST_PLUME, anchor.clone().add(0, 0.65D, 0),
+                        110, maxRadius * 0.43D, 0.85D, maxRadius * 0.43D, 0.05D);
+                world.spawnParticle(Particle.FLASH, anchor.clone().add(0, 0.75D, 0), 1, 0, 0, 0, 0);
+                world.playSound(anchor, "minecraft:entity.warden.sonic_boom", 0.9f, 0.65f);
+                task[0].cancel();
+            }
+        }, 0L, 2L);
+    }
+
+    private void drawDustRing(Location center, double radius, int points, Color color, float size, double yOffset) {
+        if (center == null || center.getWorld() == null || radius <= 0.0D || points < 3) return;
+        Particle.DustOptions dust = new Particle.DustOptions(color, size);
+        for (int i = 0; i < points; i++) {
+            double angle = 2.0D * Math.PI * i / points;
+            Location point = center.clone().add(Math.cos(angle) * radius, yOffset, Math.sin(angle) * radius);
+            center.getWorld().spawnParticle(Particle.DUST, point, 1, 0.0D, 0.0D, 0.0D, 0.0D, dust);
+        }
     }
 
     private void runSpecialAbility() {
