@@ -15,3 +15,19 @@ VampireKingBloodMark:
 VampireKingFly:
   Skills:
   - state{mid=vampire_king;s=fly;li=3;lo=3;loop=LOOP} @self
+
+VampireKingFalseSigil:
+  Skills:
+  - state{mid=vampire_king;s=false_sigil;li=2;lo=3} @self
+
+VampireKingBloodPulse:
+  Skills:
+  - state{mid=vampire_king;s=blood_pulse;li=2;lo=3} @self
+
+VampireKingMirrorStrike:
+  Skills:
+  - state{mid=vampire_king;s=mirror_strike;li=2;lo=3} @self
+
+VampireKingNightfall:
+  Skills:
+  - state{mid=vampire_king;s=nightfall;li=2;lo=3} @self

@@ -82,6 +82,17 @@ def main():
     if parents.get("hitbox") != "root" or parents.get("shadow") != "root":
         fail("ModelEngine hitbox and shadow bones must remain root children")
 
+    # Blockbench IDs for elements, animations, and keyframes must be globally unique.
+    global_ids = []
+    global_ids.extend(e.get("uuid") for e in data.get("elements", []) if e.get("uuid"))
+    for anim in data.get("animations", []):
+        if anim.get("uuid"):
+            global_ids.append(anim["uuid"])
+        for track in (anim.get("animators") or {}).values():
+            global_ids.extend(k.get("uuid") for k in track.get("keyframes", []) if k.get("uuid"))
+    if len(global_ids) != len(set(global_ids)):
+        fail("Duplicate UUID found across elements, animations, or animation keyframes")
+
     elements = data.get("elements", [])
     seen, visible = set(), []
     for e in elements:
@@ -121,6 +132,9 @@ def main():
     for name in ("idle","walk","attack","fly"):
         if name not in names:
             fail("Missing animation " + name)
+    for name in ("false_sigil","blood_pulse","mirror_strike","nightfall"):
+        if name not in names:
+            fail("Missing phase-specific boss animation " + name)
     coords = [e for e in visible if e.get("name") not in {"hitbox_volume","shadow_caster"}]
     min_x = min(min(e["from"][0],e["to"][0]) for e in coords)
     max_x = max(max(e["from"][0],e["to"][0]) for e in coords)
@@ -137,6 +151,6 @@ def main():
         fail("Hitbox bone pivot must be high enough for a 10-block boss")
     print(f"PASS: {len(visible)-2} visible cubes, {len(bones)} bones, {len(data.get('animations', []))} animations")
     print(f"PASS: {model_height:.2f}-block height, {wing_span:.2f}-block wing span")
-    print("PASS: parenting, cube rotations, hitbox pivot, UVs and PNG")
+    print("PASS: parenting, cube rotations, hitbox pivot, UVs, PNG and phase-specific boss animations")
 if __name__ == "__main__":
     main()

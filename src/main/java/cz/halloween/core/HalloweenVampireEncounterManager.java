@@ -657,8 +657,17 @@ public final class HalloweenVampireEncounterManager implements Listener {
         Player target = selectTarget();
         if (target == null) return;
 
-        // Play the authored one-shot model animation before the matching telegraph and impact callback.
-        playBossModelAnimation("attack");
+        // Each phase has its own authored Blockbench pose, played before its telegraph and impact.
+        String attackAnimation = switch (phase) {
+            case 1 -> "false_sigil";
+            case 2 -> "blood_pulse";
+            case 3 -> "mirror_strike";
+            default -> "nightfall";
+        };
+        if (!playBossModelAnimation(attackAnimation)) {
+            // Compatibility fallback for older ModelEngine builds or missing animation tracks.
+            playBossModelAnimation("attack");
+        }
         switch (phase) {
             case 1 -> falseSigil(target);
             case 2 -> bloodPulse(target);
