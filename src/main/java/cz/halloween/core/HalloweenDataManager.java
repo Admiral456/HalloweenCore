@@ -29,6 +29,7 @@ public final class HalloweenDataManager {
     private final Set<UUID> villageDiscovered = new HashSet<>();
     private long serverFragments;
     private boolean finaleUnlocked;
+    private long finaleUnlockedAt;
     private boolean vampireDefeated;
 
     public HalloweenDataManager(HalloweenCore plugin) {
@@ -49,12 +50,18 @@ public final class HalloweenDataManager {
         villageDiscovered.clear();
         serverFragments = 0L;
         finaleUnlocked = false;
+        finaleUnlockedAt = 0L;
         vampireDefeated = false;
         if (!file.exists()) return;
 
         YamlConfiguration data = YamlConfiguration.loadConfiguration(file);
         serverFragments = Math.max(0L, data.getLong("server.total-fragments", 0L));
         finaleUnlocked = data.getBoolean("server.finale-unlocked", false);
+        finaleUnlockedAt = Math.max(0L, data.getLong("server.finale-unlocked-at", 0L));
+        if (finaleUnlocked && finaleUnlockedAt == 0L) {
+            // Migration for servers whose data.yml predates the finale timestamp.
+            finaleUnlockedAt = System.currentTimeMillis();
+        }
         vampireDefeated = data.getBoolean("server.vampire-defeated", false);
 
         if (data.isConfigurationSection("players")) {
@@ -100,6 +107,7 @@ public final class HalloweenDataManager {
         YamlConfiguration data = new YamlConfiguration();
         data.set("server.total-fragments", serverFragments);
         data.set("server.finale-unlocked", finaleUnlocked);
+        if (finaleUnlockedAt > 0L) data.set("server.finale-unlocked-at", finaleUnlockedAt);
         data.set("server.vampire-defeated", vampireDefeated);
 
         Set<UUID> players = new HashSet<>();
@@ -223,7 +231,16 @@ public final class HalloweenDataManager {
     }
 
     public void unlockFinale() {
-        finaleUnlocked = true;
+        if (!finaleUnlocked) {
+            finaleUnlocked = true;
+            finaleUnlockedAt = System.currentTimeMillis();
+        } else if (finaleUnlockedAt <= 0L) {
+            finaleUnlockedAt = System.currentTimeMillis();
+        }
+    }
+
+    public long getFinaleUnlockedAt() {
+        return finaleUnlockedAt;
     }
 
     public boolean isVampireDefeated() {
