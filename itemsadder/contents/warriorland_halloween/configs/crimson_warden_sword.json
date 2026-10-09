@@ -1,0 +1,8 @@
+{
+  "components": {
+    "minecraft:max_damage": 5000,
+    "minecraft:enchantable": {
+      "value": 25
+    }
+  }
+}

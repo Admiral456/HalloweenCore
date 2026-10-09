@@ -15,6 +15,8 @@ import org.bukkit.GameMode;
 import org.bukkit.World;
 
 import java.util.UUID;
+import java.util.HashSet;
+import java.util.Set;
 
 public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenDataManager dataManager;
@@ -32,6 +34,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
+    private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
     public void onEnable() {
@@ -56,9 +59,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
 
-        for (String error : HalloweenConfigValidator.validate(this)) {
-            getLogger().severe("[CONFIG] " + error);
-        }
+        logConfigValidationIssues();
         bossManager.validateConfiguration();
 
         getServer().getPluginManager().registerEvents(this, this);
@@ -158,9 +159,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             }
         }
 
-        for (String error : HalloweenConfigValidator.validate(this)) {
-            getLogger().severe("[CONFIG] " + error);
-        }
+        logConfigValidationIssues();
         if (bossManager != null) bossManager.validateConfiguration();
         getLogger().info("HalloweenCore runtime state reloaded. enabled=" + eventEnabled
                 + ", random-events=" + getConfig().getBoolean("random-events.enabled", true)
@@ -209,6 +208,19 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         saveConfig();
         getLogger().info("Halloween soundtrack gain migration complete; volume=" +
                 getConfig().getDouble("atmosphere.volume", 3.0D) + ".");
+    }
+
+    private void logConfigValidationIssues() {
+        var errors = HalloweenConfigValidator.validate(this);
+        Set<String> currentErrors = new HashSet<>(errors);
+        for (String error : errors) {
+            if (reportedConfigErrors.add(error)) {
+                getLogger().severe("[CONFIG] " + error);
+            }
+        }
+        // If an admin fixes an issue, allow the same error to be reported again
+        // if it comes back later, without printing the same error every reload.
+        reportedConfigErrors.retainAll(currentErrors);
     }
 
     public boolean isEventEnabled() {

@@ -35,18 +35,54 @@ The custom armor uses a shared Crimson Warden equipment texture set, built from 
 
 ItemsAdder combines all content namespaces into one generated server resource pack; `warriorland_halloween` is a namespace within the pack, not a second pack in the Minecraft resource-pack menu. After `/iazip`, check `/iainfo` for the hosted URL and request/status. For ItemsAdder 4.0.17+, `resource-pack.hosting.simple_self_host.enabled: true` with `server_address: auto` is often the simplest hosting choice. Set the installed language file's `resourcepack-popup-message` to a branded message such as `&6WarriorLand Halloween 2026` if you want players to recognize the pack prompt.
 
-The Java plugin uses these IDs:
+The Java plugin uses these custom ItemsAdder IDs:
 - warriorland_halloween:hunter_mask
 - warriorland_halloween:cursed_talisman
 - warriorland_halloween:halloween_token
 - warriorland_halloween:cursed_candy
 - warriorland_halloween:haunted_map
+- warriorland_halloween:crimson_warden_helmet / chestplate / leggings / boots
+- warriorland_halloween:crimson_warden_sword / pickaxe / axe / shovel / hoe
 
 Sound IDs used by the plugin:
 - `warriorland_halloween:haunted_theme` — background loop, played at the generated track duration
 - `warriorland_halloween:event_sting` — short cue played when a random event starts
 
 The audio generator is `scripts/generate_halloween_audio.py`. It downloads and converts the CC0 Spooky Fester soundtrack, creates the five-second event cue, and generates a silent OGG for the vanilla-music overrides. The Minecraft 1.21.10 pack defines silent replacements for the exact 31 vanilla background-music events; the server-side music watchdog also stops the MUSIC category every second while Halloween ambience is active. Halloween music plays in AMBIENT at a configured volume multiplier of 3.0. After installing/updating the content, run `/iazip` and make sure players receive the rebuilt server resource pack.
+## Crimson Warden gear — configured stats
+
+These values come from `configs/items.yml` and the adjacent `components_nbt_file` JSONs. They are the attributes prepared for ItemsAdder; the rendered Minecraft tooltip/damage should still be checked once on the live server after `/iazip`.
+
+### Armour set
+
+| Piece | Armor points | Durability | Netherite baseline durability |
+|---|---:|---:|---:|
+| Helmet | 4 (Netherite 3 + 1) | 900 | 407 |
+| Chestplate | 9 (Netherite 8 + 1) | 1,300 | 592 |
+| Leggings | 7 (Netherite 6 + 1) | 1,150 | 555 |
+| Boots | 4 (Netherite 3 + 1) | 950 | 481 |
+| **Full set** | **24** | — | **20 armor points** |
+
+The custom equipment keeps the Netherite base material/toughness and adds one armor point per piece. Each piece uses the original Crimson Warden 64×32 layer textures and enchantability component value 25 (Netherite's normal enchantability is 15).
+
+### Melee weapon and tools
+
+| Item | Configured attack-damage modifier | Attack-speed modifier | Durability | Mining speed |
+|---|---:|---:|---:|---:|
+| Crimson Warden Sword | 15.0 | 0.8 | 5,000 | — |
+| Crimson Warden Pickaxe | 10.0 | 0.8 | 5,000 | 14 |
+| Crimson Warden Axe | 14.0 | 0.6 | 5,000 | 14 |
+| Crimson Warden Shovel | 10.0 | 0.8 | 4,500 | 14 |
+| Crimson Warden Hoe | 7.0 | 1.0 | 4,500 | 14 |
+
+Netherite tools use mining speed 9 for their matching tool classes and have durability 2,031. The custom tools use a Minecraft `minecraft:tool` component with speed 14, correct-drop matching rules and enchantability 25. The YAML attack values are item attribute modifiers, not a guarantee that every hit deals exactly that many health points: the final combat result also depends on the vanilla base attribute and attack cooldown.
+
+### Relics and store
+
+- `cursed-talisman`: **1,000,000 fragments**, +20 max health (one extra full row of hearts), +10% Halloween fragment multiplier while held in either hand.
+- All four armour pieces and the five Crimson Warden weapon/tool items have component JSON files under `configs/` which explicitly preserve enchantability. Tool component files also specify the mining rules.
+- Shop descriptions, configured attributes, durability values, the component JSON files and all 14 item textures are checked by `scripts/validate_halloween_assets.py`.
+
 ## Vampire model assets
 
 Plánované soubory pro finální 3D model patří do samostatného ModelEngine asset balíku. Dokud není potvrzena finální UV mapa, samotný model ani jeho textury se nepovažují za produkčně hotové. Konceptový vizuál vznikl v rámci návrhu, ale není vydáván jako finální UV texture atlas.

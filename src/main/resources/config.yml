@@ -177,8 +177,7 @@ rewards:
       name: "&4&lKrvavý meč"
       lore:
         - "&7Legendární černo-karmínová zbraň."
-        - "&cSilnější než netheritový meč."
-        - "&7Zesílený útok a rychlost; výdrž 4 200."
+        - "&cÚtokový modifier 15 • rychlostní modifier 0,8 • výdrž 5 000."
         - "&aPlně enchantovatelný."
 
     crimson-warden-pickaxe:
@@ -190,9 +189,8 @@ rewards:
       name: "&4&lKrumpáč Krvavého strážce"
       lore:
         - "&7Legendární krumpáč pro hluboké doly."
-        - "&cRychlejší a odolnější než netherit."
-        - "&7Zesílený útok a rychlost; výdrž 4 000."
-        - "&aPlně enchantovatelný."
+        - "&cTěžba 14 • útokový modifier 10 • rychlostní modifier 0,8."
+        - "&7Výdrž 5 000 • Efficiency, Fortune, Silk Touch, Mending."
 
     crimson-warden-axe:
       cost: 32000
@@ -203,9 +201,8 @@ rewards:
       name: "&4&lSekera Krvavého strážce"
       lore:
         - "&7Legendární sekera s krvavým ostřím."
-        - "&cVyšší poškození a výdrž než netherit."
-        - "&7Zesílený útok a rychlost; výdrž 4 000."
-        - "&aPlně enchantovatelná."
+        - "&cÚtokový modifier 14 • rychlostní modifier 0,6 • těžba 14."
+        - "&7Výdrž 5 000 • plně enchantovatelná."
 
     crimson-warden-shovel:
       cost: 22000
@@ -215,10 +212,9 @@ rewards:
       amount: 1
       name: "&4&lLopatka Krvavého strážce"
       lore:
-        - "&7Legendární nástroj pro rychlé kopání."
-        - "&cRychlejší a odolnější než netherit."
-        - "&7Zesílený útok a rychlost; výdrž 3 500."
-        - "&aPlně enchantovatelná."
+        - "&7Legendární lopatka na rychlé kopání."
+        - "&cTěžba 14 • útokový modifier 10 • rychlostní modifier 0,8."
+        - "&7Výdrž 4 500 • plně enchantovatelná."
 
     crimson-warden-hoe:
       cost: 26000
@@ -229,9 +225,8 @@ rewards:
       name: "&4&lMotyka Krvavého strážce"
       lore:
         - "&7Legendární motyka se zpevněným ostřím."
-        - "&cLepší výdrž a bojové statistiky než netherit."
-        - "&7Zesílený útok a rychlost; výdrž 3 500."
-        - "&aPlně enchantovatelná."
+        - "&cTěžba 14 • útokový modifier 7 • rychlostní modifier 1,0."
+        - "&7Výdrž 4 500 • plně enchantovatelná."
 
 haunted-village:
   enabled: false

@@ -222,12 +222,30 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
     if "blocked_enchants:" in definition and "blocked_enchants:\n      - ALL" in definition:
         fail(f"Custom gear '{item_id}' must remain enchantable")
 
+expected_armor_stats = {
+    "crimson_warden_helmet": ("max_durability: 900", "armor: 1"),
+    "crimson_warden_chestplate": ("max_durability: 1300", "armor: 1"),
+    "crimson_warden_leggings": ("max_durability: 1150", "armor: 1"),
+    "crimson_warden_boots": ("max_durability: 950", "armor: 1"),
+}
+for item_id, required_stats in expected_armor_stats.items():
+    start = config.find(f"  {item_id}:")
+    section_tail = config[start + len(f"  {item_id}:"):]
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", section_tail)
+    end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
+    definition = config[start:end]
+    for stat in required_stats:
+        if stat not in definition:
+            fail(f"{item_id} is missing expected full-set armour/durability stat: {stat}")
+    if "equipment:" not in definition or "slot_attribute_modifiers:" not in definition:
+        fail(f"{item_id} must use its Crimson Warden equipment layer and +1 armor modifier")
+
 expected_gear_stats = {
-    "crimson_warden_sword": ("attackDamage: 11.0", "attackSpeed: 0.2"),
-    "crimson_warden_pickaxe": ("attackDamage: 8.0", "attackSpeed: 0.4"),
-    "crimson_warden_axe": ("attackDamage: 12.0", "attackSpeed: 0.3"),
-    "crimson_warden_shovel": ("attackDamage: 8.0", "attackSpeed: 0.5"),
-    "crimson_warden_hoe": ("attackDamage: 4.0", "attackSpeed: 0.7"),
+    "crimson_warden_sword": ("attackDamage: 15.0", "attackSpeed: 0.8", "max_durability: 5000"),
+    "crimson_warden_pickaxe": ("attackDamage: 10.0", "attackSpeed: 0.8", "max_durability: 5000"),
+    "crimson_warden_axe": ("attackDamage: 14.0", "attackSpeed: 0.6", "max_durability: 5000"),
+    "crimson_warden_shovel": ("attackDamage: 10.0", "attackSpeed: 0.8", "max_durability: 4500"),
+    "crimson_warden_hoe": ("attackDamage: 7.0", "attackSpeed: 1.0", "max_durability: 4500"),
 }
 for item_id, expected_stats in expected_gear_stats.items():
     start = config.find(f"  {item_id}:")
@@ -241,6 +259,51 @@ for item_id, expected_stats in expected_gear_stats.items():
         if stat not in definition:
             fail(f"Custom gear '{item_id}' is missing expected stronger-than-netherite stat: {stat}")
 
+
+gear_components = {
+    "crimson_warden_helmet": ("crimson_warden_helmet.json", None, 900),
+    "crimson_warden_chestplate": ("crimson_warden_chestplate.json", None, 1300),
+    "crimson_warden_leggings": ("crimson_warden_leggings.json", None, 1150),
+    "crimson_warden_boots": ("crimson_warden_boots.json", None, 950),
+    "crimson_warden_sword": ("crimson_warden_sword.json", None, 5000),
+    "crimson_warden_pickaxe": ("crimson_warden_pickaxe.json", "#minecraft:mineable/pickaxe", 5000),
+    "crimson_warden_axe": ("crimson_warden_axe.json", "#minecraft:mineable/axe", 5000),
+    "crimson_warden_shovel": ("crimson_warden_shovel.json", "#minecraft:mineable/shovel", 4500),
+    "crimson_warden_hoe": ("crimson_warden_hoe.json", "#minecraft:mineable/hoe", 4500),
+}
+for item_id, (component_file, mining_tag, expected_max_damage) in gear_components.items():
+    start = config.find(f"  {item_id}:")
+    if start < 0:
+        fail(f"Custom gear '{item_id}' missing from ItemsAdder config")
+    section_tail = config[start + len(f"  {item_id}:"):]
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", section_tail)
+    end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
+    definition = config[start:end]
+    if f'components_nbt_file: "{component_file}"' not in definition:
+        fail(f"Custom gear '{item_id}' must load its enchantability/tool components from {component_file}")
+    component_path = CONTENT / "configs" / component_file
+    if not component_path.is_file():
+        fail(f"Missing custom gear component file: {component_path.relative_to(ROOT)}")
+    try:
+        components_json = json.loads(component_path.read_text(encoding="utf-8"))
+        components = components_json["components"]
+    except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
+        fail(f"Invalid components file {component_file}: {exc}")
+    if int(components.get("minecraft:max_damage", 0)) != expected_max_damage:
+        fail(f"{item_id} component max_damage must be {expected_max_damage}")
+    enchantable = components.get("minecraft:enchantable", {})
+    if not isinstance(enchantable, dict) or int(enchantable.get("value", 0)) < 25:
+        fail(f"{item_id} must retain enchanting support with enchantability >= 25")
+    if mining_tag:
+        tool_component = components.get("minecraft:tool", {})
+        rules = tool_component.get("rules", []) if isinstance(tool_component, dict) else []
+        if not isinstance(rules, list) or not any(
+            rule.get("blocks") == mining_tag
+            and float(rule.get("speed", 0)) >= 14.0
+            and rule.get("correct_for_drops") is True
+            for rule in rules if isinstance(rule, dict)
+        ):
+            fail(f"{item_id} must have mining speed >= 14 and correct drops for {mining_tag}")
 
 shop_ids = ("crimson-warden-sword", "crimson-warden-pickaxe", "crimson-warden-axe",
             "crimson-warden-shovel", "crimson-warden-hoe")
@@ -266,7 +329,9 @@ if root_textures.exists():
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
 print("Halloween asset validation passed.")
-print("14 item textures: 32x32 PNG; 2 armor layers: 64x32 PNG")
+print("14 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
+print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
+print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
 print("Sky shader: Minecraft 1.21.10 entry point present")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms) + 5s event cue, mono OGG/Vorbis containers")

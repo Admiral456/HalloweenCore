@@ -1,0 +1,19 @@
+{
+  "components": {
+    "minecraft:max_damage": 4500,
+    "minecraft:enchantable": {
+      "value": 25
+    },
+    "minecraft:tool": {
+      "default_mining_speed": 1,
+      "damage_per_block": 1,
+      "rules": [
+        {
+          "blocks": "#minecraft:mineable/hoe",
+          "speed": 14,
+          "correct_for_drops": true
+        }
+      ]
+    }
+  }
+}
