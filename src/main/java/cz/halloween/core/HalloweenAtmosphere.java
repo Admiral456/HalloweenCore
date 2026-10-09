@@ -12,6 +12,7 @@ import java.util.UUID;
 public final class HalloweenAtmosphere {
     private final HalloweenCore plugin;
     private final Map<UUID, BukkitTask> playbackTasks = new HashMap<>();
+    private BukkitTask vanillaMusicMuteTask;
 
     public HalloweenAtmosphere(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -47,9 +48,30 @@ public final class HalloweenAtmosphere {
         stopPlayback();
         if (!isAtmosphereEnabled()) return;
 
+        startVanillaMusicMute();
         for (Player player : Bukkit.getOnlinePlayers()) {
             startLoop(player);
         }
+    }
+
+    private void startVanillaMusicMute() {
+        if (vanillaMusicMuteTask != null) {
+            vanillaMusicMuteTask.cancel();
+            vanillaMusicMuteTask = null;
+        }
+        // Background music is client-scheduled and may restart after a single stop
+        // packet. Reissue the category stop every second while Halloween ambience is
+        // active. The custom Halloween track is in AMBIENT, not MUSIC, so it survives.
+        vanillaMusicMuteTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
+            if (!isAtmosphereEnabled()) return;
+            for (Player player : Bukkit.getOnlinePlayers()) {
+                try {
+                    player.stopSound(SoundCategory.MUSIC);
+                } catch (Exception ignored) {
+                    // Continue muting the other clients if a disconnect races this tick.
+                }
+            }
+        }, 1L, 20L);
     }
 
     public void stop(Player player) {
@@ -60,6 +82,10 @@ public final class HalloweenAtmosphere {
     }
 
     public void stopPlayback() {
+        if (vanillaMusicMuteTask != null) {
+            vanillaMusicMuteTask.cancel();
+            vanillaMusicMuteTask = null;
+        }
         for (BukkitTask task : playbackTasks.values()) {
             task.cancel();
         }
@@ -133,8 +159,8 @@ public final class HalloweenAtmosphere {
     private void play(Player player) {
         String custom = plugin.getConfig().getString("atmosphere.sound", "");
         String fallback = plugin.getConfig().getString("atmosphere.fallback-sound", "");
-        float volume = (float) Math.max(0.0D, Math.min(1.0D,
-                plugin.getConfig().getDouble("atmosphere.volume", 1.0D)));
+        float volume = (float) Math.max(0.0D, Math.min(3.0D,
+                plugin.getConfig().getDouble("atmosphere.volume", 3.0D)));
         float pitch = (float) Math.max(0.1D, plugin.getConfig().getDouble("atmosphere.pitch", 1.0D));
 
         // Stop anything already playing in the Music slider category before starting
@@ -148,7 +174,7 @@ public final class HalloweenAtmosphere {
 
         if (custom != null && !custom.isBlank() && hasItemsAdder()) {
             try {
-                player.playSound(player, custom, SoundCategory.MUSIC, volume, pitch);
+                player.playSound(player, custom, SoundCategory.AMBIENT, volume, pitch);
                 return;
             } catch (Exception ignored) {
                 // Invalid/missing custom sound: continue to the configured fallback.
@@ -157,7 +183,7 @@ public final class HalloweenAtmosphere {
 
         if (fallback != null && !fallback.isBlank()) {
             try {
-                player.playSound(player, fallback, SoundCategory.MUSIC, volume, pitch);
+                player.playSound(player, fallback, SoundCategory.AMBIENT, volume, pitch);
             } catch (Exception ignored) {
                 // No valid sound has been configured.
             }
