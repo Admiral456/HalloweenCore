@@ -326,17 +326,22 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        double centerX = player.getLocation().getBlockX() + 0.5D;
+        double centerY = player.getLocation().getBlockY();
+        double centerZ = player.getLocation().getBlockZ() + 0.5D;
+
         plugin.getConfig().set("bosses.vampire.arena.configured", true);
         plugin.getConfig().set("bosses.vampire.arena.world", player.getWorld().getName());
-        plugin.getConfig().set("bosses.vampire.arena.x", player.getLocation().getX());
-        plugin.getConfig().set("bosses.vampire.arena.y", player.getLocation().getY());
-        plugin.getConfig().set("bosses.vampire.arena.z", player.getLocation().getZ());
+        plugin.getConfig().set("bosses.vampire.arena.x", centerX);
+        plugin.getConfig().set("bosses.vampire.arena.y", centerY);
+        plugin.getConfig().set("bosses.vampire.arena.z", centerZ);
         plugin.saveConfig();
 
-        player.sendMessage(plugin.color("&4HALLOWEEN &8» &aAréna Krále upírů nastavena."));
+        player.sendMessage(plugin.color("&4HALLOWEEN &8» &aStřed arény Krále upírů nastaven."));
         player.sendMessage(plugin.color("&7Svět: &e" + player.getWorld().getName()));
-        player.sendMessage(plugin.color("&7Pozice: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
-                player.getLocation().getX(), player.getLocation().getY(), player.getLocation().getZ())));
+        player.sendMessage(plugin.color("&7Střed spawnu: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
+                centerX, centerY, centerZ)));
+        player.sendMessage(plugin.color("&7Boss se objeví přesně v tomto bodě. Stůj na podlaze uprostřed arény."));
         return true;
     }
 
