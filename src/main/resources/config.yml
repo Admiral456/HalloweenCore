@@ -177,7 +177,7 @@ rewards:
       name: "&4&lKrvavý meč"
       lore:
         - "&7Legendární černo-karmínová zbraň."
-        - "&cSilnější než netheritový meč."
+        - "&cÚtok 15+ • vyšší rychlost • výdrž 5 000."
         - "&7Zesílený útok a rychlost; výdrž 4 200."
         - "&aPlně enchantovatelný."
 
@@ -190,7 +190,7 @@ rewards:
       name: "&4&lKrumpáč Krvavého strážce"
       lore:
         - "&7Legendární krumpáč pro hluboké doly."
-        - "&cRychlejší a odolnější než netherit."
+        - "&cTěžba rychlostí 14 • výdrž 5 000."
         - "&7Zesílený útok a rychlost; výdrž 4 000."
         - "&aPlně enchantovatelný."
 
@@ -203,7 +203,7 @@ rewards:
       name: "&4&lSekera Krvavého strážce"
       lore:
         - "&7Legendární sekera s krvavým ostřím."
-        - "&cVyšší poškození a výdrž než netherit."
+        - "&cÚtok 14+ • rychlejší těžba • výdrž 5 000."
         - "&7Zesílený útok a rychlost; výdrž 4 000."
         - "&aPlně enchantovatelná."
 
@@ -216,7 +216,7 @@ rewards:
       name: "&4&lLopatka Krvavého strážce"
       lore:
         - "&7Legendární nástroj pro rychlé kopání."
-        - "&cRychlejší a odolnější než netherit."
+        - "&cTěžba rychlostí 14 • výdrž 4 500."
         - "&7Zesílený útok a rychlost; výdrž 3 500."
         - "&aPlně enchantovatelná."
 
@@ -229,7 +229,7 @@ rewards:
       name: "&4&lMotyka Krvavého strážce"
       lore:
         - "&7Legendární motyka se zpevněným ostřím."
-        - "&cLepší výdrž a bojové statistiky než netherit."
+        - "&cÚtok 7+ • těžba rychlostí 14 • výdrž 4 500."
         - "&7Zesílený útok a rychlost; výdrž 3 500."
         - "&aPlně enchantovatelná."
 
