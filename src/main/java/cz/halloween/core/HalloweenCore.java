@@ -75,6 +75,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         eventManager.start();
         atmosphere.start();
         passiveEffectManager.start();
+        vampireEncounterManager.startAutoProgression();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
@@ -90,7 +91,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
-        if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
+        if (vampireEncounterManager != null) vampireEncounterManager.shutdown();
         if (atmosphere != null) atmosphere.stopPlayback();
         if (dataManager != null) dataManager.save();
     }
