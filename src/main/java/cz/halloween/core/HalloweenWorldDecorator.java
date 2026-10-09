@@ -181,8 +181,12 @@ public final class HalloweenWorldDecorator implements Listener {
 
     private boolean isNaturalWebAnchor(Material material) {
         String name = material.name();
-        return material.isSolid() && (name.endsWith("_LEAVES") || name.endsWith("_LOG")
-                || name.endsWith("_WOOD") || name.endsWith("_STONE") || name.endsWith("_DEEPSLATE")
+        // Leaves often aren't full-cube-solid in Bukkit's material flags, but are
+        // still the most natural place for cobwebs. Keep them explicitly eligible.
+        boolean treeAnchor = name.endsWith("_LEAVES") || name.endsWith("_LOG") || name.endsWith("_WOOD");
+        boolean stoneAnchor = material.isSolid()
+                && (name.endsWith("_STONE") || name.endsWith("_DEEPSLATE")
                 || material == Material.MOSS_BLOCK || material == Material.MOSSY_COBBLESTONE);
+        return treeAnchor || stoneAnchor;
     }
 }
