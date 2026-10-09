@@ -121,6 +121,9 @@ def main():
     for name in ("idle","walk","attack","fly"):
         if name not in names:
             fail("Missing animation " + name)
+    for name in ("false_sigil","blood_pulse","mirror_strike","nightfall"):
+        if name not in names:
+            fail("Missing phase-specific boss animation " + name)
     coords = [e for e in visible if e.get("name") not in {"hitbox_volume","shadow_caster"}]
     min_x = min(min(e["from"][0],e["to"][0]) for e in coords)
     max_x = max(max(e["from"][0],e["to"][0]) for e in coords)
@@ -137,6 +140,6 @@ def main():
         fail("Hitbox bone pivot must be high enough for a 10-block boss")
     print(f"PASS: {len(visible)-2} visible cubes, {len(bones)} bones, {len(data.get('animations', []))} animations")
     print(f"PASS: {model_height:.2f}-block height, {wing_span:.2f}-block wing span")
-    print("PASS: parenting, cube rotations, hitbox pivot, UVs and PNG")
+    print("PASS: parenting, cube rotations, hitbox pivot, UVs, PNG and phase-specific boss animations")
 if __name__ == "__main__":
     main()

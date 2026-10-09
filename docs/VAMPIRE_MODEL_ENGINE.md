@@ -13,3 +13,8 @@ The reflection bridge expects the ModelEngine R4 API shape ModelEngineAPI.getMod
 3. Use the Halloween boss-effects preview, then test the live encounter in staging to confirm the attack animation is visible before impact.
 4. Enter phase 4 and confirm the wings use the looping fly animation while attacks still telegraph and damage correctly.
 5. Keep bosses.vampire.model.ready: false until the client-side test passes.
+
+
+## Phase-specific attack poses
+
+The blueprint includes four separate one-shot animation tracks: false_sigil, blood_pulse, mirror_strike, and nightfall. HalloweenCore selects one by encounter phase before running the corresponding telegraph and delayed impact. If the ModelEngine animation API cannot play a phase-specific track, the encounter falls back to the generic attack animation. The structural validator requires all four named tracks.
