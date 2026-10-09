@@ -28,6 +28,7 @@ import java.util.UUID;
 public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
+    private final NamespacedKey legacyDecoratedKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
@@ -35,7 +36,8 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
+        this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
     }
 
     public void start() {
@@ -107,9 +109,15 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private void decorateChunk(Chunk chunk) {
-        int pumpkins = Math.max(0, Math.min(6, plugin.getConfig().getInt("world-decorations.pumpkins-per-chunk", 3)));
-        int webs = Math.max(0, Math.min(3, plugin.getConfig().getInt("world-decorations.cobwebs-per-chunk", 1)));
-        int attempts = Math.max(8, Math.min(80, plugin.getConfig().getInt("world-decorations.attempts-per-placement", 24)));
+        // Existing decorated chunks get only the new accent layer. Avoid stacking
+        // a second batch of pumpkins/cobwebs when upgrading an already-running world.
+        boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE);
+        int pumpkins = legacyDecorated ? 0 : Math.max(0, Math.min(6,
+                plugin.getConfig().getInt("world-decorations.pumpkins-per-chunk", 5)));
+        int webs = legacyDecorated ? 0 : Math.max(0, Math.min(3,
+                plugin.getConfig().getInt("world-decorations.cobwebs-per-chunk", 2)));
+        int candles = Math.max(0, Math.min(3, plugin.getConfig().getInt("world-decorations.red-candles-per-chunk", 1)));
+        int attempts = Math.max(8, Math.min(80, plugin.getConfig().getInt("world-decorations.attempts-per-placement", 32)));
         long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C4F574545L;
         Random random = new Random(seed);
@@ -144,6 +152,19 @@ public final class HalloweenWorldDecorator implements Listener {
             if (countNearbyWebAnchors(surface) < 2) continue;
             air.setType(Material.COBWEB, false);
             webCount++;
+        }
+
+        int candleCount = 0;
+        for (int i = 0; i < attempts && candleCount < candles; i++) {
+            int x = (chunk.getX() << 4) + random.nextInt(16);
+            int z = (chunk.getZ() << 4) + random.nextInt(16);
+            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
+            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid()) continue;
+            if (!naturalNeighborhood(ground) || ground.getState() instanceof TileState) continue;
+            Block air = ground.getRelative(0, 1, 0);
+            if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
+            air.setType(Material.RED_CANDLE, false);
+            candleCount++;
         }
     }
 
@@ -180,7 +201,8 @@ public final class HalloweenWorldDecorator implements Listener {
             case GRASS_BLOCK, DIRT, COARSE_DIRT, ROOTED_DIRT, PODZOL, MYCELIUM,
                     MOSS_BLOCK, MUD, MUDDY_MANGROVE_ROOTS, CLAY, MOSSY_COBBLESTONE,
                     STONE, ANDESITE, DIORITE, GRANITE, DEEPSLATE, TUFF, CALCITE,
-                    SAND, RED_SAND, GRAVEL, SNOW_BLOCK -> true;
+                    SAND, RED_SAND, GRAVEL, SNOW_BLOCK, NETHERRACK, SOUL_SAND, SOUL_SOIL,
+                    CRIMSON_NYLIUM, WARPED_NYLIUM, BASALT, BLACKSTONE, END_STONE -> true;
             default -> false;
         };
     }
