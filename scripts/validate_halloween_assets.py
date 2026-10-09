@@ -28,8 +28,27 @@ EXPECTED = {
     "crimson_warden_chestplate.png",
     "crimson_warden_leggings.png",
     "crimson_warden_boots.png",
+    "crimson_warden_sword.png",
+    "crimson_warden_pickaxe.png",
+    "crimson_warden_axe.png",
+    "crimson_warden_shovel.png",
+    "crimson_warden_hoe.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
+
+
+EXPECTED_MUSIC_EVENTS = {
+    "music.creative", "music.credits", "music.dragon", "music.end", "music.game", "music.menu",
+    "music.nether.basalt_deltas", "music.nether.crimson_forest", "music.nether.nether_wastes",
+    "music.nether.soul_sand_valley", "music.nether.warped_forest",
+    "music.overworld.badlands", "music.overworld.bamboo_jungle", "music.overworld.cherry_grove",
+    "music.overworld.deep_dark", "music.overworld.desert", "music.overworld.dripstone_caves",
+    "music.overworld.flower_forest", "music.overworld.forest", "music.overworld.frozen_peaks",
+    "music.overworld.grove", "music.overworld.jagged_peaks", "music.overworld.jungle",
+    "music.overworld.lush_caves", "music.overworld.meadow", "music.overworld.old_growth_taiga",
+    "music.overworld.snowy_slopes", "music.overworld.sparse_jungle", "music.overworld.stony_peaks",
+    "music.overworld.swamp", "music.under_water",
+}
 
 
 def png_size(path: Path) -> tuple[int, int]:
@@ -106,9 +125,11 @@ try:
     vanilla_sound_events = json.loads(VANILLA_SOUNDS_CONFIG.read_text(encoding="utf-8"))
 except (OSError, json.JSONDecodeError) as exc:
     fail(f"Invalid resource-pack sounds.json: {exc}")
-if not isinstance(vanilla_sound_events, dict) or len(vanilla_sound_events) < 40:
-    fail("Vanilla sounds.json must override the supported vanilla music event set")
-for event_id in ("music.game", "music.menu", "music.creative", "music.under_water", "music.nether.crimson_forest"):
+if not isinstance(vanilla_sound_events, dict) or set(vanilla_sound_events) != EXPECTED_MUSIC_EVENTS:
+    missing_events = sorted(EXPECTED_MUSIC_EVENTS - set(vanilla_sound_events))
+    unexpected_events = sorted(set(vanilla_sound_events) - EXPECTED_MUSIC_EVENTS)
+    fail(f"Vanilla music overrides differ from Minecraft 1.21.10. Missing={missing_events}; unexpected={unexpected_events}")
+for event_id in sorted(EXPECTED_MUSIC_EVENTS):
     definition = vanilla_sound_events.get(event_id)
     if not isinstance(definition, dict) or definition.get("replace") is not True:
         fail(f"Vanilla music event {event_id} is not explicitly replaced")
@@ -162,9 +183,32 @@ if "namespace: warriorland_halloween" not in config:
 
 for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_candy", "haunted_map",
                 "crimson_warden_helmet", "crimson_warden_chestplate",
-                "crimson_warden_leggings", "crimson_warden_boots"):
+                "crimson_warden_leggings", "crimson_warden_boots",
+                "crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
+                "crimson_warden_shovel", "crimson_warden_hoe"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
+
+shop_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
+if "      cost: 1000000" not in shop_config or "      bonus-health: 20.0" not in shop_config:
+    fail("Cursed talisman must cost 1,000,000 fragments and grant +20 max health")
+for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
+                "crimson_warden_shovel", "crimson_warden_hoe"):
+    start = config.find(f"  {item_id}:")
+    if start < 0:
+        fail(f"Custom gear '{item_id}' missing from ItemsAdder config")
+    end = config.find("\n  ", start + 4)
+    definition = config[start:end if end >= 0 else len(config)]
+    if "material: NETHERITE_" not in definition or "attribute_modifiers:" not in definition or "durability:" not in definition:
+        fail(f"Custom gear '{item_id}' needs a netherite base material, extra attributes, and durability")
+    if "blocked_enchants:" in definition and "blocked_enchants:\n      - ALL" in definition:
+        fail(f"Custom gear '{item_id}' must remain enchantable")
+
+shop_ids = ("crimson-warden-sword", "crimson-warden-pickaxe", "crimson-warden-axe",
+            "crimson-warden-shovel", "crimson-warden-hoe")
+for shop_id in shop_ids:
+    if f"    {shop_id}:" not in shop_config:
+        fail(f"Shop reward '{shop_id}' missing from config.yml")
 
 # ItemsAdder equipment layers are source assets at contents/<namespace>/textures/armor,
 # while item icons and vanilla overrides are emitted from the resourcepack/assets tree.
@@ -184,11 +228,11 @@ if root_textures.exists():
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
 print("Halloween asset validation passed.")
-print("9 item textures: 32x32 PNG; 2 armor layers: 64x32 PNG")
+print("14 item textures: 32x32 PNG; 2 armor layers: 64x32 PNG")
 print("ItemsAdder namespace: warriorland_halloween")
 print("Sky shader: Minecraft 1.21.10 entry point present")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms) + 5s event cue, mono OGG/Vorbis containers")
 print("ItemsAdder sound definitions: present")
-print(f"Vanilla music events suppressed: {len(vanilla_sound_events)}")
+print(f"Verified exact Minecraft 1.21.10 music-event overrides: {len(vanilla_sound_events)}")
 print("Halloween silent OGG: mono OGG/Vorbis, about 1 second")
 print("Content layout: structure method 2")
