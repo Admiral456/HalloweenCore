@@ -26,7 +26,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "boss", "give", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "boss", "bosseffects", "give", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -38,6 +38,11 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return section.getKeys(false).stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .sorted()
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("bosseffects") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("1", "2", "3", "4").stream()
+                    .filter(value -> value.startsWith(args[1]))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("boss") && sender.hasPermission("halloweencore.admin")) {
@@ -70,6 +75,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
         if (args[0].equalsIgnoreCase("boss")) return boss(sender, args);
+        if (args[0].equalsIgnoreCase("bosseffects")) return bossEffects(sender, args);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
@@ -86,6 +92,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween boss <status|start|stop> &7- finální encounter (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
         return true;
@@ -339,6 +346,37 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 player.getLocation().getBlockX() + 0.5D, (double) player.getLocation().getBlockY(),
                 player.getLocation().getBlockZ() + 0.5D)));
         player.sendMessage(plugin.color("&7Tento blok je přesný spawn point. Příkaz použij uprostřed arény na její podlaze."));
+        return true;
+    }
+
+
+    private boolean bossEffects(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cVizuální náhled může spustit jen hráč přímo ve hře."));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween bosseffects <1|2|3|4>"));
+            return true;
+        }
+
+        int phase;
+        try {
+            phase = Integer.parseInt(args[1]);
+        } catch (NumberFormatException ex) {
+            sender.sendMessage(plugin.color("&cZadej fázi 1, 2, 3 nebo 4."));
+            return true;
+        }
+
+        if (plugin.getVampireEncounterManager() == null
+                || !plugin.getVampireEncounterManager().previewAbility(player, phase)) {
+            sender.sendMessage(plugin.color("&cFáze musí být číslo od 1 do 4."));
+            return true;
+        }
+
+        sender.sendMessage(plugin.color("&aSpuštěn vizuální náhled fáze " + phase
+                + ". &7Jen částice a zvuky — žádný boss ani poškození hráčů."));
         return true;
     }
 
