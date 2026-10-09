@@ -231,7 +231,7 @@ TOOL_SPECS = {
 }
 for item_id, (material, min_durability, damage, speed) in TOOL_SPECS.items():
     match = re.search(
-        rf"(?ms)^  {re.escape(item_id)}:\\n(.*?)(?=^  [a-z0-9_]+:\\n|\\Z)",
+        rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [a-z0-9_]+:\n|\Z)",
         config,
     )
     if not match:
@@ -240,14 +240,14 @@ for item_id, (material, min_durability, damage, speed) in TOOL_SPECS.items():
     for required in (f"material: {material}", f"texture: item/{item_id}", "attribute_modifiers:", "mainhand:"):
         if required not in block:
             fail(f"Tool item '{item_id}' is missing {required}")
-    if re.search(r"(?m)^\\s*blocked_enchants:", block):
+    if re.search(r"(?m)^\s*blocked_enchants:", block):
         fail(f"Tool item '{item_id}' must not block normal enchantments")
-    durability = re.search(r"(?m)^\\s*max_durability:\\s*(\\d+)", block)
+    durability = re.search(r"(?m)^\s*max_durability:\s*(\d+)", block)
     if not durability or int(durability.group(1)) < min_durability:
         fail(f"Tool item '{item_id}' durability must be at least {min_durability}")
-    if not re.search(rf"(?m)^\\s*attackDamage:\\s*{re.escape(damage)}(?:\\.0)?\\s*$", block):
+    if not re.search(rf"(?m)^\s*attackDamage:\s*{re.escape(damage)}(?:\.0)?\s*$", block):
         fail(f"Tool item '{item_id}' has an unexpected attack-damage modifier")
-    if not re.search(rf"(?m)^\\s*attackSpeed:\\s*{re.escape(speed)}\\s*$", block):
+    if not re.search(rf"(?m)^\s*attackSpeed:\s*{re.escape(speed)}\s*$", block):
         fail(f"Tool item '{item_id}' has an unexpected attack-speed modifier")
 
 SHOP_CONFIG = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
@@ -260,7 +260,7 @@ SHOP_IDS = {
 }
 for shop_id, item_id in SHOP_IDS.items():
     match = re.search(
-        rf"(?ms)^    {re.escape(shop_id)}:\\n(.*?)(?=^    [a-z0-9-]+:\\n|^haunted-village:|\\Z)",
+        rf"(?ms)^    {re.escape(shop_id)}:\n(.*?)(?=^    [a-z0-9-]+:\n|^haunted-village:|\Z)",
         SHOP_CONFIG,
     )
     if not match or f'itemsadder-id: "warriorland_halloween:{item_id}"' not in match.group(1):
@@ -269,8 +269,8 @@ for shop_id, item_id in SHOP_IDS.items():
 REWARD_MANAGER = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenRewardManager.java").read_text(encoding="utf-8")
 if 'Bukkit.createInventory(holder, 54,' not in REWARD_MANAGER:
     fail("Halloween shop must use a 54-slot inventory so all gear is visible")
-slots_match = re.search(r"(?m)^\\s*int\\[\\] slots = \\{([^}]+)\\};", REWARD_MANAGER)
-if not slots_match or len(re.findall(r"\\d+", slots_match.group(1))) < 12:
+slots_match = re.search(r"(?m)^\s*int\[\] slots = \{([^}]+)\};", REWARD_MANAGER)
+if not slots_match or len(re.findall(r"\d+", slots_match.group(1))) < 12:
     fail("Halloween shop needs at least 12 reward slots for the full gear set")
 
 # ItemsAdder equipment layers are source assets at contents/<namespace>/textures/armor,
