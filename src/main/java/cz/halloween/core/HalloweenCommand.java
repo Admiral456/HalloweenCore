@@ -381,7 +381,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         String musicId = plugin.getConfig().getString("atmosphere.sound", "");
         sender.sendMessage(plugin.color("&7Halloween soundtrack: " + (!musicId.isBlank() && itemsAdder ? "&aNAKONFIGUROVÁN" : "&cNEDOSTUPNÝ")
                 + (musicId.isBlank() ? "" : " &8• " + musicId)));
-        sender.sendMessage(plugin.color("&7Vanilla hudba: &a31 hudebních událostí potlačeno v packu + watchdog MUSIC"));
+        sender.sendMessage(plugin.color("&7Vanilla hudba: &a31 override definic + watchdog MUSIC &8• klientský pack musí být přijat"));
         sender.sendMessage(plugin.color("&7Speciální mobové: " + (mythicMobs && modelEngine ? "&aMythicMobs + ModelEngine nalezeny" : "&evanilla fallback; pro vlastní 3D modely je potřeba MythicMobs + ModelEngine")));
         sender.sendMessage(plugin.color("&7Krvavý měsíc: &c" + plugin.getConfig().getDouble("random-events.blood-moon-damage-multiplier", 3.0D)
                 + "× poškození od monster &8• vlna " + plugin.getConfig().getInt("random-events.invasion-mobs-per-surge", 4)));
