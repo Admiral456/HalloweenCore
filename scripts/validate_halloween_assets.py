@@ -164,6 +164,22 @@ for sound in ("haunted_theme", "event_sting"):
         fail(f"ItemsAdder sound '{sound}' missing from sounds.yml")
 
 runtime_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
+if not re.search(r"(?m)^  volume:\\s*3\\.0\\s*$", runtime_config):
+    fail("Halloween ambient volume must be configured to 3.0 (three times full-volume gain)")
+if "volume-tripled-v2-migrated: true" not in runtime_config:
+    fail("Default config must declare the one-time 3x volume migration marker")
+
+atmosphere_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenAtmosphere.java").read_text(encoding="utf-8")
+if "SoundCategory.AMBIENT, volume, pitch" not in atmosphere_java:
+    fail("Halloween theme must use the AMBIENT category so vanilla MUSIC can be stopped independently")
+if "player.stopSound(SoundCategory.MUSIC)" not in atmosphere_java or "}, 1L, 20L);" not in atmosphere_java:
+    fail("Halloween ambience must actively stop the vanilla MUSIC category at least once per second")
+
+passive_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenPassiveEffectManager.java").read_text(encoding="utf-8")
+if "Attribute.MAX_HEALTH" not in passive_java or "getItemInOffHand()" not in passive_java:
+    fail("Cursed talisman must add max health while held in either hand")
+
+
 for sound_id in ("warriorland_halloween:event_sting", "warriorland_halloween:haunted_theme"):
     if sound_id not in runtime_config:
         fail(f"Plugin configuration is missing sound ID: {sound_id}")
@@ -203,6 +219,19 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
         fail(f"Custom gear '{item_id}' needs a netherite base material, extra attributes, and durability")
     if "blocked_enchants:" in definition and "blocked_enchants:\n      - ALL" in definition:
         fail(f"Custom gear '{item_id}' must remain enchantable")
+
+expected_gear_stats = {
+    "crimson_warden_sword": ("attackDamage: 11.0", "attackSpeed: -2.0"),
+    "crimson_warden_pickaxe": ("attackDamage: 8.0", "attackSpeed: -1.8"),
+    "crimson_warden_axe": ("attackDamage: 12.0", "attackSpeed: -2.4"),
+    "crimson_warden_shovel": ("attackDamage: 8.0", "attackSpeed: -1.8"),
+    "crimson_warden_hoe": ("attackDamage: 4.0", "attackSpeed: 0.0"),
+}
+for item_id, expected_stats in expected_gear_stats.items():
+    for stat in expected_stats:
+        if stat not in definition:
+            fail(f"Custom gear '{item_id}' is missing expected stronger-than-netherite stat: {stat}")
+
 
 shop_ids = ("crimson-warden-sword", "crimson-warden-pickaxe", "crimson-warden-axe",
             "crimson-warden-shovel", "crimson-warden-hoe")
