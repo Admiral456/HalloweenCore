@@ -93,6 +93,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
+        if (args[0].equalsIgnoreCase("buildvampirearena")) return buildVampireArena(sender, args);
+        if (args[0].equalsIgnoreCase("setsecret")) return setSecret(sender, args);
+        if (args[0].equalsIgnoreCase("secrets")) return showSecrets(sender);
         if (args[0].equalsIgnoreCase("boss")) return boss(sender, args);
         if (args[0].equalsIgnoreCase("bosseffects")) return bossEffects(sender, args);
         if (args[0].equalsIgnoreCase("modelpreview")) return modelPreview(sender, args);
@@ -113,6 +116,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
         sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween buildvampirearena [confirm] &7- náhled a bezpečná stavba arény (admin)"));
         sender.sendMessage(plugin.color("&6/halloween boss <status|start|stop> &7- finální encounter (admin)"));
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
