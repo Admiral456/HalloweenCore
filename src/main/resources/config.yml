@@ -387,7 +387,7 @@ atmosphere:
   fallback-sound: ""
   volume: 0.35
   pitch: 1.0
-  loop-seconds: 64
+  loop-milliseconds: 64000
   send-title-on-join: true
   title: "&6&lHALLOWEEN 2026"
   subtitle: "&7Něco se probudilo..."
