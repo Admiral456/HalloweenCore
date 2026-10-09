@@ -153,6 +153,13 @@ public final class HalloweenEventManager {
                 "&6&lHALLOWEEN &8» &f" + name + " začíná!");
         String announcement = plugin.color(message.replace("%duration%", Integer.toString(duration)));
         Bukkit.broadcastMessage(announcement);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            player.sendTitle(
+                    plugin.color("&6&lHALLOWEEN EVENT"),
+                    plugin.color("&e" + name + " &8• &7" + duration + " minut"),
+                    10, 60, 15
+            );
+        }
         plugin.getLogger().info("Halloween event started: " + activeEventId + " (duration=" + duration + "m)");
         playEventSound();
     }
@@ -198,17 +205,29 @@ public final class HalloweenEventManager {
         Player target = players[ThreadLocalRandom.current().nextInt(players.length)];
 
         if (activeEventId.equalsIgnoreCase("soulstorm")) {
-            if (plugin.getMobManager().spawnEventMob(target)) {
-                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().add(0, 1, 0), 16, 1.0, 1.0, 1.0, 0.02);
-                target.sendMessage(plugin.color("&5Duše se shlukují... &7Nedaleko se objevil prokletý lovec."));
-            }
+            boolean spawned = plugin.getMobManager().spawnEventMob(target);
+            target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
+                    target.getLocation().clone().add(0, 1, 0), 30, 1.5, 1.2, 1.5, 0.025);
+            target.getWorld().spawnParticle(Particle.SOUL,
+                    target.getLocation().clone().add(0, 1, 0), 12, 1.0, 0.8, 1.0, 0.02);
+            target.sendMessage(plugin.color(spawned
+                    ? "&5Duše se shlukují... &7Nedaleko se objevil prokletý lovec."
+                    : "&5Duševní bouře &8» &7Duše víří kolem tebe. Další prokletý lovec se pokusí objevit, až bude volné místo."));
         } else if (activeEventId.equalsIgnoreCase("witching-hour")) {
-            if (plugin.getMobManager().spawnEventMob(target)) {
-                target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().add(0, 1, 0), 18, 1.0, 1.0, 1.0, 0.05);
-                target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7něco se k tobě blíží."));
-            }
+            boolean spawned = plugin.getMobManager().spawnEventMob(target);
+            target.getWorld().spawnParticle(Particle.WITCH,
+                    target.getLocation().clone().add(0, 1, 0), 28, 1.4, 1.0, 1.4, 0.05);
+            target.getWorld().spawnParticle(Particle.ENCHANT,
+                    target.getLocation().clone().add(0, 1, 0), 18, 1.0, 0.8, 1.0, 0.2);
+            target.sendMessage(plugin.color(spawned
+                    ? "&5Čarodějnická hodina &8» &7něco se k tobě blíží."
+                    : "&5Čarodějnická hodina &8» &7Magie se kolem tebe rozvířila. Další čarodějnice se pokusí objevit, až bude volné místo."));
         } else if (activeEventId.equalsIgnoreCase("cursed-harvest")) {
-            target.getWorld().spawnParticle(Particle.COMPOSTER, target.getLocation().clone().add(0, 1, 0), 14, 0.8, 0.6, 0.8, 0.03);
+            target.getWorld().spawnParticle(Particle.COMPOSTER,
+                    target.getLocation().clone().add(0, 1, 0), 18, 1.0, 0.8, 1.0, 0.04);
+            target.getWorld().spawnParticle(Particle.HAPPY_VILLAGER,
+                    target.getLocation().clone().add(0, 1, 0), 8, 0.7, 0.6, 0.7, 0.02);
+            target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Zvýšené odměny platí právě teď; vyzkoušej sklízení plodin."));
         } else if (activeEventId.equalsIgnoreCase("blood-moon-invasion")) {
             // The captain enters during the final two minutes. Spawn it before later waves fill the cap.
             if (!invasionCaptainSpawned && activeUntil - now <= 120_000L
@@ -227,10 +246,13 @@ public final class HalloweenEventManager {
                 if (!plugin.getMobManager().spawnEventMob(target)) break;
                 spawned++;
             }
-            if (spawned > 0) {
-                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
-                        target.getLocation().clone().add(0, 1.0D, 0), 24, 1.2D, 0.9D, 1.2D, 0.025D);
-            }
+            target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
+                    target.getLocation().clone().add(0, 1.0D, 0), 34, 1.5D, 1.0D, 1.5D, 0.03D);
+            target.getWorld().spawnParticle(Particle.ASH,
+                    target.getLocation().clone().add(0, 1.0D, 0), 18, 1.0D, 0.8D, 1.0D, 0.02D);
+            target.sendMessage(plugin.color(spawned > 0
+                    ? "&4Krvavý měsíc &8» &cVlna invaze dorazila! &7Noví nepřátelé: &e" + spawned
+                    : "&4Krvavý měsíc &8» &cCítíš, jak se blíží další vlna. &7Jakmile bude bezpečné místo a volný limit mobů, nepřátelé se objeví."));
         }
 
         lastSurgeAt = now;
