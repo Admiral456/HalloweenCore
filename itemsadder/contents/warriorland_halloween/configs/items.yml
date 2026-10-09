@@ -115,7 +115,7 @@ items:
     lore:
       - "&7Legendární zbraň Krvavého strážce."
       - "&cSilnější než netheritový meč."
-      - "&7+3 útok, +0,2 rychlost útoku; 4 200 výdrže."
+      - "&7Celkem: 12 útok, rychlost 2,0; výdrž 4 200."
       - "&aLze enchantovat: Sharpness, Looting, Mending..."
     material: NETHERITE_SWORD
     graphics:
@@ -124,15 +124,15 @@ items:
       max_durability: 4200
     attribute_modifiers:
       mainhand:
-        attackDamage: 3.0
-        attackSpeed: 0.2
+        attackDamage: 11.0
+        attackSpeed: -2.0
 
   crimson_warden_pickaxe:
     name: "&4&lKrumpáč Krvavého strážce"
     lore:
       - "&7Legendární krumpáč pro hluboké doly."
       - "&cRychlejší a odolnější než netherit."
-      - "&7+2 útok, +0,4 rychlost útoku; 4 000 výdrže."
+      - "&7Celkem: 9 útok, rychlost 2,2; výdrž 4 000."
       - "&aLze enchantovat: Efficiency, Fortune, Silk Touch, Mending..."
     material: NETHERITE_PICKAXE
     graphics:
@@ -141,15 +141,15 @@ items:
       max_durability: 4000
     attribute_modifiers:
       mainhand:
-        attackDamage: 2.0
-        attackSpeed: 0.4
+        attackDamage: 8.0
+        attackSpeed: -1.8
 
   crimson_warden_axe:
     name: "&4&lSekera Krvavého strážce"
     lore:
       - "&7Legendární sekera s krvavým ostřím."
       - "&cVyšší poškození a výdrž než netherit."
-      - "&7+2 útok, +0,3 rychlost útoku; 4 000 výdrže."
+      - "&7Celkem: 13 útok, rychlost 1,6; výdrž 4 000."
       - "&aLze enchantovat: Sharpness, Efficiency, Unbreaking, Mending..."
     material: NETHERITE_AXE
     graphics:
@@ -158,15 +158,15 @@ items:
       max_durability: 4000
     attribute_modifiers:
       mainhand:
-        attackDamage: 2.0
-        attackSpeed: 0.3
+        attackDamage: 12.0
+        attackSpeed: -2.4
 
   crimson_warden_shovel:
     name: "&4&lLopatka Krvavého strážce"
     lore:
       - "&7Legendární lopatka na rychlé kopání."
       - "&cRychlejší a odolnější než netherit."
-      - "&7+2 útok, +0,5 rychlost útoku; 3 500 výdrže."
+      - "&7Celkem: 9 útok, rychlost 2,2; výdrž 3 500."
       - "&aLze enchantovat: Efficiency, Silk Touch, Unbreaking, Mending..."
     material: NETHERITE_SHOVEL
     graphics:
@@ -175,15 +175,15 @@ items:
       max_durability: 3500
     attribute_modifiers:
       mainhand:
-        attackDamage: 2.0
-        attackSpeed: 0.5
+        attackDamage: 8.0
+        attackSpeed: -1.8
 
   crimson_warden_hoe:
     name: "&4&lMotyka Krvavého strážce"
     lore:
       - "&7Legendární motyka se zpevněným ostřím."
       - "&cLepší výdrž a bojové statistiky než netherit."
-      - "&7+2 útok, +0,7 rychlost útoku; 3 500 výdrže."
+      - "&7Celkem: 5 útok, rychlost 4,0; výdrž 3 500."
       - "&aLze enchantovat: Efficiency, Fortune, Silk Touch, Mending..."
     material: NETHERITE_HOE
     graphics:
@@ -192,8 +192,8 @@ items:
       max_durability: 3500
     attribute_modifiers:
       mainhand:
-        attackDamage: 2.0
-        attackSpeed: 0.7
+        attackDamage: 4.0
+        attackSpeed: 0.0
 
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"
