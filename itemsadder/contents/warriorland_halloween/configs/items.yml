@@ -117,7 +117,7 @@ items:
       - "&aLze normálně enchantovat."
     material: NETHERITE_SWORD
     graphics:
-      texture: item/crimson_warden_sword
+      model: item/crimson_warden_sword
     durability:
       max_durability: 2700
     attribute_modifiers:
@@ -134,7 +134,7 @@ items:
       - "&aLze enchantovat včetně Efficiency, Unbreaking a Mending."
     material: NETHERITE_PICKAXE
     graphics:
-      texture: item/crimson_warden_pickaxe
+      model: item/crimson_warden_pickaxe
     durability:
       max_durability: 3200
     attribute_modifiers:
@@ -151,7 +151,7 @@ items:
       - "&aLze normálně enchantovat."
     material: NETHERITE_AXE
     graphics:
-      texture: item/crimson_warden_axe
+      model: item/crimson_warden_axe
     durability:
       max_durability: 3000
     attribute_modifiers:
@@ -168,7 +168,7 @@ items:
       - "&aLze enchantovat včetně Efficiency, Unbreaking a Mending."
     material: NETHERITE_SHOVEL
     graphics:
-      texture: item/crimson_warden_shovel
+      model: item/crimson_warden_shovel
     durability:
       max_durability: 2800
     attribute_modifiers:
@@ -185,7 +185,7 @@ items:
       - "&aLze normálně enchantovat."
     material: NETHERITE_HOE
     graphics:
-      texture: item/crimson_warden_hoe
+      model: item/crimson_warden_hoe
     durability:
       max_durability: 2700
     attribute_modifiers:
