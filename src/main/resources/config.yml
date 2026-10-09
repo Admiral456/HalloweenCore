@@ -138,18 +138,28 @@ special-mobs:
       health-multiplier: 1.35
       speed-level: 0
       strength-level: 0
+      ability-cooldown-seconds: 12
+      soul-siphon-blindness-ticks: 35
+      soul-siphon-weakness-ticks: 80
     gravekeeper:
       name: "&8&lHrobník"
       glowing: true
       health-multiplier: 1.45
       speed-level: 0
       strength-level: 0
+      ability-cooldown-seconds: 9
+      grave-mark-delay-ticks: 24
+      grave-mark-radius-blocks: 1.5
+      grave-mark-damage: 3.0
     blood-spider:
       name: "&c&lKrvavý pavouk"
       glowing: true
       health-multiplier: 1.25
       speed-level: 1
       strength-level: 0
+      ability-cooldown-seconds: 8
+      blood-web-poison-ticks: 80
+      blood-web-slowness-ticks: 45
     pumpkin-wraith:
       name: "&6&lDýňový přízrak"
       glowing: true
@@ -157,12 +167,17 @@ special-mobs:
       speed-level: 0
       strength-level: 1
       explosion-radius: 3
+      ash-flash-radius-blocks: 5.0
+      ash-flash-nausea-ticks: 70
+      ash-flash-blindness-ticks: 30
     hex-witch:
       name: "&5&lHexová čarodějka"
       glowing: true
       health-multiplier: 1.30
       speed-level: 0
       strength-level: 0
+      ability-cooldown-seconds: 10
+      random-hex-duration-ticks: 65
 
 notifications:
   fragment-gain: true
