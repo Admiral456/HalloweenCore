@@ -261,6 +261,11 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                             getConfig().set(targetPath + "." + key, source.get(key));
                         }
                     }
+                    for (String key : List.of("cost", "min-curse")) {
+                        if (!getConfig().contains(targetPath + "." + key) && source.contains(key)) {
+                            getConfig().set(targetPath + "." + key, source.get(key));
+                        }
+                    }
                 }
             }
 
