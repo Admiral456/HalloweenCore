@@ -27,6 +27,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Consumer;
 
 public final class HalloweenVampireEncounterManager implements Listener {
     private final HalloweenCore plugin;
@@ -403,6 +404,10 @@ public final class HalloweenVampireEncounterManager implements Listener {
     }
 
     private void animateFalseLoot(Location anchor, double maxRadius) {
+        animateFalseLoot(anchor, maxRadius, () -> {});
+    }
+
+    private void animateFalseLoot(Location anchor, double maxRadius, Runnable onImpact) {
         final int totalFrames = 20;
         final int[] frame = {0};
         final BukkitTask[] task = new BukkitTask[1];
@@ -447,11 +452,16 @@ public final class HalloweenVampireEncounterManager implements Listener {
                 world.spawnParticle(Particle.FLASH, anchor.clone().add(0, 0.6D, 0), 1, 0, 0, 0, 0);
                 world.playSound(anchor, "minecraft:entity.generic.explode", 0.8f, 0.65f);
                 task[0].cancel();
+                onImpact.run();
             }
         }, 0L, 2L);
     }
 
     private void animateBloodPulse(Location anchor, double maxRadius) {
+        animateBloodPulse(anchor, maxRadius, () -> {});
+    }
+
+    private void animateBloodPulse(Location anchor, double maxRadius, Runnable onImpact) {
         final int totalFrames = 28;
         final int[] frame = {0};
         final BukkitTask[] task = new BukkitTask[1];
@@ -486,11 +496,16 @@ public final class HalloweenVampireEncounterManager implements Listener {
                         95, maxRadius * 0.45D, 0.75D, maxRadius * 0.45D, 0.035D);
                 world.playSound(anchor, "minecraft:entity.generic.explode", 0.85f, 0.45f);
                 task[0].cancel();
+                onImpact.run();
             }
         }, 0L, 2L);
     }
 
     private void animateMirrorStrike(Location anchor, List<Location> markers, double radius) {
+        animateMirrorStrike(anchor, markers, radius, impact -> {});
+    }
+
+    private void animateMirrorStrike(Location anchor, List<Location> markers, double radius, Consumer<Location> onImpact) {
         final int totalFrames = 18;
         final int[] frame = {0};
         final BukkitTask[] task = new BukkitTask[1];
@@ -521,12 +536,16 @@ public final class HalloweenVampireEncounterManager implements Listener {
             if (f >= totalFrames) {
                 task[0].cancel();
                 Location impact = markers.get(ThreadLocalRandom.current().nextInt(markers.size()));
-                animateMirrorImpact(impact, radius);
+                animateMirrorImpact(impact, radius, () -> onImpact.accept(impact));
             }
         }, 0L, 2L);
     }
 
     private void animateMirrorImpact(Location impact, double maxRadius) {
+        animateMirrorImpact(impact, maxRadius, () -> {});
+    }
+
+    private void animateMirrorImpact(Location impact, double maxRadius, Runnable onImpact) {
         final int totalFrames = 12;
         final int[] frame = {0};
         final BukkitTask[] task = new BukkitTask[1];
@@ -550,11 +569,16 @@ public final class HalloweenVampireEncounterManager implements Listener {
                         50, 0.8D, 0.95D, 0.8D, 0.12D);
                 world.playSound(impact, "minecraft:entity.player.attack.sweep", 1.0f, 0.45f);
                 task[0].cancel();
+                onImpact.run();
             }
         }, 0L, 2L);
     }
 
     private void animateEclipse(Location anchor, double maxRadius) {
+        animateEclipse(anchor, maxRadius, () -> {});
+    }
+
+    private void animateEclipse(Location anchor, double maxRadius, Runnable onImpact) {
         final int totalFrames = 26;
         final int[] frame = {0};
         final BukkitTask[] task = new BukkitTask[1];
@@ -597,6 +621,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
                 world.spawnParticle(Particle.FLASH, anchor.clone().add(0, 0.75D, 0), 1, 0, 0, 0, 0);
                 world.playSound(anchor, "minecraft:entity.warden.sonic_boom", 0.9f, 0.65f);
                 task[0].cancel();
+                onImpact.run();
             }
         }, 0L, 2L);
     }
@@ -645,16 +670,11 @@ public final class HalloweenVampireEncounterManager implements Listener {
         double damage = Math.max(0.0D,
                 plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-1-damage", 3.0D));
 
-        drawRing(mark, radius, org.bukkit.Particle.SOUL_FIRE_FLAME, 28);
         target.sendTitle(plugin.color("&5&lFALEŠNÁ KOŘIST"),
-                plugin.color("&7Runy pod tebou vybuchnou. Uteč!"), 0, 28, 5);
-        target.playSound(target.getLocation(), "minecraft:block.amethyst_block.chime", 0.9f, 0.55f);
-
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                plugin.color("&7Runy se nabíjejí. Uteč z označeného kruhu!"), 0, 30, 5);
+        target.playSound(mark, "minecraft:block.amethyst_block.chime", 0.9f, 0.55f);
+        animateFalseLoot(mark, radius, () -> {
             if (!isSameEncounter(encounterId)) return;
-            mark.getWorld().spawnParticle(org.bukkit.Particle.SOUL, mark.clone().add(0, 0.15D, 0),
-                    45, radius * 0.35D, 0.35D, radius * 0.35D, 0.02D);
-            mark.getWorld().playSound(mark, "minecraft:entity.generic.explode", 0.6f, 0.65f);
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (!plugin.isEligibleGameplayPlayer(player)) continue;
                 if (!player.getWorld().getUID().equals(mark.getWorld().getUID())) continue;
@@ -664,7 +684,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
                         org.bukkit.potion.PotionEffectType.SLOWNESS, 25, 0, true, true, true
                 ));
             }
-        }, 30L);
+        });
     }
 
     private void drawRing(Location center, double radius, org.bukkit.Particle particle, int points) {
@@ -711,16 +731,11 @@ public final class HalloweenVampireEncounterManager implements Listener {
         double damage = Math.max(0.0D,
                 plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-2-damage", 5.0D));
 
-        drawRing(mark, radius, org.bukkit.Particle.DUST_PLUME, 36);
         mark.getWorld().playSound(mark, "minecraft:entity.warden.heartbeat", 0.8f, 0.55f);
-        target.sendMessage(plugin.color("&5Krvavý puls &8» &cKruh se uzavírá. Značenému místu se vyhni!"));
-
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        target.sendTitle(plugin.color("&4&lKRVAVÝ PULS"),
+                plugin.color("&7Vlna se šíří od středu. Opusť rudou zónu!"), 0, 38, 5);
+        animateBloodPulse(mark, radius, () -> {
             if (!isSameEncounter(encounterId)) return;
-            mark.getWorld().spawnParticle(org.bukkit.Particle.DUST_PLUME, mark.clone().add(0, 0.5D, 0),
-                    70, radius * 0.45D, 0.8D, radius * 0.45D, 0.02D);
-            mark.getWorld().playSound(mark, "minecraft:entity.generic.explode", 0.75f, 0.45f);
-
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (!plugin.isEligibleGameplayPlayer(player)) continue;
                 if (!player.getWorld().getUID().equals(mark.getWorld().getUID())) continue;
@@ -731,7 +746,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
                         (player.getLocation().getZ() - mark.getZ()) * 0.04D
                 )));
             }
-        }, 35L);
+        });
     }
 
     private void mirrorStrike(Player target) {
@@ -747,31 +762,21 @@ public final class HalloweenVampireEncounterManager implements Listener {
         List<Location> markers = new ArrayList<>();
 
         for (int i = 0; i < 3; i++) {
-            double angle = (2.0D * Math.PI * i / 3.0D) + (ThreadLocalRandom.current().nextDouble(-0.12D, 0.12D));
-            Location marker = anchor.clone().add(Math.cos(angle) * markerDistance, 0.0D,
-                    Math.sin(angle) * markerDistance);
-            markers.add(marker);
-            drawRing(marker, radius, org.bukkit.Particle.PORTAL, 24);
-            marker.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, marker.clone().add(0, 0.7D, 0),
-                    16, 0.65D, 0.8D, 0.65D, 0.02D);
+            double angle = (2.0D * Math.PI * i / 3.0D)
+                    + ThreadLocalRandom.current().nextDouble(-0.12D, 0.12D);
+            markers.add(anchor.clone().add(Math.cos(angle) * markerDistance, 0.0D,
+                    Math.sin(angle) * markerDistance));
         }
-        anchor.getWorld().playSound(anchor, "minecraft:entity.enderman.stare", 0.9f, 0.45f);
-        target.sendTitle(plugin.color("&5&lZRCADLOVÝ VÝPAD"),
-                plugin.color("&7Tři stíny, jedna čepel. Nezůstávej u run!"), 0, 35, 5);
 
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        anchor.getWorld().playSound(anchor, "minecraft:entity.enderman.stare", 0.9f, 0.45f);
+        target.sendTitle(plugin.color("&d&lZRCADLOVÝ VÝPAD"),
+                plugin.color("&7Tři portály. Jeden výpad. Sleduj značky a uhni!"), 0, 38, 5);
+        animateMirrorStrike(anchor, markers, radius, impact -> {
             if (!isSameEncounter(encounterId)) return;
-            Location impact = markers.get(ThreadLocalRandom.current().nextInt(markers.size()));
             if (impact.getBlock().isPassable()
                     && impact.clone().add(0, 1, 0).getBlock().isPassable()) {
                 boss.teleport(impact);
             }
-            impact.getWorld().spawnParticle(org.bukkit.Particle.CRIT, impact.clone().add(0, 0.8D, 0),
-                    55, 0.9D, 1.1D, 0.9D, 0.15D);
-            impact.getWorld().spawnParticle(org.bukkit.Particle.SOUL_FIRE_FLAME, impact.clone().add(0, 0.4D, 0),
-                    40, 0.65D, 0.6D, 0.65D, 0.02D);
-            impact.getWorld().playSound(impact, "minecraft:entity.player.attack.sweep", 1.0f, 0.45f);
-
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (!plugin.isEligibleGameplayPlayer(player)) continue;
                 if (!player.getWorld().getUID().equals(impact.getWorld().getUID())) continue;
@@ -781,7 +786,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
                         org.bukkit.potion.PotionEffectType.BLINDNESS, 30, 0, true, true, true
                 ));
             }
-        }, 35L);
+        });
     }
 
     private void nightfall() {
@@ -793,25 +798,16 @@ public final class HalloweenVampireEncounterManager implements Listener {
         double damage = Math.max(0.0D,
                 plugin.getConfig().getDouble("bosses.vampire.encounter.abilities.phase-4-damage", 7.0D));
 
-        // Inner circles are deceptive echoes; only the outer circle marks the actual blast radius.
-        drawRing(origin, radius * 0.55D, org.bukkit.Particle.SOUL_FIRE_FLAME, 32);
-        drawRing(origin, radius * 0.78D, org.bukkit.Particle.SOUL_FIRE_FLAME, 40);
-        drawRing(origin, radius, org.bukkit.Particle.SOUL_FIRE_FLAME, 52);
         origin.getWorld().playSound(origin, "minecraft:entity.warden.sonic_boom", 0.8f, 0.45f);
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!plugin.isEligibleGameplayPlayer(player)) continue;
             if (!player.getWorld().getUID().equals(origin.getWorld().getUID())) continue;
             if (player.getLocation().distanceSquared(origin) <= radius * radius * 1.5D) {
-                player.sendMessage(plugin.color("&4ZATMĚNÍ &8» &7Vnitřní kruhy klamou. Skutečný dosah ukazuje vnější runa!"));
+                player.sendMessage(plugin.color("&4ZATMĚNÍ &8» &7Vnitřní kruhy klamou. Vnější značí skutečný dosah!"));
             }
         }
-
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+        animateEclipse(origin, radius, () -> {
             if (!isSameEncounter(encounterId)) return;
-            origin.getWorld().spawnParticle(org.bukkit.Particle.DUST_PLUME, origin.clone().add(0, 0.8D, 0),
-                    100, radius * 0.42D, 1.0D, radius * 0.42D, 0.05D);
-            origin.getWorld().playSound(origin, "minecraft:entity.warden.sonic_boom", 0.9f, 0.65f);
-
             for (Player player : Bukkit.getOnlinePlayers()) {
                 if (!plugin.isEligibleGameplayPlayer(player)) continue;
                 if (!player.getWorld().getUID().equals(origin.getWorld().getUID())) continue;
@@ -821,7 +817,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
                         org.bukkit.potion.PotionEffectType.BLINDNESS, 60, 0, true, true, true
                 ));
             }
-        }, 40L);
+        });
     }
 
     private void maintainPhaseEffects() {
