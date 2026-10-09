@@ -335,9 +335,18 @@ for marker in ("RADIUS = 48", "public Inspection inspect(", "public int build(",
 if not re.search(r"RADIUS\s*=\s*48", ARENA_SOURCE):
     fail("Epic arena must have a 97-block diameter (radius 48)")
 
-for marker in ("scheduleFirstEvent()", "startEventNow(String requestedId)", "beginEvent(String eventId)", "runActiveEventEffects", "end-message"):
+for marker in ("scheduleFirstEvent()", "startEventNow(String requestedId)", "beginEvent(String eventId)", "runActiveEventEffects", "sendTitle(", "Particle.ENCHANT", "Particle.HAPPY_VILLAGER", "Particle.ASH", "end-message"):
     if marker not in EVENT_SOURCE:
         fail(f"Event manager is missing required behavior: {marker}")
+for setting, expected in (
+    ("random-events.start-delay-seconds: 30", True),
+    ("surge-interval-seconds: 30", True),
+    ("max-event-mobs: 16", True),
+    ("invasion-mobs-per-surge: 3", True),
+):
+    if setting not in runtime_config:
+        fail(f"Runtime event config is missing active event tuning: {setting}")
+
 for event_id in ("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion"):
     if f'"{event_id}"' not in EVENT_SOURCE:
         fail(f"Event manager does not register event '{event_id}'")
