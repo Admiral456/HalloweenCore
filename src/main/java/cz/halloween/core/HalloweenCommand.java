@@ -38,13 +38,14 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("event") && sender.hasPermission("halloweencore.admin")) {
             return List.of("status", "start", "stop", "soulstorm", "witching-hour",
-                    "cursed-harvest", "blood-moon-invasion", "random").stream()
+                    "cursed-harvest", "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising", "random").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("event")
                 && args[1].equalsIgnoreCase("start") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("random", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion").stream()
+            return List.of("random", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion",
+                    "pumpkin-apocalypse", "graveyard-rising").stream()
                     .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
@@ -86,14 +87,16 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("event") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("status", "start", "stop", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion", "random")
+            return List.of("status", "start", "stop", "soulstorm", "witching-hour", "cursed-harvest",
+                    "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising", "random")
                     .stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("event") && args[1].equalsIgnoreCase("start")
                 && sender.hasPermission("halloweencore.admin")) {
-            return List.of("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion", "random")
+            return List.of("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion",
+                    "pumpkin-apocalypse", "graveyard-rising", "random")
                     .stream()
                     .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
@@ -251,7 +254,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             if (!action.equals("status")) {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween event [status|start [random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion]|stop]"));
+                sender.sendMessage(plugin.color("&cPoužití: /halloween event [status|start [random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion|pumpkin-apocalypse|graveyard-rising]|stop]"));
                 return true;
             }
         } else if (!checkUse(sender)) {
@@ -375,6 +378,13 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7Server progress: &e" + total + " &7/ &e" + goal + " &8(" + String.format("%.1f", progress) + "%)"));
         sender.sendMessage(plugin.color("&7Online hráči: &e" + Bukkit.getOnlinePlayers().size()));
         sender.sendMessage(plugin.color("&7ItemsAdder: " + status(itemsAdder) + " &8• verze: " + status(itemsAdderVersion)));
+        String musicId = plugin.getConfig().getString("atmosphere.sound", "");
+        sender.sendMessage(plugin.color("&7Halloween soundtrack: " + (!musicId.isBlank() && itemsAdder ? "&aNAKONFIGUROVÁN" : "&cNEDOSTUPNÝ")
+                + (musicId.isBlank() ? "" : " &8• " + musicId)));
+        sender.sendMessage(plugin.color("&7Vanilla hudba: &a31 hudebních událostí potlačeno v packu + watchdog MUSIC"));
+        sender.sendMessage(plugin.color("&7Speciální mobové: " + (mythicMobs && modelEngine ? "&aMythicMobs + ModelEngine nalezeny" : "&evanilla fallback; pro vlastní 3D modely je potřeba MythicMobs + ModelEngine")));
+        sender.sendMessage(plugin.color("&7Krvavý měsíc: &c" + plugin.getConfig().getDouble("random-events.blood-moon-damage-multiplier", 3.0D)
+                + "× poškození od monster &8• vlna " + plugin.getConfig().getInt("random-events.invasion-mobs-per-surge", 4)));
         sender.sendMessage(plugin.color("&7  hunter_mask: " + status(hunterMask)));
         sender.sendMessage(plugin.color("&7  cursed_talisman: " + status(cursedTalisman)));
         sender.sendMessage(plugin.color("&7  halloween_token: " + status(halloweenToken)));
