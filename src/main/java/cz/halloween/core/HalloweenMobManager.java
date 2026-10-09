@@ -350,32 +350,33 @@ public final class HalloweenMobManager implements Listener {
     }
 
     public boolean spawnEventMob(Player player) {
-        if (!plugin.isEventEnabled() || player == null) return false;
-        if (!plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
+        String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
+        return spawnEventMob(player, ids[ThreadLocalRandom.current().nextInt(ids.length)]);
+    }
+
+    /** Spawn a specific special type so every event can choose its own enemy mix. */
+    public boolean spawnEventMob(Player player, String mobId) {
+        if (!plugin.isEventEnabled() || player == null
+                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
+        if (!isKnownSpecialMob(mobId)) return false;
 
         World world = player.getWorld();
         if (!plugin.isEligibleGameplayWorld(world)) return false;
-        int maxEventMobs = Math.max(1, plugin.getConfig().getInt("random-events.max-event-mobs", 12));
+        int maxEventMobs = Math.max(1, Math.min(80,
+                plugin.getConfig().getInt("random-events.max-event-mobs", 36)));
         if (countEventMobs(world) >= maxEventMobs) return false;
 
-        String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
-        String mobId = ids[ThreadLocalRandom.current().nextInt(ids.length)];
-
-        org.bukkit.Location spawnLocation = findSafeEventLocation(player);
+        Location spawnLocation = findSafeEventLocation(player);
         if (spawnLocation == null) return false;
 
-        EntityType type = switch (mobId) {
-            case "gravekeeper" -> EntityType.SKELETON;
-            case "blood-spider" -> EntityType.SPIDER;
-            case "pumpkin-wraith" -> EntityType.CREEPER;
-            case "hex-witch" -> EntityType.WITCH;
-            default -> EntityType.ZOMBIE;
-        };
-
-        Entity entity = world.spawnEntity(spawnLocation, type);
-        if (!(entity instanceof LivingEntity living)) {
-            entity.remove();
-            return false;
+        LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
+        if (living == null) {
+            Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
+            if (!(entity instanceof LivingEntity spawned)) {
+                entity.remove();
+                return false;
+            }
+            living = spawned;
         }
 
         configureSpecialMob(living, mobId);
