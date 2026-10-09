@@ -1,21 +1,14 @@
-# Halloween music license
+# Halloween music assets
 
-HalloweenCore does not generate its soundtrack.
+The Halloween sound files are original procedural audio created for this project. They are synthesized from oscillators, envelopes and generated noise; they do not contain third-party recordings or samples.
 
-The planned ambient loop is:
+- `itemsadder/contents/warriorland_halloween/sounds/haunted_theme.ogg`: 64-second ambient loop, mono OGG/Vorbis.
+- `itemsadder/contents/warriorland_halloween/sounds/event_sting.ogg`: 5-second one-shot Halloween event cue, mono OGG/Vorbis.
+- ItemsAdder registration: `itemsadder/contents/warriorland_halloween/configs/sounds.yml`.
+- Sound IDs: `warriorland_halloween:haunted_theme` and `warriorland_halloween:event_sting`.
 
-- **Title:** Creepy
-- **Author:** TokyoGeisha
-- **Source:** https://opengameart.org/content/creepy
-- **License:** CC0
-- **Use:** Halloween 2026 ambient loop
+The CC0 track **Creepy** by TokyoGeisha was reviewed as a candidate at https://opengameart.org/content/creepy, but it is not bundled. The included audio is the original synthesized alternative, not a copy or conversion of that track.
 
-The source page identifies the track as a creepy/horror loop and states that attribution is not required.
+## Installation
 
-## Distribution policy
-
-The track must only be bundled into the Minecraft resource pack after the exact source file and its license have been verified. Do not substitute a random YouTube upload.
-
-A YouTube Audio Library track is not automatically a good fit for a distributed Minecraft resource pack because the applicable license can be narrower than simple video usage.
-
-Current repository state: the custom sound ID `halloween:haunted_theme` is wired in the plugin, but the external audio binary is intentionally not bundled yet.
+Copy the `warriorland_halloween` content folder to the server's ItemsAdder contents directory, run `/iazip`, then make sure players receive the rebuilt resource pack. The plugin's ambient loop and event cue rely on these client-side sound definitions.
