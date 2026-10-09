@@ -22,3 +22,10 @@ jobs:
         run: python3 scripts/validate_vampire_model.py
       - name: Build
         run: mvn -B clean package
+      - name: Upload plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-jar
+          path: target/HalloweenCore.jar
+          if-no-files-found: error
+          retention-days: 14
