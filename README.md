@@ -26,7 +26,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
 - Maska nočního lovce dává při nošení +5 % k zisku fragmentů; stojí 4 000 fragmentů a vyžaduje prokletí 3
-- Prokletý talisman dává při držení +10 % k zisku fragmentů; stojí 15 000 fragmentů a vyžaduje prokletí 5
+- Prokletý talisman stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +20 maximálního zdraví (jeden řádek srdcí navíc) a zachovává +10 % k zisku fragmentů
 - limitovaný token Halloween 2026 stojí 30 000 fragmentů a vyžaduje prokletí 5
 - po dosažení globálního cíle se natrvalo odemkne serverové finále
 - hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
@@ -107,15 +107,15 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 ## Halloween hudba a obloha
 
 - `scripts/generate_halloween_audio.py` stáhne skladbu `Spooky Fester` od Eldritch Grim z OpenGameArt (licence CC0), převede ji na mono OGG/Vorbis a vygeneruje originální 5sekundový event cue. Vyžaduje přístup k internetu, Python standard library a `ffmpeg`; nastaví také přesnou délku ambientní smyčky podle výsledného OGG souboru.
-- Interval přehrávání se při sestavení nastavuje přes `atmosphere.loop-milliseconds` podle skutečné délky `Spooky Fester`. Hudba se přehrává v kategorii MUSIC a jako zdroj navázaný na hráče, aby se při pohybu neztrácela.
+- Interval přehrávání se při sestavení nastavuje přes `atmosphere.loop-milliseconds` podle skutečné délky `Spooky Fester`. Hudba se přehrává jako zdroj navázaný na hráče v kategorii AMBIENT, aby se nezastavila spolu s vanilla hudbou.
 - Zdroj hudby: [Spooky Fester — Eldritch Grim](https://opengameart.org/content/spooky-fester), CC0. OpenGameArt uvádí, že uvedení autora není povinné; zdroj zde přesto evidujeme.
 - ItemsAdder zvuky jsou registrované v `itemsadder/contents/warriorland_halloween/configs/sounds.yml`. Plugin používá `warriorland_halloween:haunted_theme` pro atmosféru a `warriorland_halloween:event_sting` na začátku náhodného eventu.
 - Ambientní hudba se spouští hned po připojení a opakuje se samostatně každému hráči podle délky skladby; při odchodu nebo vypnutí eventu se jeho přehrávací úloha zruší, aby nevznikala překrývající se hudba.
 - CI vytvoří ke stažení artefakt `WarriorLand-Halloween-ItemsAdder.zip` včetně zvuků.
 - Shader oblohy je v `itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh`; zachovává základní cyklus dne/noci a přidává oranžovo-karmínový filtr.
 - Po nasazení obsahu na server spusť `/iazip` a zajisti, že hráči obdrží nový resource pack. ItemsAdder sloučí obsahy do jednoho packu; `warriorland_halloween` je namespace, ne druhý pack v seznamu Minecraftu. V `/iainfo` ověř hlavně hosting URL/status. Pro ItemsAdder 4.0.17+ je obvykle nejjednodušší `resource-pack.hosting.simple_self_host.enabled: true` a `server_address: auto`; dostupnost doručení na Hostify je nutné ověřit na skutečném serveru. V language souboru ItemsAdder lze nastavit `resourcepack-popup-message` na značkovaný text `&6WarriorLand Halloween 2026`. Vizuální vzhled shaderu je potřeba potvrdit v klientu; shaderový mod jej může přepsat.
-- Hlavní hudba má hlasitost zvýšenou z 0.35 na 1.0. Při první aktualizaci se existující konfigurace převede jednou, pokud chybí `atmosphere.volume-triple-migrated: true`. Soubor `resourcepack/assets/minecraft/sounds.json` mapuje známé vanilla music eventy na tichý OGG, takže pack potlačí běžnou Minecraft hudbu a ponechá Halloween ambient.
-- Custom shop obsahuje čtyři kusy zbroje Krvavého strážce. Každý používá vlastní PNG ikonu, společný armor layer_1/layer_2 set, základní netheritový materiál, +1 armor navíc na kus a zvýšenou odolnost. Běžné enchantování zůstává povolené.
+- Hlavní hudba má hlasitost zvýšenou na multiplikátor `3.0` (3× výchozí hlasitost). Starší serverové konfigurace se při aktualizaci jednou převedou přes `atmosphere.volume-tripled-v2-migrated`. Resource pack v `resourcepack/assets/minecraft/sounds.json` přepisuje přesně 31 existujících hudebních událostí Minecraftu 1.21.10 tichým OGG; server navíc každou sekundu zastavuje kategorii MUSIC. Halloween soundtrack běží v kategorii AMBIENT, aby ho muter neukončil.
+- Custom shop obsahuje čtyři kusy zbroje Krvavého strážce. Každý používá vlastní PNG ikonu a společné 64×32 armor layer_1/layer_2 textury, netheritový základ, +1 armor na kus a vyšší výdrž; běžné enchantování zůstává povolené. Doplňuje je vlastní meč, krumpáč, sekera, lopatka a motyka s transparentními pixel-art ikonami, vyšší výdrží a posílenými atributy; všechny používají netheritové materiály a enchanty nejsou blokované.
 - Pokud se pack hráčům vůbec neukáže, spusť `/iainfo` a ověř, že ItemsAdder hlásí dosažitelnou URL resource packu. `/iazip` pouze sestaví ZIP; doručování vyžaduje funkční hosting v `plugins/ItemsAdder/config.yml`. Na ItemsAdder 4.0.17+ lze použít `simple_self_host`; u starších verzí je třeba podporovaný self-host s otevřeným portem nebo externí hosting. Nezaměňuj tento serverový pack s ručně přidávaným packem v seznamu Minecraftu.
 
 ## Eventy, test bosse a dekorace světa
@@ -131,7 +131,8 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
 - `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
-- `/halloween rewards` otevře shop; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
+- `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
+- Prokletý talisman stojí 1 000 000 fragmentů. Při držení v hlavní nebo vedlejší ruce přidá +20 k maximálnímu zdraví (jeden celý řádek srdcí) a zachovává 10% bonus k fragmentům.
 - Po nahrání obsahu do `plugins/ItemsAdder/contents/warriorland_halloween` restartuj server, spusť `/iazip` a ověř `/iainfo`. Pokud není URL resource packu dosažitelná nebo se žádná výzva neobjeví, je nutné opravit hosting resource packu v ItemsAdder, ne plugin HalloweenCore.
 
 ## Směr dalšího vývoje

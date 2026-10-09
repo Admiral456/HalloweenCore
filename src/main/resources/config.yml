@@ -94,17 +94,20 @@ rewards:
         - "&7jen jednou."
 
     cursed-talisman:
-      cost: 15000
+      cost: 1000000
       min-curse: 5
       itemsadder-id: "warriorland_halloween:cursed_talisman"
       bonus-multiplier: 0.10
+      bonus-health: 20.0
       material: NETHER_STAR
       amount: 1
       name: "&5&lProkletý talisman &8[2026]"
       lore:
-        - "&7Vzpomínka na Halloween 2026."
-        - "&7Limitovaná odměna pro hráče,"
-        - "&7kteří se dostanou až na vysoké prokletí."
+        - "&7Legendární relikvie z finálního obchodu."
+        - "&d+1 celý řádek srdcí navíc (+20 HP)."
+        - "&7Aktivuje se při držení v ruce/offhandu."
+        - "&5+10 % Halloween fragmentů."
+        - "&8Cena: 1 000 000 fragmentů."
 
     halloween-token:
       cost: 30000
@@ -164,6 +167,71 @@ rewards:
         - "&7Vlastní černo-karmínová zbroj."
         - "&c+1 bod brnění, vyšší odolnost."
         - "&8Enchantovatelné jako netherit."
+
+    crimson-warden-sword:
+      cost: 35000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:crimson_warden_sword"
+      material: NETHERITE_SWORD
+      amount: 1
+      name: "&4&lKrvavý meč"
+      lore:
+        - "&7Legendární černo-karmínová zbraň."
+        - "&cSilnější než netheritový meč."
+        - "&7Zesílený útok a rychlost; výdrž 4 200."
+        - "&aPlně enchantovatelný."
+
+    crimson-warden-pickaxe:
+      cost: 50000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:crimson_warden_pickaxe"
+      material: NETHERITE_PICKAXE
+      amount: 1
+      name: "&4&lKrumpáč Krvavého strážce"
+      lore:
+        - "&7Legendární krumpáč pro hluboké doly."
+        - "&cRychlejší a odolnější než netherit."
+        - "&7Zesílený útok a rychlost; výdrž 4 000."
+        - "&aPlně enchantovatelný."
+
+    crimson-warden-axe:
+      cost: 32000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:crimson_warden_axe"
+      material: NETHERITE_AXE
+      amount: 1
+      name: "&4&lSekera Krvavého strážce"
+      lore:
+        - "&7Legendární sekera s krvavým ostřím."
+        - "&cVyšší poškození a výdrž než netherit."
+        - "&7Zesílený útok a rychlost; výdrž 4 000."
+        - "&aPlně enchantovatelná."
+
+    crimson-warden-shovel:
+      cost: 22000
+      min-curse: 3
+      itemsadder-id: "warriorland_halloween:crimson_warden_shovel"
+      material: NETHERITE_SHOVEL
+      amount: 1
+      name: "&4&lLopatka Krvavého strážce"
+      lore:
+        - "&7Legendární nástroj pro rychlé kopání."
+        - "&cRychlejší a odolnější než netherit."
+        - "&7Zesílený útok a rychlost; výdrž 3 500."
+        - "&aPlně enchantovatelná."
+
+    crimson-warden-hoe:
+      cost: 26000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:crimson_warden_hoe"
+      material: NETHERITE_HOE
+      amount: 1
+      name: "&4&lMotyka Krvavého strážce"
+      lore:
+        - "&7Legendární motyka se zpevněným ostřím."
+        - "&cLepší výdrž a bojové statistiky než netherit."
+        - "&7Zesílený útok a rychlost; výdrž 3 500."
+        - "&aPlně enchantovatelná."
 
 haunted-village:
   enabled: false
@@ -443,9 +511,10 @@ atmosphere:
   enabled: true
   sound: "warriorland_halloween:haunted_theme"
   fallback-sound: ""
-  # Formerly 0.35; now near the practical maximum (~2.9x louder).
-  volume: 1.0
+  # 3x the previous full-volume value; Halloween is played outside the MUSIC category.
+  volume: 3.0
   volume-triple-migrated: true
+  volume-tripled-v2-migrated: true
   pitch: 1.0
   loop-milliseconds: 76136
   send-title-on-join: true
