@@ -1,19 +1,25 @@
-# Vampire King — ModelEngine integration
+# Vampire King — ModelEngine integration and quality checklist
 
-The repo contains an editable Blockbench Generic Model blueprint:
-- `mythicmobs/models/vampire_king.bbmodel`
-- matching 128×128 atlas `mythicmobs/models/vampire_king.png` (also embedded in the model)
-- model ID `vampire_king`
-- animation tracks `idle`, `walk`, `attack` and `fly`
+## Blueprint
+- `mythicmobs/models/vampire_king.bbmodel`: editable Blockbench Generic Model blueprint.
+- `mythicmobs/models/vampire_king.png`: matching 128×128 atlas embedded byte-for-byte in the blueprint.
+- Model ID: `vampire_king`.
+- Components: layered obsidian armour, crimson coat, skull-like face, crown/horns, claws, ceremonial blade, split cape and broad bat wings.
+- Animation tracks: `idle`, `walk`, `attack`, `fly`.
 
-The design uses obsidian armour, crimson cloth, a gilded crown, skeletal face and red eyes, claws, ceremonial blade, split cape and wide articulated bat wings. Static dimensions are validated against the 10-block height / 8-block wingspan contract.
+## Rig and ModelEngine restrictions
+Cubes are individually UV-mapped. Cube rotations are restricted to 0°, ±22.5° or ±45° around one axis. The rig hierarchy keeps head, arms, legs, wings and cloak under the body; the ceremonial blade follows the right arm; hitbox and shadow remain root children. The hitbox pivot is placed at the vampire's upper body so the tall model looks at players correctly.
 
-Install on staging only:
-1. Copy the blueprint to `plugins/ModelEngine/blueprints/vampire_king.bbmodel` (or a MythicMobs pack's `models/` folder).
-2. Run `/meg reload models` and inspect parse logs.
-3. Distribute and accept the generated resource pack on a client.
-4. Install the mob and skill YAML in MythicMobs, then run `/mm reload`.
-5. Spawn the mob in a staging world and verify scale, wing pose, blade, texture, hitbox and animation playback.
-6. Keep `bosses.vampire.model.ready: false` until the runtime check passes.
+Automated validation checks PNG integrity, embedded/external texture parity, UV bounds, cube rotation constraints, bone references/parenting, animation tracks and the 10-block height / 8-block wing-span contract:
+`python3 scripts/validate_vampire_model.py`.
 
-The four live attacks and `/halloween bosseffects <1|2|3|4>` share animated telegraphs: charging runic rings, expanding blood shockwave, three mirror portals and pulsing eclipse circles with flame pillars. Damage resolves at the animation impact. CI validates files and Java compilation, not client-side resource-pack delivery.
+## Import and runtime verification
+1. Back up the server and use staging.
+2. Copy the blueprint into `plugins/ModelEngine/blueprints/vampire_king.bbmodel` or a MythicMobs pack's `models/` folder.
+3. Run `/meg reload models`; verify there are no blueprint parsing errors.
+4. Host/distribute the generated resource pack and accept it on a test client.
+5. Install the MythicMobs mob/skills YAML and run `/mm reload`.
+6. Verify model scale, wing animation, blade attachment, texture, hitbox, idle and attack.
+7. Keep `bosses.vampire.model.ready: false` until all live checks pass.
+
+All four live attacks share the preview's animation path; damage resolves only at impact, and the callback exits if the encounter has ended.
