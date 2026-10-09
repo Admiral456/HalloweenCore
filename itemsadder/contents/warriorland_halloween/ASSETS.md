@@ -9,14 +9,22 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/item/halloween_token.png
 - resourcepack/assets/warriorland_halloween/textures/item/cursed_candy.png
 - resourcepack/assets/warriorland_halloween/textures/item/haunted_map.png
+- resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_helmet.png
+- resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_chestplate.png
+- resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_leggings.png
+- resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_boots.png
+- resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_1.png
+- resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_2.png
 
 Included client/audio assets:
 - resourcepack/assets/minecraft/shaders/core/sky.fsh
-- sounds/haunted_theme.ogg — original 64-second ambient loop (mono OGG/Vorbis)
+- sounds/haunted_theme.ogg — Spooky Fester ambient loop (duration measured at build time) (mono OGG/Vorbis)
 - sounds/event_sting.ogg — original 5-second Halloween event cue (mono OGG/Vorbis)
 - configs/sounds.yml — ItemsAdder sound registration
 
-The original sounds use no third-party recordings or samples. Rebuild the ItemsAdder resource pack with /iazip after installing/updating these contents.
+Ambient music is Spooky Fester by Eldritch Grim from OpenGameArt (CC0); it is downloaded and converted to OGG during CI. The short event cue is generated locally. Rebuild the ItemsAdder resource pack with /iazip after installing/updating these contents.
+The custom armor uses a shared Crimson Warden equipment texture set, built from 64x32 layer_1/layer_2 atlases. It uses Netherite armor materials with +1 armor per piece (24 armor points total for the full set versus 20 for full vanilla Netherite) and extended durability, while retaining normal enchantability.
+
 The Java plugin uses these IDs:
 - warriorland_halloween:hunter_mask
 - warriorland_halloween:cursed_talisman
@@ -25,7 +33,7 @@ The Java plugin uses these IDs:
 - warriorland_halloween:haunted_map
 
 Sound IDs used by the plugin:
-- `warriorland_halloween:haunted_theme` — background loop, played every 64 seconds
+- `warriorland_halloween:haunted_theme` — background loop, played at the generated track duration
 - `warriorland_halloween:event_sting` — short cue played when a random event starts
 
 The audio generator is `scripts/generate_halloween_audio.py`. It recreates both original OGG files for CI and local packaging. After installing/updating the content, run `/iazip` and make sure players receive the rebuilt server resource pack.

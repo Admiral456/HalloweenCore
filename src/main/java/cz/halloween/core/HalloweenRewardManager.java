@@ -62,7 +62,7 @@ public final class HalloweenRewardManager {
         }
         inventory.setItem(4, progress);
 
-        int[] slots = {11, 13, 15};
+        int[] slots = {10, 11, 12, 13, 14, 15, 16};
         int index = 0;
         for (String id : section.getKeys(false)) {
             if (index >= slots.length) break;

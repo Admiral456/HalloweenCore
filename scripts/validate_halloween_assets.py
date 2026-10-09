@@ -21,7 +21,13 @@ EXPECTED = {
     "halloween_token.png",
     "cursed_candy.png",
     "haunted_map.png",
+    "crimson_warden_helmet.png",
+    "crimson_warden_chestplate.png",
+    "crimson_warden_leggings.png",
+    "crimson_warden_boots.png",
 }
+ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
+
 
 def png_size(path: Path) -> tuple[int, int]:
     data = path.read_bytes()
@@ -43,6 +49,14 @@ for name in sorted(EXPECTED):
     width, height = png_size(TEXTURES / name)
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
+
+for layer in ("layer_1.png", "layer_2.png"):
+    path = ARMOR_TEXTURES / layer
+    if not path.is_file():
+        fail("Missing Crimson Warden armor layer: " + str(path.relative_to(ROOT)))
+    width, height = png_size(path)
+    if (width, height) != (64, 32):
+        fail(f"{layer} must be 64x32, got {width}x{height}")
 
 if not SHADER.is_file():
     fail("Missing Halloween sky shader: " + str(SHADER.relative_to(ROOT)))
@@ -108,7 +122,9 @@ config = CONFIG.read_text(encoding="utf-8")
 if "namespace: warriorland_halloween" not in config:
     fail("ItemsAdder namespace missing from items.yml")
 
-for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_candy", "haunted_map"):
+for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_candy", "haunted_map",
+                "crimson_warden_helmet", "crimson_warden_chestplate",
+                "crimson_warden_leggings", "crimson_warden_boots"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
 
@@ -117,7 +133,7 @@ if root_textures.exists():
     fail("Mixed ItemsAdder content layout detected: top-level textures/ exists; use resourcepack/assets layout only")
 
 print("Halloween asset validation passed.")
-print("5 textures: 32x32 PNG")
+print("9 item textures: 32x32 PNG; 2 armor layers: 64x32 PNG")
 print("ItemsAdder namespace: warriorland_halloween")
 print("Sky shader: Minecraft 1.21.10 entry point present")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms) + 5s event cue, mono OGG/Vorbis containers")

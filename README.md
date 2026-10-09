@@ -110,6 +110,16 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - CI vytvoří ke stažení artefakt `WarriorLand-Halloween-ItemsAdder.zip` včetně zvuků.
 - Shader oblohy je v `itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh`; zachovává základní cyklus dne/noci a přidává oranžovo-karmínový filtr.
 - Po nasazení obsahu na server spusť `/iazip` a zajisti, že hráči obdrží nový resource pack. Vizuální vzhled je potřeba potvrdit v klientu; shaderový mod jej může přepsat.
+- Custom shop obsahuje čtyři kusy zbroje Krvavého strážce. Každý používá vlastní PNG ikonu, společný armor layer_1/layer_2 set, základní netheritový materiál, +1 armor navíc na kus a zvýšenou odolnost. Běžné enchantování zůstává povolené.
+- Pokud se pack hráčům vůbec neukáže, spusť `/iainfo` a ověř, že ItemsAdder hlásí dosažitelnou URL resource packu. `/iazip` pouze sestaví ZIP; doručování vyžaduje funkční hosting v `plugins/ItemsAdder/config.yml`. Na ItemsAdder 4.0.17+ lze použít `simple_self_host`; u starších verzí je třeba podporovaný self-host s otevřeným portem nebo externí hosting. Nezaměňuj tento serverový pack s ručně přidávaným packem v seznamu Minecraftu.
+
+## Návod: aréna, obchod a resource pack
+
+- Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
+- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění bloky v kruhu o poloměru 22 bloků; před potvrzením je vhodná záloha světa.
+- `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
+- `/halloween rewards` otevře shop; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
+- Po nahrání obsahu do `plugins/ItemsAdder/contents/warriorland_halloween` restartuj server, spusť `/iazip` a ověř `/iainfo`. Pokud není URL resource packu dosažitelná nebo se žádná výzva neobjeví, je nutné opravit hosting resource packu v ItemsAdder, ne plugin HalloweenCore.
 
 ## Směr dalšího vývoje
 

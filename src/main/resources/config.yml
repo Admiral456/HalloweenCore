@@ -117,6 +117,54 @@ rewards:
         - "&7Unikátní památeční předmět."
         - "&8Po skončení eventu už nebude v obchodu."
 
+    crimson-warden-helmet:
+      cost: 9000
+      min-curse: 3
+      itemsadder-id: "warriorland_halloween:crimson_warden_helmet"
+      material: NETHERITE_HELMET
+      amount: 1
+      name: "&4&lHelma Krvavého strážce"
+      lore:
+        - "&7Vlastní černo-karmínová zbroj."
+        - "&c+1 bod brnění, vyšší odolnost."
+        - "&8Enchantovatelná jako netherit."
+
+    crimson-warden-chestplate:
+      cost: 18000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:crimson_warden_chestplate"
+      material: NETHERITE_CHESTPLATE
+      amount: 1
+      name: "&4&lKyrys Krvavého strážce"
+      lore:
+        - "&7Vlastní černo-karmínová zbroj."
+        - "&c+1 bod brnění, vyšší odolnost."
+        - "&8Enchantovatelný jako netherit."
+
+    crimson-warden-leggings:
+      cost: 14500
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:crimson_warden_leggings"
+      material: NETHERITE_LEGGINGS
+      amount: 1
+      name: "&4&lNohavice Krvavého strážce"
+      lore:
+        - "&7Vlastní černo-karmínová zbroj."
+        - "&c+1 bod brnění, vyšší odolnost."
+        - "&8Enchantovatelné jako netherit."
+
+    crimson-warden-boots:
+      cost: 10000
+      min-curse: 3
+      itemsadder-id: "warriorland_halloween:crimson_warden_boots"
+      material: NETHERITE_BOOTS
+      amount: 1
+      name: "&4&lBoty Krvavého strážce"
+      lore:
+        - "&7Vlastní černo-karmínová zbroj."
+        - "&c+1 bod brnění, vyšší odolnost."
+        - "&8Enchantovatelné jako netherit."
+
 haunted-village:
   enabled: false
   world: ""
