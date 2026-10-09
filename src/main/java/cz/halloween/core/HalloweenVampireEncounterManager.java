@@ -32,6 +32,8 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private BukkitTask tickTask;
     private final Set<UUID> participants = new HashSet<>();
     private final Map<UUID, Integer> participationSeconds = new HashMap<>();
+    private final Map<UUID, Double> damageContribution = new HashMap<>();
+    private boolean victoryHandled;
     private long startedAt;
     private int phase;
     private long lastAbilityAt;
@@ -97,6 +99,8 @@ public final class HalloweenVampireEncounterManager implements Listener {
         lastAbilityAt = 0L;
         participants.clear();
         participationSeconds.clear();
+        damageContribution.clear();
+        victoryHandled = false;
         plugin.getBossManager().trackVampireBoss(boss);
         Bukkit.broadcastMessage(plugin.color(
                 plugin.getConfig().getString("messages.vampire-start",
@@ -125,6 +129,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         lastAbilityAt = 0L;
         participants.clear();
         participationSeconds.clear();
+        damageContribution.clear();
         if (plugin.getBossManager() != null) {
             plugin.getBossManager().stopVampireBossBar();
         }
@@ -391,12 +396,16 @@ public final class HalloweenVampireEncounterManager implements Listener {
         lastAbilityAt = 0L;
         participants.clear();
         participationSeconds.clear();
+        damageContribution.clear();
         if (plugin.getBossManager() != null) {
             plugin.getBossManager().stopVampireBossBar();
         }
     }
 
     private void finishVictory(Player killer) {
+        if (victoryHandled || plugin.getDataManager().isVampireDefeated()) return;
+        victoryHandled = true;
+
         if (tickTask != null) {
             tickTask.cancel();
             tickTask = null;
@@ -417,7 +426,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         ));
 
         UUID topPlayer = null;
-        int topSeconds = -1;
+        double topDamage = 0.0D;
         for (UUID uuid : participants) {
             int seconds = participationSeconds.getOrDefault(uuid, 0);
             if (seconds < minSeconds) continue;
@@ -430,8 +439,9 @@ public final class HalloweenVampireEncounterManager implements Listener {
                 player.sendMessage(plugin.color("&6HALLOWEEN &8» &fZa účast v boji získáváš &e+"
                         + participationReward + " &ffragmentů."));
             }
-            if (seconds > topSeconds) {
-                topSeconds = seconds;
+            double damageDealt = damageContribution.getOrDefault(uuid, 0.0D);
+            if (Double.isFinite(damageDealt) && damageDealt > topDamage) {
+                topDamage = damageDealt;
                 topPlayer = uuid;
             }
         }
@@ -446,7 +456,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
             plugin.getService().addFragments(topPlayer, topBonus, "boss-top-contributor");
             Player top = Bukkit.getPlayer(topPlayer);
             if (top != null) {
-                top.sendMessage(plugin.color("&5HALLOWEEN &8» &dNejvětší podíl na pádu bosse: &e+"
+                top.sendMessage(plugin.color("&5HALLOWEEN &8» &dNejvětší poškození bosse: &e+"
                         + topBonus + " &dfragmentů."));
             }
         }
@@ -525,7 +535,12 @@ public final class HalloweenVampireEncounterManager implements Listener {
         if (isTrackedVampireBoss(event.getEntity())) {
             Player player = resolvePlayer(event);
             if (player != null && plugin.isEligibleGameplayPlayer(player)) {
-                participants.add(player.getUniqueId());
+                UUID playerId = player.getUniqueId();
+                participants.add(playerId);
+                double damage = event.getFinalDamage();
+                if (Double.isFinite(damage) && damage > 0.0D) {
+                    damageContribution.merge(playerId, damage, Double::sum);
+                }
             }
             return;
         }
