@@ -277,7 +277,7 @@ random-events:
   # Number of special mobs in each Blood Moon invasion wave (1–4).
   invasion-mobs-per-surge: 2
   special-mob-chance-multiplier: 1.50
-  sound: "halloween:haunted_theme"
+  sound: "warriorland_halloween:event_sting"
   types:
     soulstorm:
       name: "Duševní bouře"
@@ -383,11 +383,11 @@ bosses:
 
 atmosphere:
   enabled: true
-  sound: "halloween:haunted_theme"
+  sound: "warriorland_halloween:haunted_theme"
   fallback-sound: ""
   volume: 0.35
   pitch: 1.0
-  loop-seconds: 95
+  loop-seconds: 64
   send-title-on-join: true
   title: "&6&lHALLOWEEN 2026"
   subtitle: "&7Něco se probudilo..."
