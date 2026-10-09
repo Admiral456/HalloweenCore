@@ -172,6 +172,26 @@ public final class HalloweenConfigValidator {
                 }
             }
 
+            ConfigurationSection autoStart = vampire.getConfigurationSection("auto-start");
+            if (autoStart != null) {
+                long delay = autoStart.getLong("delay-after-finale-seconds", -1L);
+                long countdown = autoStart.getLong("omen-countdown-seconds", -1L);
+                double nearbyRadius = autoStart.getDouble("nearby-radius-blocks", -1.0D);
+                int minimumPlayers = autoStart.getInt("minimum-nearby-players", -1);
+                if (delay < 0L || delay > 86_400L) {
+                    errors.add("vampire auto-start delay-after-finale-seconds must be between 0 and 86400");
+                }
+                if (countdown < 0L || countdown > 300L) {
+                    errors.add("vampire auto-start omen-countdown-seconds must be between 0 and 300");
+                }
+                if (nearbyRadius < 16.0D || nearbyRadius > 256.0D) {
+                    errors.add("vampire auto-start nearby-radius-blocks must be between 16 and 256");
+                }
+                if (minimumPlayers < 1 || minimumPlayers > 100) {
+                    errors.add("vampire auto-start minimum-nearby-players must be between 1 and 100");
+                }
+            }
+
             ConfigurationSection model = vampire.getConfigurationSection("model");
             if (model != null) {
                 String provider = model.getString("provider", "");
