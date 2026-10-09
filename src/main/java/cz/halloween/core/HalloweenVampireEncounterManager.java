@@ -984,26 +984,22 @@ public final class HalloweenVampireEncounterManager implements Listener {
             Object modeledEntity = apiClass.getMethod("getModeledEntity", Entity.class).invoke(null, boss);
             if (modeledEntity == null) return false;
 
-            Object modelResult = modeledEntity.getClass().getMethod("getModel", String.class)
+            // Invoke methods through public API interfaces rather than implementation classes,
+            // which may be package-private in a given ModelEngine build.
+            Class<?> modeledEntityApi = Class.forName("com.ticxo.modelengine.api.model.ModeledEntity");
+            Object modelResult = modeledEntityApi.getMethod("getModel", String.class)
                     .invoke(modeledEntity, "vampire_king");
             if (!(modelResult instanceof Optional<?> modelOptional) || modelOptional.isEmpty()) return false;
 
             Object activeModel = modelOptional.get();
-            Object handler = activeModel.getClass().getMethod("getAnimationHandler").invoke(activeModel);
-            Method playAnimation = null;
-            for (Method candidate : handler.getClass().getMethods()) {
-                if (candidate.getName().equals("playAnimation")
-                        && candidate.getParameterCount() == 5
-                        && candidate.getParameterTypes()[0] == String.class
-                        && candidate.getParameterTypes()[1] == double.class
-                        && candidate.getParameterTypes()[2] == double.class
-                        && candidate.getParameterTypes()[3] == double.class
-                        && candidate.getParameterTypes()[4] == boolean.class) {
-                    playAnimation = candidate;
-                    break;
-                }
-            }
-            if (playAnimation == null) {
+            Class<?> activeModelApi = Class.forName("com.ticxo.modelengine.api.model.ActiveModel");
+            Object handler = activeModelApi.getMethod("getAnimationHandler").invoke(activeModel);
+            Class<?> handlerApi = Class.forName("com.ticxo.modelengine.api.animation.handler.AnimationHandler");
+            Method playAnimation;
+            try {
+                playAnimation = handlerApi.getMethod("playAnimation",
+                        String.class, double.class, double.class, double.class, boolean.class);
+            } catch (NoSuchMethodException ex) {
                 if (!modelAnimationWarningLogged) {
                     plugin.getLogger().warning("ModelEngine is present but its animation API does not expose the expected playAnimation(String,double,double,double,boolean) method.");
                     modelAnimationWarningLogged = true;
