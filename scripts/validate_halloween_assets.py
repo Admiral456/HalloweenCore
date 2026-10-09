@@ -237,9 +237,18 @@ for item_id, (material, min_durability, damage, speed) in GEAR_SPECS.items():
     if not match:
         fail(f"Tool item '{item_id}' missing from items.yml")
     block = match.group(1)
-    for required in (f"material: {material}", f"texture: item/{item_id}", "attribute_modifiers:", "mainhand:"):
+    for required in (f"material: {material}", f"model: item/{item_id}", "attribute_modifiers:", "mainhand:"):
         if required not in block:
             fail(f"Tool item '{item_id}' is missing {required}")
+    model_path = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "models" / "item" / f"{item_id}.json"
+    try:
+        model = json.loads(model_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"Invalid handheld model for '{item_id}': {exc}")
+    if model.get("parent") != "minecraft:item/handheld":
+        fail(f"Tool model '{item_id}' must inherit minecraft:item/handheld")
+    if model.get("textures", {}).get("layer0") != f"warriorland_halloween:item/{item_id}":
+        fail(f"Tool model '{item_id}' points at the wrong icon texture")
     if re.search(r"(?m)^\s*blocked_enchants:", block):
         fail(f"Tool item '{item_id}' must not block normal enchantments")
     durability = re.search(r"(?m)^\s*max_durability:\s*(\d+)", block)
