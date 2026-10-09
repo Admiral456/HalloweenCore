@@ -52,6 +52,13 @@ public final class VampireArenaBuilder {
                 if (dx * dx + dz * dz > r2Limit) continue;
                 int x = centerX + dx;
                 int z = centerZ + dz;
+                int groundY = world.getHighestBlockYAt(x, z);
+                if (groundY < floorY - 6) {
+                    obstructionCount++;
+                    if (first.isEmpty()) {
+                        first = x + " " + groundY + " " + z + " (terrain is over 6 blocks below arena floor)";
+                    }
+                }
                 for (int y = centerY; y < centerY + CLEARANCE_HEIGHT; y++) {
                     Material material = world.getBlockAt(x, y, z).getType();
                     if (!material.isAir()) {
@@ -64,7 +71,7 @@ public final class VampireArenaBuilder {
             }
         }
         if (obstructionCount > 0) {
-            return new Inspection(false, "Nad podlahou obří arény musí být volných 20 bloků.",
+            return new Inspection(false, "Nad podlahou obří arény musí být volných 20 bloků a terén nesmí být o více než 6 bloků níž.",
                     obstructionCount, first);
         }
         return new Inspection(true, "", 0, "");
@@ -87,8 +94,17 @@ public final class VampireArenaBuilder {
                 int d2 = dx * dx + dz * dz;
                 if (d2 > RADIUS * RADIUS) continue;
                 double radius = Math.sqrt(d2);
-                changed += set(world.getBlockAt(cx + dx, floorY, cz + dz),
-                        floorMaterial(dx, dz, radius));
+                int x = cx + dx;
+                int z = cz + dz;
+                int groundY = world.getHighestBlockYAt(x, z);
+                // Fill shallow low spots before laying the single flat arena floor.
+                // Inspection already rejects holes deeper than six blocks.
+                for (int y = groundY + 1; y < floorY; y++) {
+                    Material foundation = ((y + dx + dz) & 1) == 0
+                            ? Material.POLISHED_BLACKSTONE : Material.DEEPSLATE_BRICKS;
+                    changed += set(world.getBlockAt(x, y, z), foundation);
+                }
+                changed += set(world.getBlockAt(x, floorY, z), floorMaterial(dx, dz, radius));
             }
         }
 
