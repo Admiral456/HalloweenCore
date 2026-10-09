@@ -354,6 +354,42 @@ public final class HalloweenMobManager implements Listener {
         return true;
     }
 
+    /**
+     * Spawns the named captain for the Blood Moon invasion. It is counted as an event mob
+     * so it is cleaned up at the end of the event and respects the configured per-world cap.
+     */
+    public boolean spawnInvasionCaptain(Player player) {
+        if (!plugin.isEventEnabled() || player == null || !player.isOnline()) return false;
+        if (!plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
+        World world = player.getWorld();
+        if (!plugin.isEligibleGameplayWorld(world)) return false;
+
+        int maxEventMobs = Math.max(1, plugin.getConfig().getInt("random-events.max-event-mobs", 12));
+        if (countEventMobs(world) >= maxEventMobs) return false;
+        org.bukkit.Location spawnLocation = findSafeEventLocation(player);
+        if (spawnLocation == null) return false;
+
+        Entity entity = world.spawnEntity(spawnLocation, EntityType.CREEPER);
+        if (!(entity instanceof LivingEntity living)) {
+            entity.remove();
+            return false;
+        }
+
+        configureSpecialMob(living, "pumpkin-wraith");
+        living.setCustomName(plugin.color("&4&lKAPITÁN KRVAVÉ INVAZE"));
+        living.setCustomNameVisible(true);
+        living.setGlowing(true);
+        living.setMaxHealth(Math.min(400.0D, living.getMaxHealth() * 3.0D));
+        living.setHealth(living.getMaxHealth());
+        living.addPotionEffect(new PotionEffect(PotionEffectType.RESISTANCE, Integer.MAX_VALUE, 1, true, false, false));
+        if (living instanceof Creeper creeper) {
+            creeper.setExplosionRadius(Math.max(1, Math.min(3,
+                    plugin.getConfig().getInt("special-mobs.types.pumpkin-wraith.explosion-radius", 3))));
+        }
+        living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
+        return true;
+    }
+
     private void configureSpecialMob(LivingEntity entity, String mobId) {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types." + mobId);
         if (section == null) return;

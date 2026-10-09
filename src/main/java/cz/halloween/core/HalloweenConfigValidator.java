@@ -46,6 +46,10 @@ public final class HalloweenConfigValidator {
         if (duration < 1) errors.add("random-events.duration-minutes must be >= 1");
         if (surgeInterval < 10L) errors.add("random-events.surge-interval-seconds must be >= 10");
         if (maxEventMobs < 1) errors.add("random-events.max-event-mobs must be >= 1");
+        int invasionMobsPerSurge = plugin.getConfig().getInt("random-events.invasion-mobs-per-surge", 2);
+        if (invasionMobsPerSurge < 1 || invasionMobsPerSurge > 4) {
+            errors.add("random-events.invasion-mobs-per-surge must be between 1 and 4");
+        }
 
         String worldMode = plugin.getConfig().getString("gameplay.worlds.mode", "BLACKLIST");
         if (!worldMode.equalsIgnoreCase("BLACKLIST") && !worldMode.equalsIgnoreCase("WHITELIST")) {

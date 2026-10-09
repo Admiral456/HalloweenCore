@@ -15,6 +15,7 @@ public final class HalloweenEventManager {
     private long nextEventAt;
     private boolean started;
     private long lastSurgeAt;
+    private boolean invasionCaptainSpawned;
 
     public HalloweenEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -36,6 +37,7 @@ public final class HalloweenEventManager {
         activeEventId = null;
         activeUntil = 0L;
         lastSurgeAt = 0L;
+        invasionCaptainSpawned = false;
         if (started && plugin.getConfig().getBoolean("random-events.enabled", true)) {
             scheduleNextEvent();
         } else {
@@ -51,6 +53,7 @@ public final class HalloweenEventManager {
         activeUntil = 0L;
         nextEventAt = 0L;
         lastSurgeAt = 0L;
+        invasionCaptainSpawned = false;
     }
 
     private void tick() {
@@ -86,13 +89,14 @@ public final class HalloweenEventManager {
     }
 
     private void startRandomEvent() {
-        String[] events = {"soulstorm", "witching-hour", "cursed-harvest"};
+        String[] events = {"soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion"};
         activeEventId = events[ThreadLocalRandom.current().nextInt(events.length)];
 
         int phase = getGlobalPhase();
         int duration = Math.max(1, plugin.getConfig().getInt("random-events.duration-minutes", 5) + Math.min(3, phase / 2));
         activeUntil = System.currentTimeMillis() + duration * 60_000L;
         lastSurgeAt = 0L;
+        invasionCaptainSpawned = false;
 
         String path = "random-events.types." + activeEventId;
         String name = plugin.getConfig().getString(path + ".name", activeEventId);
@@ -114,6 +118,7 @@ public final class HalloweenEventManager {
 
         activeEventId = null;
         activeUntil = 0L;
+        invasionCaptainSpawned = false;
         scheduleNextEvent();
     }
 
@@ -135,7 +140,11 @@ public final class HalloweenEventManager {
         if (now - lastSurgeAt < surgeIntervalSeconds * 1000L) return;
         if (Bukkit.getOnlinePlayers().isEmpty()) return;
 
-        Player[] players = Bukkit.getOnlinePlayers().toArray(new Player[0]);
+        Player[] players = Bukkit.getOnlinePlayers().stream()
+                .filter(plugin::isEligibleGameplayPlayer)
+                .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
+                .toArray(Player[]::new);
+        if (players.length == 0) return;
         Player target = players[ThreadLocalRandom.current().nextInt(players.length)];
 
         if (activeEventId.equalsIgnoreCase("soulstorm")) {
@@ -149,7 +158,29 @@ public final class HalloweenEventManager {
                 target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7něco se k tobě blíží."));
             }
         } else if (activeEventId.equalsIgnoreCase("cursed-harvest")) {
-            target.getWorld().spawnParticle(Particle.COMPOSTER, target.getLocation().add(0, 1, 0), 14, 0.8, 0.6, 0.8, 0.03);
+            target.getWorld().spawnParticle(Particle.COMPOSTER, target.getLocation().clone().add(0, 1, 0), 14, 0.8, 0.6, 0.8, 0.03);
+        } else if (activeEventId.equalsIgnoreCase("blood-moon-invasion")) {
+            // The captain enters during the final two minutes. Spawn it before later waves fill the cap.
+            if (!invasionCaptainSpawned && activeUntil - now <= 120_000L
+                    && plugin.getMobManager().spawnInvasionCaptain(target)) {
+                invasionCaptainSpawned = true;
+                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
+                        target.getLocation().clone().add(0, 1.0D, 0), 70, 1.8D, 1.2D, 1.8D, 0.045D);
+                target.playSound(target.getLocation(), Sound.ENTITY_WARDEN_ROAR, 0.85f, 0.55f);
+                Bukkit.broadcastMessage(plugin.color("&4&lKRVAVÝ MĚSÍC &8» &cKapitán invaze se probudil! Silný nepřítel se objevil poblíž jednoho z hráčů."));
+            }
+
+            int waveSize = Math.max(1, Math.min(4,
+                    plugin.getConfig().getInt("random-events.invasion-mobs-per-surge", 2)));
+            int spawned = 0;
+            for (int i = 0; i < waveSize; i++) {
+                if (!plugin.getMobManager().spawnEventMob(target)) break;
+                spawned++;
+            }
+            if (spawned > 0) {
+                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
+                        target.getLocation().clone().add(0, 1.0D, 0), 24, 1.2D, 0.9D, 1.2D, 0.025D);
+            }
         }
 
         lastSurgeAt = now;
