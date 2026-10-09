@@ -36,6 +36,18 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("event") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("status", "start", "stop", "soulstorm", "witching-hour",
+                    "cursed-harvest", "blood-moon-invasion", "random").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("event")
+                && args[1].equalsIgnoreCase("start") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("random", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion").stream()
+                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("shader") && sender.hasPermission("halloweencore.admin")) {
             return List.of("on", "off", "reload").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
@@ -766,7 +778,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         try {
             String source = Files.readString(shaderPath, StandardCharsets.UTF_8);
             java.util.regex.Pattern tintPattern = java.util.regex.Pattern.compile(
-                    "sky\\.rgb\\s*=\\s*mix\\(sky\\.rgb,\\s*sky\\.rgb\\s*\\*\\s*halloweenTint,\\s*[0-9.]+\\s*\\);");");
+                    "sky\\.rgb\\s*=\\s*mix\\(sky\\.rgb,\\s*sky\\.rgb\\s*\\*\\s*halloweenTint,\\s*[0-9.]+\\s*\\);");
             java.util.regex.Matcher matcher = tintPattern.matcher(source);
             if (!matcher.find()) {
                 sender.sendMessage(plugin.color("&cV souboru sky.fsh jsem nenašel očekávaný Halloween tint."));
