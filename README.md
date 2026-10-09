@@ -115,7 +115,7 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - Shader oblohy je v `itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh`; zachovává základní cyklus dne/noci a přidává oranžovo-karmínový filtr.
 - Po nasazení obsahu na server spusť `/iazip` a zajisti, že hráči obdrží nový resource pack. ItemsAdder sloučí obsahy do jednoho packu; `warriorland_halloween` je namespace, ne druhý pack v seznamu Minecraftu. V `/iainfo` ověř hlavně hosting URL/status. Pro ItemsAdder 4.0.17+ je obvykle nejjednodušší `resource-pack.hosting.simple_self_host.enabled: true` a `server_address: auto`; dostupnost doručení na Hostify je nutné ověřit na skutečném serveru. V language souboru ItemsAdder lze nastavit `resourcepack-popup-message` na značkovaný text `&6WarriorLand Halloween 2026`. Vizuální vzhled shaderu je potřeba potvrdit v klientu; shaderový mod jej může přepsat.
 - Hlavní hudba má hlasitost zvýšenou na multiplikátor `3.0` (3× výchozí hlasitost). Starší serverové konfigurace se při aktualizaci jednou převedou přes `atmosphere.volume-tripled-v2-migrated`. Resource pack v `resourcepack/assets/minecraft/sounds.json` přepisuje přesně 31 existujících hudebních událostí Minecraftu 1.21.10 tichým OGG; server navíc každou sekundu zastavuje kategorii MUSIC. Halloween soundtrack běží v kategorii AMBIENT, aby ho muter neukončil.
-- Custom shop obsahuje čtyři kusy zbroje Krvavého strážce. Každý používá vlastní PNG ikonu a společné 64×32 armor layer_1/layer_2 textury, netheritový základ, +1 armor na kus a vyšší výdrž; běžné enchantování zůstává povolené. Doplňuje je vlastní meč, krumpáč, sekera, lopatka a motyka s transparentními pixel-art ikonami, vyšší výdrží a posílenými atributy; všechny používají netheritové materiály a enchanty nejsou blokované.
+- Custom shop obsahuje čtyři kusy zbroje Krvavého strážce. Každý používá vlastní PNG ikonu a společné 64×32 armor layer_1/layer_2 textury, netheritový základ, brnění 6/12/9/6 podle kusu a vyšší výdrž; běžné enchantování zůstává povolené. Doplňuje je vlastní meč, krumpáč, sekera, lopatka a motyka s transparentními pixel-art ikonami, vyšší výdrží a posílenými atributy; všechny používají netheritové materiály a enchanty nejsou blokované.
 - Pokud se pack hráčům vůbec neukáže, spusť `/iainfo` a ověř, že ItemsAdder hlásí dosažitelnou URL resource packu. `/iazip` pouze sestaví ZIP; doručování vyžaduje funkční hosting v `plugins/ItemsAdder/config.yml`. Na ItemsAdder 4.0.17+ lze použít `simple_self_host`; u starších verzí je třeba podporovaný self-host s otevřeným portem nebo externí hosting. Nezaměňuj tento serverový pack s ručně přidávaným packem v seznamu Minecraftu.
 
 ## Eventy, test bosse a dekorace světa
@@ -167,17 +167,18 @@ Všechny kusy mají vlastní původní černo-karmínové PNG ikony; zbroj naví
 
 | Kus | Statistika | Netherite baseline | Nastavení HalloweenCore |
 |---|---|---|---|
-| Helma | Brnění / výdrž | 3 / 407 | 4 / 900 |
-| Kyrys | Brnění / výdrž | 8 / 592 | 9 / 1 300 |
-| Nohavice | Brnění / výdrž | 6 / 555 | 7 / 1 150 |
-| Boty | Brnění / výdrž | 3 / 481 | 4 / 950 |
+| Helma | Brnění / výdrž | 3 / 407 | 6 / 900 |
+| Kyrys | Brnění / výdrž | 8 / 592 | 12 / 1 300 |
+| Nohavice | Brnění / výdrž | 6 / 555 | 9 / 1 150 |
+| Boty | Brnění / výdrž | 3 / 481 | 6 / 950 |
+| Celá sada | Celkem brnění | 20 bodů | 33 bodů |
 | Meč | Útokový modifier / výdrž | vanilla Netherite / 2 031 | 15.0 / 5 000 |
 | Krumpáč | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 10.0 / 14 / 5 000 |
 | Sekera | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 14.0 / 14 / 5 000 |
 | Lopatka | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 10.0 / 14 / 4 500 |
 | Motyka | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 7.0 / 14 / 4 500 |
 
-Každý kus zbroje má navíc +1 bod brnění: celá sada tedy cílí na 24 bodů místo 20 u běžného Netheritu. Meč má attack-damage modifier 15.0 (nad požadovanými 12); přesný výsledný údaj v tooltipu/hit závisí na aplikaci komponent ItemsAdderem, základním atributu hráče a attack cooldownu. Zbroj, meč a nástroje používají moderní item component JSON s enchantability 25; krumpáč, sekera, lopatka a motyka mají navíc tool komponent rychlosti 14 pro správné blokové tagy. Talisman stojí 1 000 000 fragmentů a při držení v ruce nebo offhandu přidává +20 max HP (jeden celý řádek srdcí).
+Krvavý strážce má nastavené brnění 6/12/9/6 podle kusu; celá sada tedy dává 33 bodů brnění místo 20 u běžného Netheritu. Meč má attack-damage modifier 15.0 (nad požadovanými 12); přesný výsledný údaj v tooltipu/hit závisí na aplikaci komponent ItemsAdderem, základním atributu hráče a attack cooldownu. Zbroj, meč a nástroje používají moderní item component JSON s enchantability 25; krumpáč, sekera, lopatka a motyka mají navíc tool komponent rychlosti 14 pro správné blokové tagy. Talisman stojí 1 000 000 fragmentů a při držení v ruce nebo offhandu přidává +20 max HP (jeden celý řádek srdcí).
 
 ## Boss placeholders
 

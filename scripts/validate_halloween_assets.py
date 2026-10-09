@@ -223,10 +223,10 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
         fail(f"Custom gear '{item_id}' must remain enchantable")
 
 expected_armor_stats = {
-    "crimson_warden_helmet": ("max_durability: 900", "armor: 1"),
-    "crimson_warden_chestplate": ("max_durability: 1300", "armor: 1"),
-    "crimson_warden_leggings": ("max_durability: 1150", "armor: 1"),
-    "crimson_warden_boots": ("max_durability: 950", "armor: 1"),
+    "crimson_warden_helmet": ("max_durability: 900", "armor: 3"),
+    "crimson_warden_chestplate": ("max_durability: 1300", "armor: 4"),
+    "crimson_warden_leggings": ("max_durability: 1150", "armor: 3"),
+    "crimson_warden_boots": ("max_durability: 950", "armor: 3"),
 }
 for item_id, required_stats in expected_armor_stats.items():
     start = config.find(f"  {item_id}:")
@@ -238,7 +238,7 @@ for item_id, required_stats in expected_armor_stats.items():
         if stat not in definition:
             fail(f"{item_id} is missing expected full-set armour/durability stat: {stat}")
     if "equipment:" not in definition or "slot_attribute_modifiers:" not in definition:
-        fail(f"{item_id} must use its Crimson Warden equipment layer and +1 armor modifier")
+        fail(f"{item_id} must use its Crimson Warden equipment layer and required armor modifier")
 
 expected_gear_stats = {
     "crimson_warden_sword": ("attackDamage: 15.0", "attackSpeed: 0.8", "max_durability: 5000"),

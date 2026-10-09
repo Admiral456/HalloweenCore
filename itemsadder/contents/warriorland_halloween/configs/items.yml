@@ -50,7 +50,7 @@ items:
     name: "&4&lHelma Krvavého strážce"
     lore:
       - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&c+1 bod brnění nad běžný netherit."
+      - "&cBrnění 6 (netherit 3) • výdrž 900."
       - "&8Lze enchantovat běžnými enchanty."
     material: NETHERITE_HELMET
     components_nbt_file: "crimson_warden_helmet.json"
@@ -61,13 +61,13 @@ items:
     equipment:
       id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
-        armor: 1
+        armor: 3
 
   crimson_warden_chestplate:
     name: "&4&lKyrys Krvavého strážce"
     lore:
       - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&c+1 bod brnění nad běžný netherit."
+      - "&cBrnění 12 (netherit 8) • výdrž 1 300."
       - "&8Lze enchantovat běžnými enchanty."
     material: NETHERITE_CHESTPLATE
     components_nbt_file: "crimson_warden_chestplate.json"
@@ -78,13 +78,13 @@ items:
     equipment:
       id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
-        armor: 1
+        armor: 4
 
   crimson_warden_leggings:
     name: "&4&lNohavice Krvavého strážce"
     lore:
       - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&c+1 bod brnění nad běžný netherit."
+      - "&cBrnění 9 (netherit 6) • výdrž 1 150."
       - "&8Lze enchantovat běžnými enchanty."
     material: NETHERITE_LEGGINGS
     components_nbt_file: "crimson_warden_leggings.json"
@@ -95,13 +95,13 @@ items:
     equipment:
       id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
-        armor: 1
+        armor: 3
 
   crimson_warden_boots:
     name: "&4&lBoty Krvavého strážce"
     lore:
       - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&c+1 bod brnění nad běžný netherit."
+      - "&cBrnění 6 (netherit 3) • výdrž 950."
       - "&8Lze enchantovat běžnými enchanty."
     material: NETHERITE_BOOTS
     components_nbt_file: "crimson_warden_boots.json"
@@ -112,7 +112,7 @@ items:
     equipment:
       id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
-        armor: 1
+        armor: 3
 
   crimson_warden_sword:
     name: "&4&lKrvavý meč"
