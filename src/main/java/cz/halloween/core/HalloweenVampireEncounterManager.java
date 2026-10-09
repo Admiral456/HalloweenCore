@@ -34,6 +34,8 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private final NamespacedKey bossKey;
 
     private LivingEntity boss;
+    private LivingEntity previewEntity;
+    private BukkitTask previewCleanupTask;
     private UUID bossUuid;
     private BukkitTask tickTask;
     private BukkitTask summoningTask;
@@ -199,6 +201,70 @@ public final class HalloweenVampireEncounterManager implements Listener {
         }
     }
 
+    /**
+     * Safely spawns a temporary, invulnerable copy of the configured MythicMobs boss for model testing.
+     * It never starts the real encounter, registers participants, or grants rewards.
+     */
+    public boolean previewModelAnimation(Player player, String animation) {
+        if (player == null || !player.isOnline() || animation == null) return false;
+        if (isActive()) return false;
+        Set<String> allowed = Set.of("idle", "walk", "attack", "fly",
+                "false_sigil", "blood_pulse", "mirror_strike", "nightfall");
+        if (!allowed.contains(animation.toLowerCase(java.util.Locale.ROOT))) return false;
+        if (!plugin.getServer().getPluginManager().isPluginEnabled("MythicMobs")
+                || !plugin.getServer().getPluginManager().isPluginEnabled("ModelEngine")) {
+            return false;
+        }
+
+        stopModelPreview();
+        Location location = player.getLocation().clone();
+        org.bukkit.util.Vector direction = location.getDirection().setY(0.0D);
+        if (direction.lengthSquared() < 0.001D) direction = new org.bukkit.util.Vector(0, 0, 1);
+        direction.normalize().multiply(4.0D);
+        location.add(direction);
+        location.setPitch(0.0F);
+        location.setYaw(player.getLocation().getYaw() + 180.0F);
+
+        LivingEntity preview = spawnMythicMob(location);
+        if (preview == null) return false;
+        preview.setInvulnerable(true);
+        preview.setSilent(true);
+        preview.setGravity(false);
+        preview.setCustomName(plugin.color("&d&lNÁHLED MODELU KRÁLE UPÍRŮ"));
+        preview.setCustomNameVisible(true);
+        if (preview instanceof org.bukkit.entity.Mob mob) {
+            mob.setAI(false);
+            mob.setAware(false);
+        }
+        previewEntity = preview;
+
+        String requestedAnimation = animation.toLowerCase(java.util.Locale.ROOT);
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (previewEntity != preview || !preview.isValid() || preview.isDead()) return;
+            if (!playModelAnimation(preview, requestedAnimation)) {
+                player.sendMessage(plugin.color("&eModel byl vytvořen, ale animaci &f" + requestedAnimation
+                        + " &eModelEngine nepřehrál. Zkontroluj import modelu a verzi API."));
+            } else {
+                player.sendMessage(plugin.color("&aAnimace &f" + requestedAnimation
+                        + " &abyla spuštěna na dočasném modelu."));
+            }
+        }, 1L);
+
+        previewCleanupTask = plugin.getServer().getScheduler().runTaskLater(plugin, this::stopModelPreview, 200L);
+        return true;
+    }
+
+    public void stopModelPreview() {
+        if (previewCleanupTask != null) {
+            previewCleanupTask.cancel();
+            previewCleanupTask = null;
+        }
+        if (previewEntity != null) {
+            if (previewEntity.isValid() && !previewEntity.isDead()) previewEntity.remove();
+            previewEntity = null;
+        }
+    }
+
     public boolean startEncounter() {
         if (!plugin.isEventEnabled()) return false;
         if (isActive()) return false;
@@ -213,6 +279,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
             return false;
         }
 
+        stopModelPreview();
         LivingEntity spawned = spawnMythicMob(location);
         if (spawned == null) {
             plugin.getLogger().severe("Cannot start Vampire encounter: MythicMobs mob '" 
@@ -244,6 +311,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     }
 
     public void stopEncounter() {
+        stopModelPreview();
         if (tickTask != null) {
             tickTask.cancel();
             tickTask = null;
@@ -345,7 +413,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         phase = nextPhase;
         if (phase == 4) {
             // The final phase adds the looping wing/fly animation; attack animations can layer over it.
-            playBossModelAnimation("fly");
+            playModelAnimation(boss, "fly");
         }
         broadcastPhase(phase);
         maintainPhaseEffects();
@@ -664,9 +732,9 @@ public final class HalloweenVampireEncounterManager implements Listener {
             case 3 -> "mirror_strike";
             default -> "nightfall";
         };
-        if (!playBossModelAnimation(attackAnimation)) {
+        if (!playModelAnimation(boss, attackAnimation)) {
             // Compatibility fallback for older ModelEngine builds or missing animation tracks.
-            playBossModelAnimation("attack");
+            playModelAnimation(boss, "attack");
         }
         switch (phase) {
             case 1 -> falseSigil(target);
@@ -981,8 +1049,8 @@ public final class HalloweenVampireEncounterManager implements Listener {
      * Reflection keeps HalloweenCore loadable when ModelEngine is not installed; the finale readiness
      * gate still prevents production spawning until the model has been verified on a real client.
      */
-    private boolean playBossModelAnimation(String animation) {
-        if (boss == null || !boss.isValid() || boss.isDead()) return false;
+    private boolean playModelAnimation(LivingEntity target, String animation) {
+        if (target == null || !target.isValid() || target.isDead()) return false;
         if (animation == null || animation.isBlank()) return false;
         if (plugin.getServer().getPluginManager().getPlugin("ModelEngine") == null
                 || !plugin.getServer().getPluginManager().isPluginEnabled("ModelEngine")) {
@@ -990,7 +1058,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         }
         try {
             Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
-            Object modeledEntity = apiClass.getMethod("getModeledEntity", Entity.class).invoke(null, boss);
+            Object modeledEntity = apiClass.getMethod("getModeledEntity", Entity.class).invoke(null, target);
             if (modeledEntity == null) return false;
 
             // Invoke methods through public API interfaces rather than implementation classes,

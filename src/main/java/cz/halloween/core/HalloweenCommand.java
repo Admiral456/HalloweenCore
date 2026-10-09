@@ -26,7 +26,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "give", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -51,6 +51,12 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return section.getKeys(false).stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .sorted()
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("modelpreview") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("idle", "walk", "attack", "fly", "false_sigil", "blood_pulse", "mirror_strike", "nightfall")
+                    .stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("bosseffects") && sender.hasPermission("halloweencore.admin")) {
@@ -89,6 +95,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
         if (args[0].equalsIgnoreCase("boss")) return boss(sender, args);
         if (args[0].equalsIgnoreCase("bosseffects")) return bossEffects(sender, args);
+        if (args[0].equalsIgnoreCase("modelpreview")) return modelPreview(sender, args);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
@@ -108,6 +115,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween boss <status|start|stop> &7- finální encounter (admin)"));
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
         return true;
@@ -486,6 +494,25 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+
+    private boolean modelPreview(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz musíš použít ve hře."));
+            return true;
+        }
+        if (args.length != 2) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween modelpreview <idle|walk|attack|fly|false_sigil|blood_pulse|mirror_strike|nightfall>"));
+            return true;
+        }
+        HalloweenVampireEncounterManager encounter = plugin.getVampireEncounterManager();
+        if (encounter == null || !encounter.previewModelAnimation(player, args[1])) {
+            sender.sendMessage(plugin.color("&cNáhled nelze spustit. Ověř, že MythicMobs a ModelEngine běží, model je importovaný a finální encounter právě neběží."));
+            return true;
+        }
+        sender.sendMessage(plugin.color("&aDočasný nezranitelný model byl vytvořen před tebou. Automaticky zmizí za 10 sekund."));
+        return true;
+    }
 
     private boolean bossEffects(CommandSender sender, String[] args) {
         if (!checkAdmin(sender)) return true;

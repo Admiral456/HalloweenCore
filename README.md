@@ -179,3 +179,8 @@ Encounter při každém speciálním útoku vyvolá jednorázovou animaci `attac
 ## Čtyři samostatné animace útoků
 
 Model nyní obsahuje vlastní jednorázové animace false_sigil, blood_pulse, mirror_strike a nightfall. Encounter vybírá odpovídající animaci podle fáze bosse a spustí ji před telegraphem; pokud nainstalovaná verze ModelEngine některou animaci neumí přehrát, použije základní attack animaci jako bezpečný fallback. Validátor kontroluje přítomnost všech čtyř fázových animací.
+
+
+## Bezpečný náhled modelu
+
+Administrátor může použít `/halloween modelpreview <idle|walk|attack|fly|false_sigil|blood_pulse|mirror_strike|nightfall>`. Příkaz vytvoří čtyři bloky před hráčem dočasný, nezranitelný model přes MythicMobs a ModelEngine, vypne jeho AI a odstraní ho po 10 sekundách. Náhled nespustí encounter, nepočítá účast a neuděluje odměny. Pořád je nutné ověřit render v klientovi s přijatým resource packem.
