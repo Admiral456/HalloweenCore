@@ -2,6 +2,9 @@ package cz.halloween.core;
 
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.attribute.AttributeInstance;
+import org.bukkit.attribute.AttributeModifier;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
@@ -11,25 +14,36 @@ import org.bukkit.potion.PotionEffectType;
 public final class HalloweenPassiveEffectManager {
     private final HalloweenCore plugin;
     private final NamespacedKey rewardKey;
+    private final NamespacedKey talismanHealthKey;
 
     public HalloweenPassiveEffectManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.rewardKey = new NamespacedKey(plugin, "halloween_reward");
+        this.talismanHealthKey = new NamespacedKey(plugin, "cursed_talisman_bonus_health");
     }
 
     public void start() {
-        long period = 40L;
+        long period = 20L;
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, period, period);
     }
 
     private void tick() {
-        if (!plugin.isEventEnabled()) return;
-        if (!plugin.getConfig().getBoolean("rewards.passive-effects.enabled", true)) return;
+        boolean passiveEnabled = plugin.isEventEnabled()
+                && plugin.getConfig().getBoolean("rewards.passive-effects.enabled", true);
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!plugin.isEligibleGameplayPlayer(player)) continue;
-            if (!plugin.isEligibleGameplayWorld(player.getWorld())) continue;
+            boolean gameplayEligible = passiveEnabled
+                    && plugin.isEligibleGameplayPlayer(player)
+                    && plugin.isEligibleGameplayWorld(player.getWorld());
 
+            // The talisman works while held in either hand. Always reconcile the
+            // modifier, even when Halloween is switched off, so it cannot get stuck.
+            boolean talismanActive = gameplayEligible
+                    && (isReward(player.getInventory().getItemInMainHand(), "cursed-talisman")
+                    || isReward(player.getInventory().getItemInOffHand(), "cursed-talisman"));
+            updateTalismanHealth(player, talismanActive);
+
+            if (!gameplayEligible) continue;
             ItemStack helmet = player.getInventory().getHelmet();
             if (!isReward(helmet, "hunter-mask")) continue;
 
@@ -42,6 +56,30 @@ public final class HalloweenPassiveEffectManager {
                     false,
                     true
             ));
+        }
+    }
+
+    private void updateTalismanHealth(Player player, boolean active) {
+        AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
+        if (maxHealth == null) return;
+
+        double bonusHealth = Math.max(0.0D,
+                plugin.getConfig().getDouble("rewards.shop.cursed-talisman.bonus-health", 20.0D));
+        AttributeModifier existing = maxHealth.getModifiers().stream()
+                .filter(modifier -> modifier.getKey().equals(talismanHealthKey))
+                .findFirst()
+                .orElse(null);
+
+        if (existing != null && (!active || Math.abs(existing.getAmount() - bonusHealth) > 0.001D)) {
+            maxHealth.removeModifier(existing);
+            existing = null;
+            // If the maximum dropped, clamp current health to the new maximum.
+            player.setHealth(Math.min(player.getHealth(), Math.max(1.0D, maxHealth.getValue())));
+        }
+
+        if (active && bonusHealth > 0.0D && existing == null) {
+            maxHealth.addModifier(new AttributeModifier(
+                    talismanHealthKey, bonusHealth, AttributeModifier.Operation.ADD_NUMBER));
         }
     }
 
