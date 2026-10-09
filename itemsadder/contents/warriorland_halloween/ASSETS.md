@@ -10,11 +10,13 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/item/cursed_candy.png
 - resourcepack/assets/warriorland_halloween/textures/item/haunted_map.png
 
-Planned world/audio assets:
+Included client/audio assets:
 - resourcepack/assets/minecraft/shaders/core/sky.fsh
-- resourcepack/assets/warriorland_halloween/sounds/haunted_theme.ogg
-- resourcepack/assets/warriorland_halloween/sounds/event_ambience.ogg
+- sounds/haunted_theme.ogg — original 64-second ambient loop (mono OGG/Vorbis)
+- sounds/event_sting.ogg — original 5-second Halloween event cue (mono OGG/Vorbis)
+- configs/sounds.yml — ItemsAdder sound registration
 
+The original sounds use no third-party recordings or samples. Rebuild the ItemsAdder resource pack with /iazip after installing/updating these contents.
 The Java plugin uses these IDs:
 - warriorland_halloween:hunter_mask
 - warriorland_halloween:cursed_talisman
