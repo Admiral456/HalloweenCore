@@ -108,6 +108,13 @@ public final class HalloweenAtmosphere {
     }
 
     private void stopConfiguredSounds(Player player) {
+        // Stop the category as well as our own IDs. This prevents a vanilla track
+        // already in progress from continuing to play underneath Halloween ambience.
+        try {
+            player.stopSound(SoundCategory.MUSIC);
+        } catch (Exception ignored) {
+            // Fall through to stop the configured sounds individually.
+        }
         String custom = plugin.getConfig().getString("atmosphere.sound", "");
         String fallback = plugin.getConfig().getString("atmosphere.fallback-sound", "");
         stopSound(player, custom);
