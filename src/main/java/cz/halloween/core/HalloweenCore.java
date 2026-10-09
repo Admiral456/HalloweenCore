@@ -198,14 +198,15 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     }
 
     private void migrateAtmosphereVolume() {
-        // Upgrade existing server configs once: the prior default 0.35 was too quiet.
-        if (getConfig().getBoolean("atmosphere.volume-triple-migrated", false)) return;
+        // One-time migration for servers that already have the older 0.35/1.0 settings.
+        // Do not overwrite an administrator's deliberate custom value above 1.0.
+        if (getConfig().getBoolean("atmosphere.volume-tripled-v2-migrated", false)) return;
         double existing = getConfig().getDouble("atmosphere.volume", 0.35D);
-        if (existing <= 0.36D) getConfig().set("atmosphere.volume", 1.0D);
-        getConfig().set("atmosphere.volume-triple-migrated", true);
+        if (existing <= 1.0D) getConfig().set("atmosphere.volume", 3.0D);
+        getConfig().set("atmosphere.volume-tripled-v2-migrated", true);
         saveConfig();
-        getLogger().info("Halloween soundtrack volume upgraded to " +
-                getConfig().getDouble("atmosphere.volume", 1.0D) + ".");
+        getLogger().info("Halloween soundtrack gain migration complete; volume=" +
+                getConfig().getDouble("atmosphere.volume", 3.0D) + ".");
     }
 
     public boolean isEventEnabled() {
