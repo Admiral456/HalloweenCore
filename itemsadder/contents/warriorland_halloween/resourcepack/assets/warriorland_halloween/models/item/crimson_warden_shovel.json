@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:item/handheld",
+  "textures": {
+    "layer0": "warriorland_halloween:item/crimson_warden_shovel"
+  }
+}
