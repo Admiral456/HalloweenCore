@@ -64,8 +64,21 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .filter(value -> value.startsWith(args[1]))
                     .toList();
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("event") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("status", "start", "stop", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion", "random")
+                    .stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("event") && args[1].equalsIgnoreCase("start")
+                && sender.hasPermission("halloweencore.admin")) {
+            return List.of("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion", "random")
+                    .stream()
+                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("boss") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("status", "start", "stop").stream()
+            return List.of("status", "start", "test", "stop").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
@@ -85,7 +98,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
         if (args[0].equalsIgnoreCase("curse")) return curse(sender);
-        if (args[0].equalsIgnoreCase("event")) return event(sender);
+        if (args[0].equalsIgnoreCase("event")) return event(sender, args);
         if (args[0].equalsIgnoreCase("rewards")) return rewards(sender);
         if (args[0].equalsIgnoreCase("claim")) return claim(sender, args);
         if (args[0].equalsIgnoreCase("challenge")) return challenge(sender);
@@ -105,7 +118,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
-        sender.sendMessage(plugin.color("&6/halloween event &7- aktuální Halloween událost"));
+        sender.sendMessage(plugin.color("&6/halloween event [start|stop] &7- stav a testovací spuštění eventu (admin)"));
         sender.sendMessage(plugin.color("&6/halloween rewards &7- limitované odměny 2026"));
         sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní Halloween lov"));
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
@@ -117,7 +130,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
         sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween buildvampirearena [confirm] &7- náhled a bezpečná stavba arény (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween boss <status|start|stop> &7- finální encounter (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween boss <status|start|test|stop> &7- finále nebo bezpečný test bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
@@ -185,19 +198,71 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean event(CommandSender sender) {
-        if (!checkUse(sender) || !checkEnabled(sender)) return true;
-        if (plugin.getEventManager() == null || plugin.getEventManager().getActiveEventId() == null) {
-            sender.sendMessage(plugin.color("&7Právě neprobíhá žádná náhodná událost."));
-            long seconds = plugin.getEventManager() == null ? 0L : plugin.getEventManager().getNextEventSeconds();
-            sender.sendMessage(plugin.color("&7Další událost přibližně za &e" + seconds + " s&7."));
+    private boolean event(CommandSender sender, String[] args) {
+        if (args.length >= 2) {
+            if (!checkAdmin(sender)) return true;
+            if (plugin.getEventManager() == null) {
+                sender.sendMessage(plugin.color("&cSprávce eventů není dostupný."));
+                return true;
+            }
+            String action = args[1].toLowerCase(java.util.Locale.ROOT);
+            if (action.equals("start")) {
+                String requested = args.length >= 3 ? args[2] : "random";
+                if (!plugin.isEventEnabled()) {
+                    sender.sendMessage(plugin.color("&cNejdřív zapni Halloween: /halloween on"));
+                    return true;
+                }
+                if (!plugin.getEventManager().startEventNow(requested)) {
+                    sender.sendMessage(plugin.color("&cEvent nelze spustit. Už jeden běží, nebo je ID neplatné. Použij /halloween event start random."));
+                    return true;
+                }
+                sender.sendMessage(plugin.color("&aTestovací okamžité spuštění eventu: &e" + requested));
+                return true;
+            }
+            if (action.equals("stop")) {
+                if (!plugin.getEventManager().stopActiveEventNow()) {
+                    sender.sendMessage(plugin.color("&7Právě není aktivní žádný event."));
+                } else {
+                    sender.sendMessage(plugin.color("&eAktivní Halloween event byl ukončen správcem."));
+                }
+                return true;
+            }
+            if (!action.equals("status")) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween event [status|start [random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion]|stop]"));
+                return true;
+            }
+        } else if (!checkUse(sender)) {
             return true;
         }
-        sender.sendMessage(plugin.color("&6&lHALLOWEEN UDÁLOST"));
-        String active = plugin.getEventManager().getActiveEventId();
+
+        HalloweenEventManager manager = plugin.getEventManager();
+        if (manager == null) {
+            sender.sendMessage(plugin.color("&cSprávce Halloween eventů není dostupný."));
+            return true;
+        }
+        if (!plugin.isEventEnabled()) {
+            sender.sendMessage(plugin.color("&cHalloween je vypnutý. Správce může použít /halloween on."));
+            return true;
+        }
+        String active = manager.getActiveEventId();
+        if (active == null) {
+            long seconds = manager.getNextEventSeconds();
+            sender.sendMessage(plugin.color("&6&lHALLOWEEN UDÁLOST"));
+            sender.sendMessage(plugin.color("&7Právě neběží žádný event."));
+            if (seconds < 0) {
+                sender.sendMessage(plugin.color("&7Automatický plán je vypnutý; správce může použít &e/halloween event start random&7."));
+            } else {
+                sender.sendMessage(plugin.color("&7Další event přibližně za &e" + seconds + " s&7."));
+            }
+            if (sender.hasPermission("halloweencore.admin")) {
+                sender.sendMessage(plugin.color("&7Pro test: &e/halloween event start random"));
+            }
+            return true;
+        }
         String eventName = plugin.getConfig().getString("random-events.types." + active + ".name", active);
-        sender.sendMessage(plugin.color("&7Typ: &e" + eventName));
-        sender.sendMessage(plugin.color("&7Zbývá: &e" + plugin.getEventManager().getRemainingSeconds() + " s"));
+        sender.sendMessage(plugin.color("&6&lHALLOWEEN UDÁLOST"));
+        sender.sendMessage(plugin.color("&7Typ: &e" + eventName + " &8(" + active + ")"));
+        sender.sendMessage(plugin.color("&7Zbývá: &e" + manager.getRemainingSeconds() + " s"));
         return true;
     }
 
@@ -574,6 +639,18 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                             plugin.getBossManager().getVampireBossHealthPercent() * 100.0D) + "%"));
                 }
             }
+            case "test" -> {
+                if (encounter.isActive()) {
+                    sender.sendMessage(plugin.color("&eEncounter už běží."));
+                    return true;
+                }
+                if (encounter.startTestEncounter()) {
+                    sender.sendMessage(plugin.color("&aTestovací boss byl vyvolán bez progressu a bez odměn."));
+                } else {
+                    sender.sendMessage(plugin.color("&cTestovací boss se nepodařilo vyvolat. Potřebuje nastavené místo arény a funkční MythicMobs definici vampire-king."));
+                    sender.sendMessage(plugin.color("&7Zkontroluj /halloween debug, /mm mobs a konzoli."));
+                }
+            }
             case "start" -> {
                 if (encounter.isActive()) {
                     sender.sendMessage(plugin.color("&eEncounter už běží."));
@@ -598,7 +675,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 encounter.delayNaturalSummoningAfterStop();
                 sender.sendMessage(plugin.color("&aEncounter Krále upírů byl zastaven. Automatické vyvolání je dočasně odloženo."));
             }
-            default -> sender.sendMessage(plugin.color("&cPoužití: /halloween boss <status|start|stop>"));
+            default -> sender.sendMessage(plugin.color("&cPoužití: /halloween boss <status|start|test|stop>"));
         }
         return true;
     }
