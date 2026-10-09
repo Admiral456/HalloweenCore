@@ -32,6 +32,7 @@ import java.util.function.Consumer;
 public final class HalloweenVampireEncounterManager implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey bossKey;
+    private final Set<String> loggedWarnings = new HashSet<>();
 
     private LivingEntity boss;
     private LivingEntity previewEntity;
@@ -55,6 +56,12 @@ public final class HalloweenVampireEncounterManager implements Listener {
     public HalloweenVampireEncounterManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.bossKey = new NamespacedKey(plugin, "vampire_boss");
+    }
+
+    private void warnOnce(String key, String message) {
+        if (loggedWarnings.add(key)) {
+            plugin.getLogger().warning(message);
+        }
     }
 
     public boolean isActive() {
@@ -184,8 +191,9 @@ public final class HalloweenVampireEncounterManager implements Listener {
             long retryMinutes = Math.max(1L,
                     plugin.getConfig().getLong("bosses.vampire.summoning.retry-delay-minutes", 20L));
             naturalRetryAfterAt = now + retryMinutes * 60_000L;
-            plugin.getLogger().warning("Natural Vampire summoning failed. Retrying after "
-                    + retryMinutes + " minute(s); inspect /halloween boss status and the MythicMobs definition.");
+            warnOnce("natural-summoning-failed",
+                    "Natural Vampire summoning failed; the next attempt is in " + retryMinutes
+                            + " minute(s). Repeated retries will not spam the console. Check /halloween boss status and the MythicMobs definition.");
         }
     }
 
@@ -290,7 +298,8 @@ public final class HalloweenVampireEncounterManager implements Listener {
 
         Location location = getArenaLocation();
         if (location == null) {
-            plugin.getLogger().warning("Cannot start Vampire encounter: arena centre is not configured or its world is not loaded.");
+            warnOnce("arena-centre-unavailable",
+                    "Cannot start Vampire encounter: arena centre is not configured or its world is not loaded. Further identical warnings are suppressed.");
             return false;
         }
 
@@ -302,9 +311,10 @@ public final class HalloweenVampireEncounterManager implements Listener {
             fallbackTestBoss = spawned != null;
         }
         if (spawned == null) {
-            plugin.getLogger().severe("MythicMobs could not spawn boss ID '"
-                    + plugin.getBossManager().getVampireSpec().id()
-                    + "'. Check plugins/MythicMobs/Mobs/vampire-king.yml and /mm reload.");
+            warnOnce("mythic-boss-spawn-failed",
+                    "MythicMobs could not spawn boss ID '"
+                            + plugin.getBossManager().getVampireSpec().id()
+                            + "'. Check plugins/MythicMobs/Mobs/vampire-king.yml and /mm reload.");
             return false;
         }
 
@@ -1150,10 +1160,12 @@ public final class HalloweenVampireEncounterManager implements Listener {
                 maxHealth.setBaseValue(500.0D);
                 living.setHealth(500.0D);
             }
-            plugin.getLogger().warning("MythicMobs boss definition unavailable; using a vanilla zombie as an admin-only boss test.");
+            warnOnce("test-boss-fallback",
+                    "MythicMobs boss definition unavailable; using a vanilla zombie as an admin-only boss test.");
             return living;
         } catch (RuntimeException ex) {
-            plugin.getLogger().warning("Could not spawn fallback test boss: " + ex.getMessage());
+            warnOnce("test-boss-fallback-failed",
+                    "Could not spawn fallback test boss: " + ex.getMessage());
             return null;
         }
     }
@@ -1185,7 +1197,8 @@ public final class HalloweenVampireEncounterManager implements Listener {
             Object bukkitEntity = entityRef.getClass().getMethod("getBukkitEntity").invoke(entityRef);
             return bukkitEntity instanceof LivingEntity living ? living : null;
         } catch (ReflectiveOperationException | RuntimeException ex) {
-            plugin.getLogger().warning("MythicMobs API spawn failed: " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
+            warnOnce("mythic-api-spawn-" + ex.getClass().getSimpleName(),
+                    "MythicMobs API spawn failed: " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
             return null;
         }
     }
