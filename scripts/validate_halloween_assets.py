@@ -273,6 +273,62 @@ slots_match = re.search(r"(?m)^\s*int\[\] slots = \{([^}]+)\};", REWARD_MANAGER)
 if not slots_match or len(re.findall(r"\d+", slots_match.group(1))) < 12:
     fail("Halloween shop needs at least 12 reward slots for the full gear set")
 
+# Static integration checks for arena, event scheduling, test spawning and reload.
+JAVA = ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core"
+ARENA_SOURCE = (JAVA / "VampireArenaBuilder.java").read_text(encoding="utf-8")
+EVENT_SOURCE = (JAVA / "HalloweenEventManager.java").read_text(encoding="utf-8")
+COMMAND_SOURCE = (JAVA / "HalloweenCommand.java").read_text(encoding="utf-8")
+CORE_SOURCE = (JAVA / "HalloweenCore.java").read_text(encoding="utf-8")
+BOSS_SOURCE = (JAVA / "HalloweenVampireEncounterManager.java").read_text(encoding="utf-8")
+DECORATION_SOURCE = (JAVA / "HalloweenWorldDecorator.java").read_text(encoding="utf-8")
+
+for marker in ("RADIUS = 48", "public Inspection inspect(", "public int build(", "Point[] towers", "Point[] gates", "Point[] obelisks"):
+    if marker not in ARENA_SOURCE:
+        fail(f"Epic arena builder is missing required feature: {marker}")
+if not re.search(r"RADIUS\s*=\s*48", ARENA_SOURCE):
+    fail("Epic arena must have a 97-block diameter (radius 48)")
+
+for marker in ("scheduleFirstEvent()", "startEventNow(String requestedId)", "beginEvent(String eventId)", "runActiveEventEffects", "end-message"):
+    if marker not in EVENT_SOURCE:
+        fail(f"Event manager is missing required behavior: {marker}")
+for event_id in ("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion"):
+    if f'"{event_id}"' not in EVENT_SOURCE:
+        fail(f"Event manager does not register event '{event_id}'")
+
+for marker in (
+    'args[0].equalsIgnoreCase("buildvampirearena")',
+    'args[0].equalsIgnoreCase("event")',
+    'args[0].equalsIgnoreCase("boss")',
+    'args[0].equalsIgnoreCase("shader")',
+    "startTestEncounter()",
+    "plugin.reloadEventConfig()",
+    'Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip")',
+):
+    if marker not in COMMAND_SOURCE:
+        fail(f"Admin command wiring is missing: {marker}")
+
+for marker in (
+    "eventManager.scheduleFirstEvent()",
+    "atmosphere.refreshPlayback()",
+    "worldDecorator.scanLoadedChunks()",
+    "migrateAtmosphereVolume()",
+):
+    if marker not in CORE_SOURCE:
+        fail(f"Runtime reload/activation is missing: {marker}")
+
+for marker in (
+    "public boolean startTestEncounter()",
+    "spawnTestFallback(location)",
+    "testEncounter",
+    "Test neodemkne finále",
+):
+    if marker not in BOSS_SOURCE:
+        fail(f"Boss test mode is missing safety behavior: {marker}")
+
+for marker in ("Material.JACK_O_LANTERN", "Material.PUMPKIN", "Material.COBWEB", "chunks-per-tick", "treeAnchor"):
+    if marker not in DECORATION_SOURCE:
+        fail(f"World Halloween decoration is missing: {marker}")
+
 # ItemsAdder equipment layers are source assets at contents/<namespace>/textures/armor,
 # while item icons and vanilla overrides are emitted from the resourcepack/assets tree.
 for layer in ("layer_1.png", "layer_2.png"):
