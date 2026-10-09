@@ -86,3 +86,12 @@ Netherite tools use mining speed 9 for their matching tool classes and have dura
 ## Vampire model assets
 
 Plánované soubory pro finální 3D model patří do samostatného ModelEngine asset balíku. Dokud není potvrzena finální UV mapa, samotný model ani jeho textury se nepovažují za produkčně hotové. Konceptový vizuál vznikl v rámci návrhu, ale není vydáván jako finální UV texture atlas.
+
+
+## Halloween event soundtrack and music suppression
+
+The generated pack contains a CC0-converted Spooky Fester ambience plus six original procedural event cues. Each event cue is registered in `configs/sounds.yml`: `soulstorm_sting`, `witching_sting`, `harvest_sting`, `blood_moon_rise`, `pumpkin_apocalypse` and `graveyard_rising`. The Minecraft resource-pack `sounds.json` replaces 31 configured Minecraft 1.21.10 background-music events with `warriorland_halloween:halloween_silence`; the plugin also stops the client MUSIC category once per second while the Halloween ambience is active. This only takes effect after each client downloads and accepts the rebuilt pack.
+
+## Custom enemy model files
+
+Five ModelEngine blueprints with independent 128×128 atlases are stored in `mythicmobs/models/halloween_*.bbmodel` and `mythicmobs/models/halloween_*.png`. These files are packaged separately from ItemsAdder content in the CI artifact `HalloweenCore-Special-Mobs-ModelEngine.zip`; import the blueprints into ModelEngine and merge `ModelEngine/resource pack` into the ItemsAdder-hosted pack before testing them in-game. The model/texture structure is checked by `scripts/validate_special_mob_models.py`.

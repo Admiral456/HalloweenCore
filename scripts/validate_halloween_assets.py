@@ -14,6 +14,14 @@ CONFIG = CONTENT / "configs" / "items.yml"
 SOUNDS_CONFIG = CONTENT / "configs" / "sounds.yml"
 THEME = CONTENT / "sounds" / "haunted_theme.ogg"
 EVENT_STING = CONTENT / "sounds" / "event_sting.ogg"
+EVENT_CUES = {
+    "soulstorm_sting": 5.2,
+    "witching_sting": 4.8,
+    "harvest_sting": 4.2,
+    "blood_moon_rise": 7.0,
+    "pumpkin_apocalypse": 5.4,
+    "graveyard_rising": 6.0,
+}
 VANILLA_SOUNDS_CONFIG = CONTENT / "resourcepack" / "assets" / "minecraft" / "sounds.json"
 SILENT_MUSIC = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "sounds" / "halloween_silence.ogg"
 ARMOR_SOURCE_TEXTURES = CONTENT / "textures" / "armor" / "crimson_warden"
@@ -88,7 +96,9 @@ for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "halloweenTin
         fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
 
 theme_duration = 0.0
-for audio, expected_duration in ((THEME, None), (EVENT_STING, 5.0)):
+audio_specs = [(THEME, None), (EVENT_STING, 5.0)]
+audio_specs.extend((CONTENT / "sounds" / f"{name}.ogg", duration) for name, duration in EVENT_CUES.items())
+for audio, expected_duration in audio_specs:
     if not audio.is_file():
         fail("Missing Halloween audio asset: " + str(audio.relative_to(ROOT)))
     if audio.read_bytes()[:4] != b"OggS":
@@ -159,9 +169,11 @@ if not 0.8 <= float(silence_stream.get("duration", 0)) <= 1.2:
 if not SOUNDS_CONFIG.is_file():
     fail("Missing ItemsAdder sounds configuration: " + str(SOUNDS_CONFIG.relative_to(ROOT)))
 sounds_text = SOUNDS_CONFIG.read_text(encoding="utf-8")
-for sound in ("haunted_theme", "event_sting"):
+for sound in ("haunted_theme", "event_sting", *EVENT_CUES.keys()):
     if f"  {sound}:" not in sounds_text:
         fail(f"ItemsAdder sound '{sound}' missing from sounds.yml")
+    if f"sound.{sound}:" not in sounds_text:
+        fail(f"ItemsAdder subtitle for '{sound}' missing from sounds.yml")
 
 runtime_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
 if not re.search(r"(?m)^  volume:\s*3\.0\s*$", runtime_config):
@@ -180,7 +192,8 @@ if "Attribute.MAX_HEALTH" not in passive_java or "getItemInOffHand()" not in pas
     fail("Cursed talisman must add max health while held in either hand")
 
 
-for sound_id in ("warriorland_halloween:event_sting", "warriorland_halloween:haunted_theme"):
+for sound_id in ("warriorland_halloween:event_sting", "warriorland_halloween:haunted_theme",
+                 *(f"warriorland_halloween:{name}" for name in EVENT_CUES)):
     if sound_id not in runtime_config:
         fail(f"Plugin configuration is missing sound ID: {sound_id}")
 loop_match = re.search(r"(?m)^  loop-milliseconds:\s*(\d+)\s*$", runtime_config)
@@ -334,7 +347,7 @@ print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
 print("Sky shader: Minecraft 1.21.10 entry point present")
-print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms) + 5s event cue, mono OGG/Vorbis containers")
+print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")
 print("ItemsAdder sound definitions: present")
 print(f"Verified exact Minecraft 1.21.10 music-event overrides: {len(vanilla_sound_events)}")
 print("Halloween silent OGG: mono OGG/Vorbis, about 1 second")

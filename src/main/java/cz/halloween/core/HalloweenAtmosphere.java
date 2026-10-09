@@ -6,12 +6,15 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 public final class HalloweenAtmosphere {
     private final HalloweenCore plugin;
     private final Map<UUID, BukkitTask> playbackTasks = new HashMap<>();
+    private final Set<String> reportedAudioIssues = new HashSet<>();
     private BukkitTask vanillaMusicMuteTask;
 
     public HalloweenAtmosphere(HalloweenCore plugin) {
@@ -172,22 +175,34 @@ public final class HalloweenAtmosphere {
             // Older server API: fall back to stopping the configured sound IDs below.
         }
 
-        if (custom != null && !custom.isBlank() && hasItemsAdder()) {
-            try {
-                player.playSound(player, custom, SoundCategory.AMBIENT, volume, pitch);
-                return;
-            } catch (Exception ignored) {
-                // Invalid/missing custom sound: continue to the configured fallback.
+        if (custom != null && !custom.isBlank()) {
+            if (!hasItemsAdder()) {
+                warnAudioOnce("itemsadder",
+                        "Halloween ambience is configured but ItemsAdder is not enabled; the custom soundtrack cannot be registered.");
+            } else {
+                try {
+                    player.playSound(player, custom, SoundCategory.AMBIENT, volume, pitch);
+                    return;
+                } catch (Exception ex) {
+                    warnAudioOnce("custom:" + custom,
+                            "Could not play Halloween sound '" + custom + "' (" + ex.getClass().getSimpleName()
+                                    + "). Verify that the rebuilt ItemsAdder resource pack was imported with /iazip and accepted by clients.");
+                }
             }
         }
 
         if (fallback != null && !fallback.isBlank()) {
             try {
                 player.playSound(player, fallback, SoundCategory.AMBIENT, volume, pitch);
-            } catch (Exception ignored) {
-                // No valid sound has been configured.
+            } catch (Exception ex) {
+                warnAudioOnce("fallback:" + fallback,
+                        "Configured Halloween fallback sound '" + fallback + "' is unavailable (" + ex.getClass().getSimpleName() + ").");
             }
         }
+    }
+
+    private void warnAudioOnce(String key, String message) {
+        if (reportedAudioIssues.add(key)) plugin.getLogger().warning(message);
     }
 
     private boolean hasItemsAdder() {

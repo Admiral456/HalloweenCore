@@ -8,6 +8,7 @@ import org.bukkit.Particle;
 import org.bukkit.block.Block;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.CreatureSpawnEvent;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
@@ -20,8 +21,13 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class HalloweenMobManager implements Listener {
@@ -30,6 +36,7 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey relicKey;
     private final NamespacedKey eventMobKey;
     private final NamespacedKey abilityCooldownKey;
+    private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
     public HalloweenMobManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -41,13 +48,10 @@ public final class HalloweenMobManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSpawn(CreatureSpawnEvent event) {
-        if (!plugin.isEventEnabled()) return;
-        if (!plugin.getConfig().getBoolean("special-mobs.enabled", true)) return;
+        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("special-mobs.enabled", true)) return;
         if (event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.NATURAL
                 && event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.REINFORCEMENTS
-                && event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.PATROL) {
-            return;
-        }
+                && event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.PATROL) return;
 
         LivingEntity entity = event.getEntity();
         if (!plugin.isEligibleGameplayWorld(entity.getWorld())) return;
@@ -59,12 +63,13 @@ public final class HalloweenMobManager implements Listener {
             case WITCH -> "hex-witch";
             default -> null;
         };
-
         if (mobId == null) return;
 
-        double chance = Math.max(0.0D, Math.min(1.0D, plugin.getConfig().getDouble("special-mobs.chance", 0.04D)));
+        double chance = Math.max(0.0D, Math.min(1.0D,
+                plugin.getConfig().getDouble("special-mobs.chance", 0.04D)));
         int phase = plugin.getEventManager() == null ? 0 : plugin.getEventManager().getGlobalPhase();
-        double phaseBonus = Math.max(0.0D, plugin.getConfig().getDouble("special-mobs.phase-bonus-chance", 0.005D));
+        double phaseBonus = Math.max(0.0D,
+                plugin.getConfig().getDouble("special-mobs.phase-bonus-chance", 0.005D));
         chance = Math.min(1.0D, chance + phase * phaseBonus);
         if (plugin.getEventManager() != null && plugin.getEventManager().getActiveEventId() != null) {
             chance = Math.min(1.0D, chance * Math.max(1.0D,
@@ -72,7 +77,31 @@ public final class HalloweenMobManager implements Listener {
         }
         if (ThreadLocalRandom.current().nextDouble() > chance) return;
 
+        // If the ModelEngine pack is installed, replace the natural vanilla mob with
+        // its distinct textured MythicMob at the same location.
+        LivingEntity modeled = spawnMythicModelMob(entity.getLocation(), mobId);
+        if (modeled != null) {
+            configureSpecialMob(modeled, mobId);
+            event.setCancelled(true);
+            return;
+        }
         configureSpecialMob(entity, mobId);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void applyBloodMoonDamageMultiplier(EntityDamageByEntityEvent event) {
+        if (!plugin.isEventEnabled() || plugin.getEventManager() == null
+                || !plugin.getEventManager().isActive("blood-moon-invasion")) return;
+        if (!(event.getEntity() instanceof Player target)
+                || !plugin.isEligibleGameplayPlayer(target)
+                || !plugin.isEligibleGameplayWorld(target.getWorld())) return;
+
+        LivingEntity attacker = resolveLivingAttacker(event.getDamager());
+        if (!isHostileDamageSource(attacker)) return;
+
+        double multiplier = Math.max(1.0D, Math.min(5.0D,
+                plugin.getConfig().getDouble("random-events.blood-moon-damage-multiplier", 3.0D)));
+        event.setDamage(event.getDamage() * multiplier);
     }
 
 
@@ -106,6 +135,19 @@ public final class HalloweenMobManager implements Listener {
             default -> {
             }
         }
+    }
+
+    private boolean isHostileDamageSource(LivingEntity attacker) {
+        if (attacker == null) return false;
+        // Most hostile mobs implement Monster; include hostile types which don't share
+        // that interface in Bukkit (notably the Ender Dragon, Wither and Shulker).
+        return attacker instanceof Monster
+                || attacker instanceof EnderDragon
+                || attacker instanceof Wither
+                || attacker instanceof Shulker
+                || attacker instanceof Ghast
+                || attacker instanceof Phantom
+                || attacker instanceof Slime;
     }
 
     private LivingEntity resolveLivingAttacker(Entity damager) {
@@ -321,32 +363,33 @@ public final class HalloweenMobManager implements Listener {
     }
 
     public boolean spawnEventMob(Player player) {
-        if (!plugin.isEventEnabled() || player == null) return false;
-        if (!plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
+        String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
+        return spawnEventMob(player, ids[ThreadLocalRandom.current().nextInt(ids.length)]);
+    }
+
+    /** Spawn a specific special type so every event can choose its own enemy mix. */
+    public boolean spawnEventMob(Player player, String mobId) {
+        if (!plugin.isEventEnabled() || player == null
+                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
+        if (!isKnownSpecialMob(mobId)) return false;
 
         World world = player.getWorld();
         if (!plugin.isEligibleGameplayWorld(world)) return false;
-        int maxEventMobs = Math.max(1, plugin.getConfig().getInt("random-events.max-event-mobs", 12));
+        int maxEventMobs = Math.max(1, Math.min(80,
+                plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
         if (countEventMobs(world) >= maxEventMobs) return false;
 
-        String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
-        String mobId = ids[ThreadLocalRandom.current().nextInt(ids.length)];
-
-        org.bukkit.Location spawnLocation = findSafeEventLocation(player);
+        Location spawnLocation = findSafeEventLocation(player);
         if (spawnLocation == null) return false;
 
-        EntityType type = switch (mobId) {
-            case "gravekeeper" -> EntityType.SKELETON;
-            case "blood-spider" -> EntityType.SPIDER;
-            case "pumpkin-wraith" -> EntityType.CREEPER;
-            case "hex-witch" -> EntityType.WITCH;
-            default -> EntityType.ZOMBIE;
-        };
-
-        Entity entity = world.spawnEntity(spawnLocation, type);
-        if (!(entity instanceof LivingEntity living)) {
-            entity.remove();
-            return false;
+        LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
+        if (living == null) {
+            Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
+            if (!(entity instanceof LivingEntity spawned)) {
+                entity.remove();
+                return false;
+            }
+            living = spawned;
         }
 
         configureSpecialMob(living, mobId);
@@ -364,15 +407,20 @@ public final class HalloweenMobManager implements Listener {
         World world = player.getWorld();
         if (!plugin.isEligibleGameplayWorld(world)) return false;
 
-        int maxEventMobs = Math.max(1, plugin.getConfig().getInt("random-events.max-event-mobs", 12));
+        int maxEventMobs = Math.max(1, Math.min(80,
+                plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
         if (countEventMobs(world) >= maxEventMobs) return false;
-        org.bukkit.Location spawnLocation = findSafeEventLocation(player);
+        Location spawnLocation = findSafeEventLocation(player);
         if (spawnLocation == null) return false;
 
-        Entity entity = world.spawnEntity(spawnLocation, EntityType.CREEPER);
-        if (!(entity instanceof LivingEntity living)) {
-            entity.remove();
-            return false;
+        LivingEntity living = spawnMythicModelMob(spawnLocation, "pumpkin-wraith");
+        if (living == null) {
+            Entity entity = world.spawnEntity(spawnLocation, EntityType.CREEPER);
+            if (!(entity instanceof LivingEntity spawned)) {
+                entity.remove();
+                return false;
+            }
+            living = spawned;
         }
 
         configureSpecialMob(living, "pumpkin-wraith");
@@ -388,6 +436,113 @@ public final class HalloweenMobManager implements Listener {
         }
         living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
         return true;
+    }
+
+    private boolean isKnownSpecialMob(String mobId) {
+        return mobId != null && switch (mobId) {
+            case "cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch" -> true;
+            default -> false;
+        };
+    }
+
+    private EntityType baseEntityType(String mobId) {
+        return switch (mobId) {
+            case "gravekeeper" -> EntityType.SKELETON;
+            case "blood-spider" -> EntityType.SPIDER;
+            case "pumpkin-wraith" -> EntityType.CREEPER;
+            case "hex-witch" -> EntityType.WITCH;
+            default -> EntityType.ZOMBIE;
+        };
+    }
+
+    /**
+     * The ModelEngine texture/model layer is used only when its dependencies and the
+     * matching MythicMobs definition are present. If not, callers safely use vanilla.
+     */
+    private LivingEntity spawnMythicModelMob(Location location, String mobId) {
+        if (!plugin.getConfig().getBoolean("special-mobs.custom-models.enabled", true)) return null;
+        var mythicPlugin = plugin.getServer().getPluginManager().getPlugin("MythicMobs");
+        var modelPlugin = plugin.getServer().getPluginManager().getPlugin("ModelEngine");
+        if (mythicPlugin == null || !mythicPlugin.isEnabled() || modelPlugin == null || !modelPlugin.isEnabled()) return null;
+
+        String customId = switch (mobId) {
+            case "cursed-zombie" -> "halloween_cursed_zombie";
+            case "gravekeeper" -> "halloween_gravekeeper";
+            case "blood-spider" -> "halloween_blood_spider";
+            case "pumpkin-wraith" -> "halloween_pumpkin_wraith";
+            case "hex-witch" -> "halloween_hex_witch";
+            default -> null;
+        };
+        if (customId == null) return null;
+
+        try {
+            Class<?> mythicBukkitClass = Class.forName("io.lumine.mythic.bukkit.MythicBukkit");
+            Object mythic = mythicBukkitClass.getMethod("inst").invoke(null);
+            Object manager = mythic.getClass().getMethod("getMobManager").invoke(mythic);
+            Method getter = manager.getClass().getMethod("getMythicMob", String.class);
+            Object maybeMob = getter.invoke(manager, customId);
+            Object mythicMob = maybeMob instanceof Optional<?> optional ? optional.orElse(null) : maybeMob;
+            if (mythicMob == null) return null;
+
+            Object adaptedLocation = adaptMythicLocation(location);
+            if (adaptedLocation == null) {
+                warnCustomModelOnce("location-adapter",
+                        "MythicMobs API location adapter was not found; special mobs will use vanilla fallback entities.");
+                return null;
+            }
+
+            Method spawnMethod = null;
+            for (Method method : mythicMob.getClass().getMethods()) {
+                if (!method.getName().equals("spawn") || method.getParameterCount() != 2) continue;
+                Class<?>[] parameters = method.getParameterTypes();
+                if (!parameters[0].isInstance(adaptedLocation)) continue;
+                if (parameters[1] != double.class && parameters[1] != Double.class) continue;
+                spawnMethod = method;
+                break;
+            }
+            if (spawnMethod == null) {
+                warnCustomModelOnce("spawn-method",
+                        "MythicMobs API does not expose spawn(location, level); special mobs will use vanilla fallback entities.");
+                return null;
+            }
+
+            Object activeMob = spawnMethod.invoke(mythicMob, adaptedLocation, 1.0D);
+            if (activeMob == null) return null;
+            Object entityWrapper = activeMob.getClass().getMethod("getEntity").invoke(activeMob);
+            Object bukkitEntity = entityWrapper.getClass().getMethod("getBukkitEntity").invoke(entityWrapper);
+            return bukkitEntity instanceof LivingEntity living ? living : null;
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException exception) {
+            warnCustomModelOnce(exception.getClass().getName(),
+                    "Could not spawn a Halloween MythicMob through the API (" + exception.getClass().getSimpleName()
+                            + "); keeping vanilla fallback special mobs available.");
+            return null;
+        }
+    }
+
+    private Object adaptMythicLocation(Location location) throws ReflectiveOperationException {
+        String[] adapters = {
+                "io.lumine.mythic.bukkit.BukkitAdapter",
+                "io.lumine.mythic.bukkit.adapters.BukkitAdapter"
+        };
+        for (String adapterName : adapters) {
+            try {
+                Class<?> adapter = Class.forName(adapterName);
+                for (Method method : adapter.getMethods()) {
+                    if (!Modifier.isStatic(method.getModifiers()) || !method.getName().equals("adapt")
+                            || method.getParameterCount() != 1) continue;
+                    if (method.getParameterTypes()[0].isAssignableFrom(location.getClass())) {
+                        return method.invoke(null, location);
+                    }
+                }
+            } catch (ClassNotFoundException ignored) {
+                // Try the alternative package used by another MythicMobs API release.
+            }
+        }
+        return null;
+    }
+
+    private void warnCustomModelOnce(String key, String message) {
+        if (warnedCustomModelIssues.add(key)) plugin.getLogger().warning(message);
     }
 
     private void configureSpecialMob(LivingEntity entity, String mobId) {
@@ -410,6 +565,34 @@ public final class HalloweenMobManager implements Listener {
 
         if (entity instanceof Creeper creeper) {
             creeper.setExplosionRadius(Math.max(1, section.getInt("explosion-radius", 3)));
+        }
+        playMobSpawnVfx(entity, mobId);
+    }
+
+    private void playMobSpawnVfx(LivingEntity entity, String mobId) {
+        Location effect = entity.getLocation().clone().add(0.0D, 0.85D, 0.0D);
+        switch (mobId) {
+            case "cursed-zombie" -> {
+                entity.getWorld().spawnParticle(Particle.SOUL, effect, 18, 0.35D, 0.55D, 0.35D, 0.035D);
+                entity.getWorld().spawnParticle(Particle.ASH, effect, 12, 0.3D, 0.35D, 0.3D, 0.01D);
+            }
+            case "gravekeeper" -> {
+                entity.getWorld().spawnParticle(Particle.SOUL, effect, 22, 0.4D, 0.6D, 0.4D, 0.04D);
+                entity.getWorld().spawnParticle(Particle.REVERSE_PORTAL, effect, 14, 0.35D, 0.5D, 0.35D, 0.02D);
+            }
+            case "blood-spider" -> {
+                entity.getWorld().spawnParticle(Particle.CRIT, effect, 20, 0.25D, 0.25D, 0.25D, 0.12D);
+                entity.getWorld().spawnParticle(Particle.CRIMSON_SPORE, effect, 14, 0.3D, 0.25D, 0.3D, 0.01D);
+            }
+            case "pumpkin-wraith" -> {
+                entity.getWorld().spawnParticle(Particle.FLAME, effect, 22, 0.3D, 0.45D, 0.3D, 0.025D);
+                entity.getWorld().spawnParticle(Particle.ASH, effect, 16, 0.35D, 0.35D, 0.35D, 0.01D);
+            }
+            case "hex-witch" -> {
+                entity.getWorld().spawnParticle(Particle.WITCH, effect, 20, 0.35D, 0.55D, 0.35D, 0.05D);
+                entity.getWorld().spawnParticle(Particle.PORTAL, effect, 14, 0.3D, 0.4D, 0.3D, 0.08D);
+            }
+            default -> { }
         }
     }
 

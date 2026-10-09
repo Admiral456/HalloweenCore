@@ -28,6 +28,8 @@ jobs:
         run: python3 scripts/validate_halloween_assets.py
       - name: Validate Vampire King model
         run: python3 scripts/validate_vampire_model.py
+      - name: Validate custom Halloween mob models
+        run: python3 scripts/validate_special_mob_models.py
       - name: Build
         run: mvn -B clean package
       - name: Package ItemsAdder content
@@ -40,6 +42,23 @@ jobs:
         with:
           name: WarriorLand-Halloween-ItemsAdder
           path: target/WarriorLand-Halloween-ItemsAdder.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Package special mob models
+        run: |
+          mkdir -p target/halloween-mob-pack/MythicMobs/Mobs target/halloween-mob-pack/ModelEngine/blueprints
+          cp mythicmobs/mobs/halloween-special-mobs.yml target/halloween-mob-pack/MythicMobs/Mobs/
+          cp mythicmobs/models/halloween_*.bbmodel target/halloween-mob-pack/ModelEngine/blueprints/
+          cp mythicmobs/models/halloween_*.png target/halloween-mob-pack/ModelEngine/blueprints/
+          cp mythicmobs/README.md target/halloween-mob-pack/README.txt
+          cd target/halloween-mob-pack
+          zip -qr ../HalloweenCore-Special-Mobs-ModelEngine.zip .
+          unzip -t ../HalloweenCore-Special-Mobs-ModelEngine.zip
+      - name: Upload special mob ModelEngine pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Special-Mobs-ModelEngine
+          path: target/HalloweenCore-Special-Mobs-ModelEngine.zip
           if-no-files-found: error
           retention-days: 14
       - name: Upload plugin JAR

@@ -1,0 +1,93 @@
+# HalloweenCore custom mob definitions.
+# Install in plugins/MythicMobs/Mobs/ and run /mm reload.
+# Their models are in the companion HalloweenCore-Special-Mobs-ModelEngine.zip.
+halloween_cursed_zombie:
+  Type: ZOMBIE
+  Display: '&2&lPROKLETÝ ZOMBIE'
+  Health: 36
+  Damage: 6
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: true
+    PreventSunburn: true
+    MovementSpeed: 0.25
+    KnockbackResistance: 0.15
+    PreventRenaming: true
+  Skills:
+  - model{mid=halloween_cursed_zombie;n=false} @self ~onSpawn
+  - state{mid=halloween_cursed_zombie;s=idle;} @self ~onSpawn
+  - state{mid=halloween_cursed_zombie;s=attack} @self ~onAttack
+
+halloween_gravekeeper:
+  Type: SKELETON
+  Display: '&b&lHROBNÍK'
+  Health: 34
+  Damage: 7
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: true
+    MovementSpeed: 0.24
+    KnockbackResistance: 0.25
+    PreventRenaming: true
+  Skills:
+  - model{mid=halloween_gravekeeper;n=false} @self ~onSpawn
+  - state{mid=halloween_gravekeeper;s=idle;} @self ~onSpawn
+  - state{mid=halloween_gravekeeper;s=attack} @self ~onAttack
+
+halloween_blood_spider:
+  Type: SPIDER
+  Display: '&4&lKRVAVÝ PAVOUK'
+  Health: 30
+  Damage: 6
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: true
+    MovementSpeed: 0.32
+    KnockbackResistance: 0.2
+    PreventRenaming: true
+  Skills:
+  - model{mid=halloween_blood_spider;n=false} @self ~onSpawn
+  - state{mid=halloween_blood_spider;s=idle;} @self ~onSpawn
+  - state{mid=halloween_blood_spider;s=attack} @self ~onAttack
+
+halloween_pumpkin_wraith:
+  Type: CREEPER
+  Display: '&6&lDÝŇOVÝ PŘÍZRAK'
+  Health: 42
+  Damage: 8
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: true
+    MovementSpeed: 0.24
+    KnockbackResistance: 0.35
+    PreventRenaming: true
+  Skills:
+  - model{mid=halloween_pumpkin_wraith;n=false} @self ~onSpawn
+  - state{mid=halloween_pumpkin_wraith;s=idle;} @self ~onSpawn
+  - state{mid=halloween_pumpkin_wraith;s=attack} @self ~onAttack
+
+halloween_hex_witch:
+  Type: WITCH
+  Display: '&5&lHEXOVÁ ČARODĚJKA'
+  Health: 32
+  Damage: 6
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: true
+    MovementSpeed: 0.24
+    KnockbackResistance: 0.1
+    PreventRenaming: true
+  Skills:
+  - model{mid=halloween_hex_witch;n=false} @self ~onSpawn
+  - state{mid=halloween_hex_witch;s=idle;} @self ~onSpawn
+  - state{mid=halloween_hex_witch;s=attack} @self ~onAttack

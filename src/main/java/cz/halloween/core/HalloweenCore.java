@@ -49,6 +49,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
+        migrateHalloweenEventOverhaul();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -148,6 +149,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         reloadConfig();
         migrateAtmosphereVolume();
         migrateCrimsonWardenShopDefaults();
+        migrateCrimsonWardenArmorStats();
+        migrateHalloweenEventOverhaul();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -324,6 +327,86 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Crimson Warden armor stats and shop lore migrated once; other server settings were preserved.");
         } catch (IOException ex) {
             getLogger().warning("Crimson Warden armor-stat migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+
+    /**
+     * Apply the intentional Halloween event overhaul to existing installations once.
+     * It updates event timings/balance/cues and world decoration density, while keeping
+     * the administrator's global event enable switch, arena coordinates, prices and
+     * all unrelated gameplay settings intact.
+     */
+    private void migrateHalloweenEventOverhaul() {
+        if (getConfig().getBoolean("migrations.halloween-event-overhaul-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml is unavailable; Halloween event migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+
+            String eventsRoot = "random-events.";
+            for (String key : List.of(
+                    "start-delay-seconds",
+                    "interval-minutes.min",
+                    "interval-minutes.max",
+                    "duration-minutes",
+                    "surge-interval-seconds",
+                    "max-event-mobs",
+                    "event-mobs-enabled",
+                    "invasion-mobs-per-surge",
+                    "blood-moon-damage-multiplier",
+                    "special-mob-chance-multiplier")) {
+                String sourcePath = eventsRoot + key;
+                if (defaults.contains(sourcePath)) {
+                    getConfig().set(sourcePath, defaults.get(sourcePath));
+                }
+            }
+
+            for (String id : List.of(
+                    "soulstorm",
+                    "witching-hour",
+                    "cursed-harvest",
+                    "blood-moon-invasion",
+                    "pumpkin-apocalypse",
+                    "graveyard-rising")) {
+                String sourcePath = eventsRoot + "types." + id;
+                ConfigurationSection source = defaults.getConfigurationSection(sourcePath);
+                if (source == null) continue;
+                String targetPath = sourcePath;
+                for (String key : List.of("name", "sound", "start-message", "end-message")) {
+                    if (source.contains(key)) {
+                        getConfig().set(targetPath + "." + key, source.get(key));
+                    }
+                }
+                ConfigurationSection multipliers = source.getConfigurationSection("multipliers");
+                if (multipliers != null) {
+                    for (String key : multipliers.getKeys(false)) {
+                        getConfig().set(targetPath + ".multipliers." + key, multipliers.get(key));
+                    }
+                }
+            }
+
+            for (String key : List.of(
+                    "pumpkins-per-chunk",
+                    "cobwebs-per-chunk",
+                    "red-candles-per-chunk",
+                    "attempts-per-placement")) {
+                String sourcePath = "world-decorations." + key;
+                if (defaults.contains(sourcePath)) {
+                    getConfig().set(sourcePath, defaults.get(sourcePath));
+                }
+            }
+            getConfig().set("special-mobs.custom-models.enabled",
+                    defaults.getBoolean("special-mobs.custom-models.enabled", true));
+            getConfig().set("migrations.halloween-event-overhaul-v1", true);
+            saveConfig();
+            getLogger().info("Halloween event overhaul applied once: six event definitions, denser Blood Moon waves, 3x hostile-mob damage and refreshed world decorations; unrelated settings were preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Halloween event overhaul migration failed: " + ex.getClass().getSimpleName());
         }
     }
 

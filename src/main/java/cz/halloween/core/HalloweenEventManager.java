@@ -4,6 +4,11 @@ import org.bukkit.Bukkit;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.Particle;
+import org.bukkit.SoundCategory;
+import org.bukkit.block.Block;
+import org.bukkit.block.data.Ageable;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
@@ -66,7 +71,7 @@ public final class HalloweenEventManager {
 
         String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
         if (eventId.isEmpty() || eventId.equals("random")) {
-            String[] events = {"soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion"};
+            String[] events = getKnownEventIds().toArray(String[]::new);
             eventId = events[ThreadLocalRandom.current().nextInt(events.length)];
         }
         if (!getKnownEventIds().contains(eventId)) return false;
@@ -81,7 +86,7 @@ public final class HalloweenEventManager {
     }
 
     public java.util.List<String> getKnownEventIds() {
-        return java.util.List.of("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion");
+        return java.util.List.of("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising");
     }
 
     public void stop() {
@@ -123,8 +128,8 @@ public final class HalloweenEventManager {
             return;
         }
         int phase = getGlobalPhase();
-        int baseMin = Math.max(1, plugin.getConfig().getInt("random-events.interval-minutes.min", 20));
-        int baseMax = Math.max(baseMin, plugin.getConfig().getInt("random-events.interval-minutes.max", 35));
+        int baseMin = Math.max(1, plugin.getConfig().getInt("random-events.interval-minutes.min", 15));
+        int baseMax = Math.max(baseMin, plugin.getConfig().getInt("random-events.interval-minutes.max", 24));
         int min = Math.max(8, baseMin - phase * 2);
         int max = Math.max(min, baseMax - phase * 2);
         int minutes = ThreadLocalRandom.current().nextInt(min, max + 1);
@@ -132,7 +137,7 @@ public final class HalloweenEventManager {
     }
 
     private void startRandomEvent() {
-        String[] events = {"soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion"};
+        String[] events = getKnownEventIds().toArray(String[]::new);
         String selected = events[ThreadLocalRandom.current().nextInt(events.length)];
         beginEvent(selected);
     }
@@ -173,12 +178,14 @@ public final class HalloweenEventManager {
     }
 
     private void playEventSound() {
-        String configured = plugin.getConfig().getString("random-events.sound", "");
+        String eventPath = "random-events.types." + activeEventId + ".sound";
+        String configured = plugin.getConfig().getString(eventPath,
+                plugin.getConfig().getString("random-events.sound", ""));
         if (configured == null || configured.isBlank()) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
             try {
-                player.playSound(player.getLocation(), configured.toLowerCase(Locale.ROOT), 1.0f, 0.65f);
+                player.playSound(player.getLocation(), configured.toLowerCase(Locale.ROOT), SoundCategory.AMBIENT, 0.9f, 1.0f);
             } catch (Exception ignored) {
                 player.playSound(player.getLocation(), Sound.ENTITY_WITCH_AMBIENT, 1.0f, 0.7f);
             }
@@ -186,7 +193,8 @@ public final class HalloweenEventManager {
     }
 
     private void runActiveEventEffects(long now) {
-        long surgeIntervalSeconds = Math.max(10L, plugin.getConfig().getLong("random-events.surge-interval-seconds", 45L));
+        long surgeIntervalSeconds = Math.max(10L,
+                plugin.getConfig().getLong("random-events.surge-interval-seconds", 25L));
         if (now - lastSurgeAt < surgeIntervalSeconds * 1000L) return;
         if (Bukkit.getOnlinePlayers().isEmpty()) return;
 
@@ -197,43 +205,117 @@ public final class HalloweenEventManager {
         if (players.length == 0) return;
         Player target = players[ThreadLocalRandom.current().nextInt(players.length)];
 
-        if (activeEventId.equalsIgnoreCase("soulstorm")) {
-            if (plugin.getMobManager().spawnEventMob(target)) {
-                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().add(0, 1, 0), 16, 1.0, 1.0, 1.0, 0.02);
-                target.sendMessage(plugin.color("&5Duše se shlukují... &7Nedaleko se objevil prokletý lovec."));
+        switch (activeEventId.toLowerCase(Locale.ROOT)) {
+            case "soulstorm" -> {
+                int spawned = spawnWave(target, new String[]{"cursed-zombie", "gravekeeper", "blood-spider"}, 3);
+                target.getWorld().spawnParticle(Particle.SOUL, target.getLocation().clone().add(0, 1.0D, 0),
+                        38, 1.8D, 1.1D, 1.8D, 0.04D);
+                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().clone().add(0, 0.5D, 0),
+                        16, 1.3D, 0.5D, 1.3D, 0.025D);
+                if (spawned > 0) target.sendMessage(plugin.color("&5Duše se shlukují... &7Z mlhy vyrazilo několik prokletých lovců."));
             }
-        } else if (activeEventId.equalsIgnoreCase("witching-hour")) {
-            if (plugin.getMobManager().spawnEventMob(target)) {
-                target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().add(0, 1, 0), 18, 1.0, 1.0, 1.0, 0.05);
-                target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7něco se k tobě blíží."));
+            case "witching-hour" -> {
+                int spawned = spawnWave(target, new String[]{"hex-witch", "blood-spider", "cursed-zombie"}, 3);
+                target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().clone().add(0, 1.0D, 0),
+                        32, 1.4D, 1.0D, 1.4D, 0.08D);
+                target.getWorld().spawnParticle(Particle.PORTAL, target.getLocation().clone().add(0, 0.7D, 0),
+                        28, 1.2D, 0.7D, 1.2D, 0.15D);
+                if (ThreadLocalRandom.current().nextBoolean()) {
+                    target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 35, 0, true, false, false));
+                    target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7čarodějnice ti na okamžik zastřela zrak."));
+                } else if (spawned > 0) {
+                    target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7Z temnoty se vynořila lovící smečka."));
+                }
             }
-        } else if (activeEventId.equalsIgnoreCase("cursed-harvest")) {
-            target.getWorld().spawnParticle(Particle.COMPOSTER, target.getLocation().clone().add(0, 1, 0), 14, 0.8, 0.6, 0.8, 0.03);
-        } else if (activeEventId.equalsIgnoreCase("blood-moon-invasion")) {
-            // The captain enters during the final two minutes. Spawn it before later waves fill the cap.
-            if (!invasionCaptainSpawned && activeUntil - now <= 120_000L
-                    && plugin.getMobManager().spawnInvasionCaptain(target)) {
-                invasionCaptainSpawned = true;
-                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
-                        target.getLocation().clone().add(0, 1.0D, 0), 70, 1.8D, 1.2D, 1.8D, 0.045D);
-                target.playSound(target.getLocation(), Sound.ENTITY_WARDEN_ROAR, 0.85f, 0.55f);
-                Bukkit.broadcastMessage(plugin.color("&4&lKRVAVÝ MĚSÍC &8» &cKapitán invaze se probudil! Silný nepřítel se objevil poblíž jednoho z hráčů."));
+            case "cursed-harvest" -> {
+                int cropsGrown = empowerNearbyCrops(target, 8, 5);
+                int spawned = spawnWave(target, new String[]{"blood-spider", "pumpkin-wraith"}, 2);
+                target.getWorld().spawnParticle(Particle.COMPOSTER, target.getLocation().clone().add(0, 1.0D, 0),
+                        24, 1.5D, 0.8D, 1.5D, 0.04D);
+                target.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().clone().add(0, 1.0D, 0),
+                        14, 1.1D, 0.7D, 1.1D, 0.02D);
+                if (cropsGrown > 0) target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Temná magie popohnala růst okolních plodin."));
+                if (spawned > 0) target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Ze záhonů vylézají prokletí strážci."));
             }
+            case "blood-moon-invasion" -> {
+                if (!invasionCaptainSpawned && activeUntil - now <= 120_000L
+                        && plugin.getMobManager().spawnInvasionCaptain(target)) {
+                    invasionCaptainSpawned = true;
+                    target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
+                            target.getLocation().clone().add(0, 1.0D, 0), 70, 1.8D, 1.2D, 1.8D, 0.045D);
+                    target.playSound(target.getLocation(), org.bukkit.Sound.ENTITY_WARDEN_ROAR,
+                            SoundCategory.AMBIENT, 0.85f, 0.55f);
+                    Bukkit.broadcastMessage(plugin.color("&4&lKRVAVÝ MĚSÍC &8» &cKapitán invaze se probudil! Silný nepřítel se objevil poblíž jednoho z hráčů."));
+                }
 
-            int waveSize = Math.max(1, Math.min(4,
-                    plugin.getConfig().getInt("random-events.invasion-mobs-per-surge", 2)));
-            int spawned = 0;
-            for (int i = 0; i < waveSize; i++) {
-                if (!plugin.getMobManager().spawnEventMob(target)) break;
-                spawned++;
-            }
-            if (spawned > 0) {
+                int waveSize = Math.max(1, Math.min(8,
+                        plugin.getConfig().getInt("random-events.invasion-mobs-per-surge", 4)));
+                int spawned = spawnWave(target,
+                        new String[]{"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"},
+                        waveSize);
                 target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
-                        target.getLocation().clone().add(0, 1.0D, 0), 24, 1.2D, 0.9D, 1.2D, 0.025D);
+                        target.getLocation().clone().add(0, 1.0D, 0), 34, 1.5D, 1.0D, 1.5D, 0.035D);
+                target.getWorld().spawnParticle(Particle.ASH,
+                        target.getLocation().clone().add(0, 1.0D, 0), 30, 1.4D, 0.8D, 1.4D, 0.015D);
+                if (spawned > 0) target.sendMessage(plugin.color("&4Krvavý měsíc &8» &cDalší vlna nepřátel útočí! Veškerá monstra udělují trojnásobné poškození."));
+            }
+            case "pumpkin-apocalypse" -> {
+                int spawned = spawnWave(target, new String[]{"pumpkin-wraith", "pumpkin-wraith", "cursed-zombie"}, 5);
+                target.getWorld().spawnParticle(Particle.FLAME, target.getLocation().clone().add(0, 1.0D, 0),
+                        48, 1.8D, 1.0D, 1.8D, 0.035D);
+                target.getWorld().spawnParticle(Particle.LAVA, target.getLocation().clone().add(0, 0.5D, 0),
+                        12, 1.4D, 0.5D, 1.4D, 0.0D);
+                target.getWorld().spawnParticle(Particle.ASH, target.getLocation().clone().add(0, 1.0D, 0),
+                        25, 1.3D, 0.8D, 1.3D, 0.02D);
+                if (spawned > 0) target.sendMessage(plugin.color("&6&lDÝŇOVÁ APOKALYPSA &8» &7Z pukajících dýní vyrazila další vlna přízraků."));
+            }
+            case "graveyard-rising" -> {
+                int spawned = spawnWave(target, new String[]{"gravekeeper", "gravekeeper", "cursed-zombie", "blood-spider"}, 4);
+                target.getWorld().spawnParticle(Particle.SOUL, target.getLocation().clone().add(0, 0.3D, 0),
+                        44, 1.8D, 0.15D, 1.8D, 0.025D);
+                target.getWorld().spawnParticle(Particle.ASH, target.getLocation().clone().add(0, 1.0D, 0),
+                        22, 1.2D, 0.8D, 1.2D, 0.015D);
+                if (spawned > 0) target.sendMessage(plugin.color("&8&lHŘBITOV VSTÁVÁ &8» &7Náhrobky se otřásají a mrtví vstávají ze země."));
+            }
+            default -> {
+                // Unknown custom event IDs are ignored safely; known IDs are validated before activation.
             }
         }
-
         lastSurgeAt = now;
+    }
+
+    private int spawnWave(Player target, String[] mobIds, int count) {
+        int spawned = 0;
+        if (target == null || mobIds == null || mobIds.length == 0) return 0;
+        for (int i = 0; i < count; i++) {
+            String mobId = mobIds[ThreadLocalRandom.current().nextInt(mobIds.length)];
+            if (plugin.getMobManager().spawnEventMob(target, mobId)) spawned++;
+        }
+        return spawned;
+    }
+
+    /**
+     * The harvest surge makes the event visible in the world without replacing blocks:
+     * it advances a few nearby crop growth stages and summons guardians from the fields.
+     */
+    private int empowerNearbyCrops(Player target, int radius, int maximum) {
+        if (target == null || target.getWorld() == null) return 0;
+        int grown = 0;
+        for (int dx = -radius; dx <= radius && grown < maximum; dx++) {
+            for (int dz = -radius; dz <= radius && grown < maximum; dz++) {
+                if (dx * dx + dz * dz > radius * radius) continue;
+                int x = target.getLocation().getBlockX() + dx;
+                int z = target.getLocation().getBlockZ() + dz;
+                if (!target.getWorld().isChunkLoaded(x >> 4, z >> 4)) continue;
+                Block crop = target.getWorld().getHighestBlockAt(x, z);
+                if (!(crop.getBlockData() instanceof Ageable ageable)) continue;
+                if (ageable.getAge() >= ageable.getMaximumAge()) continue;
+                ageable.setAge(Math.min(ageable.getMaximumAge(), ageable.getAge() + 1));
+                crop.setBlockData(ageable, false);
+                grown++;
+            }
+        }
+        return grown;
     }
 
     public int getGlobalPhase() {

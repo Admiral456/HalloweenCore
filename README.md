@@ -106,10 +106,10 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 
 ## Halloween hudba a obloha
 
-- `scripts/generate_halloween_audio.py` stáhne skladbu `Spooky Fester` od Eldritch Grim z OpenGameArt (licence CC0), převede ji na mono OGG/Vorbis a vygeneruje originální 5sekundový event cue. Vyžaduje přístup k internetu, Python standard library a `ffmpeg`; nastaví také přesnou délku ambientní smyčky podle výsledného OGG souboru.
+- `scripts/generate_halloween_audio.py` stáhne skladbu `Spooky Fester` od Eldritch Grim z OpenGameArt (licence CC0), převede ji na mono OGG/Vorbis a vygeneruje šest originálních, odlišných eventových znělek pro všech 6 eventů. Vyžaduje přístup k internetu, Python standard library a `ffmpeg`; při buildu se přesná délka ambientní smyčky zapíše do konfigurace.
 - Interval přehrávání se při sestavení nastavuje přes `atmosphere.loop-milliseconds` podle skutečné délky `Spooky Fester`. Hudba se přehrává jako zdroj navázaný na hráče v kategorii AMBIENT, aby se nezastavila spolu s vanilla hudbou.
 - Zdroj hudby: [Spooky Fester — Eldritch Grim](https://opengameart.org/content/spooky-fester), CC0. OpenGameArt uvádí, že uvedení autora není povinné; zdroj zde přesto evidujeme.
-- ItemsAdder zvuky jsou registrované v `itemsadder/contents/warriorland_halloween/configs/sounds.yml`. Plugin používá `warriorland_halloween:haunted_theme` pro atmosféru a `warriorland_halloween:event_sting` na začátku náhodného eventu.
+- ItemsAdder zvuky jsou registrované v `itemsadder/contents/warriorland_halloween/configs/sounds.yml`. Ambient používá `warriorland_halloween:haunted_theme`, šest eventů má samostatné ID a `event_sting` zůstává jako obecná znělka.
 - Ambientní hudba se spouští hned po připojení a opakuje se samostatně každému hráči podle délky skladby; při odchodu nebo vypnutí eventu se jeho přehrávací úloha zruší, aby nevznikala překrývající se hudba.
 - CI vytvoří ke stažení artefakt `WarriorLand-Halloween-ItemsAdder.zip` včetně zvuků.
 - Shader oblohy je v `itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh`; zachovává základní cyklus dne/noci a přidává oranžovo-karmínový filtr.
@@ -118,12 +118,26 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - Custom shop obsahuje čtyři kusy zbroje Krvavého strážce. Každý používá vlastní PNG ikonu a společné 64×32 armor layer_1/layer_2 textury, netheritový základ, brnění 6/12/9/6 podle kusu a vyšší výdrž; běžné enchantování zůstává povolené. Doplňuje je vlastní meč, krumpáč, sekera, lopatka a motyka s transparentními pixel-art ikonami, vyšší výdrží a posílenými atributy; všechny používají netheritové materiály a enchanty nejsou blokované.
 - Pokud se pack hráčům vůbec neukáže, spusť `/iainfo` a ověř, že ItemsAdder hlásí dosažitelnou URL resource packu. `/iazip` pouze sestaví ZIP; doručování vyžaduje funkční hosting v `plugins/ItemsAdder/config.yml`. Na ItemsAdder 4.0.17+ lze použít `simple_self_host`; u starších verzí je třeba podporovaný self-host s otevřeným portem nebo externí hosting. Nezaměňuj tento serverový pack s ručně přidávaným packem v seznamu Minecraftu.
 
-## Eventy, test bosse a dekorace světa
+## Eventy, speciální mobové a dekorace světa
 
-- `/halloween on` aktivuje atmosféru a naplánuje první náhodný event přibližně za 30 sekund; další eventy se spouštějí v běžném intervalovém nastavení.
-- `/halloween event` zobrazuje stav; admin může spustit `/halloween event start random` nebo určit `soulstorm`, `witching-hour`, `cursed-harvest` či `blood-moon-invasion`. `/halloween event stop` event ukončí.
+Náhodné eventy se spouštějí přibližně 15–24 minut od sebe a trvají 6 minut. Po zapnutí Halloween systému přijde první event po krátké prodlevě.
+
+| Event | Co se během něj děje |
+|---|---|
+| **Duševní bouře** | Vlny prokletých zombie, hrobníků a krvavých pavouků; duševní částice; 2× odměna za lov a 1,5× za rybaření. |
+| **Čarodějnická hodina** | Hexové čarodějky a pavouci útočí ze stínů; může se objevit efekt Darkness; zvýšené odměny za těžbu, lov a rybaření. |
+| **Prokletá sklizeň** | Temná magie urychlí několik okolních plodin a ze záhonů vyrazí speciální mobové; 3× odměna za sklizeň. |
+| **Krvavý měsíc – invaze** | Silnější vlny až 4 nepřátel každých 25 sekund, nejvýše 48 eventových mobů na svět, unikátní varovné částice, Kapitán invaze v závěrečné části a **3× poškození od nepřátelských monster**. |
+| **Dýňová apokalypsa** | Husté vlny dýňových přízraků, plameny, popel a lávové částice; 2,5× odměna za lov. |
+| **Hřbitov vstává** | Hrobníci, prokleté zombie a pavouci se objevují ve vlnách z duševní mlhy; 2,25× odměna za lov. |
+
+Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/halloween event`, `/halloween event start <id>` a `/halloween event stop` umožňují správcům ověřit jednotlivé eventy. Dostupné ID jsou `soulstorm`, `witching-hour`, `cursed-harvest`, `blood-moon-invasion`, `pumpkin-apocalypse` a `graveyard-rising`.
+
+Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
+
+Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
+
 - `/halloween boss test` vyvolá testovacího Krále upírů bez globálního progressu, odemčení finále a model-ready gate. Vyžaduje uložený střed arény a funkční MythicMobs mob `vampire-king`; testovací zabití nedává odměny ani neoznačí finále za splněné.
-- Při zapnutém eventu se při načítání chunků na přirozeném terénu postupně objeví dýně, jack-o-lanterny a ojedinělé pavučiny. Jednotlivé chunky se označí, aby se dekorace při restartu neopakovaly. Dekorace nepřepisují existující bloky, ale na přírodně vypadající trávě u staveb je vhodné zkontrolovat výsledek.
 
 ## Návod: aréna, obchod a resource pack
 
@@ -204,6 +218,23 @@ Výstup:
 
 `target/HalloweenCore.jar`
 
+
+## Speciální mobové: modely a resource pack
+
+Zdrojové Blockbench modely a externí atlasy pro speciální moby jsou v `mythicmobs/models/halloween_*.bbmodel` a `mythicmobs/models/halloween_*.png`. Kontroluje je `python3 scripts/validate_special_mob_models.py`; CI zároveň balí definice a blueprinty do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`.
+
+Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj blueprinty přes ModelEngine, spusť `/meg reload models` a `/mm reload`. Do stávajícího seznamu `merge_other_plugins_resourcepacks_folders` v konfiguraci ItemsAdderu přidej cestu `ModelEngine/resource pack`, aby se modelové textury dostaly do stejného klientského packu. Poté spusť `/iazip`, ověř `/iainfo`, přijmi pack na klientovi a znovu se připoj.
+
+## Diagnostika hudby a klientského packu
+
+Resource pack nahrazuje 31 standardních událostí **hudby na pozadí** Minecraftu tichým OGG a plugin navíc jednou za sekundu zastavuje kategorii `MUSIC`. To není možné ověřit pouze kompilací: klient musí stáhnout a přijmout nejnovější pack. Hudební disky/jukebox a běžné zvukové efekty se tímto seznamem nepotlačují.
+
+- Ověř `/halloween debug` a `/iainfo`.
+- Ve hře zkus `/playsound minecraft:music.game master @s` — se správným packem by se tato hudební událost měla ozvat potichu/nebýt slyšet.
+- Ověř `/playsound warriorland_halloween:haunted_theme ambient @s` a `/playsound warriorland_halloween:blood_moon_rise ambient @s`.
+- Po změně zvuků proveď `/iazip`, nech klienta přijmout změněný resource pack a připoj se znovu.
+
+CI dokládá strukturu PNG, OGG, zvukových registrací, modelů a JAR build; skutečné stažení packu, rendering ModelEngine a zastavení vanilla hudby je nutné potvrdit na živém Hostify serveru.
 
 ## Skutečný model Krále upírů
 

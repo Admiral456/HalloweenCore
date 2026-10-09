@@ -281,6 +281,9 @@ special-mobs:
   chance: 0.04
   phase-bonus-chance: 0.005
   bonus-fragments: 12
+  custom-models:
+    enabled: true
+    # If MythicMobs/ModelEngine or a definition is missing, HalloweenCore keeps vanilla fallbacks.
   relic-drop-chance: 0.12
   relic-item-id: "warriorland_halloween:cursed_candy"
   map-drop-chance: 0.03
@@ -378,50 +381,76 @@ curse:
 
 random-events:
   enabled: true
-  # After /halloween on, make the first event visible after a short delay.
+  # /halloween on starts the first event after a short warning.
   start-delay-seconds: 30
   interval-minutes:
-    min: 20
-    max: 35
-  duration-minutes: 5
-  surge-interval-seconds: 45
-  max-event-mobs: 12
+    min: 15
+    max: 24
+  duration-minutes: 6
+  surge-interval-seconds: 25
+  max-event-mobs: 48
   event-mobs-enabled: true
-  # Number of special mobs in each Blood Moon invasion wave (1–4).
-  invasion-mobs-per-surge: 2
-  special-mob-chance-multiplier: 1.50
+  # Blood Moon is intentionally more intense, but bounded to avoid runaway entity counts.
+  invasion-mobs-per-surge: 4
+  blood-moon-damage-multiplier: 3.0
+  special-mob-chance-multiplier: 2.0
   sound: "warriorland_halloween:event_sting"
   types:
     soulstorm:
       name: "Duševní bouře"
-      start-message: "&6&lHALLOWEEN &8» &dDuše mrtvých se probudily. Po dobu &e%duration% minut &ddostáváš zvýšený zisk fragmentů z lovu."
-      end-message: "&6&lHALLOWEEN &8» &7Duševní bouře utichla."
+      sound: "warriorland_halloween:soulstorm_sting"
+      start-message: "&6&lDUŠEVNÍ BOUŘE &8» &dZávoj mezi světy se trhá! Lovci duší vyráží na hráče; lov a rybaření přináší více fragmentů."
+      end-message: "&6&lDUŠEVNÍ BOUŘE &8» &7Duše se vrací do mlhy."
       multipliers:
         mob-kill: 2.0
         fishing: 1.5
 
     witching-hour:
       name: "Čarodějnická hodina"
-      start-message: "&6&lHALLOWEEN &8» &5Čarodějnická hodina začala. &fTěžba &5a lov &fzískávají více fragmentů."
-      end-message: "&6&lHALLOWEEN &8» &7Čarodějnická hodina skončila."
+      sound: "warriorland_halloween:witching_sting"
+      start-message: "&5&lČARODĚJNICKÁ HODINA &8» &dČarodějnice rozsévají kletby a lovci číhají ze stínů. Těžba i lov mají vyšší odměny."
+      end-message: "&5&lČARODĚJNICKÁ HODINA &8» &7Kletby pomalu vyprchávají."
       multipliers:
         mining: 1.75
-        mob-kill: 1.5
+        mob-kill: 1.75
+        fishing: 1.25
 
     cursed-harvest:
       name: "Prokletá sklizeň"
-      start-message: "&6&lHALLOWEEN &8» &aPole jsou prokletá. &fSklizeň &azískává několikanásobně více fragmentů."
-      end-message: "&6&lHALLOWEEN &8» &7Prokletá sklizeň skončila."
+      sound: "warriorland_halloween:harvest_sting"
+      start-message: "&a&lPROKLETÁ SKLIZEŇ &8» &2Plodiny ožívají pod temnou magií. Sklízej, než pole pohltí prokletí strážci."
+      end-message: "&a&lPROKLETÁ SKLIZEŇ &8» &7Pole konečně utichla."
       multipliers:
         farming: 3.0
         fishing: 1.25
-    
+        mob-kill: 1.5
+
     blood-moon-invasion:
       name: "Krvavý měsíc — invaze"
-      start-message: "&4&lKRVAVÝ MĚSÍC &8» &cObloha zrudla! Vlny speciálních mobů se blíží. Zvládnete přežít invazi po dobu &e%duration% minut&c?"
-      end-message: "&4&lKRVAVÝ MĚSÍC &8» &7Poslední stíny ustoupily. Invaze skončila."
+      sound: "warriorland_halloween:blood_moon_rise"
+      start-message: "&4&lKRVAVÝ MĚSÍC &8» &cObloha zrudla! Přichází husté vlny speciálních monster a VŠECHNA monstra udělují 3× poškození. Přežijte invazi!"
+      end-message: "&4&lKRVAVÝ MĚSÍC &8» &7Poslední stíny ustoupily. Trojnásobné poškození skončilo."
       multipliers:
         mob-kill: 2.25
+        mining: 1.25
+
+    pumpkin-apocalypse:
+      name: "Dýňová apokalypsa"
+      sound: "warriorland_halloween:pumpkin_apocalypse"
+      start-message: "&6&lDÝŇOVÁ APOKALYPSA &8» &cDýně praskají a ze země šlehají plameny! Dýňoví přízraci přichází ve velkých skupinách."
+      end-message: "&6&lDÝŇOVÁ APOKALYPSA &8» &7Poslední dýně dohořely."
+      multipliers:
+        mob-kill: 2.5
+        farming: 1.5
+
+    graveyard-rising:
+      name: "Hřbitov vstává"
+      sound: "warriorland_halloween:graveyard_rising"
+      start-message: "&8&lHŘBITOV VSTÁVÁ &8» &7Z hrobů se valí mlha, hrobníci vstávají a každou chvíli se objeví další vlna nemrtvých."
+      end-message: "&8&lHŘBITOV VSTÁVÁ &8» &7Země se uzavřela a mrtví se vrací pod zem."
+      multipliers:
+        mob-kill: 2.25
+        mining: 1.5
 
 
 # Hlavní boss – specifikace je záměrně připravená před samotnou implementací.
@@ -496,10 +525,11 @@ bosses:
 
 world-decorations:
   enabled: true
-  # Add-only decoration: natural terrain chunks only; never replaces a solid block.
-  pumpkins-per-chunk: 3
-  cobwebs-per-chunk: 1
-  attempts-per-placement: 24
+  # Add-only decoration: safe natural ground only; never replaces a solid block or tile entity.
+  pumpkins-per-chunk: 5
+  cobwebs-per-chunk: 2
+  red-candles-per-chunk: 1
+  attempts-per-placement: 32
   chunks-per-tick: 2
 
 atmosphere:

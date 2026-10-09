@@ -204,11 +204,104 @@ def generate_event_sting() -> None:
     write_ogg("event_sting", normalize(output))
 
 
+def generate_custom_event_cue(
+    name: str,
+    duration: float,
+    seed: int,
+    bass_hz: float,
+    notes: tuple[tuple[float, float, float, float], ...],
+    brightness: float,
+) -> None:
+    """Create a distinct, self-contained cue so every event has its own audio identity."""
+    count = int(SAMPLE_RATE * duration)
+    rng = random.Random(seed)
+    partials = []
+    for i in range(26):
+        frequency = rng.uniform(bass_hz * 1.6, bass_hz * 22.0)
+        amplitude = rng.uniform(0.0012, 0.0065) / (1.0 + i * 0.055)
+        partials.append((frequency, amplitude, rng.uniform(0.0, TWO_PI)))
+    output: list[float] = []
+    for n in range(count):
+        t = n / SAMPLE_RATE
+        attack = smoothstep(t / 0.10)
+        tail = smoothstep((duration - t) / 0.36)
+        decay = math.exp(-t / (duration * 0.40))
+        low = (
+            0.72 * s(bass_hz, t, duration, 0.2)
+            + 0.31 * s(bass_hz * 1.48, t, duration, 1.1)
+            + 0.18 * s(bass_hz * 2.03, t, duration, 0.3)
+        ) * math.exp(-t / (duration * 0.33))
+        texture = sum(amplitude * s(freq, t, duration, phase)
+                      for freq, amplitude, phase in partials) * decay
+        transient = (
+            0.38 * s(bass_hz * 0.51, t, duration, 0.2)
+            + 0.18 * s(bass_hz * 0.77, t, duration, 0.6)
+        ) * math.exp(-t / 0.72) * smoothstep(t / 0.022)
+        melody = 0.0
+        for start, frequency, note_duration, gain in notes:
+            age = t - start
+            if 0.0 <= age < note_duration:
+                envelope = smoothstep(age / 0.035) * math.exp(-age / (note_duration / 2.45))
+                fundamental = s(frequency, t, duration, 0.4)
+                overtone = s(frequency * 2.01, t, duration, 1.2)
+                shimmer = s(frequency * 3.97, t, duration, 0.1)
+                melody += gain * envelope * (fundamental + 0.28 * overtone + brightness * 0.11 * shimmer)
+        grain = (rng.random() * 2.0 - 1.0) * 0.014 * math.exp(-t / 0.22)
+        output.append(math.tanh((low * 0.72 + texture * 2.0 + transient * 0.75 + melody + grain) * tail * attack))
+    write_ogg(name, normalize(output))
+
+
+def generate_event_cues() -> None:
+    # Dissonant soul chimes with a hollow low-end pulse.
+    generate_custom_event_cue(
+        "soulstorm_sting", 5.2, 20261001, 42.0,
+        ((0.15, 587.33, 3.0, 0.10), (0.50, 554.37, 3.0, 0.09),
+         (1.05, 740.00, 2.5, 0.07), (1.65, 415.30, 2.8, 0.075)),
+        0.42,
+    )
+    # Witching hour: tight, detuned notes and an unsettling rising accent.
+    generate_custom_event_cue(
+        "witching_sting", 4.8, 20261002, 51.9,
+        ((0.08, 311.13, 3.2, 0.11), (0.42, 369.99, 2.9, 0.09),
+         (0.88, 466.16, 3.1, 0.10), (1.45, 622.25, 2.6, 0.08)),
+        0.56,
+    )
+    # Harvest cue has a warmer, bell-like cadence over a dark drone.
+    generate_custom_event_cue(
+        "harvest_sting", 4.2, 20261003, 65.4,
+        ((0.12, 220.00, 2.7, 0.085), (0.48, 329.63, 2.7, 0.085),
+         (0.88, 440.00, 2.4, 0.075), (1.35, 523.25, 2.2, 0.065)),
+        0.20,
+    )
+    # Blood Moon has the heaviest drum-like hit and a long, ominous tail.
+    generate_custom_event_cue(
+        "blood_moon_rise", 7.0, 20261004, 34.65,
+        ((0.18, 196.00, 4.0, 0.09), (0.72, 293.66, 3.7, 0.10),
+         (1.40, 440.00, 3.5, 0.095), (2.20, 587.33, 3.1, 0.07)),
+        0.35,
+    )
+    # Pumpkin apocalypse uses an unstable, bright, cracked-bell chord.
+    generate_custom_event_cue(
+        "pumpkin_apocalypse", 5.4, 20261005, 55.0,
+        ((0.10, 164.81, 3.0, 0.11), (0.40, 246.94, 2.8, 0.10),
+         (0.83, 369.99, 2.7, 0.09), (1.30, 493.88, 2.6, 0.085)),
+        0.63,
+    )
+    # Graveyard rising is cold and sparse with falling, distant bell notes.
+    generate_custom_event_cue(
+        "graveyard_rising", 6.0, 20261006, 38.9,
+        ((0.18, 392.00, 3.7, 0.075), (0.74, 293.66, 3.6, 0.085),
+         (1.35, 220.00, 3.4, 0.09), (2.00, 164.81, 3.0, 0.08)),
+        0.30,
+    )
+
+
 def main() -> None:
     if shutil.which("ffmpeg") is None:
         raise SystemExit("ffmpeg is required to encode Halloween OGG assets")
     generate_haunted_theme()
     generate_event_sting()
+    generate_event_cues()
     generate_silent_music_asset()
 
 
