@@ -30,6 +30,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final NamespacedKey decoratedKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
+    private final Set<String> warnedErrors = new HashSet<>();
     private BukkitTask task;
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
@@ -94,8 +95,13 @@ public final class HalloweenWorldDecorator implements Listener {
                 decorateChunk(chunk);
                 chunk.getPersistentDataContainer().set(decoratedKey, PersistentDataType.BYTE, (byte) 1);
             } catch (RuntimeException ex) {
-                plugin.getLogger().warning("Could not decorate Halloween chunk " + chunk.getWorld().getName()
-                        + " " + chunk.getX() + "," + chunk.getZ() + ": " + ex.getMessage());
+                String warningKey = ex.getClass().getName();
+                if (warnedErrors.add(warningKey)) {
+                    plugin.getLogger().warning("Halloween world decoration encountered " + warningKey
+                            + " at chunk " + chunk.getWorld().getName() + " "
+                            + chunk.getX() + "," + chunk.getZ()
+                            + ". Further errors of this type are suppressed to keep the console readable.");
+                }
             }
         }
     }
