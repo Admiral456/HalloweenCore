@@ -30,6 +30,9 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private LivingEntity boss;
     private UUID bossUuid;
     private BukkitTask tickTask;
+    private BukkitTask autoProgressionTask;
+    private boolean omenAnnounced;
+    private long naturalSpawnAt;
     private final Set<UUID> participants = new HashSet<>();
     private final Map<UUID, Integer> participationSeconds = new HashMap<>();
     private final Map<UUID, Double> damageContribution = new HashMap<>();
@@ -41,6 +44,106 @@ public final class HalloweenVampireEncounterManager implements Listener {
     public HalloweenVampireEncounterManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.bossKey = new NamespacedKey(plugin, "vampire_boss");
+    }
+
+    public void startAutoProgression() {
+        if (autoProgressionTask != null) return;
+        autoProgressionTask = plugin.getServer().getScheduler().runTaskTimer(
+                plugin, this::tickAutomaticProgression, 20L, 20L);
+    }
+
+    public void shutdown() {
+        if (autoProgressionTask != null) {
+            autoProgressionTask.cancel();
+            autoProgressionTask = null;
+        }
+        stopEncounter();
+    }
+
+    private void tickAutomaticProgression() {
+        if (isActive()) return;
+
+        if (!plugin.isEventEnabled()
+                || !plugin.getConfig().getBoolean("bosses.vampire.auto-start.enabled", true)
+                || plugin.getDataManager().isVampireDefeated()
+                || !plugin.getDataManager().isFinaleUnlocked()
+                || !plugin.getBossManager().isVampireReady()) {
+            clearOmenCountdown();
+            return;
+        }
+
+        long unlockedAt = plugin.getDataManager().getFinaleUnlockedAt();
+        if (unlockedAt <= 0L) {
+            plugin.getDataManager().unlockFinale();
+            plugin.getDataManager().save();
+            unlockedAt = plugin.getDataManager().getFinaleUnlockedAt();
+        }
+
+        long delaySeconds = Math.max(0L,
+                plugin.getConfig().getLong("bosses.vampire.auto-start.delay-after-finale-seconds", 300L));
+        long now = System.currentTimeMillis();
+        if (now < unlockedAt + delaySeconds * 1000L) {
+            clearOmenCountdown();
+            return;
+        }
+
+        Location center = getArenaLocation();
+        if (center == null) {
+            clearOmenCountdown();
+            return;
+        }
+
+        double radius = Math.max(16.0D,
+                plugin.getConfig().getDouble("bosses.vampire.auto-start.nearby-radius-blocks", 64.0D));
+        int minimumPlayers = Math.max(1,
+                plugin.getConfig().getInt("bosses.vampire.auto-start.minimum-nearby-players", 1));
+        if (countEligiblePlayersNear(center, radius) < minimumPlayers) {
+            clearOmenCountdown();
+            return;
+        }
+
+        if (!omenAnnounced) {
+            omenAnnounced = true;
+            long countdownSeconds = Math.max(0L,
+                    plugin.getConfig().getLong("bosses.vampire.auto-start.omen-countdown-seconds", 30L));
+            naturalSpawnAt = now + countdownSeconds * 1000L;
+
+            String warning = plugin.getConfig().getString("messages.vampire-omen",
+                    "&5&lHALLOWEEN &8» &dZemě se zachvěla. Ve světě &e%world% &7na souřadnicích &e%x% %y% %z% &7se probouzí Král upírů. Máte &e%countdown% sekund &7na přípravu.");
+            warning = warning.replace("%world%", center.getWorld().getName())
+                    .replace("%x%", Integer.toString(center.getBlockX()))
+                    .replace("%y%", Integer.toString(center.getBlockY()))
+                    .replace("%z%", Integer.toString(center.getBlockZ()))
+                    .replace("%countdown%", Long.toString(countdownSeconds));
+            Bukkit.broadcastMessage(plugin.color(warning));
+            center.getWorld().playSound(center, "minecraft:entity.warden.heartbeat", 0.8f, 0.55f);
+            center.getWorld().spawnParticle(org.bukkit.Particle.SOUL, center.clone().add(0, 1, 0),
+                    70, 2.5D, 1.5D, 2.5D, 0.04D);
+            if (countdownSeconds > 0L) return;
+        }
+
+        if (System.currentTimeMillis() < naturalSpawnAt) return;
+        if (startEncounter()) {
+            clearOmenCountdown();
+        } else {
+            clearOmenCountdown();
+        }
+    }
+
+    private int countEligiblePlayersNear(Location center, double radius) {
+        int count = 0;
+        double radiusSquared = radius * radius;
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player)) continue;
+            if (!player.getWorld().getUID().equals(center.getWorld().getUID())) continue;
+            if (player.getLocation().distanceSquared(center) <= radiusSquared) count++;
+        }
+        return count;
+    }
+
+    private void clearOmenCountdown() {
+        omenAnnounced = false;
+        naturalSpawnAt = 0L;
     }
 
     public boolean isActive() {
@@ -130,6 +233,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         participants.clear();
         participationSeconds.clear();
         damageContribution.clear();
+        clearOmenCountdown();
         if (plugin.getBossManager() != null) {
             plugin.getBossManager().stopVampireBossBar();
         }
@@ -397,6 +501,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         participants.clear();
         participationSeconds.clear();
         damageContribution.clear();
+        clearOmenCountdown();
         if (plugin.getBossManager() != null) {
             plugin.getBossManager().stopVampireBossBar();
         }
