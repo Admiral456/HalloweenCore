@@ -1,17 +1,23 @@
 #!/usr/bin/env python3
-"""Generate original, sample-free Halloween audio for the ItemsAdder pack.
+"""Build Halloween audio for the ItemsAdder pack from a CC0 source track.
 
-Requires only Python's standard library and ffmpeg. Files are generated in CI
-and locally so no third-party recording must be downloaded or redistributed.
+The ambient track is fetched from OpenGameArt, converted with ffmpeg, and its
+actual encoded duration is written to the plugin default config. The event cue
+is synthesized locally. Requires internet access, Python standard library, and ffmpeg.
 """
 from __future__ import annotations
 
 import array
+import json
 import math
 import random
+import re
 import shutil
 import subprocess
 import tempfile
+import time
+import urllib.error
+import urllib.request
 import wave
 from pathlib import Path
 
@@ -62,74 +68,89 @@ def normalize(samples: list[float]) -> array.array:
     return pcm
 
 
+def probe_audio_duration(path: Path) -> float:
+    """Return the duration of the first decoded audio stream in seconds."""
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "error", "-select_streams", "a:0",
+            "-show_entries", "stream=duration", "-of", "json", str(path),
+        ],
+        check=True, capture_output=True, text=True,
+    )
+    streams = json.loads(result.stdout).get("streams", [])
+    if not streams or not streams[0].get("duration"):
+        raise RuntimeError(f"Could not determine audio duration for {path.name}")
+    return float(streams[0]["duration"])
+
+
 def generate_haunted_theme() -> None:
-    duration = 64.0
-    count = int(SAMPLE_RATE * duration)
-    rng = random.Random(4562026)
-    # Four slowly shifting minor-ish chords: E minor, C, A minor, B tension.
-    chords = [
-        [41.203, 61.735, 82.407, 123.471],
-        [32.703, 48.999, 65.406, 98.000],
-        [27.500, 41.203, 55.000, 82.407],
-        [30.868, 46.249, 61.735, 92.499],
-    ]
-    melody = [659.25, 587.33, 493.88, 392.00, 440.00, 587.33, 349.23, 493.88]
-    # Deterministic oscillator bank makes an airy, filtered-noise-like wind bed.
-    wind_partials = []
-    for i in range(26):
-        f = rng.uniform(95.0, 760.0)
-        amp = rng.uniform(0.003, 0.010) / (1.0 + i * 0.045)
-        phase = rng.uniform(0.0, TWO_PI)
-        wind_partials.append((f, amp, phase))
-
-    output: list[float] = []
-    for n in range(count):
-        t = n / SAMPLE_RATE
-        local = t % 16.0
-        section = int(t // 16.0)
-        blend = smoothstep((local - 13.5) / 2.5)
-        chord_a = chords[section]
-        chord_b = chords[(section + 1) % len(chords)]
-        pad = 0.0
-        for j, f in enumerate(chord_a):
-            phase = section * 0.41 + j * 1.17
-            pad += (1.0 - blend) * [0.16, 0.075, 0.060, 0.025][j] * (
-                s(f, t, duration, phase) + 0.18 * s(f * 2.0, t, duration, phase * 0.7)
-            )
-        next_section = (section + 1) % len(chords)
-        for j, f in enumerate(chord_b):
-            phase = next_section * 0.41 + j * 1.17
-            pad += blend * [0.16, 0.075, 0.060, 0.025][j] * (
-                s(f, t, duration, phase) + 0.18 * s(f * 2.0, t, duration, phase * 0.7)
-            )
-
-        drone = (
-            0.075 * s(41.203, t, duration, 0.4)
-            + 0.035 * s(20.602, t, duration, 1.1)
-            + 0.024 * s(61.735, t, duration, 2.2)
-        ) * (0.82 + 0.18 * math.sin(TWO_PI * t / 32.0 + 0.6))
-
-        wind = sum(amp * s(f, t, duration, phase) for f, amp, phase in wind_partials)
-        wind *= 0.78 + 0.22 * math.sin(TWO_PI * t / 16.0 + 0.7)
-
-        # Sparse bell motif each sixteen-second section; notes end before the boundary.
-        bells = 0.0
-        for when, note_idx, note_duration in ((1.0, 0, 2.5), (4.8, 2, 2.4), (8.7, 1, 2.7), (12.2, 3, 2.4)):
-            age = local - when
-            if 0.0 <= age < note_duration:
-                env = smoothstep(age / 0.12) * math.exp(-age / (note_duration / 2.4))
-                f = melody[(note_idx + section) % len(melody)]
-                bells += 0.055 * env * (
-                    s(f, t, duration, section * 0.33)
-                    + 0.24 * s(f * 2.76, t, duration, 0.7)
-                    + 0.08 * s(f * 4.1, t, duration, 1.1)
-                )
-        whisper = (
-            0.012 * s(784.0, t, duration, 1.3) * math.sin(TWO_PI * t / 32.0 + 0.4)
-            + 0.008 * s(932.33, t, duration, 0.8) * math.sin(TWO_PI * t / 16.0 + 2.0)
+    """Fetch the CC0 Spooky Fester track and encode the client-ready OGG."""
+    source_url = "https://opengameart.org/sites/default/files/spooky_2.mp3"
+    SOUNDS_DIR.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="halloween-audio-") as tmp:
+        source_path = Path(tmp) / "spooky-fester.mp3"
+        ogg_path = SOUNDS_DIR / "haunted_theme.ogg"
+        request = urllib.request.Request(
+            source_url,
+            headers={"User-Agent": "HalloweenCore-build/1.0 (CC0 audio asset)"},
         )
-        output.append(math.tanh((pad + drone + wind * 0.38 + bells + whisper) * 1.65))
-    write_ogg("haunted_theme", normalize(output))
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    data = response.read()
+                if len(data) < 500_000:
+                    raise RuntimeError(
+                        f"OpenGameArt audio download looks incomplete ({len(data)} bytes)"
+                    )
+                if not (
+                    data.startswith(b"ID3")
+                    or (
+                        len(data) > 1
+                        and data[0] == 0xFF
+                        and (data[1] & 0xE0) == 0xE0
+                    )
+                ):
+                    raise RuntimeError("OpenGameArt response is not a recognizable MP3")
+                source_path.write_bytes(data)
+                break
+            except (OSError, urllib.error.URLError, TimeoutError, RuntimeError) as exc:
+                if attempt == 2:
+                    raise RuntimeError(
+                        f"Could not retrieve Spooky Fester from {source_url}: {exc}"
+                    ) from exc
+                time.sleep(2 ** attempt)
+
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                "-i", str(source_path), "-vn", "-map_metadata", "-1",
+                "-ac", "1", "-ar", str(SAMPLE_RATE),
+                "-c:a", "libvorbis", "-q:a", "4", str(ogg_path),
+            ],
+            check=True,
+        )
+
+        if not ogg_path.is_file() or ogg_path.read_bytes()[:4] != b"OggS":
+            raise RuntimeError("ffmpeg did not create a valid OGG container")
+
+        duration_ms = round(probe_audio_duration(ogg_path) * 1000)
+        config_path = ROOT / "src" / "main" / "resources" / "config.yml"
+        config_text = config_path.read_text(encoding="utf-8")
+        config_text, replacements = re.subn(
+            r"(?m)^  loop-milliseconds:\s*\d+\s*$",
+            f"  loop-milliseconds: {duration_ms}",
+            config_text,
+        )
+        if replacements != 1:
+            raise RuntimeError(
+                "Expected exactly one 'atmosphere.loop-milliseconds' setting in config.yml"
+            )
+        config_path.write_text(config_text, encoding="utf-8")
+
+    print(
+        f"Encoded CC0 Spooky Fester as {ogg_path.relative_to(ROOT)} "
+        f"({ogg_path.stat().st_size:,} bytes, {duration_ms} ms)"
+    )
 
 
 def generate_event_sting() -> None:

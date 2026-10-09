@@ -1,6 +1,7 @@
 package cz.halloween.core;
 
 import org.bukkit.Bukkit;
+import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -78,8 +79,11 @@ public final class HalloweenAtmosphere {
         stopConfiguredSounds(player);
         play(player);
 
-        long loopSeconds = Math.max(10L, plugin.getConfig().getLong("atmosphere.loop-seconds", 64L));
-        long periodTicks = loopSeconds * 20L;
+        // Milliseconds allow a 2:07 soundtrack to repeat at its actual length.
+        // Preserve the older seconds option as a backwards-compatible fallback.
+        long fallbackMillis = Math.max(10L, plugin.getConfig().getLong("atmosphere.loop-seconds", 64L)) * 1000L;
+        long loopMillis = Math.max(10_000L, plugin.getConfig().getLong("atmosphere.loop-milliseconds", fallbackMillis));
+        long periodTicks = Math.max(1L, Math.round(loopMillis / 50.0D));
         UUID playerId = player.getUniqueId();
         BukkitTask task = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
             Player online = Bukkit.getPlayer(playerId);
@@ -90,8 +94,9 @@ public final class HalloweenAtmosphere {
                 return;
             }
 
-            // Restart the exact same streamed sound at its configured loop
-            // boundary. This keeps the ambience going for the entire event.
+            // Stop the previous stream before restarting at the configured
+            // boundary, preventing overlap if the server tick is delayed.
+            stopConfiguredSounds(online);
             play(online);
         }, periodTicks, periodTicks);
         playbackTasks.put(playerId, task);
@@ -126,7 +131,7 @@ public final class HalloweenAtmosphere {
 
         if (custom != null && !custom.isBlank() && hasItemsAdder()) {
             try {
-                player.playSound(player.getLocation(), custom, volume, pitch);
+                player.playSound(player, custom, SoundCategory.MUSIC, volume, pitch);
                 return;
             } catch (Exception ignored) {
                 // Invalid/missing custom sound: continue to the configured fallback.
@@ -135,7 +140,7 @@ public final class HalloweenAtmosphere {
 
         if (fallback != null && !fallback.isBlank()) {
             try {
-                player.playSound(player.getLocation(), fallback, volume, pitch);
+                player.playSound(player, fallback, SoundCategory.MUSIC, volume, pitch);
             } catch (Exception ignored) {
                 // No valid sound has been configured.
             }

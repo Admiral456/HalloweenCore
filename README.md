@@ -102,9 +102,11 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 
 ## Halloween hudba a obloha
 
-- `scripts/generate_halloween_audio.py` generuje originální 64sekundovou ambientní smyčku a 5sekundový event cue jako mono OGG/Vorbis; potřebuje Python standard library a `ffmpeg`.
+- `scripts/generate_halloween_audio.py` stáhne skladbu `Spooky Fester` od Eldritch Grim z OpenGameArt (licence CC0), převede ji na mono OGG/Vorbis a vygeneruje originální 5sekundový event cue. Vyžaduje přístup k internetu, Python standard library a `ffmpeg`; nastaví také přesnou délku ambientní smyčky podle výsledného OGG souboru.
+- Interval přehrávání se při sestavení nastavuje přes `atmosphere.loop-milliseconds` podle skutečné délky `Spooky Fester`. Hudba se přehrává v kategorii MUSIC a jako zdroj navázaný na hráče, aby se při pohybu neztrácela.
+- Zdroj hudby: [Spooky Fester — Eldritch Grim](https://opengameart.org/content/spooky-fester), CC0. OpenGameArt uvádí, že uvedení autora není povinné; zdroj zde přesto evidujeme.
 - ItemsAdder zvuky jsou registrované v `itemsadder/contents/warriorland_halloween/configs/sounds.yml`. Plugin používá `warriorland_halloween:haunted_theme` pro atmosféru a `warriorland_halloween:event_sting` na začátku náhodného eventu.
-- Ambientní hudba se spouští hned po připojení a opakuje se samostatně každému hráči podle délky 64sekundového souboru; při odchodu nebo vypnutí eventu se jeho přehrávací úloha zruší, aby nevznikala překrývající se hudba.
+- Ambientní hudba se spouští hned po připojení a opakuje se samostatně každému hráči podle délky skladby; při odchodu nebo vypnutí eventu se jeho přehrávací úloha zruší, aby nevznikala překrývající se hudba.
 - CI vytvoří ke stažení artefakt `WarriorLand-Halloween-ItemsAdder.zip` včetně zvuků.
 - Shader oblohy je v `itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh`; zachovává základní cyklus dne/noci a přidává oranžovo-karmínový filtr.
 - Po nasazení obsahu na server spusť `/iazip` a zajisti, že hráči obdrží nový resource pack. Vizuální vzhled je potřeba potvrdit v klientu; shaderový mod jej může přepsat.
