@@ -213,8 +213,10 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
     start = config.find(f"  {item_id}:")
     if start < 0:
         fail(f"Custom gear '{item_id}' missing from ItemsAdder config")
-    end = config.find("\n  ", start + 4)
-    definition = config[start:end if end >= 0 else len(config)]
+    section_tail = config[start + len(f"  {item_id}:"):]
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\\s*$", section_tail)
+    end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
+    definition = config[start:end]
     if "material: NETHERITE_" not in definition or "attribute_modifiers:" not in definition or "durability:" not in definition:
         fail(f"Custom gear '{item_id}' needs a netherite base material, extra attributes, and durability")
     if "blocked_enchants:" in definition and "blocked_enchants:\n      - ALL" in definition:
