@@ -94,7 +94,8 @@ public final class HalloweenMobManager implements Listener {
             }
             case "gravekeeper" -> {
                 if (!(event.getDamager() instanceof Arrow arrow)
-                        || arrow.getShooter() != attacker
+                        || !(arrow.getShooter() instanceof LivingEntity shooter)
+                        || !shooter.getUniqueId().equals(attacker.getUniqueId())
                         || !canUseSpecialAbility(attacker, mobId)) return;
                 graveMark(attacker, target);
             }
@@ -250,17 +251,22 @@ public final class HalloweenMobManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onDeath(EntityDeathEvent event) {
-        if (!isSpecial(event.getEntity())) return;
+        if (!plugin.isEventEnabled() || !isSpecial(event.getEntity())) return;
 
         String mobId = event.getEntity().getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
         if (mobId == null) return;
 
         Player killer = event.getEntity().getKiller();
-        if (killer != null) {
-            long bonus = Math.max(0L, plugin.getConfig().getLong("special-mobs.bonus-fragments", 12L));
-            if (bonus > 0L) {
-                plugin.getService().addFragments(killer.getUniqueId(), bonus, "special-mob");
-            }
+        boolean eligibleKiller = killer != null
+                && plugin.isEligibleGameplayPlayer(killer)
+                && plugin.isEligibleGameplayWorld(killer.getWorld())
+                && plugin.isEligibleGameplayWorld(event.getEntity().getWorld());
+        // Event loot is earned through eligible player combat, not creative or environmental kills.
+        if (!eligibleKiller) return;
+
+        long bonus = Math.max(0L, plugin.getConfig().getLong("special-mobs.bonus-fragments", 12L));
+        if (bonus > 0L) {
+            plugin.getService().addFragments(killer.getUniqueId(), bonus, "special-mob");
         }
 
         double dropChance = Math.max(0.0D, Math.min(1.0D, plugin.getConfig().getDouble("special-mobs.relic-drop-chance", 0.12D)));
