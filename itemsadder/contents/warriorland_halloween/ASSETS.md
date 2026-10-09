@@ -17,13 +17,18 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_2.png
 
 Included client/audio assets:
-- resourcepack/assets/minecraft/shaders/core/sky.fsh
+- resourcepack/assets/minecraft/shaders/core/sky.fsh — seasonal orange/crimson sky tint
+- resourcepack/assets/minecraft/sounds.json — replaces vanilla music events with a silent OGG while the Halloween pack is active
+- resourcepack/assets/warriorland_halloween/sounds/halloween_silence.ogg — one-second silent replacement file
+- textures/armor/crimson_warden/layer_1.png and layer_2.png — ItemsAdder equipment source layers
 - sounds/haunted_theme.ogg — Spooky Fester ambient loop (duration measured at build time) (mono OGG/Vorbis)
 - sounds/event_sting.ogg — original 5-second Halloween event cue (mono OGG/Vorbis)
 - configs/sounds.yml — ItemsAdder sound registration
 
 Ambient music is Spooky Fester by Eldritch Grim from OpenGameArt (CC0); it is downloaded and converted to OGG during CI. The short event cue is generated locally. Rebuild the ItemsAdder resource pack with /iazip after installing/updating these contents.
-The custom armor uses a shared Crimson Warden equipment texture set, built from 64x32 layer_1/layer_2 atlases. It uses Netherite armor materials with +1 armor per piece (24 armor points total for the full set versus 20 for full vanilla Netherite) and extended durability, while retaining normal enchantability.
+The custom armor uses a shared Crimson Warden equipment texture set, built from 64x32 layer_1/layer_2 atlases. Place those equipment layers in the source path `plugins/ItemsAdder/contents/warriorland_halloween/textures/armor/crimson_warden/`; item icons, sounds.json, and the sky shader are emitted from `resourcepack/assets/`. It uses Netherite armor materials with +1 armor per piece (24 armor points total for the full set versus 20 for full vanilla Netherite) and extended durability, while retaining normal enchantability.
+
+ItemsAdder combines all content namespaces into one generated server resource pack; `warriorland_halloween` is a namespace within the pack, not a second pack in the Minecraft resource-pack menu. After `/iazip`, check `/iainfo` for the hosted URL and request/status. For ItemsAdder 4.0.17+, `resource-pack.hosting.simple_self_host.enabled: true` with `server_address: auto` is often the simplest hosting choice. Set the installed language file's `resourcepack-popup-message` to a branded message such as `&6WarriorLand Halloween 2026` if you want players to recognize the pack prompt.
 
 The Java plugin uses these IDs:
 - warriorland_halloween:hunter_mask
