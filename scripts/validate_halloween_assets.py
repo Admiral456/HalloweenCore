@@ -222,14 +222,14 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
 
 # Audit custom gear definitions: every item must use its matching texture and keep vanilla enchantability.
-TOOL_SPECS = {
+GEAR_SPECS = {
     "crimson_warden_sword": ("NETHERITE_SWORD", 2500, "10", "-2.0"),
     "crimson_warden_shovel": ("NETHERITE_SHOVEL", 2500, "8", "-2.3"),
     "crimson_warden_pickaxe": ("NETHERITE_PICKAXE", 3000, "8", "-2.2"),
     "crimson_warden_axe": ("NETHERITE_AXE", 2800, "12", "-2.6"),
     "crimson_warden_hoe": ("NETHERITE_HOE", 2500, "4", "0.4"),
 }
-for item_id, (material, min_durability, damage, speed) in TOOL_SPECS.items():
+for item_id, (material, min_durability, damage, speed) in GEAR_SPECS.items():
     match = re.search(
         rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [a-z0-9_]+:\n|\Z)",
         config,
@@ -250,18 +250,56 @@ for item_id, (material, min_durability, damage, speed) in TOOL_SPECS.items():
     if not re.search(rf"(?m)^\s*attackSpeed:\s*{re.escape(speed)}\s*$", block):
         fail(f"Tool item '{item_id}' has an unexpected attack-speed modifier")
 
+ARMOR_SPECS = {
+    "crimson_warden_helmet": ("NETHERITE_HELMET", 800),
+    "crimson_warden_chestplate": ("NETHERITE_CHESTPLATE", 1200),
+    "crimson_warden_leggings": ("NETHERITE_LEGGINGS", 1000),
+    "crimson_warden_boots": ("NETHERITE_BOOTS", 900),
+}
+for item_id, (material, min_durability) in ARMOR_SPECS.items():
+    match = re.search(
+        rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [a-z0-9_]+:\n|\Z)",
+        config,
+    )
+    if not match:
+        fail(f"Armor item '{item_id}' missing from items.yml")
+    block = match.group(1)
+    for required in (f"material: {material}", f"texture: item/{item_id}", "slot_attribute_modifiers:", "armor: 1"):
+        if required not in block:
+            fail(f"Armor item '{item_id}' is missing {required}")
+    if re.search(r"(?m)^\s*blocked_enchants:", block):
+        fail(f"Armor item '{item_id}' must not block normal enchantments")
+    durability = re.search(r"(?m)^\s*max_durability:\s*(\d+)", block)
+    if not durability or int(durability.group(1)) < min_durability:
+        fail(f"Armor item '{item_id}' durability must be at least {min_durability}")
+
 SHOP_CONFIG = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
 SHOP_IDS = {
+    "hunter-mask": "hunter_mask",
+    "cursed-talisman": "cursed_talisman",
+    "halloween-token": "halloween_token",
+    "crimson-warden-helmet": "crimson_warden_helmet",
+    "crimson-warden-chestplate": "crimson_warden_chestplate",
+    "crimson-warden-leggings": "crimson_warden_leggings",
+    "crimson-warden-boots": "crimson_warden_boots",
     "crimson-warden-sword": "crimson_warden_sword",
     "crimson-warden-shovel": "crimson_warden_shovel",
     "crimson-warden-pickaxe": "crimson_warden_pickaxe",
     "crimson-warden-axe": "crimson_warden_axe",
     "crimson-warden-hoe": "crimson_warden_hoe",
 }
+shop_start = SHOP_CONFIG.find("  shop:")
+shop_end = SHOP_CONFIG.find("\nhaunted-village:", shop_start)
+if shop_start < 0 or shop_end < 0:
+    fail("Could not locate the Halloween rewards.shop section")
+shop_block = SHOP_CONFIG[shop_start:shop_end]
+actual_shop_ids = re.findall(r"(?m)^    ([a-z0-9-]+):\s*$", shop_block)
+if len(actual_shop_ids) < len(SHOP_IDS):
+    fail(f"Expected at least {len(SHOP_IDS)} shop items, found {len(actual_shop_ids)}")
 for shop_id, item_id in SHOP_IDS.items():
     match = re.search(
-        rf"(?ms)^    {re.escape(shop_id)}:\n(.*?)(?=^    [a-z0-9-]+:\n|^haunted-village:|\Z)",
-        SHOP_CONFIG,
+        rf"(?ms)^    {re.escape(shop_id)}:\n(.*?)(?=^    [a-z0-9-]+:\n|\Z)",
+        shop_block,
     )
     if not match or f'itemsadder-id: "warriorland_halloween:{item_id}"' not in match.group(1):
         fail(f"Shop entry '{shop_id}' does not point to ItemsAdder item '{item_id}'")
@@ -270,8 +308,8 @@ REWARD_MANAGER = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" /
 if 'Bukkit.createInventory(holder, 54,' not in REWARD_MANAGER:
     fail("Halloween shop must use a 54-slot inventory so all gear is visible")
 slots_match = re.search(r"(?m)^\s*int\[\] slots = \{([^}]+)\};", REWARD_MANAGER)
-if not slots_match or len(re.findall(r"\d+", slots_match.group(1))) < 12:
-    fail("Halloween shop needs at least 12 reward slots for the full gear set")
+if not slots_match or len(re.findall(r"\d+", slots_match.group(1))) < len(SHOP_IDS):
+    fail(f"Halloween shop needs at least {len(SHOP_IDS)} reward slots for every configured reward")
 
 # Static integration checks for arena, event scheduling, test spawning and reload.
 JAVA = ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core"
@@ -338,6 +376,19 @@ for layer in ("layer_1.png", "layer_2.png"):
     width, height = png_size(path)
     if (width, height) != (64, 32):
         fail(f"ItemsAdder source {layer} must be 64x32, got {width}x{height}")
+
+for layer in ("layer_1.png", "layer_2.png"):
+    source_path = ARMOR_SOURCE_TEXTURES / layer
+    resource_path = ARMOR_TEXTURES / layer
+    try:
+        source_size = png_size(source_path)
+        resource_size = png_size(resource_path)
+    except (OSError, ValueError, struct.error) as exc:
+        fail(f"Invalid packaged armor layer {layer}: {exc}")
+    if source_size != (64, 32) or resource_size != (64, 32):
+        fail(f"Armor layers {layer} must be 64x32 in both source and resource-pack locations")
+    if source_path.read_bytes() != resource_path.read_bytes():
+        fail(f"Armor layer copies for {layer} differ between ItemsAdder source and resource pack")
 
 root_textures = CONTENT / "textures"
 if root_textures.exists():
