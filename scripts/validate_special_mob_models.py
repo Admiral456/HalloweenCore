@@ -17,10 +17,13 @@ MODEL_DIR = ROOT / "mythicmobs" / "models"
 MOB_CONFIG = ROOT / "mythicmobs" / "mobs" / "halloween-special-mobs.yml"
 MOB_IDS = (
     "halloween_cursed_zombie",
+    "halloween_void_reaper",
     "halloween_gravekeeper",
+    "halloween_frost_stalker",
     "halloween_blood_spider",
     "halloween_pumpkin_wraith",
     "halloween_hex_witch",
+    "halloween_nightmare",
 )
 
 
