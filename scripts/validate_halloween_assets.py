@@ -311,8 +311,8 @@ if "player.stopSound(SoundCategory.MUSIC)" not in atmosphere_java or "}, 1L, 20L
     fail("Halloween ambience must actively stop the vanilla MUSIC category at least once per second")
 
 reload_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
-if '"iazip"' not in reload_java or '"iatexture all"' not in reload_java:
-    fail("/halloween reload must rebuild ItemsAdder assets and request a resource-pack refresh for online players")
+if '"iazip"' not in reload_java or '"iatexture all"' not in reload_java or '"meg reload models"' not in reload_java or "ModelEngine/resource pack" not in reload_java:
+    fail("/halloween reload must refresh ModelEngine models, merge its pack, rebuild ItemsAdder assets and refresh online players")
 
 passive_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenPassiveEffectManager.java").read_text(encoding="utf-8")
 if "Attribute.MAX_HEALTH" not in passive_java or "getItemInOffHand()" not in passive_java:

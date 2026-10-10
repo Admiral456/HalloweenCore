@@ -883,33 +883,121 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         Bukkit.getScheduler().runTask(plugin, () -> {
-            // /iazip reloads ItemsAdder content and generates the merged resource-pack ZIP.
-            boolean zipDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
-            if (!zipDispatched) {
-                sender.sendMessage(plugin.color("&cNepodařilo se spustit /iazip. Spusť ho ručně v konzoli serveru."));
-                return;
+            var modelEngine = Bukkit.getPluginManager().getPlugin("ModelEngine");
+            if (modelEngine != null && modelEngine.isEnabled()) {
+                boolean modelsReloaded = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "meg reload models");
+                if (modelsReloaded) {
+                    sender.sendMessage(plugin.color("&eModelEngine: /meg reload models byl předán k obnovení modelů a jejich textur."));
+                } else {
+                    sender.sendMessage(plugin.color("&cModelEngine nepřijal /meg reload models. Zkontroluj, zda jsou blueprinty importované."));
+                }
             }
 
-            sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl předán k obnovení obsahu a sestavení resource packu."));
-            sender.sendMessage(plugin.color("&7Za chvíli se požádá i o znovunačtení textur u všech online hráčů."));
-            // Allow the zip-generation task time to finish before telling clients to refresh.
+            // Let ModelEngine create/update its pack before ensuring ItemsAdder merges it.
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                var current = Bukkit.getPluginManager().getPlugin("ItemsAdder");
-                if (current == null || !current.isEnabled()) {
-                    sender.sendMessage(plugin.color("&cItemsAdder se během obnovy vypnul; textury hráčů nebyly obnoveny."));
+                ensureModelEngineResourcePackMerged(sender);
+
+                // /iazip reloads ItemsAdder content and generates the merged resource-pack ZIP.
+                boolean zipDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
+                if (!zipDispatched) {
+                    sender.sendMessage(plugin.color("&cNepodařilo se spustit /iazip. Spusť ho ručně v konzoli serveru."));
                     return;
                 }
 
-                boolean refreshed = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iatexture all");
-                if (refreshed) {
-                    sender.sendMessage(plugin.color("&aItemsAdder: požadavek /iatexture all byl předán online hráčům."));
-                    sender.sendMessage(plugin.color("&7Pokud se textura neprojeví, zkontroluj hosting resource packu a klientský log; textury ModelEngine vyžadují jeho resource pack ve sloučeném ItemsAdder packu."));
-                } else {
-                    sender.sendMessage(plugin.color("&cNepodařilo se spustit /iatexture all. Po dokončení /iazip ho spusť ručně."));
-                }
-            }, 200L);
+                sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl předán k obnovení obsahu a sestavení resource packu."));
+                sender.sendMessage(plugin.color("&7Za chvíli se požádá i o znovunačtení textur u všech online hráčů."));
+                // Allow the zip-generation task time to finish before telling clients to refresh.
+                Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                    var current = Bukkit.getPluginManager().getPlugin("ItemsAdder");
+                    if (current == null || !current.isEnabled()) {
+                        sender.sendMessage(plugin.color("&cItemsAdder se během obnovy vypnul; textury hráčů nebyly obnoveny."));
+                        return;
+                    }
+
+                    boolean refreshed = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iatexture all");
+                    if (refreshed) {
+                        sender.sendMessage(plugin.color("&aItemsAdder: požadavek /iatexture all byl předán online hráčům."));
+                        sender.sendMessage(plugin.color("&7Pokud se textura neprojeví, zkontroluj hosting resource packu a klientský log."));
+                    } else {
+                        sender.sendMessage(plugin.color("&cNepodařilo se spustit /iatexture all. Po dokončení /iazip ho spusť ručně."));
+                    }
+                }, 200L);
+            }, 20L);
         });
         return true;
+    }
+
+    /**
+     * Ensure ModelEngine's generated assets are part of the ItemsAdder pack without
+     * replacing the administrator's other merge entries or rewriting unrelated settings.
+     */
+    private void ensureModelEngineResourcePackMerged(CommandSender sender) {
+        var modelEngine = Bukkit.getPluginManager().getPlugin("ModelEngine");
+        if (modelEngine == null || !modelEngine.isEnabled()) return;
+
+        Path pluginsDirectory = plugin.getDataFolder().toPath().getParent();
+        Path modelPack = pluginsDirectory.resolve("ModelEngine").resolve("resource pack");
+        Path itemsAdderConfig = pluginsDirectory.resolve("ItemsAdder").resolve("config.yml");
+        if (!Files.isDirectory(modelPack)) {
+            sender.sendMessage(plugin.color("&eModelEngine resource pack zatím neexistuje. Naimportuj mob blueprinty a ověř /meg reload models."));
+            return;
+        }
+        if (!Files.isRegularFile(itemsAdderConfig)) {
+            sender.sendMessage(plugin.color("&eNenašel jsem plugins/ItemsAdder/config.yml; cestu ModelEngine/resource pack je nutné přidat do merge konfigurace ručně."));
+            return;
+        }
+
+        try {
+            List<String> lines = new ArrayList<>(Files.readAllLines(itemsAdderConfig, StandardCharsets.UTF_8));
+            boolean alreadyMerged = lines.stream()
+                    .map(String::trim)
+                    .map(line -> line.replace("\"", "").replace("'", ""))
+                    .anyMatch(line -> line.equals("- ModelEngine/resource pack"));
+            if (alreadyMerged) return;
+
+            final String key = "merge_other_plugins_resourcepacks_folders:";
+            int keyIndex = -1;
+            int keyIndent = -1;
+            for (int i = 0; i < lines.size(); i++) {
+                String line = lines.get(i);
+                String trimmed = line.trim();
+                if (trimmed.startsWith("#") || !trimmed.startsWith(key)) continue;
+                int indent = line.length() - line.stripLeading().length();
+                if (indent > keyIndent) {
+                    keyIndex = i;
+                    keyIndent = indent;
+                }
+            }
+            if (keyIndex < 0) {
+                sender.sendMessage(plugin.color("&eItemsAdder config neobsahuje merge_other_plugins_resourcepacks_folders; ModelEngine pack přidej do resource-pack.zip merge seznamu ručně."));
+                return;
+            }
+
+            String oldLine = lines.get(keyIndex);
+            String comment = oldLine.contains("#") ? " " + oldLine.substring(oldLine.indexOf('#')) : "";
+            if (oldLine.substring(oldLine.indexOf(':') + 1).contains("[]")) {
+                lines.set(keyIndex, " ".repeat(keyIndent) + key + comment);
+                lines.add(keyIndex + 1, " ".repeat(keyIndent + 2) + "- \"ModelEngine/resource pack\"");
+            } else {
+                int insertAt = keyIndex + 1;
+                while (insertAt < lines.size()) {
+                    String line = lines.get(insertAt);
+                    if (line.isBlank() || line.trim().startsWith("#")) {
+                        insertAt++;
+                        continue;
+                    }
+                    int indent = line.length() - line.stripLeading().length();
+                    if (indent <= keyIndent) break;
+                    insertAt++;
+                }
+                lines.add(insertAt, " ".repeat(keyIndent + 2) + "- \"ModelEngine/resource pack\"");
+            }
+
+            Files.write(itemsAdderConfig, lines, StandardCharsets.UTF_8);
+            sender.sendMessage(plugin.color("&aItemsAdder config: do existujícího merge seznamu byla přidána cesta ModelEngine/resource pack."));
+        } catch (IOException ex) {
+            sender.sendMessage(plugin.color("&cNemohl jsem upravit merge seznam ItemsAdderu: " + ex.getClass().getSimpleName() + ". Nastav ModelEngine/resource pack ručně."));
+        }
     }
 
     private boolean toggle(CommandSender sender, String arg) {
