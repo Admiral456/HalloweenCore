@@ -631,9 +631,21 @@ public final class HalloweenMobManager implements Listener {
                 entity.getWorld().spawnParticle(Particle.SOUL, effect, 18, 0.35D, 0.55D, 0.35D, 0.035D);
                 entity.getWorld().spawnParticle(Particle.ASH, effect, 12, 0.3D, 0.35D, 0.3D, 0.01D);
             }
+            case "void-reaper" -> {
+                entity.getWorld().spawnParticle(Particle.REVERSE_PORTAL, effect, 24, 0.45D, 0.6D, 0.45D, 0.035D);
+                entity.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, effect, 14, 0.35D, 0.5D, 0.35D, 0.02D);
+            }
             case "gravekeeper" -> {
                 entity.getWorld().spawnParticle(Particle.SOUL, effect, 22, 0.4D, 0.6D, 0.4D, 0.04D);
                 entity.getWorld().spawnParticle(Particle.REVERSE_PORTAL, effect, 14, 0.35D, 0.5D, 0.35D, 0.02D);
+            }
+            case "frost-stalker" -> {
+                entity.getWorld().spawnParticle(Particle.SNOWFLAKE, effect, 26, 0.5D, 0.4D, 0.5D, 0.02D);
+                entity.getWorld().spawnParticle(Particle.END_ROD, effect, 12, 0.25D, 0.3D, 0.25D, 0.01D);
+            }
+            case "nightmare" -> {
+                entity.getWorld().spawnParticle(Particle.ASH, effect, 22, 0.45D, 0.6D, 0.45D, 0.02D);
+                entity.getWorld().spawnParticle(Particle.PORTAL, effect, 26, 0.4D, 0.6D, 0.4D, 0.04D);
             }
             case "blood-spider" -> {
                 entity.getWorld().spawnParticle(Particle.CRIT, effect, 20, 0.25D, 0.25D, 0.25D, 0.12D);
