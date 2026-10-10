@@ -269,7 +269,7 @@ public final class HalloweenWorldDecorator implements Listener {
 
     private boolean placeGravestone(Block ground, Random random) {
         boolean cracked = random.nextBoolean();
-        Material baseSlab = cracked ? Material.DEEPSLATE_BRICK_SLAB : Material.POLISHED_BLACKSTONE_BRICK_SLAB;
+        Material baseStone = cracked ? Material.DEEPSLATE_BRICKS : Material.POLISHED_BLACKSTONE_BRICKS;
         Material stone = cracked ? Material.CRACKED_POLISHED_BLACKSTONE_BRICKS : Material.POLISHED_BLACKSTONE_BRICKS;
         Material face = cracked ? Material.CRACKED_DEEPSLATE_BRICKS : Material.CHISELED_POLISHED_BLACKSTONE;
         Material sideWall = cracked ? Material.COBBLESTONE_WALL : Material.POLISHED_BLACKSTONE_BRICK_WALL;
@@ -278,7 +278,7 @@ public final class HalloweenWorldDecorator implements Listener {
         // Low six-block plinth makes the grave look grounded rather than like a floating icon.
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = 0; dz <= 1; dz++) {
-                plan.add(new BlockPlacement(dx, 1, dz, baseSlab));
+                plan.add(new BlockPlacement(dx, 1, dz, baseStone));
             }
         }
         // A real stone cross silhouette, a carved face, side braces and a capstone.

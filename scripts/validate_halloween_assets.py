@@ -419,7 +419,7 @@ if "resourcePackRebuildInProgress" not in reload_java or "Resource pack je přip
 world_decorator = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenWorldDecorator.java").read_text(encoding="utf-8")
 for marker in ("grave_marker", "grave_marker_cracked", "ItemDisplay.class", "Display.Billboard.VERTICAL",
                "halloween_decorated_v5", "POLISHED_BLACKSTONE_BRICKS", "CHISELED_POLISHED_BLACKSTONE",
-               "DEEPSLATE_BRICK_SLAB", "RED_MUSHROOM_BLOCK", "BROWN_MUSHROOM_BLOCK", "MUSHROOM_STEM",
+               "DEEPSLATE_BRICKS", "RED_MUSHROOM_BLOCK", "BROWN_MUSHROOM_BLOCK", "MUSHROOM_STEM",
                "POLISHED_BLACKSTONE_BRICK_WALL"):
     if marker not in world_decorator:
         fail(f"Halloween world gravestone pipeline is missing: {marker}")
