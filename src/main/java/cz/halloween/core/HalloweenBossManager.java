@@ -45,6 +45,14 @@ public final class HalloweenBossManager {
     }
 
     public boolean isVampireReady() {
+        return plugin.getDataManager().isFinaleUnlocked() && isVampireConfiguredReady();
+    }
+
+    /**
+     * Checks all external/configuration gates required before the story ritual consumes rare items.
+     * This deliberately excludes the finale-unlocked flag because the ritual itself unlocks it.
+     */
+    public boolean isVampireConfiguredReady() {
         VampireSpec spec = getVampireSpec();
         int requiredProgress = plugin.getConfig().getInt("bosses.vampire.spawn-requirements.global-progress-percent", 100);
         long goal = plugin.getService().getGlobalGoal();
@@ -55,8 +63,9 @@ public final class HalloweenBossManager {
                 && plugin.getServer().getWorlds().stream().anyMatch(world -> world.getName().equalsIgnoreCase(arenaWorld))
                 && plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false);
         ConfigurationSection model = plugin.getConfig().getConfigurationSection("bosses.vampire.model");
+        var modelEngine = plugin.getServer().getPluginManager().getPlugin("ModelEngine");
         boolean mythicMobsReady = plugin.getServer().getPluginManager().getPlugin("MythicMobs") != null
-                && plugin.getServer().getPluginManager().getPlugin("MythicMobs").isEnabled();
+                && plugin.getServer().getPluginManager().isPluginEnabled("MythicMobs");
         boolean modelPluginReady = true;
         boolean modelReady = model == null
                 || !model.getBoolean("required", true)
@@ -64,15 +73,13 @@ public final class HalloweenBossManager {
                 && Math.max(0, model.getInt("min-height-blocks", 0)) >= 10
                 && Math.max(0, model.getInt("min-width-with-wings-blocks", 0)) >= 8
                 && model.getBoolean("wings-required", false));
-        if (model != null && model.getBoolean("plugin-required", true)) {
-            String provider = model.getString("provider", "");
-            if ("MODEL_ENGINE".equalsIgnoreCase(provider)) {
-                modelPluginReady = plugin.getServer().getPluginManager().getPlugin("ModelEngine") != null;
-            }
+        if (model != null && model.getBoolean("plugin-required", true)
+                && "MODEL_ENGINE".equalsIgnoreCase(model.getString("provider", ""))) {
+            modelPluginReady = modelEngine != null
+                    && plugin.getServer().getPluginManager().isPluginEnabled("ModelEngine");
         }
         return spec.enabled()
                 && !plugin.getDataManager().isVampireDefeated()
-                && plugin.getDataManager().isFinaleUnlocked()
                 && progressReady
                 && spec.finalBoss()
                 && spec.arenaRequired()
