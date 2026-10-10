@@ -170,6 +170,15 @@ public final class HalloweenRiftManager implements Listener {
             player.sendMessage(plugin.color("&4HALLOWEEN &8» &7Král upírů už bojuje. Pomoz ostatním v aréně!"));
             return;
         }
+        if (plugin.getDataManager().isVampireDefeated()) {
+            player.sendMessage(plugin.color("&4HALLOWEEN &8» &cKrál upírů už byl poražen; tento jednorázový rituál nelze znovu spustit. Suroviny nebyly odebrány."));
+            return;
+        }
+        if (!plugin.getBossManager().isVampireConfiguredReady()) {
+            player.sendMessage(plugin.color("&4HALLOWEEN &8» &cKrál upírů zatím není připravený. Suroviny nebyly odebrány."));
+            player.sendMessage(plugin.color("&7Správce musí zkontrolovat /halloween debug a nastavit bosse, arénu, MythicMobs/ModelEngine, model.ready a požadovaný serverový progress."));
+            return;
+        }
         if (!player.getInventory().containsAtLeast(new ItemStack(Material.ECHO_SHARD), 8)
                 || !player.getInventory().containsAtLeast(new ItemStack(Material.CRYING_OBSIDIAN), 4)
                 || !player.getInventory().containsAtLeast(new ItemStack(Material.GHAST_TEAR), 4)
