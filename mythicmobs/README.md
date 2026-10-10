@@ -8,7 +8,11 @@
 - `models/halloween_*.bbmodel` and `models/halloween_*.png`: individual editable Blockbench blueprints and unique 128×128 RGBA pixel-art atlases for the Cursed Zombie, Void Reaper, Gravekeeper, Frost Stalker, Blood Spider, Pumpkin Wraith, Hex Witch and Nightmare.
 - `models/vampire_king.bbmodel` and `models/vampire_king.png`: the existing boss blueprint and texture.
 
-The feature build publishes `HalloweenCore-Special-Mobs-ModelEngine.zip`, containing the eight enemy definitions under `MythicMobs/Mobs/` and the editable model/texture files under `ModelEngine/blueprints/`.
+The feature build publishes two companion archives:
+- `HalloweenCore-Special-Mobs-ModelEngine.zip`: the eight enemy definitions under `MythicMobs/Mobs/` and their editable models/textures under `ModelEngine/blueprints/`.
+- `HalloweenCore-Vampire-King-ModelEngine.zip`: the Vampire King mob and skill definitions under `MythicMobs/`, its Blockbench model and PNG under `ModelEngine/blueprints/`, and the staging checklists.
+
+The boss archive intentionally does not enable the boss or bypass the global-progress, arena, MythicMobs, ModelEngine and `model.ready` gates.
 
 ## Installation for staging
 
