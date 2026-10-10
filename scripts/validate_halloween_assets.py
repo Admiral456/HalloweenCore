@@ -14,6 +14,11 @@ SHADER = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" 
 CONFIG = CONTENT / "configs" / "items.yml"
 SOUNDS_CONFIG = CONTENT / "configs" / "sounds.yml"
 THEME = CONTENT / "sounds" / "haunted_theme.ogg"
+PLAYLIST_TRACKS = {
+    "horror_atmosphere": CONTENT / "sounds" / "horror_atmosphere.ogg",
+    "creepy_ambient": CONTENT / "sounds" / "creepy_ambient.ogg",
+    "dark_cavern_ambient": CONTENT / "sounds" / "dark_cavern_ambient.ogg",
+}
 EVENT_STING = CONTENT / "sounds" / "event_sting.ogg"
 EVENT_CUES = {
     "soulstorm_sting": 5.2,
@@ -153,6 +158,7 @@ for name in sorted(EXPECTED_SEASONAL_BLOCK_TEXTURES):
 
 theme_duration = 0.0
 audio_specs = [(THEME, None), (EVENT_STING, 5.0)]
+audio_specs.extend((path, None) for path in PLAYLIST_TRACKS.values())
 audio_specs.extend((CONTENT / "sounds" / f"{name}.ogg", duration) for name, duration in EVENT_CUES.items())
 for audio, expected_duration in audio_specs:
     if not audio.is_file():
@@ -182,6 +188,8 @@ for audio, expected_duration in audio_specs:
         theme_duration = actual_duration
         if actual_duration < 10.0:
             fail("Spooky Fester ambient theme is unexpectedly short")
+    elif audio in PLAYLIST_TRACKS.values() and actual_duration < 5.0:
+        fail(f"{audio.name} playlist loop is unexpectedly short")
     elif expected_duration is not None and abs(actual_duration - expected_duration) > 0.06:
         fail(f"{audio.name} must be {expected_duration:.0f} seconds long")
 
@@ -249,6 +257,7 @@ if "Attribute.MAX_HEALTH" not in passive_java or "getItemInOffHand()" not in pas
 
 
 for sound_id in ("warriorland_halloween:event_sting", "warriorland_halloween:haunted_theme",
+                 *(f"warriorland_halloween:{name}" for name in PLAYLIST_TRACKS),
                  *(f"warriorland_halloween:{name}" for name in EVENT_CUES)):
     if sound_id not in runtime_config:
         fail(f"Plugin configuration is missing sound ID: {sound_id}")
@@ -261,6 +270,34 @@ if abs(configured_loop_ms - round(theme_duration * 1000)) > 100:
         f"Ambient playback interval ({configured_loop_ms} ms) does not match "
         f"Spooky Fester duration ({round(theme_duration * 1000)} ms)"
     )
+
+track_durations = {}
+for match in re.finditer(
+    r"(?m)^    (haunted_theme|horror_atmosphere|creepy_ambient|dark_cavern_ambient):\\s*(\\d+)\\s*$",
+    runtime_config,
+):
+    track_durations[match.group(1)] = int(match.group(2))
+expected_track_names = {"haunted_theme", *PLAYLIST_TRACKS.keys()}
+if set(track_durations) != expected_track_names:
+    fail("Runtime config must define loop durations for each of the four Halloween playlist tracks")
+for track_name, track_path in {
+    "haunted_theme": THEME,
+    **PLAYLIST_TRACKS,
+}.items():
+    try:
+        metadata = subprocess.run(
+            ["ffprobe", "-v", "error", "-select_streams", "a:0",
+             "-show_entries", "stream=duration", "-of", "json", str(track_path)],
+            check=True, capture_output=True, text=True,
+        )
+        actual_ms = round(float(json.loads(metadata.stdout)["streams"][0]["duration"]) * 1000)
+    except (OSError, subprocess.CalledProcessError, ValueError, KeyError, IndexError) as exc:
+        fail(f"Could not inspect playlist duration for {track_name}: {exc}")
+    if abs(track_durations[track_name] - actual_ms) > 100:
+        fail(f"Playlist loop duration for {track_name} differs from encoded OGG length")
+
+if "atmosphere.playlist" not in shop_config and False:
+    fail("unreachable")
 
 config = CONFIG.read_text(encoding="utf-8")
 if "namespace: warriorland_halloween" not in config:

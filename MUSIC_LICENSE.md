@@ -27,3 +27,14 @@ All files are mono OGG/Vorbis. CI inspects the audio stream codec, sample rate, 
 Copy `warriorland_halloween` to `plugins/ItemsAdder/contents/`, run `/iazip`, and verify `/iainfo` reports a reachable resource-pack URL. Clients must accept and download the rebuilt pack for the sounds to work. The plugin plays `haunted_theme` in the AMBIENT category and periodically stops Minecraft's MUSIC category; the pack separately replaces 31 configured background music event IDs with the silent asset.
 
 A successful CI build verifies asset structure, not delivery to a live Hostify server or client-side playback.
+
+
+## Night and cave playlist (CC0)
+
+These downloadable tracks are included in the ItemsAdder resource pack by the CI audio generator. Each OpenGameArt page marks the asset CC0; no attribution is legally required, but the source links are retained here.
+
+- `horror_atmosphere.ogg` — **Horror Atmosphere**, by SubspaceAudio; the attached OGG is named “Juhani Junkala - Post Apocalyptic Wastelands [Loop Ready]”. CC0. Source: https://opengameart.org/content/horror-atmosphere
+- `creepy_ambient.ogg` — **Creepy Ambient Loop**, by epb9000. CC0. Source: https://opengameart.org/content/creepy-ambient-loop
+- `dark_cavern_ambient.ogg` — **Dark Cavern Ambient**, by Paul Wortmann; version 002 is the continuous loop. CC0. Source: https://opengameart.org/content/dark-cavern-ambient
+
+The playlist rotates Spooky Fester, Horror Atmosphere, and Creepy Ambient during Overworld night. Dark Cavern Ambient takes priority in underground spaces detected by depth and sky-light checks. Each loop period is derived from the actual encoded audio duration during CI, so tracks do not get cut off or overlap at the transition.
