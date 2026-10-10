@@ -158,7 +158,10 @@ public final class HalloweenWorldDecorator implements Listener {
                 - existing.getOrDefault(Material.JACK_O_LANTERN, 0));
         int webs = Math.max(0, bounded("cobwebs-per-chunk", 2, 0, 3) - existing.getOrDefault(Material.COBWEB, 0));
         int candles = Math.max(0, bounded("red-candles-per-chunk", 1, 0, 3) - existing.getOrDefault(Material.RED_CANDLE, 0));
-        int graves = bounded("gravestones-per-chunk", 1, 0, 2);
+        boolean existingPhysicalGrave = existing.getOrDefault(Material.CHISELED_POLISHED_BLACKSTONE, 0) > 0
+                || existing.getOrDefault(Material.CRACKED_POLISHED_BLACKSTONE_BRICKS, 0) > 0
+                || existing.getOrDefault(Material.MOSSY_STONE_BRICKS, 0) > 0;
+        int graves = existingPhysicalGrave ? 0 : bounded("gravestones-per-chunk", 1, 0, 2);
         int deadPlants = Math.max(0, bounded("dead-plants-per-chunk", 1, 0, 3)
                 - existing.getOrDefault(Material.DEAD_BUSH, 0)
                 - existing.getOrDefault(Material.BROWN_MUSHROOM, 0)
@@ -221,7 +224,7 @@ public final class HalloweenWorldDecorator implements Listener {
                     || foot.getState() instanceof TileState || head.getState() instanceof TileState) continue;
             if (placeGravestone(ground, random)) placed++;
         }
-        if (legacyDecorated && placed > 0) removeLegacyFlatGraveDisplays(chunk);
+        if (legacyDecorated && (placed > 0 || existingPhysicalGrave)) removeLegacyFlatGraveDisplays(chunk);
 
         // Add actual 3D mushrooms formed from mushroom-stem and mushroom-cap blocks.
         // The seasonal pack changes their cap textures, but the geometry is real blocks.
@@ -376,7 +379,11 @@ public final class HalloweenWorldDecorator implements Listener {
                 Material.PUMPKIN, Material.CARVED_PUMPKIN, Material.JACK_O_LANTERN,
                 Material.COBWEB, Material.RED_CANDLE, Material.DEAD_BUSH,
                 Material.BROWN_MUSHROOM, Material.RED_MUSHROOM, Material.SOUL_LANTERN,
-                Material.MUSHROOM_STEM, Material.RED_MUSHROOM_BLOCK, Material.BROWN_MUSHROOM_BLOCK);
+                Material.MUSHROOM_STEM, Material.RED_MUSHROOM_BLOCK, Material.BROWN_MUSHROOM_BLOCK,
+                Material.POLISHED_BLACKSTONE_BRICKS, Material.CHISELED_POLISHED_BLACKSTONE,
+                Material.POLISHED_BLACKSTONE_BRICK_SLAB, Material.POLISHED_BLACKSTONE_BRICK_WALL,
+                Material.CRACKED_POLISHED_BLACKSTONE_BRICKS, Material.DEEPSLATE_BRICK_SLAB,
+                Material.CRACKED_DEEPSLATE_BRICKS, Material.MOSSY_STONE_BRICKS, Material.MOSSY_STONE_BRICK_SLAB);
         java.util.Map<Material, Integer> counts = new java.util.EnumMap<>(Material.class);
         World world = chunk.getWorld();
         int baseX = chunk.getX() << 4;
