@@ -35,6 +35,7 @@ public final class HalloweenStructureGenerator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey checkedKey;
     private final NamespacedKey structureKey;
+    private final NamespacedKey legacyStructureKey;
     private final NamespacedKey centerXKey;
     private final NamespacedKey centerYKey;
     private final NamespacedKey centerZKey;
@@ -47,8 +48,9 @@ public final class HalloweenStructureGenerator implements Listener {
 
     public HalloweenStructureGenerator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.checkedKey = new NamespacedKey(plugin, "halloween_structure_checked_v1");
-        this.structureKey = new NamespacedKey(plugin, "halloween_generated_structure_v1");
+        this.checkedKey = new NamespacedKey(plugin, "halloween_structure_checked_v2");
+        this.structureKey = new NamespacedKey(plugin, "halloween_structure_type");
+        this.legacyStructureKey = new NamespacedKey(plugin, "halloween_generated_structure_v1");
         this.centerXKey = new NamespacedKey(plugin, "halloween_structure_center_x");
         this.centerYKey = new NamespacedKey(plugin, "halloween_structure_center_y");
         this.centerZKey = new NamespacedKey(plugin, "halloween_structure_center_z");
@@ -89,7 +91,7 @@ public final class HalloweenStructureGenerator implements Listener {
     }
 
     private boolean isEnabled() {
-        return plugin.getConfig().getBoolean("world-generation.enabled", true);
+        return plugin.getConfig().getBoolean("random-structures.enabled", true);
     }
 
     private void enqueue(Chunk chunk) {
@@ -104,7 +106,7 @@ public final class HalloweenStructureGenerator implements Listener {
             queued.clear();
             return;
         }
-        int budget = Math.max(1, Math.min(4, plugin.getConfig().getInt("world-generation.chunks-per-tick", 1)));
+        int budget = Math.max(1, Math.min(4, plugin.getConfig().getInt("random-structures.chunks-per-tick", 1)));
         for (int i = 0; i < budget; i++) {
             Chunk chunk = pending.poll();
             if (chunk == null) return;
@@ -134,18 +136,30 @@ public final class HalloweenStructureGenerator implements Listener {
                 ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L)
                 ^ 0x48414C4C53545255L);
-        int denominator = Math.max(48, Math.min(2000,
-                plugin.getConfig().getInt("world-generation.structure-chance-per-chunk", 220)));
-        if (random.nextInt(denominator) != 0) return;
+        // Evaluate the configured village/graveyard probabilities for every eligible
+        // Overworld chunk instead of the obsolete single world-generation.* roll.
+        int villageChance = Math.max(0, Math.min(1000,
+                plugin.getConfig().getInt("random-structures.village-chance-per-thousand", 18)));
+        int graveyardChance = Math.max(0, Math.min(1000 - villageChance,
+                plugin.getConfig().getInt("random-structures.graveyard-chance-per-thousand", 45)));
+        int roll = random.nextInt(1000);
+        final String type;
+        if (roll < villageChance) {
+            type = HAUNTED_VILLAGE;
+        } else if (roll < villageChance + graveyardChance) {
+            type = HAUNTED_GRAVEYARD;
+        } else {
+            return;
+        }
 
         int centerX = (chunk.getX() << 4) + 8;
         int centerZ = (chunk.getZ() << 4) + 8;
-        Terrain terrain = inspectTerrain(world, centerX, centerZ, 5);
+        Terrain terrain = findFlatPlatformY(world, centerX, centerZ, 5);
         if (terrain == null) return;
 
-        int villagePercent = Math.max(0, Math.min(100,
-                plugin.getConfig().getInt("world-generation.haunted-village-percent", 28)));
-        String type = random.nextInt(100) < villagePercent ? HAUNTED_VILLAGE : HAUNTED_GRAVEYARD;
+        // Fill only low natural spots and clear replaceable plants/leaves. This routine
+        // never excavates downwards or creates a cave/pit.
+        preparePlatform(world, centerX, terrain.baseY(), centerZ, 5);
         if (HAUNTED_VILLAGE.equals(type)) {
             buildHauntedVillage(world, centerX, terrain.baseY(), centerZ, random);
         } else {
@@ -154,6 +168,7 @@ public final class HalloweenStructureGenerator implements Listener {
 
         var data = chunk.getPersistentDataContainer();
         data.set(structureKey, PersistentDataType.STRING, type);
+        data.set(legacyStructureKey, PersistentDataType.STRING, type);
         data.set(centerXKey, PersistentDataType.INTEGER, centerX);
         data.set(centerYKey, PersistentDataType.INTEGER, terrain.baseY() + 1);
         data.set(centerZKey, PersistentDataType.INTEGER, centerZ);
@@ -162,14 +177,14 @@ public final class HalloweenStructureGenerator implements Listener {
     }
 
     private boolean isExcludedWorld(String worldName) {
-        for (String excluded : plugin.getConfig().getStringList("world-generation.excluded-worlds")) {
+        for (String excluded : plugin.getConfig().getStringList("random-structures.excluded-worlds")) {
             if (excluded != null && excluded.equalsIgnoreCase(worldName)) return true;
         }
         return false;
     }
 
     private boolean isNearWorldSpawn(Chunk chunk) {
-        int radius = Math.max(0, plugin.getConfig().getInt("world-generation.spawn-exclusion-radius", 320));
+        int radius = Math.max(0, plugin.getConfig().getInt("random-structures.minimum-distance-from-world-spawn-blocks", 256));
         if (radius == 0) return false;
         Location spawn = chunk.getWorld().getSpawnLocation();
         double cx = (chunk.getX() << 4) + 8.0D;
@@ -197,6 +212,24 @@ public final class HalloweenStructureGenerator implements Listener {
         return false;
     }
 
+    private Terrain findFlatPlatformY(World world, int centerX, int centerZ, int radius) {
+        return inspectTerrain(world, centerX, centerZ, radius);
+    }
+
+    private void preparePlatform(World world, int centerX, int baseY, int centerZ, int radius) {
+        fillNaturalHeightDifferences(world, centerX, baseY, centerZ, radius);
+        for (int x = centerX - radius; x <= centerX + radius; x++) {
+            for (int z = centerZ - radius; z <= centerZ + radius; z++) {
+                Block ground = findNaturalGround(world, x, z);
+                if (ground == null) continue;
+                for (int y = ground.getY() + 1; y <= baseY + 6; y++) {
+                    Block block = world.getBlockAt(x, y, z);
+                    if (isReplaceableVegetation(block.getType())) block.setType(Material.AIR, false);
+                }
+            }
+        }
+    }
+
     private Terrain inspectTerrain(World world, int centerX, int centerZ, int radius) {
         int minY = Integer.MAX_VALUE;
         int maxY = Integer.MIN_VALUE;
@@ -206,7 +239,7 @@ public final class HalloweenStructureGenerator implements Listener {
                 if (ground == null || ground.getState() instanceof TileState) return null;
                 minY = Math.min(minY, ground.getY());
                 maxY = Math.max(maxY, ground.getY());
-                if (maxY - minY > 3) return null;
+                if (maxY - minY > 5) return null;
             }
         }
         if (maxY <= world.getMinHeight() || maxY + 8 >= world.getMaxHeight()) return null;
@@ -229,7 +262,8 @@ public final class HalloweenStructureGenerator implements Listener {
 
     private Block findNaturalGround(World world, int x, int z) {
         int top = world.getHighestBlockYAt(x, z);
-        int bottom = Math.max(world.getMinHeight(), top - 12);
+        // Tall canopy blocks must not hide the natural ground from random structure placement.
+        int bottom = Math.max(world.getMinHeight(), top - 32);
         for (int y = top; y >= bottom; y--) {
             Material material = world.getBlockAt(x, y, z).getType();
             if (isNaturalGround(material)) return world.getBlockAt(x, y, z);
@@ -253,13 +287,13 @@ public final class HalloweenStructureGenerator implements Listener {
                     DANDELION, POPPY, BLUE_ORCHID, ALLIUM, AZURE_BLUET,
                     RED_TULIP, ORANGE_TULIP, WHITE_TULIP, PINK_TULIP,
                     OXEYE_DAISY, CORNFLOWER, LILY_OF_THE_VALLEY, WITHER_ROSE,
-                    SNOW, BROWN_MUSHROOM, RED_MUSHROOM, SWEET_BERRY_BUSH -> true;
-            default -> false;
+                    SNOW, BROWN_MUSHROOM, RED_MUSHROOM, SWEET_BERRY_BUSH,
+                    VINE, GLOW_LICHEN -> true;
+            default -> material.name().endsWith("_LEAVES") || material.name().endsWith("_SAPLING");
         };
     }
 
     private void buildHauntedVillage(World world, int cx, int baseY, int cz, Random random) {
-        fillNaturalHeightDifferences(world, cx, baseY, cz, 5);
         house(world, cx - 3, baseY + 1, cz - 3, true);
         house(world, cx + 3, baseY + 1, cz - 3, false);
         house(world, cx - 3, baseY + 1, cz + 3, true);
@@ -323,7 +357,6 @@ public final class HalloweenStructureGenerator implements Listener {
     }
 
     private void buildGraveyard(World world, int cx, int baseY, int cz, Random random) {
-        fillNaturalHeightDifferences(world, cx, baseY, cz, 5);
         int floorY = baseY + 1;
         // Low stone boundary with an open gate; no digging, cave or hole is generated.
         for (int offset = -5; offset <= 5; offset++) {
@@ -346,6 +379,9 @@ public final class HalloweenStructureGenerator implements Listener {
         put(world, cx, floorY + 2, cz, Material.SOUL_LANTERN);
         put(world, cx - 1, floorY, cz, Material.GRAVEL);
         put(world, cx + 1, floorY, cz, Material.GRAVEL);
+        // Distinct wither roses identify the place as a graveyard; no hole is dug.
+        put(world, cx - 3, floorY, cz + 3, Material.WITHER_ROSE);
+        put(world, cx + 3, floorY, cz + 3, Material.WITHER_ROSE);
     }
 
     private void graveMarker(World world, int x, int floorY, int z, boolean cracked) {
@@ -391,7 +427,9 @@ public final class HalloweenStructureGenerator implements Listener {
                 if (!world.isChunkLoaded(cx, cz)) continue;
                 Chunk chunk = world.getChunkAt(cx, cz);
                 var data = chunk.getPersistentDataContainer();
-                if (!HAUNTED_VILLAGE.equals(data.get(structureKey, PersistentDataType.STRING))) continue;
+                String type = data.get(structureKey, PersistentDataType.STRING);
+                if (type == null) type = data.get(legacyStructureKey, PersistentDataType.STRING);
+                if (!HAUNTED_VILLAGE.equals(type)) continue;
                 int x = data.getOrDefault(centerXKey, PersistentDataType.INTEGER, (cx << 4) + 8);
                 int y = data.getOrDefault(centerYKey, PersistentDataType.INTEGER, location.getBlockY());
                 int z = data.getOrDefault(centerZKey, PersistentDataType.INTEGER, (cz << 4) + 8);

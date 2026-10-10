@@ -56,6 +56,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenLoreV4();
         migrateCrimsonWardenLoreV5();
         migrateHalloween3dDecorationsV1();
+        migrateHalloweenDecorationReliabilityV2();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
 
@@ -168,6 +169,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenLoreV4();
         migrateCrimsonWardenLoreV5();
         migrateHalloween3dDecorationsV1();
+        migrateHalloweenDecorationReliabilityV2();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
@@ -574,6 +576,17 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getConfig().set("migrations.halloween-3d-decorations-v1", true);
         saveConfig();
         getLogger().info("Halloween 3D graves/mushrooms enabled with low per-chunk density; unrelated world settings preserved.");
+    }
+
+    private void migrateHalloweenDecorationReliabilityV2() {
+        if (getConfig().getBoolean("migrations.halloween-decoration-reliability-v2", false)) return;
+        // 48 attempts was the previous default and often missed eligible sites in sloped/forested chunks.
+        // Preserve a custom value above the old default.
+        int attempts = getConfig().getInt("world-decorations.attempts-per-placement", 48);
+        if (attempts <= 48) getConfig().set("world-decorations.attempts-per-placement", 96);
+        getConfig().set("migrations.halloween-decoration-reliability-v2", true);
+        saveConfig();
+        getLogger().info("Halloween decoration reliability migration applied.");
     }
 
     /**

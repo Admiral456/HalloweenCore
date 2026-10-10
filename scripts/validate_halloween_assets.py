@@ -434,7 +434,7 @@ if 'return plugin.getConfig().getBoolean("world-decorations.enabled", true)' not
 if "Walk down to the real" not in world_decorator or "randomCanopySurface(chunk, random)" not in world_decorator:
     fail("World decoration must distinguish natural ground from canopy anchors so forest chunks can receive decorations")
 structure_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenStructureGenerator.java").read_text(encoding="utf-8")
-for marker in ("ChunkLoadEvent", "halloween_structure_checked_v1", "random-structures.", "buildHauntedVillage",
+for marker in ("ChunkLoadEvent", "halloween_structure_checked_v2", "random-structures.", "buildHauntedVillage",
                "buildGraveyard", "findFlatPlatformY", "preparePlatform", "halloween_structure_type", "Material.WITHER_ROSE"):
     if marker not in structure_java:
         fail(f"Random Halloween structure generator is missing required behavior: {marker}")
@@ -641,9 +641,9 @@ if arena_start < 0 or arena_end < 0:
     fail("Vampire arena build command could not be located")
 arena_method = arena_command[arena_start:arena_end]
 for marker in (
-    "playerLocation.getBlockX() + 0.5D",
-    "playerLocation.getBlockY()",
-    "playerLocation.getBlockZ() + 0.5D",
+    "location.getBlockX() + 0.5D",
+    "floorSurfaceY",
+    "location.getBlockZ() + 0.5D",
     'arenaPath + ".pending"',
     'pendingPath + ".configured"',
     'plugin.getConfig().set(arenaPath + ".configured", true)',
@@ -655,7 +655,7 @@ if 'if (!plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false)
     fail("Arena generation must not require a previous /halloween setvampirearena command")
 if "builder.inspect(center)" not in arena_method or "builder.build(center)" not in arena_method:
     fail("Arena generation must retain preflight and explicit-confirm safety")
-if "Math.ceil(playerLocation.getY() - 1.0E-6D)" not in arena_method or "boolean hasConfiguredSite" not in arena_method:
+if "Math.ceil(location.getY() - 1.0E-6D)" not in arena_method or "boolean hasConfiguredSite" not in arena_method or 'mode.equals("selected")' not in arena_method or 'mode.equals("here")' not in arena_method:
     fail("Arena generation must use the correct standing-floor height and allow a configured center to be confirmed")
 arena_builder = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "VampireArenaBuilder.java").read_text(encoding="utf-8")
 for marker in ("world.getChunkAt(cx, cz)", "Material.AIR", "floorY + 1", "public int build(Location center)"):

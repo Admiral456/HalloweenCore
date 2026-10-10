@@ -44,6 +44,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final NamespacedKey oldestDecoratedKey;
     private final NamespacedKey ancientDecoratedKey;
     private final NamespacedKey oldestDecorationMarkerKey;
+    private final NamespacedKey oldestDecorationMarkerV1Key;
     private final NamespacedKey graveAccentKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
@@ -52,12 +53,13 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v6");
-        this.previousDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v5");
-        this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v4");
-        this.oldestDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
-        this.ancientDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
-        this.oldestDecorationMarkerKey = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v7");
+        this.previousDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v6");
+        this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v5");
+        this.oldestDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v4");
+        this.ancientDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
+        this.oldestDecorationMarkerKey = new NamespacedKey(plugin, "halloween_decorated_v2");
+        this.oldestDecorationMarkerV1Key = new NamespacedKey(plugin, "halloween_decorated_v1");
         this.graveAccentKey = new NamespacedKey(plugin, "halloween_grave_accent");
     }
 
@@ -142,7 +144,8 @@ public final class HalloweenWorldDecorator implements Listener {
                 || chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(oldestDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(ancientDecoratedKey, PersistentDataType.BYTE)
-                || chunk.getPersistentDataContainer().has(oldestDecorationMarkerKey, PersistentDataType.BYTE);
+                || chunk.getPersistentDataContainer().has(oldestDecorationMarkerKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(oldestDecorationMarkerV1Key, PersistentDataType.BYTE);
         // Legacy flat gravestones are removed only after at least one replacement was
         // successfully built, so unsuitable chunks never lose their existing decoration.
 
@@ -166,7 +169,7 @@ public final class HalloweenWorldDecorator implements Listener {
                 ? 0 : bounded("large-mushrooms-per-chunk", 1, 0, 1);
         int soulLights = Math.max(0, bounded("soul-lights-per-chunk", 1, 0, 2)
                 - existing.getOrDefault(Material.SOUL_LANTERN, 0));
-        int attempts = bounded("attempts-per-placement", 48, 8, 80);
+        int attempts = bounded("attempts-per-placement", 96, 16, 128);
         long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C4F574545L;
         Random random = new Random(seed);
@@ -463,7 +466,7 @@ public final class HalloweenWorldDecorator implements Listener {
                 if (isNaturalGround(ground.getRelative(dx, 0, dz).getType())) natural++;
             }
         }
-        return natural >= 7;
+        return natural >= 5;
     }
 
     private int countNearbyWebAnchors(Block center) {
