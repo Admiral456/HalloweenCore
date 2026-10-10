@@ -32,6 +32,9 @@ public final class HalloweenDataManager {
     private final Map<UUID, Integer> storyQuestProgress = new HashMap<>();
     private final Map<UUID, Set<String>> completedStoryQuests = new HashMap<>();
     private final Map<UUID, Set<String>> storyGraveyardVisits = new HashMap<>();
+    // Persisted proof lets qualified participants finish the campaign even if they were offline
+    // or had not reached its last chapter when the one-time global boss encounter ended.
+    private final Set<UUID> vampireKingDefeatProofs = new HashSet<>();
     private long serverFragments;
     private boolean finaleUnlocked;
     private boolean vampireDefeated;
@@ -57,6 +60,7 @@ public final class HalloweenDataManager {
         storyQuestProgress.clear();
         completedStoryQuests.clear();
         storyGraveyardVisits.clear();
+        vampireKingDefeatProofs.clear();
         serverFragments = 0L;
         finaleUnlocked = false;
         vampireDefeated = false;
@@ -105,6 +109,10 @@ public final class HalloweenDataManager {
                         secretDiscoveries.put(uuid, new HashSet<>(secrets));
                     }
 
+                    if (data.getBoolean(base + ".story-quest.vampire-king-proof", false)) {
+                        vampireKingDefeatProofs.add(uuid);
+                    }
+
                     // Campaign v4 adds configured graveyards and the Vampire King finale.
                     // Start the rebuilt ordered campaign cleanly instead of skipping new chapters.
                     int questCampaignVersion = data.getInt(base + ".story-quest.campaign-version", 0);
@@ -149,6 +157,7 @@ public final class HalloweenDataManager {
         players.addAll(storyQuestProgress.keySet());
         players.addAll(completedStoryQuests.keySet());
         players.addAll(storyGraveyardVisits.keySet());
+        players.addAll(vampireKingDefeatProofs);
 
         for (UUID uuid : players) {
             String base = "players." + uuid;
@@ -189,6 +198,9 @@ public final class HalloweenDataManager {
             Set<String> graveyards = storyGraveyardVisits.get(uuid);
             if (graveyards != null && !graveyards.isEmpty()) {
                 data.set(base + ".story-quest.graveyard-visits", new ArrayList<>(graveyards));
+            }
+            if (vampireKingDefeatProofs.contains(uuid)) {
+                data.set(base + ".story-quest.vampire-king-proof", true);
             }
         }
 
@@ -286,6 +298,15 @@ public final class HalloweenDataManager {
 
     public void markVampireDefeated() {
         vampireDefeated = true;
+    }
+
+    public boolean markVampireKingDefeatProof(UUID uuid) {
+        if (uuid == null) return false;
+        return vampireKingDefeatProofs.add(uuid);
+    }
+
+    public boolean hasVampireKingDefeatProof(UUID uuid) {
+        return uuid != null && vampireKingDefeatProofs.contains(uuid);
     }
 
     public Map<UUID, Long> getAllFragments() {
