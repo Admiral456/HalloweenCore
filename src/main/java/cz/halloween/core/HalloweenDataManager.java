@@ -103,13 +103,18 @@ public final class HalloweenDataManager {
                         secretDiscoveries.put(uuid, new HashSet<>(secrets));
                     }
 
-                    String questId = data.getString(base + ".story-quest.active", "");
-                    int questProgress = Math.max(0, data.getInt(base + ".story-quest.progress", 0));
-                    if (!questId.isBlank()) storyQuest.put(uuid, questId);
-                    if (questProgress > 0) storyQuestProgress.put(uuid, questProgress);
-                    java.util.List<String> completedQuests = data.getStringList(base + ".story-quest.completed");
-                    if (!completedQuests.isEmpty()) {
-                        completedStoryQuests.put(uuid, new HashSet<>(completedQuests));
+                    // Campaign v2 changes every objective into a Halloween-mob hunt.
+                    // Do not carry old easy-kill/farming completions into the new story.
+                    int questCampaignVersion = data.getInt(base + ".story-quest.campaign-version", 0);
+                    if (questCampaignVersion >= 2) {
+                        String questId = data.getString(base + ".story-quest.active", "");
+                        int questProgress = Math.max(0, data.getInt(base + ".story-quest.progress", 0));
+                        if (!questId.isBlank()) storyQuest.put(uuid, questId);
+                        if (questProgress > 0) storyQuestProgress.put(uuid, questProgress);
+                        java.util.List<String> completedQuests = data.getStringList(base + ".story-quest.completed");
+                        if (!completedQuests.isEmpty()) {
+                            completedStoryQuests.put(uuid, new HashSet<>(completedQuests));
+                        }
                     }
                 } catch (IllegalArgumentException ignored) {
                     plugin.getLogger().warning("Ignoring invalid player UUID in data.yml: " + key);
@@ -142,6 +147,7 @@ public final class HalloweenDataManager {
 
         for (UUID uuid : players) {
             String base = "players." + uuid;
+            data.set(base + ".story-quest.campaign-version", 2);
             long amount = fragments.getOrDefault(uuid, 0L);
             long join = lastJoin.getOrDefault(uuid, 0L);
             int streak = streaks.getOrDefault(uuid, 0);
