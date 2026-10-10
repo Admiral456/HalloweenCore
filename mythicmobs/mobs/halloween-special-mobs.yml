@@ -91,3 +91,58 @@ halloween_hex_witch:
   - model{mid=halloween_hex_witch;n=false} @self ~onSpawn
   - state{mid=halloween_hex_witch;s=idle;} @self ~onSpawn
   - state{mid=halloween_hex_witch;s=attack} @self ~onAttack
+
+halloween_void_reaper:
+  Type: HUSK
+  Display: '&5&lŽENEC PRÁZDNOTY'
+  Health: 44
+  Damage: 8
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: true
+    PreventSunburn: true
+    MovementSpeed: 0.26
+    KnockbackResistance: 0.30
+    PreventRenaming: true
+  Skills:
+  - model{mid=halloween_void_reaper;n=false} @self ~onSpawn
+  - state{mid=halloween_void_reaper;s=idle;} @self ~onSpawn
+  - state{mid=halloween_void_reaper;s=attack} @self ~onAttack
+
+halloween_frost_stalker:
+  Type: STRAY
+  Display: '&b&lLEDOVÝ STOPAŘ'
+  Health: 38
+  Damage: 7
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: true
+    MovementSpeed: 0.27
+    KnockbackResistance: 0.20
+    PreventRenaming: true
+  Skills:
+  - model{mid=halloween_frost_stalker;n=false} @self ~onSpawn
+  - state{mid=halloween_frost_stalker;s=idle;} @self ~onSpawn
+  - state{mid=halloween_frost_stalker;s=attack} @self ~onAttack
+
+halloween_nightmare:
+  Type: PHANTOM
+  Display: '&d&lNOČNÍ MŮRA'
+  Health: 48
+  Damage: 9
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: true
+    MovementSpeed: 0.32
+    KnockbackResistance: 0.25
+    PreventRenaming: true
+  Skills:
+  - model{mid=halloween_nightmare;n=false} @self ~onSpawn
+  - state{mid=halloween_nightmare;s=idle;} @self ~onSpawn
+  - state{mid=halloween_nightmare;s=attack} @self ~onAttack
