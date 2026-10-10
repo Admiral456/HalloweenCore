@@ -228,7 +228,7 @@ Výstup:
 
 Zdrojové Blockbench modely a externí atlasy pro speciální moby jsou v `mythicmobs/models/halloween_*.bbmodel` a `mythicmobs/models/halloween_*.png`. Kontroluje je `python3 scripts/validate_special_mob_models.py`; CI zároveň balí definice a blueprinty do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`.
 
-Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj blueprinty přes ModelEngine, spusť `/meg reload models` a `/mm reload`. Do stávajícího seznamu `merge_other_plugins_resourcepacks_folders` v konfiguraci ItemsAdderu přidej cestu `ModelEngine/resource pack`, aby se modelové textury dostaly do stejného klientského packu. Poté spusť `/iazip`, ověř `/iainfo`, přijmi pack na klientovi a znovu se připoj.
+Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj blueprinty přes ModelEngine, spusť `/meg reload` a `/mm reload`; poté spusť `/iazip` a znovu se připoj, aby klient dostal finální resource pack. Do stávajícího seznamu `merge_other_plugins_resourcepacks_folders` v konfiguraci ItemsAdderu přidej cestu `ModelEngine/resource pack`, aby se modelové textury dostaly do stejného klientského packu. Poté spusť `/iazip`, ověř `/iainfo`, přijmi pack na klientovi a znovu se připoj.
 
 ## Diagnostika hudby a klientského packu
 

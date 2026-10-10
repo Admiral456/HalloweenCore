@@ -404,8 +404,12 @@ if "player.stopSound(SoundCategory.MUSIC)" not in atmosphere_java or "}, 1L, 20L
     fail("Halloween ambience must actively stop the vanilla MUSIC category at least once per second")
 
 reload_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
-if '"iazip"' not in reload_java or '"meg reload models"' not in reload_java or "ModelEngine/resource pack" not in reload_java:
-    fail("/halloween reload must refresh ModelEngine models, merge its pack and rebuild ItemsAdder assets")
+if '"iazip"' not in reload_java or '"meg reload"' not in reload_java or '"meg reload models"' in reload_java or "ModelEngine/resource pack" not in reload_java:
+    fail("/halloween reload must use /meg reload to generate ModelEngine's pack, merge it, and then run /iazip")
+if "Files.walk(assetsDirectory)" not in reload_java or "pngCount == 0" not in reload_java:
+    fail("Reload must verify ModelEngine generated real PNG textures before building the ItemsAdder ZIP")
+if "if (!ensureModelEngineResourcePackMerged(sender))" not in reload_java:
+    fail("Reload must abort packaging when ModelEngine textures or the merge config are missing")
 if 'Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iatexture' in reload_java or "iatexture all" in reload_java:
     fail("/halloween reload must not automatically push resource packs to online players; offer the new pack on reconnect")
 if "resourcePackRebuildInProgress" not in reload_java or "Resource pack je připraven" not in reload_java:

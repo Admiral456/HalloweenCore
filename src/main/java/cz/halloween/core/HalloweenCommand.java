@@ -931,18 +931,26 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             try {
                 var modelEngine = Bukkit.getPluginManager().getPlugin("ModelEngine");
                 if (modelEngine != null && modelEngine.isEnabled()) {
-                    boolean modelsReloaded = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "meg reload models");
+                    boolean modelsReloaded = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "meg reload");
                     if (modelsReloaded) {
-                        sender.sendMessage(plugin.color("&eModelEngine: modely byly znovu načteny."));
+                        sender.sendMessage(plugin.color("&eModelEngine: modely a jejich resource pack byly znovu sestaveny."));
                     } else {
-                        sender.sendMessage(plugin.color("&cModelEngine nepřijal /meg reload models. Pokračuji se sestavením ItemsAdder packu."));
+                        sender.sendMessage(plugin.color("&cModelEngine nepřijal /meg reload. ItemsAdder ZIP nyní nesestavím, protože by mohl obsahovat staré/chybějící textury."));
+                        sender.sendMessage(plugin.color("&7Ověř ModelEngine a složku plugins/ModelEngine/blueprints/, poté spusť /halloween reload znovu."));
+                        resourcePackRebuildInProgress = false;
+                        return;
                     }
                 }
 
                 // ModelEngine should update its resource-pack files before ItemsAdder merges them.
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     try {
-                        ensureModelEngineResourcePackMerged(sender);
+                        if (!ensureModelEngineResourcePackMerged(sender)) {
+                            sender.sendMessage(plugin.color("&cItemsAdder ZIP nebyl spuštěn, protože ModelEngine resource pack nemá ověřené textury nebo není správně nastavený merge."));
+                            sender.sendMessage(plugin.color("&7Oprav uvedenou cestu/soubory, spusť znovu /halloween reload a potom hráči znovu připojením načtou pack."));
+                            resourcePackRebuildInProgress = false;
+                            return;
+                        }
                         boolean zipDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
                         if (!zipDispatched) {
                             sender.sendMessage(plugin.color("&cNepodařilo se spustit /iazip. Zkontroluj ItemsAdder a spusť příkaz ručně v konzoli."));
@@ -974,7 +982,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                                 + ": " + ex.getMessage());
                         sender.sendMessage(plugin.color("&cObnova resource packu selhala. Zkontroluj konzoli serveru."));
                     }
-                }, 20L);
+                }, 40L);
             } catch (RuntimeException ex) {
                 resourcePackRebuildInProgress = false;
                 plugin.getLogger().warning("Halloween model reload stage failed: " + ex.getClass().getSimpleName()
@@ -989,20 +997,41 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
      * Ensure ModelEngine's generated assets are part of the ItemsAdder pack without
      * replacing the administrator's other merge entries or rewriting unrelated settings.
      */
-    private void ensureModelEngineResourcePackMerged(CommandSender sender) {
+    private boolean ensureModelEngineResourcePackMerged(CommandSender sender) {
         var modelEngine = Bukkit.getPluginManager().getPlugin("ModelEngine");
-        if (modelEngine == null || !modelEngine.isEnabled()) return;
+        if (modelEngine == null || !modelEngine.isEnabled()) {
+            sender.sendMessage(plugin.color("&eModelEngine není aktivní; sestavuji pouze ItemsAdder obsah bez special-mob modelů."));
+            return true;
+        }
 
         Path pluginsDirectory = plugin.getDataFolder().toPath().getParent();
         Path modelPack = pluginsDirectory.resolve("ModelEngine").resolve("resource pack");
+        Path assetsDirectory = modelPack.resolve("assets");
         Path itemsAdderConfig = pluginsDirectory.resolve("ItemsAdder").resolve("config.yml");
-        if (!Files.isDirectory(modelPack)) {
-            sender.sendMessage(plugin.color("&eModelEngine resource pack zatím neexistuje. Naimportuj mob blueprinty a ověř /meg reload models."));
-            return;
+        if (!Files.isDirectory(assetsDirectory)) {
+            sender.sendMessage(plugin.color("&cModelEngine po /meg reload nevytvořil složku resource pack/assets."));
+            sender.sendMessage(plugin.color("&7Ověř, že blueprinty jsou v plugins/ModelEngine/blueprints/, a zkontroluj konzoli ModelEngine."));
+            return false;
         }
+        long pngCount;
+        try (var paths = Files.walk(assetsDirectory)) {
+            pngCount = paths.filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName().toString().toLowerCase(java.util.Locale.ROOT).endsWith(".png"))
+                    .count();
+        } catch (IOException ex) {
+            sender.sendMessage(plugin.color("&cNemohu ověřit vygenerované PNG textury ModelEngine: " + ex.getClass().getSimpleName()));
+            return false;
+        }
+        if (pngCount == 0) {
+            sender.sendMessage(plugin.color("&cModelEngine resource pack/assets neobsahuje žádné PNG textury; ZIP by vedl k růžovo-černým modelům."));
+            sender.sendMessage(plugin.color("&7Zkontroluj import .bbmodel blueprintů a úspěch příkazu /meg reload."));
+            return false;
+        }
+        sender.sendMessage(plugin.color("&aModelEngine resource pack ověřen: nalezeno &e" + pngCount + " &aPNG textur."));
+
         if (!Files.isRegularFile(itemsAdderConfig)) {
-            sender.sendMessage(plugin.color("&eNenašel jsem plugins/ItemsAdder/config.yml; cestu ModelEngine/resource pack je nutné přidat do merge konfigurace ručně."));
-            return;
+            sender.sendMessage(plugin.color("&cNenašel jsem plugins/ItemsAdder/config.yml; nemohu bezpečně sloučit ModelEngine resource pack."));
+            return false;
         }
 
         try {
@@ -1011,7 +1040,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .map(String::trim)
                     .map(line -> line.replace("\"", "").replace("'", ""))
                     .anyMatch(line -> line.equals("- ModelEngine/resource pack"));
-            if (alreadyMerged) return;
+            if (alreadyMerged) {
+                sender.sendMessage(plugin.color("&aModelEngine/resource pack je již uveden v ItemsAdder merge konfiguraci."));
+                return true;
+            }
 
             final String key = "merge_other_plugins_resourcepacks_folders:";
             int keyIndex = -1;
@@ -1027,8 +1059,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 }
             }
             if (keyIndex < 0) {
-                sender.sendMessage(plugin.color("&eItemsAdder config neobsahuje merge_other_plugins_resourcepacks_folders; ModelEngine pack přidej do resource-pack.zip merge seznamu ručně."));
-                return;
+                sender.sendMessage(plugin.color("&cItemsAdder config neobsahuje merge_other_plugins_resourcepacks_folders; ModelEngine pack přidej do merge seznamu ručně."));
+                return false;
             }
 
             String oldLine = lines.get(keyIndex);
@@ -1053,8 +1085,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
             Files.write(itemsAdderConfig, lines, StandardCharsets.UTF_8);
             sender.sendMessage(plugin.color("&aItemsAdder config: do existujícího merge seznamu byla přidána cesta ModelEngine/resource pack."));
+            return true;
         } catch (IOException ex) {
             sender.sendMessage(plugin.color("&cNemohl jsem upravit merge seznam ItemsAdderu: " + ex.getClass().getSimpleName() + ". Nastav ModelEngine/resource pack ručně."));
+            return false;
         }
     }
 
