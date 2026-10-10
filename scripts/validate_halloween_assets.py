@@ -175,6 +175,41 @@ ARMOR_BALANCE = {
     "crimson_warden_boots": ("NETHERITE_BOOTS", 3, 3, 6, 950),
 }
 items_yaml = CONFIG.read_text(encoding="utf-8")
+
+# Validate the link between every ItemsAdder graphics.texture setting and its actual
+# PNG. This catches pack/model typos before a missing icon reaches the game client.
+referenced_textures = set()
+texture_root = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures"
+item_sections = re.finditer(
+    r"(?ms)^  ([A-Za-z0-9_-]+):\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)",
+    items_yaml,
+)
+for item_section in item_sections:
+    item_id, section = item_section.group(1), item_section.group(2)
+    texture_match = re.search(r"(?m)^\s+texture:\s*([A-Za-z0-9_./-]+)\s*$", section)
+    if not texture_match:
+        continue
+    texture_id = texture_match.group(1)
+    referenced_textures.add(texture_id)
+    texture_path = texture_root / (texture_id + ".png")
+    if not texture_path.is_file():
+        fail(f"ItemsAdder item '{item_id}' points to missing texture: {texture_id}.png")
+    try:
+        width, height = strict_png_size(texture_path)
+    except (OSError, ValueError) as exc:
+        fail(f"Texture for ItemsAdder item '{item_id}' is invalid: {exc}")
+    if (width, height) != (32, 32):
+        fail(f"Texture for ItemsAdder item '{item_id}' must be 32x32, got {width}x{height}")
+
+expected_item_texture_refs = {f"item/{name[:-4]}" for name in EXPECTED}
+if referenced_textures != expected_item_texture_refs:
+    fail(
+        "ItemsAdder texture references do not match the validated item PNG set. "
+        f"Missing refs={sorted(expected_item_texture_refs - referenced_textures)}; "
+        f"unvalidated refs={sorted(referenced_textures - expected_item_texture_refs)}"
+    )
+print(f"PASS ItemsAdder texture links: {len(referenced_textures)} definitions map to existing, valid 32x32 PNGs")
+
 for item_id, (material, vanilla_armor, bonus_armor, total_armor, durability) in ARMOR_BALANCE.items():
     match = re.search(rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_yaml)
     if not match:
