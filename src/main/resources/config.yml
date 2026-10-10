@@ -127,8 +127,7 @@ rewards:
       material: NETHERITE_HELMET
       amount: 1
       name: "&4&lHelma Krvavého strážce"
-      lore:
-        - "&c+6 Armor"
+      lore: []
 
     crimson-warden-chestplate:
       cost: 18000
@@ -137,8 +136,7 @@ rewards:
       material: NETHERITE_CHESTPLATE
       amount: 1
       name: "&4&lKyrys Krvavého strážce"
-      lore:
-        - "&c+12 Armor"
+      lore: []
 
     crimson-warden-leggings:
       cost: 14500
@@ -147,8 +145,7 @@ rewards:
       material: NETHERITE_LEGGINGS
       amount: 1
       name: "&4&lNohavice Krvavého strážce"
-      lore:
-        - "&c+9 Armor"
+      lore: []
 
     crimson-warden-boots:
       cost: 10000
@@ -157,8 +154,7 @@ rewards:
       material: NETHERITE_BOOTS
       amount: 1
       name: "&4&lBoty Krvavého strážce"
-      lore:
-        - "&c+6 Armor"
+      lore: []
 
     crimson-warden-shield:
       cost: 42000
@@ -560,8 +556,9 @@ world-decorations:
   pumpkins-per-chunk: 5
   cobwebs-per-chunk: 2
   red-candles-per-chunk: 1
-  gravestones-per-chunk: 2
-  dead-plants-per-chunk: 3
+  gravestones-per-chunk: 1
+  dead-plants-per-chunk: 1
+  large-mushrooms-per-chunk: 1
   soul-lights-per-chunk: 1
   attempts-per-placement: 32
   # Keep chunk work deliberately low to avoid generation spikes on live servers.

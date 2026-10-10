@@ -66,8 +66,7 @@ items:
 
   crimson_warden_helmet:
     name: "&4&lHelma Krvavého strážce"
-    lore:
-      - "&c+6 Armor"
+    lore: []
     material: NETHERITE_HELMET
     components_nbt_file: "crimson_warden_helmet.json"
     graphics:
@@ -77,12 +76,11 @@ items:
     equipment:
       id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
-        armor: 3
+        armor: 6
 
   crimson_warden_chestplate:
     name: "&4&lKyrys Krvavého strážce"
-    lore:
-      - "&c+12 Armor"
+    lore: []
     material: NETHERITE_CHESTPLATE
     components_nbt_file: "crimson_warden_chestplate.json"
     graphics:
@@ -92,12 +90,11 @@ items:
     equipment:
       id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
-        armor: 4
+        armor: 12
 
   crimson_warden_leggings:
     name: "&4&lNohavice Krvavého strážce"
-    lore:
-      - "&c+9 Armor"
+    lore: []
     material: NETHERITE_LEGGINGS
     components_nbt_file: "crimson_warden_leggings.json"
     graphics:
@@ -107,12 +104,11 @@ items:
     equipment:
       id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
-        armor: 3
+        armor: 9
 
   crimson_warden_boots:
     name: "&4&lBoty Krvavého strážce"
-    lore:
-      - "&c+6 Armor"
+    lore: []
     material: NETHERITE_BOOTS
     components_nbt_file: "crimson_warden_boots.json"
     graphics:
@@ -122,7 +118,7 @@ items:
     equipment:
       id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
-        armor: 3
+        armor: 6
 
   crimson_warden_shield:
     name: "&4&lŠtít Krvavého strážce"

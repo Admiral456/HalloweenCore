@@ -60,6 +60,7 @@ EXPECTED_SEASONAL_BLOCK_TEXTURES = {
     "pumpkin_side.png", "pumpkin_top.png", "pumpkin_face.png",
     "jack_o_lantern.png", "cobweb.png", "red_candle.png",
     "red_mushroom.png", "brown_mushroom.png", "dead_bush.png",
+    "red_mushroom_block.png", "brown_mushroom_block.png", "mushroom_block_inside.png", "mushroom_stem.png",
 }
 
 
@@ -170,10 +171,10 @@ for layer in ("layer_1.png", "layer_2.png"):
 
 # Verify that ItemsAdder's equipment modifiers match the advertised armor totals.
 ARMOR_BALANCE = {
-    "crimson_warden_helmet": ("NETHERITE_HELMET", 3, 3, 6, 900),
-    "crimson_warden_chestplate": ("NETHERITE_CHESTPLATE", 8, 4, 12, 1300),
-    "crimson_warden_leggings": ("NETHERITE_LEGGINGS", 6, 3, 9, 1150),
-    "crimson_warden_boots": ("NETHERITE_BOOTS", 3, 3, 6, 950),
+    "crimson_warden_helmet": ("NETHERITE_HELMET", 6, 900),
+    "crimson_warden_chestplate": ("NETHERITE_CHESTPLATE", 12, 1300),
+    "crimson_warden_leggings": ("NETHERITE_LEGGINGS", 9, 1150),
+    "crimson_warden_boots": ("NETHERITE_BOOTS", 6, 950),
 }
 items_yaml = CONFIG.read_text(encoding="utf-8")
 
@@ -222,7 +223,7 @@ if referenced_textures != expected_item_texture_refs:
     )
 print(f"PASS ItemsAdder texture links: {len(referenced_textures)} definitions map to existing, valid 32x32 PNGs")
 
-for item_id, (material, vanilla_armor, bonus_armor, total_armor, durability) in ARMOR_BALANCE.items():
+for item_id, (material, equipped_armor, durability) in ARMOR_BALANCE.items():
     match = re.search(rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_yaml)
     if not match:
         fail(f"ItemsAdder config is missing armor item {item_id}")
@@ -230,15 +231,15 @@ for item_id, (material, vanilla_armor, bonus_armor, total_armor, durability) in 
     if re.search(rf"(?m)^    material: {re.escape(material)}\s*$", section) is None:
         fail(f"{item_id} must use base material {material}")
     bonus_match = re.search(r"(?ms)^    equipment:\s*\n.*?^      slot_attribute_modifiers:\s*\n\s+armor:\s*(\d+)\s*$", section)
-    if not bonus_match or int(bonus_match.group(1)) != bonus_armor:
-        fail(f"{item_id} must add exactly {bonus_armor} Armor through ItemsAdder equipment modifiers")
+    if not bonus_match or int(bonus_match.group(1)) != equipped_armor:
+        fail(f"{item_id} must show the actual When Equipped attribute +{equipped_armor} Armor")
+    if re.search(r'(?m)^\s+- "&c\+\d+ Armor"\s*$', section):
+        fail(f"{item_id} must not duplicate armor stats in lore")
+    if "id: warriorland_halloween:crimson_warden" not in section:
+        fail(f"{item_id} is missing its Crimson Warden armor-layer binding")
     durability_match = re.search(r"(?m)^      max_durability: (\d+)\s*$", section)
     if not durability_match or int(durability_match.group(1)) != durability:
         fail(f"{item_id} must have durability {durability}")
-    if vanilla_armor + bonus_armor != total_armor:
-        fail(f"Internal armor balance expectation is incorrect for {item_id}")
-    if re.search(rf'(?m)^      - "&c\+{total_armor} Armor"\s*$', section) is None:
-        fail(f"{item_id} lore must display exactly +{total_armor} Armor")
     nbt_match = re.search(r'(?m)^    components_nbt_file: "([^"]+)"\s*$', section)
     if not nbt_match:
         fail(f"{item_id} is missing its component JSON")
@@ -417,11 +418,15 @@ if "resourcePackRebuildInProgress" not in reload_java or "Resource pack je přip
 
 world_decorator = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenWorldDecorator.java").read_text(encoding="utf-8")
 for marker in ("grave_marker", "grave_marker_cracked", "ItemDisplay.class", "Display.Billboard.VERTICAL",
-               "halloween_decorated_v4", "POLISHED_BLACKSTONE_BRICK_WALL"):
+               "halloween_decorated_v5", "POLISHED_BLACKSTONE_BRICKS", "CHISELED_POLISHED_BLACKSTONE",
+               "DEEPSLATE_BRICK_SLAB", "RED_MUSHROOM_BLOCK", "BROWN_MUSHROOM_BLOCK", "MUSHROOM_STEM",
+               "POLISHED_BLACKSTONE_BRICK_WALL"):
     if marker not in world_decorator:
         fail(f"Halloween world gravestone pipeline is missing: {marker}")
 if "display.setPersistent(true)" not in world_decorator or "display.setInvulnerable(true)" not in world_decorator:
     fail("Halloween gravestone displays must persist without taking damage")
+if "new Vector3f(2.4F, 2.4F, 1.0F)" in world_decorator:
+    fail("Gravestones must be built from physical blocks, not rendered as a giant flat ItemDisplay")
 if "resumeWithoutScanning()" not in world_decorator:
     fail("Halloween world decorator must be resumable without re-scanning all loaded chunks on hot reload")
 core_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCore.java").read_text(encoding="utf-8")
@@ -639,12 +644,30 @@ if "builder.inspect(center)" not in arena_method or "builder.build(center)" not 
     fail("Arena generation must retain preflight and explicit-confirm safety")
 print("PASS Vampire arena: auto-selects the standing block, stores preview, confirms same site, and keeps safety checks")
 
+curse_command = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
+curse_data = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenDataManager.java").read_text(encoding="utf-8")
+curse_service = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenServiceImpl.java").read_text(encoding="utf-8")
+core_source = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCore.java").read_text(encoding="utf-8")
+for marker in ("return curse(sender, args)", "curse set <úroveň>", "curse reset", "configuredCurseLevels()"):
+    if marker not in curse_command:
+        fail(f"Admin curse-setting command is missing: {marker}")
+if "setCurseLevelOverride" not in curse_data or "curse-level-override" not in curse_data:
+    fail("Manual curse override must persist in data.yml")
+if "getCurseLevelOverride" not in curse_service:
+    fail("Curse progression must honor the manual level override")
+if "migrateCrimsonWardenLoreV5" not in core_source:
+    fail("Existing configs must migrate away from the duplicated Crimson Warden +Armor lore")
+if "migrateHalloween3dDecorationsV1" not in core_source:
+    fail("Existing configs must get the low-density 3D grave/mushroom decoration migration")
+
 print("Halloween asset validation passed.")
 print("16 item textures: 32x32 PNG including two custom gravestones; 2 Crimson Warden armor layers: 64x32 PNG")
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
-print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
+print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16, including 3D mushroom cap textures")
+print("Crimson Warden armor: real equipment modifiers, no duplicate +Armor lore, equip texture bindings and durability verified")
+print("Crimson Warden weapon icons: generated high-contrast pixel-art icons for sword, pickaxe, axe, shovel and hoe")
 print("Sky shader: Minecraft 1.21.10 entry point and restrained Halloween tint verified")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")
 print("ItemsAdder sound definitions: present")

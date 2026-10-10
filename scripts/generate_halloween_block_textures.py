@@ -441,6 +441,194 @@ def crimson_warden_shield_texture(blocking: bool = False) -> None:
     save_sized_pixels(ITEM_OUT, filename, pixels)
 
 
+def mushroom_cap_block(red: bool) -> None:
+    """Generate the 16x16 surface of a real 3D mushroom-cap block, not only its tiny plant sprite."""
+    pixels = [[(0, 0, 0, 255) for _ in range(16)] for _ in range(16)]
+    spots_red = {(3, 3), (4, 3), (10, 2), (11, 2), (8, 6), (9, 6), (4, 9), (5, 9), (12, 11), (13, 11)}
+    spots_brown = {(3, 3), (4, 4), (10, 2), (11, 3), (8, 6), (9, 6), (4, 10), (5, 9), (12, 11), (13, 12)}
+    for y in range(16):
+        for x in range(16):
+            edge = x in (0, 15) or y in (0, 15)
+            if red:
+                if (x, y) in spots_red:
+                    color = (255, 191, 132, 255) if (x + y) % 2 else (238, 100, 77, 255)
+                elif x < 4 and y < 8:
+                    color = (111, 22, 42, 255)
+                elif x > 11 and y > 7:
+                    color = (88, 20, 38, 255)
+                elif (x + y) % 7 == 0:
+                    color = (191, 42, 51, 255)
+                else:
+                    color = (156, 30, 47, 255)
+            else:
+                if (x, y) in spots_brown:
+                    color = (92, 151, 88, 255) if (x + y) % 2 else (174, 162, 95, 255)
+                elif x < 4 and y < 8:
+                    color = (61, 43, 50, 255)
+                elif x > 11 and y > 7:
+                    color = (47, 37, 43, 255)
+                elif (x * 3 + y) % 7 == 0:
+                    color = (119, 85, 62, 255)
+                else:
+                    color = (91, 64, 54, 255)
+            pixels[y][x] = color
+    save_pixels("red_mushroom_block.png" if red else "brown_mushroom_block.png", pixels)
+
+
+def mushroom_block_inside() -> None:
+    """Pale fibrous texture for stems and exposed inner cap faces."""
+    pixels = [[(0, 0, 0, 255) for _ in range(16)] for _ in range(16)]
+    for y in range(16):
+        for x in range(16):
+            if x in (0, 15) or y in (0, 15):
+                color = (80, 55, 61, 255)
+            elif x in (4, 11):
+                color = (143, 102, 96, 255)
+            elif (x + 2 * y) % 5 == 0:
+                color = (224, 188, 160, 255)
+            elif (3 * x + y) % 7 == 0:
+                color = (183, 135, 123, 255)
+            else:
+                color = (201, 161, 140, 255)
+            pixels[y][x] = color
+    save_pixels("mushroom_block_inside.png", pixels)
+
+
+def mushroom_stem_texture() -> None:
+    """A pale, vertically fibred stem without a dark border that would form seams between blocks."""
+    pixels = [[(0, 0, 0, 255) for _ in range(16)] for _ in range(16)]
+    for y in range(16):
+        for x in range(16):
+            if x in (0, 15):
+                color = (125, 84, 78, 255)
+            elif x in (4, 11):
+                color = (143, 102, 96, 255)
+            elif (x + 2 * y) % 5 == 0:
+                color = (224, 188, 160, 255)
+            elif (3 * x + y) % 7 == 0:
+                color = (183, 135, 123, 255)
+            else:
+                color = (201, 161, 140, 255)
+            pixels[y][x] = color
+    save_pixels("mushroom_stem.png", pixels)
+
+
+def crimson_warden_weapon_icons() -> None:
+    """Draw bold, high-contrast 32x32 weapon icons so the sprites read clearly in inventory slots."""
+    clear = (0, 0, 0, 0)
+    outline = (18, 14, 24, 255)
+    steel_dark = (37, 32, 43, 255)
+    steel = (79, 88, 108, 255)
+    steel_light = (165, 177, 190, 255)
+    crimson_dark = (77, 12, 30, 255)
+    crimson = (147, 24, 44, 255)
+    red = (231, 49, 61, 255)
+    gold = (250, 172, 55, 255)
+    pale_gold = (255, 224, 130, 255)
+
+    def canvas() -> list[list[tuple[int, int, int, int]]]:
+        return [[clear for _ in range(32)] for _ in range(32)]
+
+    def put(pixels, x: int, y: int, color) -> None:
+        if 0 <= x < 32 and 0 <= y < 32:
+            pixels[y][x] = color
+
+    def rect(pixels, x0: int, y0: int, x1: int, y1: int, color) -> None:
+        for y in range(y0, y1 + 1):
+            for x in range(x0, x1 + 1):
+                put(pixels, x, y, color)
+
+    def line(pixels, x0: int, y0: int, x1: int, y1: int, color, width: int = 1) -> None:
+        dx, dy = abs(x1 - x0), abs(y1 - y0)
+        sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
+        err, x, y = dx - dy, x0, y0
+        pad = (width - 1) // 2
+        while True:
+            for ox in range(-pad, width - pad):
+                for oy in range(-pad, width - pad):
+                    put(pixels, x + ox, y + oy, color)
+            if x == x1 and y == y1:
+                break
+            twice = 2 * err
+            if twice > -dy:
+                err -= dy
+                x += sx
+            if twice < dx:
+                err += dx
+                y += sy
+
+    def row_shape(pixels, rows, color) -> None:
+        for y, left, right in rows:
+            rect(pixels, left, y, right, y, color)
+
+    # Sword: dark outline, steel edge, blood-red fuller, gold guard/grip.
+    p = canvas()
+    line(p, 8, 24, 24, 5, outline, 5)
+    line(p, 9, 23, 23, 6, steel_light, 3)
+    line(p, 10, 22, 22, 7, crimson, 2)
+    line(p, 11, 21, 22, 8, red, 1)
+    line(p, 9, 16, 16, 23, outline, 4)
+    line(p, 9, 16, 15, 22, gold, 2)
+    line(p, 5, 27, 9, 31, outline, 4)
+    line(p, 5, 27, 9, 31, crimson_dark, 2)
+    rect(p, 4, 25, 6, 27, pale_gold)
+    put(p, 24, 5, pale_gold)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_sword.png", p)
+
+    # Pickaxe: prominent jagged red-black head and a gilded handle.
+    p = canvas()
+    line(p, 8, 28, 22, 8, outline, 4)
+    line(p, 8, 28, 22, 8, gold, 2)
+    line(p, 10, 25, 21, 9, crimson_dark, 1)
+    row_shape(p, [(4, 15, 19), (5, 9, 24), (6, 6, 27), (7, 4, 28),
+                  (8, 5, 26), (9, 8, 23), (10, 11, 19)], outline)
+    row_shape(p, [(5, 11, 21), (6, 8, 25), (7, 6, 26), (8, 7, 24),
+                  (9, 10, 21)], crimson)
+    line(p, 5, 7, 15, 5, steel_light, 2)
+    line(p, 7, 8, 20, 7, red, 1)
+    put(p, 4, 7, pale_gold)
+    put(p, 25, 7, pale_gold)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_pickaxe.png", p)
+
+    # Axe: a broad, readable crimson blade with a steel cutting edge.
+    p = canvas()
+    line(p, 8, 29, 21, 8, outline, 4)
+    line(p, 8, 29, 21, 8, gold, 2)
+    row_shape(p, [(3, 13, 17), (4, 9, 21), (5, 6, 23), (6, 5, 24), (7, 4, 24),
+                  (8, 4, 22), (9, 5, 20), (10, 6, 18), (11, 7, 16), (12, 8, 14)], outline)
+    row_shape(p, [(4, 11, 19), (5, 8, 21), (6, 7, 22), (7, 6, 22),
+                  (8, 6, 20), (9, 7, 18), (10, 8, 16), (11, 9, 14)], steel)
+    row_shape(p, [(5, 12, 17), (6, 10, 19), (7, 9, 18), (8, 9, 17), (9, 10, 15)], crimson)
+    line(p, 6, 6, 13, 4, steel_light, 1)
+    line(p, 5, 8, 8, 13, pale_gold, 1)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_axe.png", p)
+
+    # Shovel: silver bevels frame a red, pointed spade.
+    p = canvas()
+    line(p, 9, 28, 22, 9, outline, 4)
+    line(p, 9, 28, 22, 9, gold, 2)
+    row_shape(p, [(3, 22, 24), (4, 20, 26), (5, 18, 27), (6, 17, 27),
+                  (7, 16, 27), (8, 16, 26), (9, 17, 25), (10, 19, 23)], outline)
+    row_shape(p, [(4, 22, 24), (5, 20, 25), (6, 19, 25), (7, 18, 24),
+                  (8, 18, 23), (9, 19, 22)], steel)
+    row_shape(p, [(5, 22, 23), (6, 21, 23), (7, 20, 22), (8, 20, 22)], crimson)
+    line(p, 21, 4, 24, 5, steel_light, 1)
+    put(p, 27, 7, pale_gold)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_shovel.png", p)
+
+    # Hoe: a hooked head, red inlay and a bright cut edge.
+    p = canvas()
+    line(p, 9, 28, 21, 10, outline, 4)
+    line(p, 9, 28, 21, 10, gold, 2)
+    row_shape(p, [(4, 16, 25), (5, 12, 27), (6, 10, 28), (7, 10, 28),
+                  (8, 11, 26), (9, 14, 23)], outline)
+    row_shape(p, [(5, 16, 25), (6, 13, 26), (7, 12, 25), (8, 14, 23)], steel)
+    row_shape(p, [(6, 18, 23), (7, 17, 22)], crimson)
+    line(p, 11, 6, 23, 6, steel_light, 1)
+    put(p, 27, 6, pale_gold)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_hoe.png", p)
+
+
 def main() -> None:
     pumpkin_side()
     pumpkin_top()
@@ -450,6 +638,11 @@ def main() -> None:
     cobweb()
     seasonal_mushroom(red=True)
     seasonal_mushroom(red=False)
+    mushroom_cap_block(red=True)
+    mushroom_cap_block(red=False)
+    mushroom_block_inside()
+    mushroom_stem_texture()
+    crimson_warden_weapon_icons()
     dead_bush()
     gravestone_texture(cracked=False)
     gravestone_texture(cracked=True)
@@ -457,7 +650,7 @@ def main() -> None:
     crimson_warden_shield_texture(blocking=True)
     # Remove a legacy texture name not referenced by vanilla 1.21.10 candle models.
     (OUT / "red_candle_lit.png").unlink(missing_ok=True)
-    for path in sorted(OUT.glob("*.png")) + sorted(ITEM_OUT.glob("grave_marker*.png")) + sorted(ITEM_OUT.glob("crimson_warden_shield*.png")):
+    for path in sorted(OUT.glob("*.png")) + sorted(ITEM_OUT.glob("grave_marker*.png")) + sorted(ITEM_OUT.glob("crimson_warden_*.png")):
         print(f"Generated {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
 
 

@@ -53,6 +53,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenShieldDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCrimsonWardenLoreV4();
+        migrateCrimsonWardenLoreV5();
+        migrateHalloween3dDecorationsV1();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
 
@@ -479,6 +481,55 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
+
+    /**
+     * Replace the old duplicated "+Armor" shop lore with real equipment-tooltip modifiers.
+     * Only presentation lore changes; prices and curse requirements are preserved.
+     */
+    private void migrateCrimsonWardenLoreV5() {
+        if (getConfig().getBoolean("migrations.crimson-warden-lore-v5", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Default config.yml is unavailable; Crimson Warden armor lore v5 migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            String root = "rewards.shop.";
+            for (String id : List.of(
+                    "crimson-warden-helmet",
+                    "crimson-warden-chestplate",
+                    "crimson-warden-leggings",
+                    "crimson-warden-boots")) {
+                ConfigurationSection source = defaults.getConfigurationSection(root + id);
+                String target = root + id;
+                if (source != null && getConfig().isConfigurationSection(target)) {
+                    getConfig().set(target + ".lore", source.getStringList("lore"));
+                }
+            }
+            getConfig().set("migrations.crimson-warden-lore-v5", true);
+            saveConfig();
+            getLogger().info("Crimson Warden armor shop lore now relies on real equipment modifiers; prices and curse gates preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Crimson Warden armor lore v5 migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Reduce the add-only decoration density when upgrading to physical 3D graves and mushrooms.
+     * This migration only changes the three decoration counts, preserving all unrelated settings.
+     */
+    private void migrateHalloween3dDecorationsV1() {
+        if (getConfig().getBoolean("migrations.halloween-3d-decorations-v1", false)) return;
+        getConfig().set("world-decorations.gravestones-per-chunk", 1);
+        getConfig().set("world-decorations.dead-plants-per-chunk", 1);
+        if (!getConfig().contains("world-decorations.large-mushrooms-per-chunk")) {
+            getConfig().set("world-decorations.large-mushrooms-per-chunk", 1);
+        }
+        getConfig().set("migrations.halloween-3d-decorations-v1", true);
+        saveConfig();
+        getLogger().info("Halloween 3D graves/mushrooms enabled with low per-chunk density; unrelated world settings preserved.");
+    }
 
     /**
      * Apply the intentional Halloween event overhaul to existing installations once.

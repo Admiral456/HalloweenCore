@@ -37,6 +37,30 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("curse") && sender.hasPermission("hallowencore.admin")) {
+            return List.of("set", "reset").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("curse")
+                && args[1].equalsIgnoreCase("set") && sender.hasPermission("hallowencore.admin")) {
+            if (args[2].matches("\\d+")) return configuredCurseLevels();
+            List<String> choices = new ArrayList<>(configuredCurseLevels());
+            choices.addAll(Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted().toList());
+            return choices.stream().distinct().toList();
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("curse")
+                && args[1].equalsIgnoreCase("set") && sender.hasPermission("hallowencore.admin")) {
+            return configuredCurseLevels();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("curse")
+                && args[1].equalsIgnoreCase("reset") && sender.hasPermission("hallowencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted().toList();
+        }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
                 && sender.hasPermission("halloweencore.admin")) {
             return List.of("reset").stream()
@@ -136,7 +160,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 0 || args[0].equalsIgnoreCase("stats")) return stats(sender);
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
-        if (args[0].equalsIgnoreCase("curse")) return curse(sender);
+        if (args[0].equalsIgnoreCase("curse")) return curse(sender, args);
         if (args[0].equalsIgnoreCase("event")) return event(sender, args);
         if (args[0].equalsIgnoreCase("rewards")) return rewards(sender);
         if (args[0].equalsIgnoreCase("claim")) return claim(sender, args);
@@ -158,7 +182,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
-        sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
+        sender.sendMessage(plugin.color("&6/halloween curse [set|reset] &7- tvoje prokletí; admin může nastavit úroveň"));
         sender.sendMessage(plugin.color("&6/halloween event [start|stop] &7- stav a testovací spuštění eventu (admin)"));
         sender.sendMessage(plugin.color("&6/halloween rewards &7- limitované odměny 2026"));
         sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní Halloween lov"));
@@ -227,9 +251,105 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean curse(CommandSender sender) {
+    private List<String> configuredCurseLevels() {
+        var levels = plugin.getConfig().getConfigurationSection("curse.levels");
+        if (levels == null) return List.of("0");
+        return levels.getKeys(false).stream()
+                .map(key -> Integer.toString(levels.getInt(key + ".level", 0)))
+                .distinct()
+                .sorted(Comparator.comparingInt(value -> {
+                    try { return Integer.parseInt(value); } catch (NumberFormatException ex) { return Integer.MAX_VALUE; }
+                }))
+                .toList();
+    }
+
+    private int highestConfiguredCurseLevel() {
+        return configuredCurseLevels().stream().mapToInt(value -> {
+            try { return Integer.parseInt(value); } catch (NumberFormatException ex) { return 0; }
+        }).max().orElse(0);
+    }
+
+    private boolean curse(CommandSender sender, String[] args) {
+        if (args.length >= 2 && (args[1].equalsIgnoreCase("set") || args[1].equalsIgnoreCase("reset"))) {
+            if (!checkAdmin(sender)) return true;
+            String action = args[1].toLowerCase(java.util.Locale.ROOT);
+            if (action.equals("set")) {
+                Player targetPlayer;
+                java.util.UUID targetId;
+                String targetName;
+                String levelText;
+                if (args.length == 3 && sender instanceof Player player && args[2].matches("\\d+")) {
+                    targetPlayer = player;
+                    targetId = player.getUniqueId();
+                    targetName = player.getName();
+                    levelText = args[2];
+                } else if (args.length == 4) {
+                    OfflinePlayer target = Bukkit.getOfflinePlayer(args[2]);
+                    targetId = target.getUniqueId();
+                    targetName = target.getName() == null ? args[2] : target.getName();
+                    targetPlayer = target.getPlayer();
+                    levelText = args[3];
+                } else {
+                    sender.sendMessage(plugin.color("&cPoužití: /halloween curse set <úroveň> nebo /halloween curse set <hráč> <úroveň>"));
+                    return true;
+                }
+                int level;
+                try {
+                    level = Integer.parseInt(levelText);
+                } catch (NumberFormatException ex) {
+                    sender.sendMessage(plugin.color("&cÚroveň musí být číslo. Dostupné: &e" + String.join(", ", configuredCurseLevels())));
+                    return true;
+                }
+                if (level < 0 || level > highestConfiguredCurseLevel()
+                        || !configuredCurseLevels().contains(Integer.toString(level))) {
+                    sender.sendMessage(plugin.color("&cNeplatná úroveň. Dostupné: &e" + String.join(", ", configuredCurseLevels())));
+                    return true;
+                }
+                plugin.getDataManager().setCurseLevelOverride(targetId, level);
+                plugin.getDataManager().save();
+                String curseName = plugin.getService().getCurseName(targetId);
+                sender.sendMessage(plugin.color("&5&lPROKLETÍ NASTAVENO &8» &f" + targetName
+                        + " &7má nyní prokletí &d" + level + " &8(" + curseName + "&8)."));
+                if (targetPlayer != null && (!(sender instanceof Player p) || !targetPlayer.getUniqueId().equals(p.getUniqueId()))) {
+                    targetPlayer.sendMessage(plugin.color("&5&lPROKLETÍ ZMĚNĚNO &8» &7Tvoje úroveň je nyní &d" + level + " &8(" + curseName + "&8)."));
+                }
+                sender.sendMessage(plugin.color("&8Pro návrat k běžnému postupu použij /halloween curse reset."));
+                return true;
+            }
+
+            if (args.length > 3) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween curse reset [hráč]"));
+                return true;
+            }
+            java.util.UUID targetId;
+            String targetName;
+            Player targetPlayer;
+            if (args.length == 3) {
+                OfflinePlayer target = Bukkit.getOfflinePlayer(args[2]);
+                targetId = target.getUniqueId();
+                targetName = target.getName() == null ? args[2] : target.getName();
+                targetPlayer = target.getPlayer();
+            } else if (sender instanceof Player player) {
+                targetId = player.getUniqueId();
+                targetName = player.getName();
+                targetPlayer = player;
+            } else {
+                sender.sendMessage(plugin.color("&cZ konzole použij /halloween curse reset <hráč>."));
+                return true;
+            }
+            plugin.getDataManager().setCurseLevelOverride(targetId, null);
+            plugin.getDataManager().save();
+            int naturalLevel = plugin.getService().getCurseLevel(targetId);
+            sender.sendMessage(plugin.color("&aRuční prokletí hráče &f" + targetName
+                    + " &abylo zrušeno. Přirozená úroveň: &e" + naturalLevel + "&a."));
+            if (targetPlayer != null && (!(sender instanceof Player p) || !targetPlayer.getUniqueId().equals(p.getUniqueId()))) {
+                targetPlayer.sendMessage(plugin.color("&aRuční nastavení prokletí bylo odebráno. Vracíš se k přirozenému postupu."));
+            }
+            return true;
+        }
+
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(plugin.color("&cTento příkaz může použít jen hráč."));
+            sender.sendMessage(plugin.color("&cTento příkaz může použít jen hráč. Pro administrátorské nastavení použij /halloween curse set <hráč> <úroveň>."));
             return true;
         }
         if (!checkUse(player) || !checkEnabled(player)) return true;
@@ -239,6 +359,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6&lTVÉ PROKLETÍ"));
         sender.sendMessage(plugin.color("&7Úroveň: &e" + level));
         sender.sendMessage(plugin.color("&7Titul: &e" + name));
+        if (player.hasPermission("hallowencore.admin")) {
+            sender.sendMessage(plugin.color("&8Admin: /halloween curse set <úroveň> nebo /halloween curse reset"));
+        }
         return true;
     }
 

@@ -142,6 +142,8 @@ public final class HalloweenServiceImpl implements HalloweenService {
 
     @Override
     public int getCurseLevel(UUID playerId) {
+        Integer override = plugin.getDataManager().getCurseLevelOverride(playerId);
+        if (override != null) return override;
         long fragments = plugin.getDataManager().getLifetimeFragments(playerId);
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("curse.levels");
         if (section == null) return 0;
