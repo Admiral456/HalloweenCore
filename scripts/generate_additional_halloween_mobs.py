@@ -17,7 +17,7 @@ MODEL_DIR = ROOT / "mythicmobs" / "models"
 # New ID, template ID, hue shift, saturation multiplier, brightness multiplier, highlight hue.
 MODELS = (
     ("halloween_void_reaper", "halloween_gravekeeper", 0.72, 1.30, 0.72, 0.78),
-    ("halloween_frost_stalker", "halloween_blood_spider", 0.52, 0.85, 1.18, 0.50),
+    ("halloween_frost_stalker", "halloween_gravekeeper", 0.52, 0.85, 1.18, 0.50),
     ("halloween_nightmare", "halloween_hex_witch", 0.94, 1.40, 0.78, 0.96),
 )
 
