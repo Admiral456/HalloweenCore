@@ -58,6 +58,12 @@ public final class HalloweenBossManager {
         long goal = plugin.getService().getGlobalGoal();
         double progress = plugin.getService().getGlobalProgressPercent();
         boolean progressReady = goal <= 0L || progress >= Math.max(0, Math.min(100, requiredProgress));
+        // This separate gate must still require 100% global progress even when an operator
+        // intentionally lowers global-progress-percent for testing or custom server pacing.
+        boolean eventCompletionRequired = plugin.getConfig().getBoolean(
+                "bosses.vampire.spawn-requirements.event-completion", true);
+        boolean globalEventCompleted = goal <= 0L || progress >= 100.0D;
+        boolean eventCompletionReady = !eventCompletionRequired || globalEventCompleted;
         String arenaWorld = plugin.getConfig().getString("bosses.vampire.arena.world", "");
         boolean arenaReady = !arenaWorld.isBlank()
                 && plugin.getServer().getWorlds().stream().anyMatch(world -> world.getName().equalsIgnoreCase(arenaWorld))
@@ -81,6 +87,7 @@ public final class HalloweenBossManager {
         return spec.enabled()
                 && !plugin.getDataManager().isVampireDefeated()
                 && progressReady
+                && eventCompletionReady
                 && spec.finalBoss()
                 && spec.arenaRequired()
                 && arenaReady
