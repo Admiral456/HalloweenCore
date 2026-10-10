@@ -514,10 +514,10 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
         fail(f"Custom gear '{item_id}' must remain enchantable")
 
 expected_armor_stats = {
-    "crimson_warden_helmet": ("max_durability: 900", "armor: 3"),
-    "crimson_warden_chestplate": ("max_durability: 1300", "armor: 4"),
-    "crimson_warden_leggings": ("max_durability: 1150", "armor: 3"),
-    "crimson_warden_boots": ("max_durability: 950", "armor: 3"),
+    "crimson_warden_helmet": ("max_durability: 900", "armor: 6"),
+    "crimson_warden_chestplate": ("max_durability: 1300", "armor: 12"),
+    "crimson_warden_leggings": ("max_durability: 1150", "armor: 9"),
+    "crimson_warden_boots": ("max_durability: 950", "armor: 6"),
 }
 for item_id, required_stats in expected_armor_stats.items():
     start = config.find(f"  {item_id}:")
