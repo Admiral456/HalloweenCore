@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import base64
 import colorsys
+import copy
 import io
 import json
 import pathlib
@@ -72,6 +73,73 @@ def remap_uuids(node: object, mapping: dict[str, str]) -> object:
     return node
 
 
+def find_group(nodes: list, name: str) -> dict | None:
+    for node in nodes:
+        if not isinstance(node, dict):
+            continue
+        if node.get("name") == name:
+            return node
+        found = find_group(node.get("children", []), name)
+        if found is not None:
+            return found
+    return None
+
+
+def add_accessory_cube(model: dict, parent_name: str, name: str,
+                       start: tuple[float, float, float], end: tuple[float, float, float],
+                       uv: tuple[int, int, int, int]) -> None:
+    parent = find_group(model.get("outliner", []), parent_name)
+    if parent is None:
+        raise RuntimeError(f"{model.get('name')} has no '{parent_name}' bone for accessory {name}")
+
+    # Use a valid Generic/Free cube template, then assign a small dedicated atlas region.
+    cube = copy.deepcopy(model["elements"][0])
+    cube_id = str(uuid.uuid4())
+    cube["uuid"] = cube_id
+    cube["name"] = name
+    cube["from"] = list(start)
+    cube["to"] = list(end)
+    cube["origin"] = [(start[i] + end[i]) / 2 for i in range(3)]
+    cube["rotation"] = [0, 0, 0]
+    u, v, width, height = uv
+    if u < 0 or v < 0 or u + width > 128 or v + height > 128:
+        raise RuntimeError(f"Accessory UV for {name} falls outside the 128x128 texture atlas")
+    cube["faces"] = {
+        face: {"uv": [u, v, u + width, v + height], "texture": 0}
+        for face in ("north", "east", "south", "west", "up", "down")
+    }
+    model["elements"].append(cube)
+    parent.setdefault("children", []).append(cube_id)
+
+
+def add_distinctive_geometry(model: dict, mob_id: str) -> None:
+    # Give each new model a silhouette detail as well as its individually recolored atlas.
+    if mob_id == "halloween_void_reaper":
+        for name, start, end in (
+            ("void_horn_left", (-5.5, 40, -2), (-3.0, 47, 1)),
+            ("void_horn_right", (3.0, 40, -2), (5.5, 47, 1)),
+            ("reaper_scythe_blade", (9.0, 27.0, -2.0), (15.0, 31.0, 1.0)),
+            ("reaper_scythe_tip", (13.0, 30.0, -1.0), (17.0, 35.0, 2.0)),
+        ):
+            parent = "head" if "horn" in name else "weapon"
+            add_accessory_cube(model, parent, name, start, end, (96, 0, 8, 8))
+    elif mob_id == "halloween_frost_stalker":
+        for name, start, end, uv in (
+            ("frost_spike_left", (-8.0, 25.0, -2.0), (-5.0, 32.0, 2.0), (0, 0, 6, 8)),
+            ("frost_spike_right", (5.0, 25.0, -2.0), (8.0, 32.0, 2.0), (0, 0, 6, 8)),
+            ("frost_back_spike", (-2.5, 23.0, 3.5), (2.5, 31.0, 7.0), (0, 0, 6, 8)),
+        ):
+            add_accessory_cube(model, "body", name, start, end, uv)
+    elif mob_id == "halloween_nightmare":
+        for name, start, end, parent in (
+            ("nightmare_wisp_left", (-12.0, 21.0, 2.0), (-6.0, 28.0, 6.0), "body"),
+            ("nightmare_wisp_right", (6.0, 21.0, 2.0), (12.0, 28.0, 6.0), "body"),
+            ("nightmare_crown_left", (-5.0, 39.0, 0.0), (-2.5, 45.0, 2.0), "head"),
+            ("nightmare_crown_right", (2.5, 39.0, 0.0), (5.0, 45.0, 2.0), "head"),
+        ):
+            add_accessory_cube(model, parent, name, start, end, (96, 0, 8, 8))
+
+
 def create_model(new_id: str, template_id: str, hue_shift: float, saturation: float,
                  brightness: float, accent_hue: float) -> None:
     source_model = MODEL_DIR / f"{template_id}.bbmodel"
@@ -94,6 +162,7 @@ def create_model(new_id: str, template_id: str, hue_shift: float, saturation: fl
     texture["path"] = f"{new_id}.png"
     texture["relative_path"] = f"{new_id}.png"
     texture["source"] = "data:image/png;base64," + base64.b64encode(new_png).decode("ascii")
+    add_distinctive_geometry(model, new_id)
 
     (MODEL_DIR / f"{new_id}.bbmodel").write_text(
         json.dumps(model, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
