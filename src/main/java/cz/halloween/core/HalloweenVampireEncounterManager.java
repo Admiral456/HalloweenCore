@@ -1083,9 +1083,12 @@ public final class HalloweenVampireEncounterManager implements Listener {
         }
 
         for (UUID uuid : qualifiedParticipants) {
+            // The world boss is one-time, but each qualified player may reach the final
+            // story chapter later or be offline during the kill. Preserve that proof first.
+            plugin.getDataManager().markVampireKingDefeatProof(uuid);
             Player participant = Bukkit.getPlayer(uuid);
-            if (participant != null && plugin.getQuestManager().isActiveObjective(participant, "vampire-king-defeated")) {
-                plugin.getQuestManager().recordAction(participant, "vampire-king-defeated");
+            if (participant != null && participant.isOnline()) {
+                plugin.getQuestManager().refreshStoredVampireVictory(participant);
             }
         }
         plugin.getDataManager().markVampireDefeated();
