@@ -105,9 +105,7 @@ public final class HalloweenQuestManager implements Listener {
             long worldTime = dead.getWorld().getTime() % 24000L;
             // Minecraft night: 13000 through 23000 ticks.
             if (worldTime < 13000L || worldTime > 23000L) {
-                if (killer.getUniqueId().equals(killer.getUniqueId())) {
-                    killer.sendMessage(plugin.color("&8HALLOWEEN &7» &cTento cíl se počítá pouze v noci."));
-                }
+                killer.sendMessage(plugin.color("&8HALLOWEEN &7» &cTento cíl se počítá pouze v noci."));
                 return;
             }
         }
