@@ -213,8 +213,13 @@ public final class HalloweenQuestManager implements Listener {
 
         Quest next = ensureActiveQuest(player);
         if (next != null) {
-            player.sendMessage(plugin.color("&7Další úkol odemčen: &e" + next.title()
-                    + "&7. Použij &f/halloween quests &7pro podrobnosti."));
+            player.sendMessage(plugin.color("&7Další úkol odemčen: &e" + next.title()));
+            player.sendMessage(plugin.color("&7" + next.description()));
+            if ((next.objective().equals("rift-investigation") || next.objective().equals("rift-seal"))
+                    && (plugin.getRiftManager() == null || !plugin.getRiftManager().isConfigured())) {
+                player.sendMessage(plugin.color("&cSprávce musí umístit trhlinu příkazem /halloween setrift."));
+            }
+            player.sendMessage(plugin.color("&7Použij &f/halloween quests &7pro podrobnosti."));
         } else {
             player.sendMessage(plugin.color("&6&lPŘÍBĚH DOKONČEN &8» &eDěkujeme, že jsi zachránil svět."));
         }
