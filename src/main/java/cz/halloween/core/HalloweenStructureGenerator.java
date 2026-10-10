@@ -48,7 +48,7 @@ public final class HalloweenStructureGenerator implements Listener {
 
     public HalloweenStructureGenerator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.checkedKey = new NamespacedKey(plugin, "halloween_structure_checked_v2");
+        this.checkedKey = new NamespacedKey(plugin, "halloween_structure_checked_v3");
         this.structureKey = new NamespacedKey(plugin, "halloween_structure_type");
         this.legacyStructureKey = new NamespacedKey(plugin, "halloween_generated_structure_v1");
         this.centerXKey = new NamespacedKey(plugin, "halloween_structure_center_x");
@@ -131,6 +131,9 @@ public final class HalloweenStructureGenerator implements Listener {
         World world = chunk.getWorld();
         if (world.getEnvironment() != World.Environment.NORMAL) return;
         if (isExcludedWorld(world.getName()) || isNearWorldSpawn(chunk) || isReservedForArena(chunk)) return;
+        // Recheck old chunks after the higher chance without duplicating existing structures.
+        if (chunk.getPersistentDataContainer().has(structureKey, PersistentDataType.STRING)
+                || chunk.getPersistentDataContainer().has(legacyStructureKey, PersistentDataType.STRING)) return;
 
         Random random = new Random(world.getSeed()
                 ^ ((long) chunk.getX() * 341873128712L)

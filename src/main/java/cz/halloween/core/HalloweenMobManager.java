@@ -35,6 +35,7 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey cursedKey;
     private final NamespacedKey relicKey;
     private final NamespacedKey eventMobKey;
+    private final NamespacedKey testMobKey;
     private final NamespacedKey abilityCooldownKey;
     private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
@@ -43,6 +44,7 @@ public final class HalloweenMobManager implements Listener {
         this.cursedKey = new NamespacedKey(plugin, "cursed_mob");
         this.relicKey = new NamespacedKey(plugin, "halloween_relic");
         this.eventMobKey = new NamespacedKey(plugin, "event_mob");
+        this.testMobKey = new NamespacedKey(plugin, "halloween_test_mob");
         this.abilityCooldownKey = new NamespacedKey(plugin, "special_ability_cooldown");
     }
 
@@ -345,6 +347,11 @@ public final class HalloweenMobManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onDeath(EntityDeathEvent event) {
+        if (isTestMob(event.getEntity())) {
+            event.getDrops().clear();
+            event.setDroppedExp(0);
+            return;
+        }
         if (!plugin.isEventEnabled() || !isSpecial(event.getEntity())) return;
 
         String mobId = event.getEntity().getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
@@ -412,6 +419,61 @@ public final class HalloweenMobManager implements Listener {
             }
             event.getDrops().add(mapItem);
         }
+    }
+
+    /** Admin test spawns: no event required; uses custom models when loaded and vanilla fallback otherwise. */
+    public int spawnTestMob(Player player, String mobId, int amount) {
+        if (player == null || !player.isOnline() || !isKnownSpecialMob(mobId)) return 0;
+        int requested = Math.max(1, Math.min(5, amount));
+        int spawnedCount = 0;
+        for (int index = 0; index < requested; index++) {
+            Location spawnLocation = findSafeTestLocation(player, index);
+            if (spawnLocation == null) continue;
+            LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
+            if (living == null) {
+                Entity entity = spawnLocation.getWorld().spawnEntity(spawnLocation, baseEntityType(mobId));
+                if (!(entity instanceof LivingEntity fallback)) { entity.remove(); continue; }
+                living = fallback;
+            }
+            configureSpecialMob(living, mobId);
+            living.getPersistentDataContainer().set(testMobKey, PersistentDataType.BYTE, (byte) 1);
+            living.setCustomName(plugin.color("&e[TEST] &f" + plugin.getConfig().getString(
+                    "special-mobs.types." + mobId + ".name", mobId)));
+            living.setCustomNameVisible(true);
+            if (living instanceof org.bukkit.entity.Mob mobEntity) mobEntity.setRemoveWhenFarAway(false);
+            LivingEntity testEntity = living;
+            plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+                if (testEntity.isValid() && !testEntity.isDead()
+                        && testEntity.getPersistentDataContainer().has(testMobKey, PersistentDataType.BYTE)) {
+                    testEntity.remove();
+                }
+            }, 20L * 300L);
+            spawnedCount++;
+        }
+        return spawnedCount;
+    }
+
+    private Location findSafeTestLocation(Player player, int index) {
+        World world = player.getWorld();
+        Location origin = player.getLocation().clone();
+        for (int attempt = 0; attempt < 10; attempt++) {
+            double angle = ThreadLocalRandom.current().nextDouble(0.0D, Math.PI * 2.0D);
+            double distance = 3.0D + index * 1.8D + attempt * 0.7D;
+            int x = origin.getBlockX() + (int) Math.round(Math.cos(angle) * distance);
+            int z = origin.getBlockZ() + (int) Math.round(Math.sin(angle) * distance);
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+            int y = world.getHighestBlockYAt(x, z) + 1;
+            if (y < world.getMinHeight() || y >= world.getMaxHeight() - 1) continue;
+            Location candidate = new Location(world, x + 0.5D, y, z + 0.5D);
+            if (!world.getWorldBorder().isInside(candidate)) continue;
+            Block feet = candidate.getBlock();
+            Block head = feet.getRelative(0, 1, 0);
+            Block below = feet.getRelative(0, -1, 0);
+            if (!feet.isPassable() || !head.isPassable() || below.isPassable()
+                    || feet.isLiquid() || head.isLiquid() || below.isLiquid()) continue;
+            return candidate;
+        }
+        return null;
     }
 
     public boolean spawnEventMob(Player player) {
@@ -492,17 +554,21 @@ public final class HalloweenMobManager implements Listener {
 
     private boolean isKnownSpecialMob(String mobId) {
         return mobId != null && switch (mobId) {
-            case "cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch" -> true;
+            case "cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                    "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare" -> true;
             default -> false;
         };
     }
 
     private EntityType baseEntityType(String mobId) {
         return switch (mobId) {
+            case "void-reaper" -> EntityType.HUSK;
             case "gravekeeper" -> EntityType.SKELETON;
+            case "frost-stalker" -> EntityType.STRAY;
             case "blood-spider" -> EntityType.SPIDER;
             case "pumpkin-wraith" -> EntityType.CREEPER;
             case "hex-witch" -> EntityType.WITCH;
+            case "nightmare" -> EntityType.PHANTOM;
             default -> EntityType.ZOMBIE;
         };
     }
@@ -709,6 +775,10 @@ public final class HalloweenMobManager implements Listener {
             }
         }
         return removed;
+    }
+
+    public boolean isTestMob(LivingEntity entity) {
+        return entity != null && entity.getPersistentDataContainer().has(testMobKey, PersistentDataType.BYTE);
     }
 
     public boolean isSpecial(LivingEntity entity) {

@@ -57,6 +57,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenLoreV5();
         migrateHalloween3dDecorationsV1();
         migrateHalloweenDecorationReliabilityV2();
+        migrateGraveyardChanceTripledV1();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
 
@@ -142,6 +143,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         if (!eventEnabled) return;
         if (vampireEncounterManager != null && vampireEncounterManager.isTrackedVampireBoss(event.getEntity())) return;
+        if (mobManager != null && mobManager.isTestMob(event.getEntity())) return;
 
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
@@ -170,6 +172,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenLoreV5();
         migrateHalloween3dDecorationsV1();
         migrateHalloweenDecorationReliabilityV2();
+        migrateGraveyardChanceTripledV1();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
@@ -558,7 +561,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getConfig().set("random-structures.village-chance-per-thousand", 18);
         }
         if (!getConfig().contains("random-structures.graveyard-chance-per-thousand")) {
-            getConfig().set("random-structures.graveyard-chance-per-thousand", 45);
+            getConfig().set("random-structures.graveyard-chance-per-thousand", 135);
         }
         if (!getConfig().contains("random-structures.chunks-per-tick")) getConfig().set("random-structures.chunks-per-tick", 1);
         if (!getConfig().contains("random-structures.minimum-distance-from-world-spawn-blocks")) {
@@ -595,6 +598,18 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
      * the administrator's global event enable switch, arena coordinates, prices and
      * all unrelated gameplay settings intact.
      */
+    /** Triples the graveyard generation chance once and preserves an explicit zero. */
+    private void migrateGraveyardChanceTripledV1() {
+        if (getConfig().getBoolean("migrations.halloween-graveyard-chance-tripled-v1", false)) return;
+        int chance = Math.max(0, getConfig().getInt("random-structures.graveyard-chance-per-thousand", 45));
+        if (chance > 0 && chance < 135) {
+            getConfig().set("random-structures.graveyard-chance-per-thousand", Math.min(1000, chance * 3));
+        }
+        getConfig().set("migrations.halloween-graveyard-chance-tripled-v1", true);
+        saveConfig();
+        getLogger().info("Halloween graveyard generation chance migration applied.");
+    }
+
     private void migrateHalloweenEventOverhaul() {
         if (getConfig().getBoolean("migrations.halloween-event-overhaul-v1", false)) return;
 

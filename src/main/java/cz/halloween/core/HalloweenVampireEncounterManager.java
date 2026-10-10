@@ -48,6 +48,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private final Map<UUID, Double> damageContribution = new HashMap<>();
     private boolean victoryHandled;
     private boolean testEncounter;
+    private Location testArenaLocation;
     private long startedAt;
     private int phase;
     private long lastAbilityAt;
@@ -289,14 +290,36 @@ public final class HalloweenVampireEncounterManager implements Listener {
         return startEncounter(true);
     }
 
+    /** Starts a test encounter near the admin without requiring a saved arena. */
+    public boolean startTestEncounter(Player player) {
+        if (player == null || !player.isOnline()) return false;
+        Location location = player.getLocation().clone();
+        org.bukkit.util.Vector direction = location.getDirection().setY(0.0D);
+        if (direction.lengthSquared() < 0.001D) direction = new org.bukkit.util.Vector(0.0D, 0.0D, 1.0D);
+        location.add(direction.normalize().multiply(4.0D));
+        int x = location.getBlockX();
+        int z = location.getBlockZ();
+        location.setX(x + 0.5D);
+        location.setZ(z + 0.5D);
+        location.setY(location.getWorld().getHighestBlockYAt(x, z) + 1.0D);
+        location.setPitch(0.0F);
+        return startEncounter(true, location);
+    }
+
     private boolean startEncounter(boolean testMode) {
+        return startEncounter(testMode, null);
+    }
+
+    private boolean startEncounter(boolean testMode, Location requestedTestLocation) {
         if (isActive()) return false;
         if (!testMode && !plugin.isEventEnabled()) return false;
         if (!testMode && !plugin.getConfig().getBoolean("bosses.vampire.enabled", false)) return false;
         if (!testMode && plugin.getDataManager().isVampireDefeated()) return false;
         if (!testMode && !plugin.getBossManager().isVampireReady()) return false;
 
-        Location location = getArenaLocation();
+        Location location = testMode && requestedTestLocation != null
+                ? requestedTestLocation.clone()
+                : getArenaLocation();
         if (location == null) {
             warnOnce("arena-centre-unavailable",
                     "Cannot start Vampire encounter: arena centre is not configured or its world is not loaded. Further identical warnings are suppressed.");
@@ -304,6 +327,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         }
 
         stopModelPreview();
+        if (testMode && requestedTestLocation != null) testArenaLocation = location.clone();
         LivingEntity spawned = spawnMythicMob(location);
         boolean fallbackTestBoss = false;
         if (spawned == null && testMode) {
@@ -311,6 +335,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
             fallbackTestBoss = spawned != null;
         }
         if (spawned == null) {
+            if (testMode) testArenaLocation = null;
             warnOnce("mythic-boss-spawn-failed",
                     "MythicMobs could not spawn boss ID '"
                             + plugin.getBossManager().getVampireSpec().id()
@@ -370,6 +395,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         if (plugin.getBossManager() != null) {
             plugin.getBossManager().stopVampireBossBar();
         }
+        testArenaLocation = null;
     }
 
     private void tick() {
@@ -1015,6 +1041,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         if (plugin.getBossManager() != null) {
             plugin.getBossManager().stopVampireBossBar();
         }
+        testArenaLocation = null;
     }
 
     private void finishVictory(Player killer) {
@@ -1215,6 +1242,9 @@ public final class HalloweenVampireEncounterManager implements Listener {
     }
 
     private Location getArenaLocation() {
+        if (testEncounter && testArenaLocation != null && testArenaLocation.getWorld() != null) {
+            return testArenaLocation.clone();
+        }
         String worldName = plugin.getConfig().getString("bosses.vampire.arena.world", "");
         World world = Bukkit.getWorld(worldName);
         if (world == null) return null;

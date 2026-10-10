@@ -447,7 +447,7 @@ random-events:
     cursed-harvest:
       name: "Prokletá sklizeň"
       sound: "warriorland_halloween:harvest_sting"
-      start-message: "&a&lPROKLETÁ SKLIZEŇ &8» &2Plodiny ožívají pod temnou magií. Sklízej, než pole pohltí prokletí strážci."
+      start-message: "&a&lPROKLETÁ SKLIZEŇ &8» &2Temná magie urychluje růst plodin a láká prokleté strážce. Sklízej zralou úrodu a braň pole!"
       end-message: "&a&lPROKLETÁ SKLIZEŇ &8» &7Pole konečně utichla."
       multipliers:
         farming: 3.0
@@ -554,9 +554,9 @@ bosses:
 
 random-structures:
   enabled: true
-  # Chances are evaluated once per eligible Overworld chunk. 18 = 1.8%, 45 = 4.5%.
+  # Chances are evaluated once per eligible Overworld chunk. 18 = 1.8%, 135 = 13.5%.
   village-chance-per-thousand: 18
-  graveyard-chance-per-thousand: 45
+  graveyard-chance-per-thousand: 135
   minimum-distance-from-world-spawn-blocks: 256
   excluded-worlds: []
   chunks-per-tick: 1
