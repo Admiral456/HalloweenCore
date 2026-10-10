@@ -94,7 +94,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("buildvampirearena") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("here", "selected", "confirm").stream()
+            return List.of("confirm").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
@@ -690,51 +690,31 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(plugin.color("&cTento příkaz musíš použít ve světě, ve kterém chceš arénu postavit."));
             return true;
         }
-        if (args.length > 2 || (args.length == 2 && !args[1].equalsIgnoreCase("confirm")
-                && !args[1].equalsIgnoreCase("here") && !args[1].equalsIgnoreCase("selected"))) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween buildvampirearena [here|selected|confirm]"));
+        if (args.length > 2 || (args.length == 2 && !args[1].equalsIgnoreCase("confirm"))) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween buildvampirearena [confirm]"));
             return true;
         }
 
         final String arenaPath = "bosses.vampire.arena";
         final String pendingPath = arenaPath + ".pending";
-        final boolean confirm = args.length == 2 && args[1].equalsIgnoreCase("confirm");
-        final boolean selected = args.length == 2 && args[1].equalsIgnoreCase("selected");
+        final boolean confirm = args.length == 2;
         org.bukkit.World world;
         org.bukkit.Location center;
 
         if (!confirm) {
-            if (selected) {
-                if (!plugin.getConfig().getBoolean(arenaPath + ".configured", false)) {
-                    sender.sendMessage(plugin.color("&cNejdřív spusť /halloween setvampirearena, nebo použij /halloween buildvampirearena here."));
-                    return true;
-                }
-                String selectedWorldName = plugin.getConfig().getString(arenaPath + ".world", "");
-                world = selectedWorldName == null || selectedWorldName.isBlank() ? null : Bukkit.getWorld(selectedWorldName);
-                if (world == null || !player.getWorld().getUID().equals(world.getUID())) {
-                    sender.sendMessage(plugin.color("&cVybraný střed musí být ve světě, ve kterém právě stojíš."));
-                    return true;
-                }
-                center = new org.bukkit.Location(world,
-                        plugin.getConfig().getDouble(arenaPath + ".x"),
-                        plugin.getConfig().getDouble(arenaPath + ".y"),
-                        plugin.getConfig().getDouble(arenaPath + ".z"));
-                double allowedDistance = (VampireArenaBuilder.RADIUS + 8.0D) * (VampireArenaBuilder.RADIUS + 8.0D);
-                if (player.getLocation().distanceSquared(center) > allowedDistance) {
-                    sender.sendMessage(plugin.color("&cJsi příliš daleko od vybraného středu. Přijď do vzdálenosti 56 bloků."));
-                    return true;
-                }
-            } else {
-                // Default/here mode anchors to the block below the player's feet.
-                org.bukkit.Location playerLocation = player.getLocation();
-                world = player.getWorld();
-                center = new org.bukkit.Location(
-                        world,
-                        playerLocation.getBlockX() + 0.5D,
-                        playerLocation.getBlockY(),
-                        playerLocation.getBlockZ() + 0.5D
-                );
-            }
+            // The block the player is standing on defines the arena floor height.
+            // No separate exact-center setup command is required.
+            org.bukkit.Location playerLocation = player.getLocation();
+            world = player.getWorld();
+            // Bukkit Location#getY is the player's actual feet height. Rounding it
+            // upward gives the block-aligned floor reference for full blocks and slabs.
+            int floorSurfaceY = (int) Math.ceil(playerLocation.getY() - 1.0E-6D);
+            center = new org.bukkit.Location(
+                    world,
+                    playerLocation.getBlockX() + 0.5D,
+                    floorSurfaceY,
+                    playerLocation.getBlockZ() + 0.5D
+            );
 
             // Save a pending site, not the live boss spawn, until the admin confirms.
             plugin.getConfig().set(pendingPath + ".configured", true);
@@ -744,27 +724,32 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             plugin.getConfig().set(pendingPath + ".z", center.getZ());
             plugin.saveConfig();
         } else {
-            if (!plugin.getConfig().getBoolean(pendingPath + ".configured", false)) {
-                sender.sendMessage(plugin.color("&cNejdřív stoupni na blok, kde má být střed podlahy arény, a spusť &6/halloween buildvampirearena&c."));
+            boolean hasPendingSite = plugin.getConfig().getBoolean(pendingPath + ".configured", false);
+            boolean hasConfiguredSite = plugin.getConfig().getBoolean(arenaPath + ".configured", false);
+            if (!hasPendingSite && !hasConfiguredSite) {
+                sender.sendMessage(plugin.color("&cNejdřív stoupni na místo arény a spusť /halloween buildvampirearena, nebo nastav střed příkazem /halloween setvampirearena."));
                 return true;
             }
 
-            String worldName = plugin.getConfig().getString(pendingPath + ".world", "");
+            // /halloween setvampirearena also selects a build center. Confirm can use
+            // it directly instead of requiring an unrelated "pending" preview path.
+            String sourcePath = hasPendingSite ? pendingPath : arenaPath;
+            String worldName = plugin.getConfig().getString(sourcePath + ".world", "");
             world = worldName == null || worldName.isBlank() ? null : Bukkit.getWorld(worldName);
             if (world == null) {
-                sender.sendMessage(plugin.color("&cSvět navržené arény není načtený. Vrať se na místo a spusť náhled znovu."));
+                sender.sendMessage(plugin.color("&cSvět zvoleného středu arény není načtený. Vrať se do daného světa a spusť náhled znovu."));
                 return true;
             }
             if (!player.getWorld().getUID().equals(world.getUID())) {
-                sender.sendMessage(plugin.color("&cPotvrzení proveď ve stejném světě, kde jsi spustil náhled."));
+                sender.sendMessage(plugin.color("&cPotvrzení proveď ve stejném světě, kde jsi zvolil střed."));
                 return true;
             }
 
             center = new org.bukkit.Location(
                     world,
-                    plugin.getConfig().getDouble(pendingPath + ".x"),
-                    plugin.getConfig().getDouble(pendingPath + ".y"),
-                    plugin.getConfig().getDouble(pendingPath + ".z")
+                    plugin.getConfig().getDouble(sourcePath + ".x"),
+                    plugin.getConfig().getDouble(sourcePath + ".y"),
+                    plugin.getConfig().getDouble(sourcePath + ".z")
             );
             double allowedDistance = (VampireArenaBuilder.RADIUS + 8.0D) * (VampireArenaBuilder.RADIUS + 8.0D);
             if (player.getLocation().distanceSquared(center) > allowedDistance) {
@@ -773,50 +758,6 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             }
         }
 
-        prepareVampireArena(sender, player, world, center, confirm);
-        return true;
-    }
-
-    private void prepareVampireArena(CommandSender sender, Player player, org.bukkit.World world,
-                                     org.bukkit.Location center, boolean confirm) {
-        java.util.List<int[]> missing = new java.util.ArrayList<>();
-        int minChunkX = (center.getBlockX() - VampireArenaBuilder.RADIUS) >> 4;
-        int maxChunkX = (center.getBlockX() + VampireArenaBuilder.RADIUS) >> 4;
-        int minChunkZ = (center.getBlockZ() - VampireArenaBuilder.RADIUS) >> 4;
-        int maxChunkZ = (center.getBlockZ() + VampireArenaBuilder.RADIUS) >> 4;
-        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
-            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
-                if (!world.isChunkLoaded(cx, cz)) missing.add(new int[]{cx, cz});
-            }
-        }
-        if (missing.isEmpty()) {
-            finishVampireArena(sender, player, world, center, confirm);
-            return;
-        }
-        sender.sendMessage(plugin.color("&6HALLOWEEN &8» &7Načítám potřebné chunky po menších dávkách."));
-        final int[] index = {0};
-        final org.bukkit.scheduler.BukkitTask[] task = new org.bukkit.scheduler.BukkitTask[1];
-        task[0] = Bukkit.getScheduler().runTaskTimer(plugin, () -> {
-            try {
-                int budget = 4;
-                while (budget-- > 0 && index[0] < missing.size()) {
-                    int[] coords = missing.get(index[0]++);
-                    world.getChunkAt(coords[0], coords[1]);
-                }
-                if (index[0] >= missing.size()) {
-                    task[0].cancel();
-                    finishVampireArena(sender, player, world, center, confirm);
-                }
-            } catch (RuntimeException ex) {
-                if (task[0] != null) task[0].cancel();
-                sender.sendMessage(plugin.color("&cNačtení chunků arény selhalo: " + ex.getClass().getSimpleName()));
-            }
-        }, 1L, 1L);
-    }
-
-    private void finishVampireArena(CommandSender sender, Player player, org.bukkit.World world,
-                                    org.bukkit.Location center, boolean confirm) {
-        if (!player.isOnline() || !player.getWorld().getUID().equals(world.getUID())) return;
         VampireArenaBuilder builder = new VampireArenaBuilder();
         VampireArenaBuilder.Inspection inspection = builder.inspect(center);
         if (!inspection.clear()) {
@@ -826,7 +767,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                         + " &7; první: &e" + inspection.firstObstruction()));
             }
             sender.sendMessage(plugin.color("&7Odstraň překážky, nech oblast načíst a spusť náhled znovu. Stavba automaticky nemaže stromy ani cizí stavby."));
-            return;
+            return true;
         }
 
         if (!confirm) {
@@ -835,10 +776,13 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(plugin.color("&7Místo sis zvolil stoupnutím na blok; střed arény byl nastaven automaticky."));
             sender.sendMessage(plugin.color("&7Střed podlahy: &e" + center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ()));
             sender.sendMessage(plugin.color("&7Průměr: &e97 bloků &8• &78 věží, 4 brány, 8 obelisků, obvodová zeď a runový kruh"));
-            sender.sendMessage(plugin.color("&7Kontrola prošla: nad terénem je 20 bloků volného prostoru."));
-            sender.sendMessage(plugin.color("&ePokud místo sedí, potvrď: &6/halloween buildvampirearena confirm"));
-            sender.sendMessage(plugin.color("&cPotvrzení přepíše povrch v kruhu o poloměru 48 bloků a postaví věže. Předem zazálohuj svět!"));
-            return;
+            sender.sendMessage(plugin.color("&7Náhled prošel. Bloky povrchu/objektů v kruhu určené k vyrovnání: &e" + inspection.obstructions()));
+            if (inspection.obstructions() > 0 && !inspection.firstObstruction().isBlank()) {
+                sender.sendMessage(plugin.color("&7První nahrazovaný blok: &e" + inspection.firstObstruction()));
+            }
+            sender.sendMessage(plugin.color("&ePokud střed a rozsah souhlasí, potvrď: &6/halloween buildvampirearena confirm"));
+            sender.sendMessage(plugin.color("&cPOZOR: potvrzení vymaže a nahradí povrch v kruhu o poloměru 48 bloků včetně stromů a staveb. Nejdřív zazálohuj svět!"));
+            return true;
         }
 
         int changed = builder.build(center);
@@ -856,6 +800,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7Změněné bloky: &e" + changed + " &8• &7Průměr arény: &e97 bloků"));
         sender.sendMessage(plugin.color("&7Tento střed se používá také pro spawn Krále upírů."));
         sender.sendMessage(plugin.color("&7Finální boss zůstává vypnutý, dokud nebude model ověřen přes ModelEngine a resource pack."));
+        return true;
     }
 
     private boolean setVampireArena(CommandSender sender) {
@@ -868,15 +813,18 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         plugin.getConfig().set("bosses.vampire.arena.configured", true);
         plugin.getConfig().set("bosses.vampire.arena.generated", false);
         plugin.getConfig().set("bosses.vampire.arena.world", player.getWorld().getName());
+        double floorSurfaceY = Math.ceil(player.getLocation().getY() - 1.0E-6D);
         plugin.getConfig().set("bosses.vampire.arena.x", player.getLocation().getBlockX() + 0.5D);
-        plugin.getConfig().set("bosses.vampire.arena.y", player.getLocation().getBlockY());
+        plugin.getConfig().set("bosses.vampire.arena.y", floorSurfaceY);
         plugin.getConfig().set("bosses.vampire.arena.z", player.getLocation().getBlockZ() + 0.5D);
+        // A newly chosen center supersedes any stale preview from an earlier command.
+        plugin.getConfig().set("bosses.vampire.arena.pending", null);
         plugin.saveConfig();
 
         player.sendMessage(plugin.color("&4HALLOWEEN &8» &aStřed arény Krále upírů nastaven."));
         player.sendMessage(plugin.color("&7Svět: &e" + player.getWorld().getName()));
         player.sendMessage(plugin.color("&7Středový bod: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
-                player.getLocation().getBlockX() + 0.5D, (double) player.getLocation().getBlockY(),
+                player.getLocation().getBlockX() + 0.5D, floorSurfaceY,
                 player.getLocation().getBlockZ() + 0.5D)));
         player.sendMessage(plugin.color("&7Tento blok je přesný spawn point. Příkaz použij uprostřed arény na její podlaze."));
         return true;

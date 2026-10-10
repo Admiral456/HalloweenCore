@@ -37,7 +37,9 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween
 - /halloween stats
 - /halloween progress
-- /halloween curse [set <úroveň>|reset] (admin: set own level with `set 5`; set another player with `set <hráč> <úroveň>`; `reset [hráč]` returns to lifetime-fragment progression)
+- `/halloween curse` — zobrazí vlastní úroveň a titul prokletí.
+- `/halloween curse set <úroveň>` — admin nastaví vlastní prokletí; `/halloween curse set <hráč> <úroveň>` nastaví prokletí jinému hráči.
+- `/halloween curse reset [hráč]` — zruší ruční nastavení a vrátí přirozený postup z celoživotních fragmentů.
 - /halloween event
 - /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin, testovací okamžité spuštění)
 - /halloween event stop (admin)
@@ -54,7 +56,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
 - /halloween setvampirearena (admin)
-- /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
+- `/halloween buildvampirearena [confirm]` — admin vybere střed stoupnutím na podlahu; potvrzení postaví arénu přesně kolem něj. Funguje i po `/halloween setvampirearena`.
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>
 - /halloween on|off
@@ -140,14 +142,16 @@ Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/hallow
 
 Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
 
-Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny, houby a hroby nezávisle na zapnutí časovaných Halloween eventů. Samostatný generátor s malou náhodnou šancí rozmísťuje Haunted Village a hřbitovy na volný přírodní terén; existující stavby nemaže a nevykopává díry. Novější dekorace tvoří také skutečné 3D hřbitovní náhrobky z kamenných bloků se samostatnou runou a velké 3D houby ze stonků a klobouků; při upgradu se odstraní stará plochá ikona náhrobku. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
+Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Dekorátor nejdřív hledá skutečnou půdu i pod korunami stromů; generování dekorací je nezávislé na `/halloween on|off`. Hřbitovní náhrobky jsou postavené z reálných kamenných bloků s drobnou runou a velké houby z vlastních texturovaných stonků a klobouků. Při upgradu se odstraňuje stará plochá ikona náhrobku a staré dekorace se doplní jen do nakonfigurovaného počtu, aby se zbytečně nezdvojovaly.
+
+Vesničky Haunted Village a malé prokleté hřbitovy se generují náhodně v přirozených rovných místech při načítání chunků v běžných Overworld světech. Není potřeba nastavovat jejich souřadnice příkazem; úspěšné nálezy si plugin uloží do dat chunku a hráči za objevení dostanou odměnu. Generování se vyhýbá oblasti 256 bloků okolo world spawnu. Hroby jsou povrchové dekorace — **plugin nikde nevyhlubuje automatické díry ani šachty**.
 
 - `/halloween boss test` vyvolá testovacího Krále upírů bez globálního progressu, odemčení finále a model-ready gate. Vyžaduje uložený střed arény a funkční MythicMobs mob `vampire-king`; testovací zabití nedává odměny ani neoznačí finále za splněné.
 
 ## Návod: aréna, obchod a resource pack
 
 - Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
-- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
+- Střed vybere příkazem `/halloween buildvampirearena` přímo z místa, kde stojí; nemusí ho předem nastavovat druhým příkazem. Náhled načte potřebné chunky, vyhodnotí plochu a uloží výběr. Stavbu potvrdí `/halloween buildvampirearena confirm`. Pokud už byl střed uložený přes `/halloween setvampirearena`, lze potvrdit i tento uložený střed. Potvrzení vyrovná terén, odstraní stromy a existující stavby v kruhu o poloměru 48 bloků a postaví věže až 15 bloků vysoké. Je to záměrně destruktivní operace: před potvrzením vždy zazálohuj svět.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
 - `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
 - `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
@@ -156,7 +160,7 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 
 ## Směr dalšího vývoje
 
-- Haunted Village
+- rozšiřování procedurálně generovaných Haunted Villages a hřbitovů
 - hlubší systém relikvií
 - resource-pack Halloween obloha
 - ověřit Halloween soundtrack a oranžovo-karmínovou oblohu v reálném klientu Minecraftu 1.21.10
@@ -248,7 +252,9 @@ Repozitář obsahuje editovatelný Blockbench blueprint `mythicmobs/models/vampi
 
 ## Generování upíří arény
 
-Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 97 bloků, šest soustředných runových kruhů, obvodové cimbuří, osm gotických věží, čtyři monumentální brány a osm vnitřních obelisků. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, načtené chunky, volný prostor nad podlahou a terén bez hlubokých proláklin. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Po potvrzení se v kruhu o poloměru 48 bloků upraví povrch terénu a vytvoří nová podlaha. Před spuštěním si udělej zálohu světa.
+Příkaz `/halloween buildvampirearena` vybere střed podle bloku pod správcem a připraví náhled; není nutné nejdřív použít `/halloween setvampirearena`. Tenhle příkaz umí také uložit střed, který lze potvrdit stejným příkazem `/halloween buildvampirearena confirm`.
+
+Náhled načte chunky v rozsahu arény, zkontroluje výšku světa a ukáže, kolik povrchových bloků bude nahrazeno. Po potvrzení se plocha v kruhu o poloměru 48 bloků vyrovná: vysoký terén, stromy a stavby se odstraní a nízká místa se vyplní. **Potvrzení je destruktivní a může přepsat existující stavby — předem zazálohuj svět.** Plugin nikde automaticky nehloubí šachty ani jámy pro vesnice a hřbitovy; ty se staví pouze ručně.
 
 
 ## Krvavý měsíc — invaze

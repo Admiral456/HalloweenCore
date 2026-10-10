@@ -43,9 +43,8 @@ public final class HalloweenWorldDecorator implements Listener {
     private final NamespacedKey legacyDecoratedKey;
     private final NamespacedKey oldestDecoratedKey;
     private final NamespacedKey ancientDecoratedKey;
-    private final NamespacedKey veryAncientDecoratedKey;
+    private final NamespacedKey oldestDecorationMarkerKey;
     private final NamespacedKey graveAccentKey;
-    private final NamespacedKey generatedStructureKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
@@ -58,9 +57,8 @@ public final class HalloweenWorldDecorator implements Listener {
         this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v4");
         this.oldestDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
         this.ancientDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
-        this.veryAncientDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.oldestDecorationMarkerKey = new NamespacedKey(plugin, "halloween_decorated_v1");
         this.graveAccentKey = new NamespacedKey(plugin, "halloween_grave_accent");
-        this.generatedStructureKey = new NamespacedKey(plugin, "halloween_generated_structure_v1");
     }
 
     public void start() {
@@ -102,7 +100,8 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private boolean isEnabled() {
-        // Long-lived world decoration is independent of the temporary event toggle.
+        // World decorations are ambient world-generation content, not event rewards.
+        // Keep them active even when /halloween off disables gameplay events.
         return plugin.getConfig().getBoolean("world-decorations.enabled", true);
     }
 
@@ -124,11 +123,6 @@ public final class HalloweenWorldDecorator implements Listener {
             if (chunk == null) return;
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
             if (!chunk.isLoaded() || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
-            if (chunk.getPersistentDataContainer().has(generatedStructureKey, PersistentDataType.STRING)) {
-                chunk.getPersistentDataContainer().set(decoratedKey, PersistentDataType.BYTE, (byte) 1);
-                continue;
-            }
-            if (isReservedForArena(chunk)) continue;
             try {
                 decorateChunk(chunk);
                 chunk.getPersistentDataContainer().set(decoratedKey, PersistentDataType.BYTE, (byte) 1);
@@ -148,22 +142,31 @@ public final class HalloweenWorldDecorator implements Listener {
                 || chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(oldestDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(ancientDecoratedKey, PersistentDataType.BYTE)
-                || chunk.getPersistentDataContainer().has(veryAncientDecoratedKey, PersistentDataType.BYTE);
+                || chunk.getPersistentDataContainer().has(oldestDecorationMarkerKey, PersistentDataType.BYTE);
         // Legacy flat gravestones are removed only after at least one replacement was
         // successfully built, so unsuitable chunks never lose their existing decoration.
 
         // Legacy chunks are upgraded with 3D graves/mushrooms only; don't duplicate
         // old pumpkins, webs, candles, lights or small mushrooms on their new pass.
-        // A one-time upgrade pass adds a few seasonal details to legacy-marked chunks
-        // that may have been processed while eventEnabled was false.
-        int pumpkins = legacyDecorated ? Math.min(1, bounded("pumpkins-per-chunk", 5, 0, 6)) : bounded("pumpkins-per-chunk", 5, 0, 6);
-        int webs = legacyDecorated ? Math.min(1, bounded("cobwebs-per-chunk", 2, 0, 3)) : bounded("cobwebs-per-chunk", 2, 0, 3);
-        int candles = legacyDecorated ? 0 : bounded("red-candles-per-chunk", 1, 0, 3);
+        java.util.Map<Material, Integer> existing = countExistingSurfaceDecorations(chunk);
+        int pumpkins = Math.max(0, bounded("pumpkins-per-chunk", 5, 0, 6)
+                - existing.getOrDefault(Material.PUMPKIN, 0)
+                - existing.getOrDefault(Material.CARVED_PUMPKIN, 0)
+                - existing.getOrDefault(Material.JACK_O_LANTERN, 0));
+        int webs = Math.max(0, bounded("cobwebs-per-chunk", 2, 0, 3) - existing.getOrDefault(Material.COBWEB, 0));
+        int candles = Math.max(0, bounded("red-candles-per-chunk", 1, 0, 3) - existing.getOrDefault(Material.RED_CANDLE, 0));
         int graves = bounded("gravestones-per-chunk", 1, 0, 2);
-        int deadPlants = legacyDecorated ? Math.min(1, bounded("dead-plants-per-chunk", 1, 0, 3)) : bounded("dead-plants-per-chunk", 1, 0, 3);
-        int largeMushrooms = bounded("large-mushrooms-per-chunk", 1, 0, 1);
-        int soulLights = legacyDecorated ? 0 : bounded("soul-lights-per-chunk", 1, 0, 2);
-        int attempts = bounded("attempts-per-placement", 32, 8, 80);
+        int deadPlants = Math.max(0, bounded("dead-plants-per-chunk", 1, 0, 3)
+                - existing.getOrDefault(Material.DEAD_BUSH, 0)
+                - existing.getOrDefault(Material.BROWN_MUSHROOM, 0)
+                - existing.getOrDefault(Material.RED_MUSHROOM, 0));
+        int largeMushrooms = (existing.getOrDefault(Material.MUSHROOM_STEM, 0)
+                + existing.getOrDefault(Material.RED_MUSHROOM_BLOCK, 0)
+                + existing.getOrDefault(Material.BROWN_MUSHROOM_BLOCK, 0)) > 0
+                ? 0 : bounded("large-mushrooms-per-chunk", 1, 0, 1);
+        int soulLights = Math.max(0, bounded("soul-lights-per-chunk", 1, 0, 2)
+                - existing.getOrDefault(Material.SOUL_LANTERN, 0));
+        int attempts = bounded("attempts-per-placement", 48, 8, 80);
         long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C4F574545L;
         Random random = new Random(seed);
@@ -184,7 +187,7 @@ public final class HalloweenWorldDecorator implements Listener {
 
         placed = 0;
         for (int i = 0; i < attempts && placed < webs; i++) {
-            Block ground = randomSurface(chunk, random);
+            Block ground = randomCanopySurface(chunk, random);
             if (!isNaturalWebAnchor(ground.getType())) continue;
             Block air = ground.getRelative(0, 1, 0);
             if (!air.getType().isAir() || air.getState() instanceof TileState || countNearbyWebAnchors(ground) < 2) continue;
@@ -360,6 +363,34 @@ public final class HalloweenWorldDecorator implements Listener {
         return true;
     }
 
+    /**
+     * Chunks can already contain vanilla or plugin decorations from previous builds.
+     * Count the surface area before a new version upgrades the chunk, so missing items
+     * are backfilled without stacking a second full set on every upgrade.
+     */
+    private java.util.Map<Material, Integer> countExistingSurfaceDecorations(Chunk chunk) {
+        java.util.Set<Material> tracked = java.util.Set.of(
+                Material.PUMPKIN, Material.CARVED_PUMPKIN, Material.JACK_O_LANTERN,
+                Material.COBWEB, Material.RED_CANDLE, Material.DEAD_BUSH,
+                Material.BROWN_MUSHROOM, Material.RED_MUSHROOM, Material.SOUL_LANTERN,
+                Material.MUSHROOM_STEM, Material.RED_MUSHROOM_BLOCK, Material.BROWN_MUSHROOM_BLOCK);
+        java.util.Map<Material, Integer> counts = new java.util.EnumMap<>(Material.class);
+        World world = chunk.getWorld();
+        int baseX = chunk.getX() << 4;
+        int baseZ = chunk.getZ() << 4;
+        for (int x = baseX; x < baseX + 16; x++) {
+            for (int z = baseZ; z < baseZ + 16; z++) {
+                int highest = world.getHighestBlockYAt(x, z);
+                int lowest = Math.max(world.getMinHeight(), highest - 80);
+                for (int y = highest; y >= lowest; y--) {
+                    Material material = world.getBlockAt(x, y, z).getType();
+                    if (tracked.contains(material)) counts.merge(material, 1, Integer::sum);
+                }
+            }
+        }
+        return counts;
+    }
+
     private boolean placeLargeMushroom(Block ground, Random random) {
         boolean red = random.nextBoolean();
         Material cap = red ? Material.RED_MUSHROOM_BLOCK : Material.BROWN_MUSHROOM_BLOCK;
@@ -395,27 +426,31 @@ public final class HalloweenWorldDecorator implements Listener {
         return true;
     }
 
-    private boolean isReservedForArena(Chunk chunk) {
-        String[] paths = {"bosses.vampire.arena.pending", "bosses.vampire.arena"};
-        for (String path : paths) {
-            if (!plugin.getConfig().getBoolean(path + ".configured", false)) continue;
-            String worldName = plugin.getConfig().getString(path + ".world", "");
-            if (worldName == null || !chunk.getWorld().getName().equals(worldName)) continue;
-            double x = plugin.getConfig().getDouble(path + ".x");
-            double z = plugin.getConfig().getDouble(path + ".z");
-            double dx = ((chunk.getX() << 4) + 8.0D) - x;
-            double dz = ((chunk.getZ() << 4) + 8.0D) - z;
-            double radius = VampireArenaBuilder.RADIUS + 8.0D;
-            if (dx * dx + dz * dz <= radius * radius) return true;
-        }
-        return false;
-    }
-
     private int bounded(String key, int fallback, int min, int max) {
         return Math.max(min, Math.min(max, plugin.getConfig().getInt("world-decorations." + key, fallback)));
     }
 
     private Block randomSurface(Chunk chunk, Random random) {
+        int x = (chunk.getX() << 4) + random.nextInt(16);
+        int z = (chunk.getZ() << 4) + random.nextInt(16);
+        World world = chunk.getWorld();
+        int highest = world.getHighestBlockYAt(x, z);
+        int lowest = Math.max(world.getMinHeight(), highest - 80);
+
+        // getHighestBlockAt can point at a tree canopy. Walk down to the real
+        // natural ground so pumpkins, mushrooms, candles and graves are not
+        // accidentally tested against leaves/logs and silently skipped.
+        for (int y = highest; y >= lowest; y--) {
+            Block candidate = world.getBlockAt(x, y, z);
+            if (isNaturalGround(candidate.getType()) && candidate.getType().isSolid()
+                    && !(candidate.getState() instanceof TileState)) {
+                return candidate;
+            }
+        }
+        return world.getHighestBlockAt(x, z);
+    }
+
+    private Block randomCanopySurface(Chunk chunk, Random random) {
         int x = (chunk.getX() << 4) + random.nextInt(16);
         int z = (chunk.getZ() << 4) + random.nextInt(16);
         return chunk.getWorld().getHighestBlockAt(x, z);

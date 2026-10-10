@@ -230,6 +230,8 @@ rewards:
 
 haunted-village:
   enabled: true
+  # Empty world means use the randomized chunk-generated Haunted Villages.
+  # Keep world/x/y/z only for backward-compatible manually configured locations.
   world: ""
   x: 0
   y: 100
@@ -550,10 +552,20 @@ bosses:
         phase-4-radius: 10
         phase-4-damage: 7.0
 
+random-structures:
+  enabled: true
+  # Chances are evaluated once per eligible Overworld chunk. 18 = 1.8%, 45 = 4.5%.
+  village-chance-per-thousand: 18
+  graveyard-chance-per-thousand: 45
+  minimum-distance-from-world-spawn-blocks: 256
+  chunks-per-tick: 1
+  discovery-radius-blocks: 10
+  village-discovery-reward-fragments: 250
+  graveyard-discovery-reward-fragments: 200
+
 world-decorations:
   enabled: true
-  # Persistent scenery is independent from enabled: false for temporary Halloween events.
-  # It only uses free natural ground and never digs holes or replaces structures.
+  # Add-only decoration: safe natural ground only; never replaces a solid block or tile entity.
   pumpkins-per-chunk: 5
   cobwebs-per-chunk: 2
   red-candles-per-chunk: 1
@@ -561,20 +573,9 @@ world-decorations:
   dead-plants-per-chunk: 1
   large-mushrooms-per-chunk: 1
   soul-lights-per-chunk: 1
-  attempts-per-placement: 40
+  attempts-per-placement: 48
+  # Keep chunk work deliberately low to avoid generation spikes on live servers.
   chunks-per-tick: 1
-
-# Random structure placement on natural terrain as map chunks load.
-# One candidate chunk in about 220 is selected on average; suitable flat locations only.
-world-generation:
-  enabled: true
-  chunks-per-tick: 1
-  structure-chance-per-chunk: 220
-  haunted-village-percent: 28
-  spawn-exclusion-radius: 320
-  excluded-worlds:
-    - world_nether
-    - world_the_end
 
 atmosphere:
   enabled: true

@@ -56,7 +56,6 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenLoreV4();
         migrateCrimsonWardenLoreV5();
         migrateHalloween3dDecorationsV1();
-        migrateProceduralWorldGenerationV1();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
 
@@ -94,9 +93,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
-        // Queue procedural structures first so the scenery decorator doesn't pre-populate their footprint.
-        getServer().getPluginManager().registerEvents(structureGenerator, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
+        getServer().getPluginManager().registerEvents(structureGenerator, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
@@ -110,8 +108,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         eventManager.start();
         vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
-        structureGenerator.start();
         worldDecorator.start();
+        structureGenerator.start();
         passiveEffectManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -170,7 +168,6 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenLoreV4();
         migrateCrimsonWardenLoreV5();
         migrateHalloween3dDecorationsV1();
-        migrateProceduralWorldGenerationV1();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
@@ -189,15 +186,18 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (atmosphere != null) atmosphere.refreshPlayback();
         if (worldDecorator != null) {
             if (getConfig().getBoolean("world-decorations.enabled", true)) {
-                // Persistent Halloween scenery doesn't depend on the timed event toggle.
+                // World ambience is independent of the event gameplay toggle. Never
+                // re-scan all chunks on the standard reload path; avoid packet bursts.
                 worldDecorator.resumeWithoutScanning();
             } else {
                 worldDecorator.stop();
             }
         }
         if (structureGenerator != null) {
-            if (getConfig().getBoolean("world-generation.enabled", true)) {
-                structureGenerator.resumeWithoutScanning();
+            if (getConfig().getBoolean("random-structures.enabled", true)) {
+                // The generator only processes chunks without its persistent marker;
+                // already generated/checked chunks are never rebuilt.
+                structureGenerator.scanLoadedChunks();
             } else {
                 structureGenerator.stop();
             }
@@ -231,7 +231,15 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             }
         }
         if (atmosphere != null) atmosphere.refreshPlayback();
-        // Persistent scenery and random structures remain active when timed Halloween events are toggled.
+        // Ambient world generation isn't toggled off by /halloween off.
+        if (worldDecorator != null) {
+            if (getConfig().getBoolean("world-decorations.enabled", true)) worldDecorator.scanLoadedChunks();
+            else worldDecorator.stop();
+        }
+        if (structureGenerator != null) {
+            if (getConfig().getBoolean("random-structures.enabled", true)) structureGenerator.scanLoadedChunks();
+            else structureGenerator.stop();
+        }
 
         if (changed) {
             Bukkit.broadcastMessage(color(enabled
@@ -541,6 +549,28 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (!getConfig().contains("world-decorations.large-mushrooms-per-chunk")) {
             getConfig().set("world-decorations.large-mushrooms-per-chunk", 1);
         }
+        // New structure-generation options must also be written into existing
+        // config.yml files; saveDefaultConfig() does not merge new keys on upgrades.
+        if (!getConfig().contains("random-structures.enabled")) getConfig().set("random-structures.enabled", true);
+        if (!getConfig().contains("random-structures.village-chance-per-thousand")) {
+            getConfig().set("random-structures.village-chance-per-thousand", 18);
+        }
+        if (!getConfig().contains("random-structures.graveyard-chance-per-thousand")) {
+            getConfig().set("random-structures.graveyard-chance-per-thousand", 45);
+        }
+        if (!getConfig().contains("random-structures.chunks-per-tick")) getConfig().set("random-structures.chunks-per-tick", 1);
+        if (!getConfig().contains("random-structures.minimum-distance-from-world-spawn-blocks")) {
+            getConfig().set("random-structures.minimum-distance-from-world-spawn-blocks", 256);
+        }
+        if (!getConfig().contains("random-structures.discovery-radius-blocks")) getConfig().set("random-structures.discovery-radius-blocks", 10);
+        if (!getConfig().contains("random-structures.village-discovery-reward-fragments")) {
+            getConfig().set("random-structures.village-discovery-reward-fragments", 250);
+        }
+        if (!getConfig().contains("random-structures.graveyard-discovery-reward-fragments")) {
+            getConfig().set("random-structures.graveyard-discovery-reward-fragments", 200);
+        }
+        // Legacy manual coordinates stay intact; generated village discovery is enabled.
+        getConfig().set("haunted-village.enabled", true);
         getConfig().set("migrations.halloween-3d-decorations-v1", true);
         saveConfig();
         getLogger().info("Halloween 3D graves/mushrooms enabled with low per-chunk density; unrelated world settings preserved.");
@@ -552,35 +582,6 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
      * the administrator's global event enable switch, arena coordinates, prices and
      * all unrelated gameplay settings intact.
      */
-    /**
-     * Adds procedural village/graveyard options to older server configs without overwriting
-     * explicitly supplied world-generation settings.
-     */
-    private void migrateProceduralWorldGenerationV1() {
-        if (getConfig().getBoolean("migrations.procedural-world-generation-v1", false)) return;
-        try (InputStream input = getResource("config.yml")) {
-            if (input == null) {
-                getLogger().warning("Default config.yml is unavailable; procedural-world-generation migration was skipped.");
-                return;
-            }
-            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(input, StandardCharsets.UTF_8));
-            String root = "world-generation.";
-            for (String key : List.of("enabled", "chunks-per-tick", "structure-chance-per-chunk",
-                    "haunted-village-percent", "spawn-exclusion-radius", "excluded-worlds")) {
-                if (!getConfig().contains(root + key) && defaults.contains(root + key)) {
-                    getConfig().set(root + key, defaults.get(root + key));
-                }
-            }
-            getConfig().set("haunted-village.enabled", true);
-            getConfig().set("migrations.procedural-world-generation-v1", true);
-            saveConfig();
-            getLogger().info("Procedural haunted-village and graveyard generation enabled.");
-        } catch (IOException ex) {
-            getLogger().warning("Procedural-world-generation migration failed: " + ex.getClass().getSimpleName());
-        }
-    }
-
     private void migrateHalloweenEventOverhaul() {
         if (getConfig().getBoolean("migrations.halloween-event-overhaul-v1", false)) return;
 
@@ -667,6 +668,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         reportedConfigErrors.retainAll(currentErrors);
     }
 
+    public HalloweenStructureGenerator getStructureGenerator() {
+        return structureGenerator;
+    }
+
     public boolean isEventEnabled() {
         return eventEnabled;
     }
@@ -713,10 +718,6 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenVampireEncounterManager getVampireEncounterManager() {
         return vampireEncounterManager;
-    }
-
-    public HalloweenStructureGenerator getStructureGenerator() {
-        return structureGenerator;
     }
 
     public HalloweenSecretDiscoveryManager getSecretDiscoveryManager() {

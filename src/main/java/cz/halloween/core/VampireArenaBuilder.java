@@ -30,6 +30,8 @@ public final class VampireArenaBuilder {
             return new Inspection(false, "Střed je příliš blízko hranici výšky světa.", 0, "");
         }
 
+        // The admin explicitly confirms a destructive 97-block arena build. Load the
+        // footprint's chunks up front instead of silently failing on a partly unloaded edge.
         int minChunkX = (centerX - RADIUS) >> 4;
         int maxChunkX = (centerX + RADIUS) >> 4;
         int minChunkZ = (centerZ - RADIUS) >> 4;
@@ -37,14 +39,27 @@ public final class VampireArenaBuilder {
         for (int cx = minChunkX; cx <= maxChunkX; cx++) {
             for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
                 if (!world.isChunkLoaded(cx, cz)) {
+                    try {
+                        world.getChunkAt(cx, cz);
+                    } catch (RuntimeException ex) {
+                        return new Inspection(false,
+                                "Nepodařilo se načíst chunk " + cx + "," + cz + " pro arénu: " + ex.getClass().getSimpleName(),
+                                0, "");
+                    }
+                }
+                if (!world.isChunkLoaded(cx, cz)) {
                     return new Inspection(false,
-                            "Některé chunky obří arény nejsou načtené. Zvyš dohled, počkej na načtení oblasti a spusť náhled znovu.",
+                            "Chunk " + cx + "," + cz + " se nepodařilo načíst. Zkus to znovu po chvíli.",
                             0, "");
                 }
             }
         }
 
-        int obstructionCount = 0;
+        // Do not reject normal hills, forest canopies, or player-built ground during
+        // preflight: these were the common reason the old command could never proceed
+        // on real worlds. The explicit confirmation warns that the whole circle is
+        // cleared/levelled, so count blocks that will be replaced for the preview.
+        int overwritten = 0;
         String first = "";
         int r2Limit = RADIUS * RADIUS;
         for (int dx = -RADIUS; dx <= RADIUS; dx++) {
@@ -53,28 +68,15 @@ public final class VampireArenaBuilder {
                 int x = centerX + dx;
                 int z = centerZ + dz;
                 int groundY = world.getHighestBlockYAt(x, z);
-                if (groundY < floorY - 6) {
-                    obstructionCount++;
-                    if (first.isEmpty()) {
-                        first = x + " " + groundY + " " + z + " (terrain is over 6 blocks below arena floor)";
-                    }
-                }
-                for (int y = centerY; y < centerY + CLEARANCE_HEIGHT; y++) {
+                for (int y = floorY + 1; y <= groundY; y++) {
                     Material material = world.getBlockAt(x, y, z).getType();
-                    if (!material.isAir()) {
-                        obstructionCount++;
-                        if (first.isEmpty()) {
-                            first = x + " " + y + " " + z + " (" + material.name() + ")";
-                        }
-                    }
+                    if (material.isAir()) continue;
+                    overwritten++;
+                    if (first.isEmpty()) first = x + " " + y + " " + z + " (" + material.name() + ")";
                 }
             }
         }
-        if (obstructionCount > 0) {
-            return new Inspection(false, "Nad podlahou obří arény musí být volných 20 bloků a terén nesmí být o více než 6 bloků níž.",
-                    obstructionCount, first);
-        }
-        return new Inspection(true, "", 0, "");
+        return new Inspection(true, "", overwritten, first);
     }
 
     public int build(Location center) {
@@ -97,8 +99,13 @@ public final class VampireArenaBuilder {
                 int x = cx + dx;
                 int z = cz + dz;
                 int groundY = world.getHighestBlockYAt(x, z);
-                // Fill shallow low spots before laying the single flat arena floor.
-                // Inspection already rejects holes deeper than six blocks.
+                // The explicit preview/confirm flow authorizes leveling the whole
+                // arena footprint. Clear high terrain/trees/buildings to the chosen
+                // floor, or fill low ground/holes without creating a pit.
+                int clearToY = Math.max(groundY, floorY + CLEARANCE_HEIGHT);
+                for (int y = floorY + 1; y <= clearToY; y++) {
+                    changed += set(world.getBlockAt(x, y, z), Material.AIR);
+                }
                 for (int y = groundY + 1; y < floorY; y++) {
                     Material foundation = ((y + dx + dz) & 1) == 0
                             ? Material.POLISHED_BLACKSTONE : Material.DEEPSLATE_BRICKS;
