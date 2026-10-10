@@ -374,6 +374,13 @@ public final class HalloweenDataManager {
         if (!safeId.equals(previous)) storyQuestProgress.remove(uuid);
     }
 
+    public void resetStoryQuests(UUID uuid) {
+        if (uuid == null) return;
+        storyQuest.remove(uuid);
+        storyQuestProgress.remove(uuid);
+        completedStoryQuests.remove(uuid);
+    }
+
     public int getStoryQuestProgress(UUID uuid) {
         return storyQuestProgress.getOrDefault(uuid, 0);
     }

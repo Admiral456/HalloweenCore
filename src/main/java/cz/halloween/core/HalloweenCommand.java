@@ -36,6 +36,20 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
+        if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
+                && sender.hasPermission("halloweencore.admin")) {
+            return List.of("reset").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
+                && args[1].equalsIgnoreCase("reset") && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted()
+                    .toList();
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("event") && sender.hasPermission("halloweencore.admin")) {
             return List.of("status", "start", "stop", "soulstorm", "witching-hour",
                     "cursed-harvest", "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising", "random").stream()
@@ -126,7 +140,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("rewards")) return rewards(sender);
         if (args[0].equalsIgnoreCase("claim")) return claim(sender, args);
         if (args[0].equalsIgnoreCase("challenge")) return challenge(sender);
-        if (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest")) return quests(sender);
+        if (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest")) return quests(sender, args);
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
@@ -148,6 +162,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween rewards &7- limitované odměny 2026"));
         sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní Halloween lov"));
         sender.sendMessage(plugin.color("&6/halloween quests &7- příběhová řada Halloween questů"));
+        sender.sendMessage(plugin.color("&6/halloween quests reset <hráč> &7- restart příběhu hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
@@ -328,7 +343,37 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
-    private boolean quests(CommandSender sender) {
+    private boolean quests(CommandSender sender, String[] args) {
+        if (args.length >= 2) {
+            if (!args[1].equalsIgnoreCase("reset")) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween quests [reset <online hráč>]"));
+                return true;
+            }
+            if (!checkAdmin(sender)) return true;
+            if (args.length != 3) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween quests reset <online hráč>"));
+                return true;
+            }
+
+            Player target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                sender.sendMessage(plugin.color("&cHráč není online. Vyber online hráče."));
+                return true;
+            }
+
+            plugin.getDataManager().resetStoryQuests(target.getUniqueId());
+            plugin.getQuestManager().show(target);
+            plugin.getDataManager().save();
+
+            sender.sendMessage(plugin.color("&aPříběhové questy hráče &f" + target.getName()
+                    + " &abyly resetovány na první kapitolu."));
+            sender.sendMessage(plugin.color("&7Resetuje se jen postup questů. Získané fragmenty a ostatní statistiky zůstávají."));
+            if (sender != target) {
+                target.sendMessage(plugin.color("&6HALLOWEEN &8» &eTvůj příběhový postup byl restartován správcem. Začínáš znovu od první kapitoly."));
+            }
+            return true;
+        }
+
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.color("&cTento příkaz může použít jen hráč."));
             return true;
