@@ -36,6 +36,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenChallengeManager challengeManager;
     private HalloweenQuestManager questManager;
     private HalloweenRiftManager riftManager;
+    private HalloweenGraveyardManager graveyardManager;
     private HalloweenBossManager bossManager;
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
@@ -68,6 +69,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         challengeManager = new HalloweenChallengeManager(this);
         questManager = new HalloweenQuestManager(this);
         riftManager = new HalloweenRiftManager(this);
+        graveyardManager = new HalloweenGraveyardManager(this);
         bossManager = new HalloweenBossManager(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
@@ -91,6 +93,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(riftManager, this);
+        getServer().getPluginManager().registerEvents(graveyardManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
@@ -292,21 +295,22 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             }
             YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
                     new InputStreamReader(input, StandardCharsets.UTF_8));
-            ConfigurationSection section = defaults.getConfigurationSection("story-rift");
-            if (section == null) return;
-
             boolean changed = false;
-            for (String key : section.getKeys(true)) {
-                if (section.isConfigurationSection(key)) continue;
-                String path = "story-rift." + key;
-                if (!getConfig().contains(path)) {
-                    getConfig().set(path, section.get(key));
-                    changed = true;
+            for (String sectionPath : List.of("story-rift", "story-graveyards")) {
+                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
+                if (section == null) continue;
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) {
+                        getConfig().set(path, section.get(key));
+                        changed = true;
+                    }
                 }
             }
             if (changed) {
                 saveConfig();
-                getLogger().info("Story-rift configuration defaults added without overwriting existing values.");
+                getLogger().info("Story rift and graveyard defaults added without overwriting existing values.");
             }
         } catch (IOException ex) {
             getLogger().warning("Story-rift configuration migration failed: " + ex.getClass().getSimpleName());
@@ -555,6 +559,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenRiftManager getRiftManager() {
         return riftManager;
+    }
+
+    public HalloweenGraveyardManager getGraveyardManager() {
+        return graveyardManager;
     }
 
     public HalloweenBossManager getBossManager() {
