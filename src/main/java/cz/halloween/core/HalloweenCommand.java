@@ -20,6 +20,7 @@ import java.nio.file.Path;
 
 public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     private final HalloweenCore plugin;
+    private boolean resourcePackRebuildInProgress;
 
     public HalloweenCommand(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -915,68 +916,71 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     private boolean rebuildItemsAdderPack(CommandSender sender) {
         var itemsAdder = Bukkit.getPluginManager().getPlugin("ItemsAdder");
         if (itemsAdder == null || !itemsAdder.isEnabled()) {
-            sender.sendMessage(plugin.color("&cItemsAdder není zapnutý. Runtime konfigurace HalloweenCore se načetla, ale textury ani resource pack nelze sestavit."));
+            sender.sendMessage(plugin.color("&cItemsAdder není zapnutý. Runtime konfigurace HalloweenCore se načetla, ale resource pack nelze sestavit."));
             sender.sendMessage(plugin.color("&7Po zapnutí ItemsAdderu spusť /halloween reload."));
             return true;
         }
+        if (resourcePackRebuildInProgress) {
+            sender.sendMessage(plugin.color("&eResource pack se už sestavuje. Počkej na dokončení; další reload teď nespouštěj."));
+            return true;
+        }
+        resourcePackRebuildInProgress = true;
+        sender.sendMessage(plugin.color("&6HALLOWEEN &8» &7Sestavuji resource pack. Během této operace nebude pack automaticky znovu posílán online hráčům, aby nedocházelo k odpojení kvůli příliš mnoha paketům."));
 
         Bukkit.getScheduler().runTask(plugin, () -> {
-            var modelEngine = Bukkit.getPluginManager().getPlugin("ModelEngine");
-            if (modelEngine != null && modelEngine.isEnabled()) {
-                boolean modelsReloaded = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "meg reload models");
-                if (modelsReloaded) {
-                    sender.sendMessage(plugin.color("&eModelEngine: /meg reload models byl předán k obnovení modelů a jejich textur."));
-                } else {
-                    sender.sendMessage(plugin.color("&cModelEngine nepřijal /meg reload models. Zkontroluj, zda jsou blueprinty importované."));
-                }
-            }
-
-            // Let ModelEngine create/update its pack before ensuring ItemsAdder merges it.
-            Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                ensureModelEngineResourcePackMerged(sender);
-
-                // /iazip reloads ItemsAdder content and generates the merged resource-pack ZIP.
-                boolean zipDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
-                if (!zipDispatched) {
-                    sender.sendMessage(plugin.color("&cNepodařilo se spustit /iazip. Spusť ho ručně v konzoli serveru."));
-                    return;
+            try {
+                var modelEngine = Bukkit.getPluginManager().getPlugin("ModelEngine");
+                if (modelEngine != null && modelEngine.isEnabled()) {
+                    boolean modelsReloaded = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "meg reload models");
+                    if (modelsReloaded) {
+                        sender.sendMessage(plugin.color("&eModelEngine: modely byly znovu načteny."));
+                    } else {
+                        sender.sendMessage(plugin.color("&cModelEngine nepřijal /meg reload models. Pokračuji se sestavením ItemsAdder packu."));
+                    }
                 }
 
-                sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl předán k obnovení obsahu a sestavení resource packu."));
-                sender.sendMessage(plugin.color("&7Obnovení klientů bude dávkované, aby server neposlal všem hráčům velký objem paketů naráz."));
-                // Wait for zip generation, then refresh one online player every two seconds.
-                // A bulk texture refresh can burst resource-pack traffic and trigger packet-limit kicks.
+                // ModelEngine should update its resource-pack files before ItemsAdder merges them.
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
-                    var current = Bukkit.getPluginManager().getPlugin("ItemsAdder");
-                    if (current == null || !current.isEnabled()) {
-                        sender.sendMessage(plugin.color("&cItemsAdder se během obnovy vypnul; klientské textury nebyly obnoveny."));
-                        return;
-                    }
-
-                    java.util.List<Player> online = new java.util.ArrayList<>(Bukkit.getOnlinePlayers());
-                    if (online.isEmpty()) {
-                        sender.sendMessage(plugin.color("&7Pack je sestavený. Hráči jej dostanou při dalším připojení."));
-                        return;
-                    }
-                    sender.sendMessage(plugin.color("&eResource pack: bezpečně obnovuji textury pro " + online.size() + " hráčů postupně."));
-                    final int[] index = {0};
-                    Bukkit.getScheduler().runTaskTimer(plugin, task -> {
-                        if (index[0] >= online.size()) {
-                            task.cancel();
-                            sender.sendMessage(plugin.color("&aObnovení resource packu bylo odesláno všem hráčům postupně."));
-                            sender.sendMessage(plugin.color("&7Pokud vzhled stále chybí, ověř URL/hash packu v ItemsAdderu a klientský log."));
+                    try {
+                        ensureModelEngineResourcePackMerged(sender);
+                        boolean zipDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
+                        if (!zipDispatched) {
+                            sender.sendMessage(plugin.color("&cNepodařilo se spustit /iazip. Zkontroluj ItemsAdder a spusť příkaz ručně v konzoli."));
+                            resourcePackRebuildInProgress = false;
                             return;
                         }
-                        Player target = online.get(index[0]++);
-                        if (!target.isOnline()) return;
-                        boolean refreshed = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iatexture " + target.getName());
-                        if (!refreshed) {
-                            sender.sendMessage(plugin.color("&cNepodařilo se obnovit textury hráče " + target.getName()
-                                    + ". Po sestavení packu zkus ručně /iatexture " + target.getName() + "."));
-                        }
-                    }, 1L, 40L);
-                }, 200L);
-            }, 20L);
+
+                        sender.sendMessage(plugin.color("&aItemsAdder: sestavení resource packu bylo zahájeno."));
+                        sender.sendMessage(plugin.color("&7Kvůli ochraně před kickem se pack nyní automaticky neposílá online hráčům."));
+                        // Do not run /iatexture for every online user here: ItemsAdder may send a large
+                        // pack and packet burst, which caused "You are sending too many packets" kicks.
+                        // Allow the zip task to settle, then unlock the command for the next rebuild.
+                        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                            try {
+                                var current = Bukkit.getPluginManager().getPlugin("ItemsAdder");
+                                if (current == null || !current.isEnabled()) {
+                                    sender.sendMessage(plugin.color("&cItemsAdder se během sestavení vypnul."));
+                                } else {
+                                    sender.sendMessage(plugin.color("&aResource pack je připraven. Hráčům se nabídne při dalším připojení."));
+                                    sender.sendMessage(plugin.color("&7Neprováděj hromadné /iatexture; pokud musíš testovat ihned, testuj pouze s jedním hráčem."));
+                                }
+                            } finally {
+                                resourcePackRebuildInProgress = false;
+                            }
+                        }, 200L);
+                    } catch (RuntimeException ex) {
+                        resourcePackRebuildInProgress = false;
+                        plugin.getLogger().warning("Halloween resource-pack rebuild stage failed: " + ex.getClass().getSimpleName()
+                                + ": " + ex.getMessage());
+                        sender.sendMessage(plugin.color("&cObnova resource packu selhala. Zkontroluj konzoli serveru."));
+                    }
+                }, 20L);
+            } catch (RuntimeException ex) {
+                resourcePackRebuildInProgress = false;
+                plugin.getLogger().warning("Halloween model reload stage failed: " + ex.getClass().getSimpleName()
+                        + ": " + ex.getMessage());
+                sender.sendMessage(plugin.color("&cObnova modelů/resource packu selhala. Zkontroluj konzoli serveru."));
+            }
         });
         return true;
     }
