@@ -76,17 +76,26 @@ public final class HalloweenQuestManager implements Listener {
 
         String specialMob = event.getEntity().getPersistentDataContainer()
                 .get(cursedMobKey, PersistentDataType.STRING);
+        var dead = event.getEntity();
+        boolean hostile = dead instanceof Monster || dead instanceof EnderDragon || dead instanceof Wither
+                || dead instanceof Ghast || dead instanceof Phantom || dead instanceof Shulker
+                || dead instanceof Slime;
+        if (!hostile) return;
+
+        Quest active = ensureActiveQuest(killer);
+        if (active == null) return;
         if (specialMob != null && !specialMob.isBlank()) {
-            recordAction(killer, "special:" + normalizeMobId(specialMob));
-            recordAction(killer, "mob-kill");
+            String specialObjective = "special:" + normalizeMobId(specialMob);
+            // One kill may advance only the currently active chapter. Do not also
+            // apply a generic-kill increment after unlocking the next chapter.
+            if (active.objective().equalsIgnoreCase(specialObjective)
+                    || active.objective().equalsIgnoreCase("mob-kill")) {
+                addProgress(killer, active, 1);
+            }
             return;
         }
-
-        var dead = event.getEntity();
-        if (dead instanceof Monster || dead instanceof EnderDragon || dead instanceof Wither
-                || dead instanceof Ghast || dead instanceof Phantom || dead instanceof Shulker
-                || dead instanceof Slime) {
-            recordAction(killer, "mob-kill");
+        if (active.objective().equalsIgnoreCase("mob-kill")) {
+            addProgress(killer, active, 1);
         }
     }
 
