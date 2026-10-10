@@ -22,7 +22,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - každý den má hráč vlastní Halloween lov
 - limitované odměny pro Halloween 2026 lze získat pouze jednou za hráče
 - odměny jsou navíc gated podle úrovně prokletí, takže nejlepší věci vyžadují aktivní hraní
-- v noci se náhodně střídají tři CC0 strašidelné ambientní skladby; v podzemních jeskyních má vlastní CC0 smyčku přednost před nočním playlistem; ve dne na povrchu Halloween hudba nehraje
+- v noci se náhodně střídají dvě CC0 strašidelné ambientní skladby; v podzemních jeskyních má vlastní CC0 smyčku přednost před nočním playlistem; ve dne na povrchu Halloween hudba nehraje
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
 - Maska nočního lovce dává při nošení +5 % k zisku fragmentů; stojí 4 000 fragmentů a vyžaduje prokletí 3
@@ -106,7 +106,7 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 
 ## Halloween hudba a obloha
 
-- Noční playlist se skládá ze skladeb Spooky Fester, Horror Atmosphere a Creepy Ambient Loop; v jeskyních hraje pouze Dark Cavern Ambient (jeskynní režim má přednost, a to i ve dne).
+- Noční playlist náhodně střídá Horror Atmosphere a Creepy Ambient Loop; v jeskyních hraje pouze Dark Cavern Ambient (jeskynní režim má přednost, a to i ve dne). Spooky Fester zůstává zachovaný jen jako starší záložní soundtrack při vypnutí playlistu.
 - Skladby jsou z OpenGameArt označené CC0 a jsou automaticky stažené a překódované při CI buildu; licence a zdroje jsou zdokumentované v `MUSIC_LICENSE.md`.
 - Playlist kontroluje změnu prostředí přibližně každé 2 sekundy; vypočítané délky každé smyčky odpovídají vytvořenému OGG souboru.
 - `scripts/generate_halloween_audio.py` stáhne skladbu `Spooky Fester` od Eldritch Grim z OpenGameArt (licence CC0), převede ji na mono OGG/Vorbis a vygeneruje šest originálních, odlišných eventových znělek pro všech 6 eventů. Vyžaduje přístup k internetu, Python standard library a `ffmpeg`; při buildu se přesná délka ambientní smyčky zapíše do konfigurace.

@@ -37,4 +37,4 @@ These downloadable tracks are included in the ItemsAdder resource pack by the CI
 - `creepy_ambient.ogg` — **Creepy Ambient Loop**, by epb9000. CC0. Source: https://opengameart.org/content/creepy-ambient-loop
 - `dark_cavern_ambient.ogg` — **Dark Cavern Ambient**, by Paul Wortmann; version 002 is the continuous loop. CC0. Source: https://opengameart.org/content/dark-cavern-ambient
 
-The playlist rotates Spooky Fester, Horror Atmosphere, and Creepy Ambient during Overworld night. Dark Cavern Ambient takes priority in underground spaces detected by depth and sky-light checks. Each loop period is derived from the actual encoded audio duration during CI, so tracks do not get cut off or overlap at the transition.
+The Overworld-night playlist randomly rotates Horror Atmosphere and Creepy Ambient. Dark Cavern Ambient is reserved for underground spaces detected by depth and sky-light checks. The pre-existing Spooky Fester track remains available as the backwards-compatible single-track fallback when the playlist is disabled. Each loop period is derived from the actual encoded audio duration during CI, so tracks do not get cut off or overlap at the transition.
