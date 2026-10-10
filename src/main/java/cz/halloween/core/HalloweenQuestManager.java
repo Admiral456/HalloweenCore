@@ -26,34 +26,39 @@ public final class HalloweenQuestManager implements Listener {
 
     private final HalloweenCore plugin;
     private final NamespacedKey cursedMobKey;
+    /*
+     * Story progression deliberately counts only tagged Halloween mobs.
+     * The first chapter additionally requires actual in-game night, so the
+     * "after dark" clue is a real condition rather than flavor text.
+     */
     private final List<Quest> quests = List.of(
-            new Quest("fog-patrol", "Znamení v mlze",
-                    "Zabij 10 nepřátelských tvorů a zjisti, co se děje po setmění.",
-                    "mob-kill", 10, 150),
+            new Quest("fog-patrol", "Co se probouzí po setmění",
+                    "Počkej na noc a poraz 4 Prokleté zombie. Běžní zombie se nepočítají.",
+                    "special-night:cursed-zombie", 4, 350),
             new Quest("gravekeepers-debt", "Dluh hrobníkovi",
-                    "Najdi a poraz 2 hrobníky na toulkách světem.",
-                    "special:gravekeeper", 2, 250),
-            new Quest("blood-silk", "Krvavé hedvábí",
-                    "Připrav krvavé pavouky o jejich kořist — poraz 3 kusy.",
-                    "special:blood-spider", 3, 300),
-            new Quest("cursed-harvest", "Sklizeň za úplňku",
-                    "Sklid 20 zralých plodin a posil svou výbavu.",
-                    "farming", 20, 200),
-            new Quest("witching-hour", "Čarodějnická hodina",
-                    "Najdi a poraz 2 hexové čarodějky.",
-                    "special:hex-witch", 2, 400),
-            new Quest("pumpkin-wraith", "Dýňové prokletí",
-                    "Znič 2 dýňové přízraky, než jejich popel zahalí okolí.",
-                    "special:pumpkin-wraith", 2, 450),
-            new Quest("void-reaper", "Ženec z prázdnoty",
-                    "Vypátrej a poraz 2 Žence prázdnoty.",
-                    "special:void-reaper", 2, 600),
+                    "Hrobníci střeží stopy po prvním útoku. Najdi a poraz 5 Hrobníků.",
+                    "special:gravekeeper", 5, 500),
+            new Quest("blood-silk", "Pavučina svědků",
+                    "Krvaví pavouci obývají místo, kde zmizeli průzkumníci. Poraz 6 Krvavých pavouků.",
+                    "special:blood-spider", 6, 650),
+            new Quest("witching-hour", "Výpověď z popela",
+                    "Hexové čarodějky znají jméno toho, kdo otevřel trhlinu. Poraz 4 Hexové čarodějky.",
+                    "special:hex-witch", 4, 750),
+            new Quest("pumpkin-wraith", "Dýňová pečeť",
+                    "Přízraky hlídají rozbitou pečeť. Znič 5 Dýňových přízraků.",
+                    "special:pumpkin-wraith", 5, 900),
+            new Quest("void-reaper", "Za hranou světa",
+                    "Trhlina zesílila. Vyhledej a poraz 4 Žence prázdnoty.",
+                    "special:void-reaper", 4, 1100),
             new Quest("frost-stalker", "Ledová stopa",
-                    "Přemoz 2 Ledové stopaře v chladných krajích.",
-                    "special:frost-stalker", 2, 650),
-            new Quest("nightmare", "Poslední noční můra",
-                    "Přežij noc a poraz Noční můru.",
-                    "special:nightmare", 1, 900)
+                    "Ledoví stopaři odnášejí poslední části pečeti. Poraz 5 Ledových stopařů.",
+                    "special:frost-stalker", 5, 1250),
+            new Quest("nightmare", "Lovec ve snech",
+                    "Noční můry už znají tvé jméno. Přežij jejich lov a poraz 3 Noční můry.",
+                    "special:nightmare", 3, 1600),
+            new Quest("last-nightmare", "Poslední noc",
+                    "Trhlina je otevřená naplno. Za noci poraz poslední Noční můru a uzavři příběh.",
+                    "special-night:nightmare", 1, 2500)
     );
 
     public HalloweenQuestManager(HalloweenCore plugin) {
@@ -84,19 +89,29 @@ public final class HalloweenQuestManager implements Listener {
 
         Quest active = ensureActiveQuest(killer);
         if (active == null) return;
-        if (specialMob != null && !specialMob.isBlank()) {
-            String specialObjective = "special:" + normalizeMobId(specialMob);
-            // One kill may advance only the currently active chapter. Do not also
-            // apply a generic-kill increment after unlocking the next chapter.
-            if (active.objective().equalsIgnoreCase(specialObjective)
-                    || active.objective().equalsIgnoreCase("mob-kill")) {
-                addProgress(killer, active, 1);
+        // Ordinary vanilla hostiles never advance the story. A matching tagged
+        // Halloween mob is required for every combat chapter.
+        if (specialMob == null || specialMob.isBlank()) return;
+
+        String mobId = normalizeMobId(specialMob);
+        String objective = active.objective().toLowerCase(Locale.ROOT);
+        boolean requiresNight = objective.startsWith("special-night:");
+        String requiredMob = objective.startsWith("special-night:")
+                ? objective.substring("special-night:".length())
+                : objective.startsWith("special:") ? objective.substring("special:".length()) : "";
+        if (requiredMob.isBlank() || !requiredMob.equals(mobId)) return;
+
+        if (requiresNight) {
+            long worldTime = dead.getWorld().getTime() % 24000L;
+            // Minecraft night: 13000 through 23000 ticks.
+            if (worldTime < 13000L || worldTime > 23000L) {
+                if (killer.getUniqueId().equals(killer.getUniqueId())) {
+                    killer.sendMessage(plugin.color("&8HALLOWEEN &7» &cTento cíl se počítá pouze v noci."));
+                }
+                return;
             }
-            return;
         }
-        if (active.objective().equalsIgnoreCase("mob-kill")) {
-            addProgress(killer, active, 1);
-        }
+        addProgress(killer, active, 1);
     }
 
     public void show(Player player) {
@@ -120,6 +135,10 @@ public final class HalloweenQuestManager implements Listener {
         player.sendMessage(plugin.color("&7" + active.description()));
         player.sendMessage(plugin.color("&7Postup: &e" + Math.min(progress, active.target())
                 + "&7/&e" + active.target()));
+        player.sendMessage(plugin.color("&8Počítají se pouze označení Halloween mobové."));
+        if (active.objective().startsWith("special-night:")) {
+            player.sendMessage(plugin.color("&8Podmínka: skutečná noc ve hře (čas 13 000–23 000)."));
+        }
         player.sendMessage(plugin.color("&7Odměna: &6" + active.reward() + " fragmentů"));
         player.sendMessage(plugin.color("&8Postup se ukládá a přežije restart serveru."));
         player.sendMessage(plugin.color("&8&m--------------------------------"));
