@@ -61,7 +61,8 @@ public final class HalloweenItemListener implements Listener {
 
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-        if (player.isSneaking() && isCrimsonWardenShield(item)) {
+        if (player.isSneaking() && (isCrimsonWardenShield(item)
+                || isCrimsonWardenShield(player.getInventory().getItemInOffHand()))) {
             event.setCancelled(true);
             activateCrimsonWardenShield(player);
             return;
@@ -134,7 +135,8 @@ public final class HalloweenItemListener implements Listener {
     private boolean isCrimsonWardenShield(ItemStack item) {
         if (item == null || item.getType() != org.bukkit.Material.SHIELD || item.getItemMeta() == null) return false;
         String reward = item.getItemMeta().getPersistentDataContainer().get(rewardKey, PersistentDataType.STRING);
-        return "crimson-warden-shield".equalsIgnoreCase(reward);
+        if ("crimson-warden-shield".equalsIgnoreCase(reward)) return true;
+        return plugin.getItemManager().isItemsAdderItem(item, "warriorland_halloween:crimson_warden_shield");
     }
 
     private void activateCrimsonWardenShield(Player player) {

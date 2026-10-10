@@ -45,6 +45,22 @@ public final class HalloweenItemManager {
         }
     }
 
+    /** Recognizes a configured ItemsAdder item even if it was issued outside HalloweenCore. */
+    public boolean isItemsAdderItem(ItemStack item, String expectedNamespacedId) {
+        if (item == null || item.getType().isAir() || expectedNamespacedId == null
+                || expectedNamespacedId.isBlank() || !isItemsAdderAvailable()) return false;
+        try {
+            Class<?> customStackClass = Class.forName("dev.lone.itemsadder.api.CustomStack");
+            Method byItemStack = customStackClass.getMethod("byItemStack", ItemStack.class);
+            Object customStack = byItemStack.invoke(null, item);
+            if (customStack == null) return false;
+            Object namespacedId = customStackClass.getMethod("getNamespacedID").invoke(customStack);
+            return namespacedId instanceof String actual && expectedNamespacedId.equalsIgnoreCase(actual);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return false;
+        }
+    }
+
     public boolean isSupportedVersion() {
         String minimum = plugin.getConfig().getString("itemsadder.minimum-version", "4.0.13");
         var pluginInstance = plugin.getServer().getPluginManager().getPlugin("ItemsAdder");

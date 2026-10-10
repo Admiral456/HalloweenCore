@@ -115,6 +115,8 @@ public final class HalloweenPassiveEffectManager implements Listener {
         if (item == null || item.getType().isAir() || item.getItemMeta() == null) return false;
         String stored = item.getItemMeta().getPersistentDataContainer()
                 .get(rewardKey, PersistentDataType.STRING);
-        return rewardId.equalsIgnoreCase(stored);
+        if (rewardId.equalsIgnoreCase(stored)) return true;
+        String itemsAdderId = plugin.getConfig().getString("rewards.shop." + rewardId + ".itemsadder-id", "");
+        return plugin.getItemManager().isItemsAdderItem(item, itemsAdderId);
     }
 }

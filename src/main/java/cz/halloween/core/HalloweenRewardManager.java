@@ -39,10 +39,12 @@ public final class HalloweenRewardManager {
             inventory.setItem(slot, filler);
         }
 
-        ItemStack balance = namedItem(Material.GOLD_NUGGET,
+        ItemStack balance = plugin.getItemManager().getItemsAdderItem("warriorland_halloween:halloween_fragment", 1);
+        if (balance == null) balance = namedItem(Material.AMETHYST_SHARD, "&6&lTvoje fragmenty");
                 "&6&lTvoje fragmenty");
         ItemMeta balanceMeta = balance.getItemMeta();
         if (balanceMeta != null) {
+            balanceMeta.setDisplayName(plugin.color("&6&lTvoje fragmenty"));
             balanceMeta.setLore(List.of(
                     plugin.color("&7K dispozici: &e" + plugin.getService().getFragments(player.getUniqueId())),
                     plugin.color("&7Celoživotně získáno: &e" + plugin.getDataManager().getLifetimeFragments(player.getUniqueId()))
@@ -192,7 +194,42 @@ public final class HalloweenRewardManager {
     private boolean isRewardItem(ItemStack item, String rewardId) {
         if (item == null || item.getType().isAir() || item.getItemMeta() == null) return false;
         String stored = item.getItemMeta().getPersistentDataContainer().get(rewardKey, PersistentDataType.STRING);
-        return rewardId.equalsIgnoreCase(stored);
+        if (rewardId.equalsIgnoreCase(stored)) return true;
+        String itemsAdderId = plugin.getConfig().getString("rewards.shop." + rewardId + ".itemsadder-id", "");
+        return plugin.getItemManager().isItemsAdderItem(item, itemsAdderId);
+    }
+
+    /** Creates a catalogue item for an administrator without charging fragments or consuming a claim. */
+    public ItemStack createAdminItem(String id, int amount) {
+        if (id == null || id.isBlank()) return null;
+        String normalizedId = id.toLowerCase(Locale.ROOT);
+        var section = plugin.getConfig().getConfigurationSection("rewards.shop." + normalizedId);
+        if (section == null) return null;
+        int safeAmount = Math.max(1, Math.min(64, amount));
+        String itemsAdderId = section.getString("itemsadder-id", "");
+        ItemStack item = itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, safeAmount);
+        if (item == null) {
+            Material material;
+            try {
+                material = Material.valueOf(section.getString("material", "PAPER").toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                return null;
+            }
+            item = new ItemStack(material, safeAmount);
+            if (!itemsAdderId.isBlank()) plugin.getItemManager().warnIfMissing(itemsAdderId, "admin item " + normalizedId);
+        } else {
+            item.setAmount(safeAmount);
+        }
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(plugin.color(section.getString("name", normalizedId)));
+            List<String> lore = new ArrayList<>();
+            for (String line : section.getStringList("lore")) lore.add(plugin.color(line));
+            meta.setLore(lore);
+            meta.getPersistentDataContainer().set(rewardKey, PersistentDataType.STRING, normalizedId);
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     public boolean claim(Player player, String id) {
