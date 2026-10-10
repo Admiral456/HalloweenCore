@@ -17,10 +17,13 @@ MODEL_DIR = ROOT / "mythicmobs" / "models"
 MOB_CONFIG = ROOT / "mythicmobs" / "mobs" / "halloween-special-mobs.yml"
 MOB_IDS = (
     "halloween_cursed_zombie",
+    "halloween_void_reaper",
     "halloween_gravekeeper",
+    "halloween_frost_stalker",
     "halloween_blood_spider",
     "halloween_pumpkin_wraith",
     "halloween_hex_witch",
+    "halloween_nightmare",
 )
 
 
@@ -159,7 +162,7 @@ def validate_model(mob_id: str) -> None:
     names = {anim.get("name") for anim in model.get("animations", [])}
     if not {"idle", "walk", "attack"}.issubset(names):
         fail(f"{model_path.name} must have idle, walk and attack animations")
-    if mob_id != "halloween_blood_spider" and "fly" not in names:
+    if mob_id not in ("halloween_blood_spider", "halloween_frost_stalker") and "fly" not in names:
         fail(f"{model_path.name} must include the floating/fly animation")
     for animation in model.get("animations", []):
         anim_uuid = animation.get("uuid")

@@ -4,19 +4,19 @@
 
 - `mobs/vampire-king.yml`: the separate Vampire King boss definition.
 - `skills/vampire-king.yml`: reusable boss-animation state skills.
-- `mobs/halloween-special-mobs.yml`: definitions for the five Halloween enemy types used by HalloweenCore.
-- `models/halloween_*.bbmodel` and `models/halloween_*.png`: individual editable Blockbench blueprints and unique 128×128 RGBA pixel-art atlases for the Cursed Zombie, Gravekeeper, Blood Spider, Pumpkin Wraith and Hex Witch.
+- `mobs/halloween-special-mobs.yml`: definitions for the eight Halloween enemy types used by HalloweenCore.
+- `models/halloween_*.bbmodel` and `models/halloween_*.png`: individual editable Blockbench blueprints and unique 128×128 RGBA pixel-art atlases for the Cursed Zombie, Void Reaper, Gravekeeper, Frost Stalker, Blood Spider, Pumpkin Wraith, Hex Witch and Nightmare.
 - `models/vampire_king.bbmodel` and `models/vampire_king.png`: the existing boss blueprint and texture.
 
-The feature build publishes `HalloweenCore-Special-Mobs-ModelEngine.zip`, containing the five enemy definitions under `MythicMobs/Mobs/` and the editable model/texture files under `ModelEngine/blueprints/`.
+The feature build publishes `HalloweenCore-Special-Mobs-ModelEngine.zip`, containing the eight enemy definitions under `MythicMobs/Mobs/` and the editable model/texture files under `ModelEngine/blueprints/`.
 
 ## Installation for staging
 
 1. Stop the server and back up `plugins/HalloweenCore/`, `plugins/ItemsAdder/`, `plugins/MythicMobs/` and `plugins/ModelEngine/`.
 2. Install the new `HalloweenCore.jar`, copy `warriorland_halloween` to `plugins/ItemsAdder/contents/`, then extract `HalloweenCore-Special-Mobs-ModelEngine.zip` over `plugins/`.
 3. Confirm that the five `.bbmodel` files are in `plugins/ModelEngine/blueprints/` and the YAML is in `plugins/MythicMobs/Mobs/halloween-special-mobs.yml`. The texture is embedded in each Blockbench blueprint; accompanying PNGs are supplied as editable/external source copies.
-4. Run `/meg reload models` (or `/meg reload` if that is the command for your installed version). ModelEngine must report all five model IDs as loaded and generate `plugins/ModelEngine/resource pack/`.
-5. Run `/mm reload`. Verify that there are no errors for the five definitions and their `model{mid=...}` skills.
+4. Run `/meg reload models` (or `/meg reload` if that is the command for your installed version). ModelEngine must report all eight model IDs as loaded and generate `plugins/ModelEngine/resource pack/`.
+5. Run `/mm reload`. Verify that there are no errors for the eight definitions and their `model{mid=...}` skills.
 6. In the existing ItemsAdder config, add `ModelEngine/resource pack` to `merge_other_plugins_resourcepacks_folders` without deleting existing folders. Then run `/iazip` **after** ModelEngine has generated its resource pack.
 7. Run `/iainfo` and verify the final pack URL is reachable. Disconnect/reconnect and accept the rebuilt pack. The Halloween pumpkin/web/candle overrides should be visible, and special mobs should use their ModelEngine models rather than vanilla base entities.
 8. Test `/halloween event start soulstorm` and `/halloween event start blood-moon-invasion`. A successful Java build does not replace the live-client rendering check.

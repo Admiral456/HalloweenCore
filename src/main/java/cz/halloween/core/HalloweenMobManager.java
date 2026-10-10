@@ -57,10 +57,13 @@ public final class HalloweenMobManager implements Listener {
         if (!plugin.isEligibleGameplayWorld(entity.getWorld())) return;
         String mobId = switch (entity.getType()) {
             case ZOMBIE -> "cursed-zombie";
+            case HUSK -> "void-reaper";
             case SKELETON -> "gravekeeper";
+            case STRAY -> "frost-stalker";
             case SPIDER -> "blood-spider";
             case CREEPER -> "pumpkin-wraith";
             case WITCH -> "hex-witch";
+            case PHANTOM -> "nightmare";
             default -> null;
         };
         if (mobId == null) return;
@@ -131,6 +134,21 @@ public final class HalloweenMobManager implements Listener {
             case "blood-spider" -> {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
                 bloodWeb(attacker, target);
+            }
+            case "void-reaper" -> {
+                if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
+                reaperGloom(attacker, target);
+            }
+            case "frost-stalker" -> {
+                if (!(event.getDamager() instanceof Arrow arrow)
+                        || !(arrow.getShooter() instanceof LivingEntity shooter)
+                        || !shooter.getUniqueId().equals(attacker.getUniqueId())
+                        || !canUseSpecialAbility(attacker, mobId)) return;
+                frostbite(attacker, target);
+            }
+            case "nightmare" -> {
+                if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
+                nightmareDread(attacker, target);
             }
             default -> {
             }
@@ -212,6 +230,40 @@ public final class HalloweenMobManager implements Listener {
                 target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 55, 1, true, true, false));
             }
         }, delayTicks);
+    }
+
+    private void reaperGloom(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.void-reaper");
+        int duration = Math.max(20, section == null ? 70 : section.getInt("gloom-ticks", 70));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 0, true, true, false));
+        Location impact = target.getLocation().clone().add(0, 1.0D, 0);
+        target.getWorld().spawnParticle(Particle.REVERSE_PORTAL, impact, 28, 0.45D, 0.55D, 0.45D, 0.035D);
+        target.getWorld().playSound(impact, "minecraft:entity.warden.heartbeat", 0.9f, 0.55f);
+        target.sendMessage(plugin.color("&5Ženec prázdnoty kolem tebe stáhl svět do temnoty."));
+    }
+
+    private void frostbite(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.frost-stalker");
+        int duration = Math.max(20, section == null ? 80 : section.getInt("frostbite-ticks", 80));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Math.max(20, duration / 2), 0, true, true, false));
+        Location impact = target.getLocation().clone().add(0, 1.0D, 0);
+        target.getWorld().spawnParticle(Particle.SNOWFLAKE, impact, 28, 0.5D, 0.55D, 0.5D, 0.015D);
+        target.getWorld().playSound(impact, "minecraft:block.glass.break", 0.7f, 0.6f);
+        target.sendMessage(plugin.color("&bLedový stopař tě zasáhl mrazivým jedem."));
+    }
+
+    private void nightmareDread(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.nightmare");
+        int duration = Math.max(20, section == null ? 60 : section.getInt("night-terror-ticks", 60));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, duration, 0, true, true, false));
+        Location impact = target.getLocation().clone().add(0, 1.0D, 0);
+        target.getWorld().spawnParticle(Particle.ASH, impact, 35, 0.6D, 0.7D, 0.6D, 0.025D);
+        target.getWorld().spawnParticle(Particle.PORTAL, impact, 20, 0.5D, 0.5D, 0.5D, 0.04D);
+        target.getWorld().playSound(impact, "minecraft:entity.phantom.ambient", 0.9f, 0.55f);
+        target.sendMessage(plugin.color("&dNoční můra ti vnukla děsivé vidiny."));
     }
 
     private void bloodWeb(LivingEntity attacker, Player target) {
@@ -467,10 +519,13 @@ public final class HalloweenMobManager implements Listener {
 
         String customId = switch (mobId) {
             case "cursed-zombie" -> "halloween_cursed_zombie";
+            case "void-reaper" -> "halloween_void_reaper";
             case "gravekeeper" -> "halloween_gravekeeper";
+            case "frost-stalker" -> "halloween_frost_stalker";
             case "blood-spider" -> "halloween_blood_spider";
             case "pumpkin-wraith" -> "halloween_pumpkin_wraith";
             case "hex-witch" -> "halloween_hex_witch";
+            case "nightmare" -> "halloween_nightmare";
             default -> null;
         };
         if (customId == null) return null;
@@ -576,9 +631,21 @@ public final class HalloweenMobManager implements Listener {
                 entity.getWorld().spawnParticle(Particle.SOUL, effect, 18, 0.35D, 0.55D, 0.35D, 0.035D);
                 entity.getWorld().spawnParticle(Particle.ASH, effect, 12, 0.3D, 0.35D, 0.3D, 0.01D);
             }
+            case "void-reaper" -> {
+                entity.getWorld().spawnParticle(Particle.REVERSE_PORTAL, effect, 24, 0.45D, 0.6D, 0.45D, 0.035D);
+                entity.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, effect, 14, 0.35D, 0.5D, 0.35D, 0.02D);
+            }
             case "gravekeeper" -> {
                 entity.getWorld().spawnParticle(Particle.SOUL, effect, 22, 0.4D, 0.6D, 0.4D, 0.04D);
                 entity.getWorld().spawnParticle(Particle.REVERSE_PORTAL, effect, 14, 0.35D, 0.5D, 0.35D, 0.02D);
+            }
+            case "frost-stalker" -> {
+                entity.getWorld().spawnParticle(Particle.SNOWFLAKE, effect, 26, 0.5D, 0.4D, 0.5D, 0.02D);
+                entity.getWorld().spawnParticle(Particle.END_ROD, effect, 12, 0.25D, 0.3D, 0.25D, 0.01D);
+            }
+            case "nightmare" -> {
+                entity.getWorld().spawnParticle(Particle.ASH, effect, 22, 0.45D, 0.6D, 0.45D, 0.02D);
+                entity.getWorld().spawnParticle(Particle.PORTAL, effect, 26, 0.4D, 0.6D, 0.4D, 0.04D);
             }
             case "blood-spider" -> {
                 entity.getWorld().spawnParticle(Particle.CRIT, effect, 20, 0.25D, 0.25D, 0.25D, 0.12D);
