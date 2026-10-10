@@ -103,10 +103,10 @@ public final class HalloweenDataManager {
                         secretDiscoveries.put(uuid, new HashSet<>(secrets));
                     }
 
-                    // Campaign v2 changes every objective into a Halloween-mob hunt.
-                    // Do not carry old easy-kill/farming completions into the new story.
+                    // Campaign v3 adds a real rift investigation and an item-costing seal ritual.
+                    // Start the updated ordered campaign cleanly rather than skipping new story beats.
                     int questCampaignVersion = data.getInt(base + ".story-quest.campaign-version", 0);
-                    if (questCampaignVersion >= 2) {
+                    if (questCampaignVersion >= 3) {
                         String questId = data.getString(base + ".story-quest.active", "");
                         int questProgress = Math.max(0, data.getInt(base + ".story-quest.progress", 0));
                         if (!questId.isBlank()) storyQuest.put(uuid, questId);
@@ -147,7 +147,7 @@ public final class HalloweenDataManager {
 
         for (UUID uuid : players) {
             String base = "players." + uuid;
-            data.set(base + ".story-quest.campaign-version", 2);
+            data.set(base + ".story-quest.campaign-version", 3);
             long amount = fragments.getOrDefault(uuid, 0L);
             long join = lastJoin.getOrDefault(uuid, 0L);
             int streak = streaks.getOrDefault(uuid, 0);
