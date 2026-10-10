@@ -176,9 +176,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         if (atmosphere != null) atmosphere.refreshPlayback();
         if (worldDecorator != null) {
-            worldDecorator.stop();
             if (eventEnabled && getConfig().getBoolean("world-decorations.enabled", true)) {
-                worldDecorator.scanLoadedChunks();
+                // Do not re-scan all already-loaded chunks during /halloween reload:
+                // mass block/display updates can overwhelm packet limits on a busy server.
+                // The running task is kept, or resumed without an initial full-world scan.
+                worldDecorator.resumeWithoutScanning();
+            } else {
+                worldDecorator.stop();
             }
         }
 

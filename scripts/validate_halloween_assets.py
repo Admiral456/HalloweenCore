@@ -418,6 +418,12 @@ for marker in ("grave_marker", "grave_marker_cracked", "ItemDisplay.class", "Dis
         fail(f"Halloween world gravestone pipeline is missing: {marker}")
 if "display.setPersistent(true)" not in world_decorator or "display.setInvulnerable(true)" not in world_decorator:
     fail("Halloween gravestone displays must persist without taking damage")
+if "resumeWithoutScanning()" not in world_decorator:
+    fail("Halloween world decorator must be resumable without re-scanning all loaded chunks on hot reload")
+core_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCore.java").read_text(encoding="utf-8")
+reload_state = core_java[core_java.find("public void reloadEventConfig()"):core_java.find("public void ", core_java.find("public void reloadEventConfig()") + 20)]
+if "worldDecorator.resumeWithoutScanning()" not in reload_state or "worldDecorator.scanLoadedChunks()" in reload_state:
+    fail("/halloween reload must not enqueue every loaded chunk for a mass decoration pass")
 
 passive_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenPassiveEffectManager.java").read_text(encoding="utf-8")
 if "Attribute.MAX_HEALTH" not in passive_java or "getItemInOffHand()" not in passive_java:

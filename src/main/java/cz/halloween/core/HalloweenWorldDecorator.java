@@ -63,6 +63,15 @@ public final class HalloweenWorldDecorator implements Listener {
         queued.clear();
     }
 
+    /**
+     * Resume background processing without re-queuing every chunk already loaded.
+     * Hot reload must not replay decorations across the entire visible world in one session.
+     */
+    public void resumeWithoutScanning() {
+        if (task != null || !isEnabled()) return;
+        task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::processQueue, 1L, 10L);
+    }
+
     public void scanLoadedChunks() {
         if (!isEnabled()) return;
         for (World world : plugin.getServer().getWorlds()) {
