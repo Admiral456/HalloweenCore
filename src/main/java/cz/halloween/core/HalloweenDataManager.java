@@ -28,6 +28,9 @@ public final class HalloweenDataManager {
     private final Set<UUID> challengeClaimed = new HashSet<>();
     private final Set<UUID> villageDiscovered = new HashSet<>();
     private final Map<UUID, Set<String>> secretDiscoveries = new HashMap<>();
+    private final Map<UUID, String> storyQuest = new HashMap<>();
+    private final Map<UUID, Integer> storyQuestProgress = new HashMap<>();
+    private final Map<UUID, Set<String>> completedStoryQuests = new HashMap<>();
     private long serverFragments;
     private boolean finaleUnlocked;
     private boolean vampireDefeated;
@@ -49,6 +52,9 @@ public final class HalloweenDataManager {
         challengeClaimed.clear();
         villageDiscovered.clear();
         secretDiscoveries.clear();
+        storyQuest.clear();
+        storyQuestProgress.clear();
+        completedStoryQuests.clear();
         serverFragments = 0L;
         finaleUnlocked = false;
         vampireDefeated = false;
@@ -96,6 +102,15 @@ public final class HalloweenDataManager {
                     if (!secrets.isEmpty()) {
                         secretDiscoveries.put(uuid, new HashSet<>(secrets));
                     }
+
+                    String questId = data.getString(base + ".story-quest.active", "");
+                    int questProgress = Math.max(0, data.getInt(base + ".story-quest.progress", 0));
+                    if (!questId.isBlank()) storyQuest.put(uuid, questId);
+                    if (questProgress > 0) storyQuestProgress.put(uuid, questProgress);
+                    java.util.List<String> completedQuests = data.getStringList(base + ".story-quest.completed");
+                    if (!completedQuests.isEmpty()) {
+                        completedStoryQuests.put(uuid, new HashSet<>(completedQuests));
+                    }
                 } catch (IllegalArgumentException ignored) {
                     plugin.getLogger().warning("Ignoring invalid player UUID in data.yml: " + key);
                 }
@@ -121,6 +136,9 @@ public final class HalloweenDataManager {
         players.addAll(challengeClaimed);
         players.addAll(villageDiscovered);
         players.addAll(secretDiscoveries.keySet());
+        players.addAll(storyQuest.keySet());
+        players.addAll(storyQuestProgress.keySet());
+        players.addAll(completedStoryQuests.keySet());
 
         for (UUID uuid : players) {
             String base = "players." + uuid;
@@ -147,6 +165,15 @@ public final class HalloweenDataManager {
             Set<String> secrets = secretDiscoveries.get(uuid);
             if (secrets != null && !secrets.isEmpty()) {
                 data.set(base + ".secret-discoveries", new ArrayList<>(secrets));
+            }
+
+            String activeQuest = storyQuest.get(uuid);
+            if (activeQuest != null && !activeQuest.isBlank()) data.set(base + ".story-quest.active", activeQuest);
+            int questProgress = storyQuestProgress.getOrDefault(uuid, 0);
+            if (questProgress > 0) data.set(base + ".story-quest.progress", questProgress);
+            Set<String> completedQuests = completedStoryQuests.get(uuid);
+            if (completedQuests != null && !completedQuests.isEmpty()) {
+                data.set(base + ".story-quest.completed", new ArrayList<>(completedQuests));
             }
         }
 
@@ -332,6 +359,44 @@ public final class HalloweenDataManager {
     public Set<String> getDiscoveredSecrets(UUID uuid) {
         if (uuid == null) return Set.of();
         return Set.copyOf(secretDiscoveries.getOrDefault(uuid, Collections.emptySet()));
+    }
+
+    public String getStoryQuest(UUID uuid) {
+        return storyQuest.getOrDefault(uuid, "");
+    }
+
+    public void setStoryQuest(UUID uuid, String questId) {
+        if (uuid == null) return;
+        String safeId = questId == null ? "" : questId.trim();
+        String previous = storyQuest.getOrDefault(uuid, "");
+        if (safeId.isBlank()) storyQuest.remove(uuid);
+        else storyQuest.put(uuid, safeId);
+        if (!safeId.equals(previous)) storyQuestProgress.remove(uuid);
+    }
+
+    public int getStoryQuestProgress(UUID uuid) {
+        return storyQuestProgress.getOrDefault(uuid, 0);
+    }
+
+    public void setStoryQuestProgress(UUID uuid, int progress) {
+        if (uuid == null) return;
+        if (progress <= 0) storyQuestProgress.remove(uuid);
+        else storyQuestProgress.put(uuid, progress);
+    }
+
+    public Set<String> getCompletedStoryQuests(UUID uuid) {
+        if (uuid == null) return Set.of();
+        return Set.copyOf(completedStoryQuests.getOrDefault(uuid, Collections.emptySet()));
+    }
+
+    public boolean hasCompletedStoryQuest(UUID uuid, String questId) {
+        if (uuid == null || questId == null) return false;
+        return completedStoryQuests.getOrDefault(uuid, Collections.emptySet()).contains(questId);
+    }
+
+    public boolean completeStoryQuest(UUID uuid, String questId) {
+        if (uuid == null || questId == null || questId.isBlank()) return false;
+        return completedStoryQuests.computeIfAbsent(uuid, ignored -> new HashSet<>()).add(questId);
     }
 
     public boolean hasClaimedReward(UUID uuid, String rewardId) {

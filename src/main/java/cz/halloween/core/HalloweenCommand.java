@@ -29,7 +29,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = List.of(
-                    "stats", "progress", "curse", "event", "challenge",
+                    "stats", "progress", "curse", "event", "challenge", "quests",
                     "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
@@ -126,6 +126,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("rewards")) return rewards(sender);
         if (args[0].equalsIgnoreCase("claim")) return claim(sender, args);
         if (args[0].equalsIgnoreCase("challenge")) return challenge(sender);
+        if (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest")) return quests(sender);
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
@@ -146,6 +147,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween event [start|stop] &7- stav a testovací spuštění eventu (admin)"));
         sender.sendMessage(plugin.color("&6/halloween rewards &7- limitované odměny 2026"));
         sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní Halloween lov"));
+        sender.sendMessage(plugin.color("&6/halloween quests &7- příběhová řada Halloween questů"));
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
@@ -323,6 +325,16 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         if (!checkUse(player) || !checkEnabled(player)) return true;
         plugin.getChallengeManager().show(player);
+        return true;
+    }
+
+    private boolean quests(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz může použít jen hráč."));
+            return true;
+        }
+        if (!checkUse(player) || !checkEnabled(player)) return true;
+        plugin.getQuestManager().show(player);
         return true;
     }
 

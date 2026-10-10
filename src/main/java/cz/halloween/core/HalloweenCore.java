@@ -34,6 +34,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenAtmosphere atmosphere;
     private HalloweenMobManager mobManager;
     private HalloweenChallengeManager challengeManager;
+    private HalloweenQuestManager questManager;
     private HalloweenBossManager bossManager;
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
@@ -62,6 +63,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         atmosphere = new HalloweenAtmosphere(this);
         mobManager = new HalloweenMobManager(this);
         challengeManager = new HalloweenChallengeManager(this);
+        questManager = new HalloweenQuestManager(this);
         bossManager = new HalloweenBossManager(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
@@ -83,6 +85,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
+        getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
@@ -475,6 +478,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenChallengeManager getChallengeManager() {
         return challengeManager;
+    }
+
+    public HalloweenQuestManager getQuestManager() {
+        return questManager;
     }
 
     public HalloweenBossManager getBossManager() {
