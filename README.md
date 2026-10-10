@@ -43,7 +43,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
 - /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
-- /halloween quests — příběhová kampaň o devíti kapitolách, uložený postup a automatické odměny
+- /halloween quests — příběhová kampaň o jedenácti kapitolách, uložený postup a automatické odměny
 - /halloween challenge
 - /halloween rewards
 - /halloween claim <id>
@@ -52,12 +52,21 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween debug
 - /halloween setvillage (admin)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
+- /halloween setrift (admin, umístí příběhovou trhlinu na aktuální pozici)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
 - /halloween setvampirearena (admin)
 - /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>
 - /halloween on|off
+
+## Příběhová trhlina a finální rituál
+
+Příběhová kampaň má 11 navazujících kapitol. Běžní vanilla mobové postup v bojových úkolech nezvyšují; počítají se jen označení Halloween mobové správného typu. První lov i finální Nightmare vyžadují noc ve světě Minecraftu.
+
+Správce musí jednou vybrat místo trhliny a přímo na něm použít `/halloween setrift`. Trhlina se vykresluje vanilla částicemi portálu a duší, takže kvůli samotnému efektu není nutný resource pack, ItemsAdder ani ModelEngine. Příkaz uloží svět a souřadnice do `config.yml`; místo lze kdykoliv změnit opětovným použitím příkazu. V diagnostice `/halloween debug` se ukazuje, zda je místo nakonfigurované.
+
+Po prozkoumání trhliny v noci příběh pokračuje lovem Ženců prázdnoty, Ledových stopařů a Nočních můr. Závěrečný rituál se provádí u trhliny v noci: hráč musí mít v inventáři 4 Echo Shardy a 1 Crying Obsidian, držet Echo Shard v hlavní ruce a kliknout pravým tlačítkem do vzduchu. Materiály se spotřebují a trhlina na krátkou dobu vizuálně zkolabuje. Délku tohoto efektu upravuje `story-rift.collapse-seconds`.
 
 ## Boss bar
 
