@@ -43,7 +43,9 @@ public final class HalloweenWorldDecorator implements Listener {
     private final NamespacedKey legacyDecoratedKey;
     private final NamespacedKey oldestDecoratedKey;
     private final NamespacedKey ancientDecoratedKey;
+    private final NamespacedKey veryAncientDecoratedKey;
     private final NamespacedKey graveAccentKey;
+    private final NamespacedKey generatedStructureKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
@@ -51,12 +53,14 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v5");
-        this.previousDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v4");
-        this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
-        this.oldestDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
-        this.ancientDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v6");
+        this.previousDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v5");
+        this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v4");
+        this.oldestDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
+        this.ancientDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
+        this.veryAncientDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
         this.graveAccentKey = new NamespacedKey(plugin, "halloween_grave_accent");
+        this.generatedStructureKey = new NamespacedKey(plugin, "halloween_generated_structure_v1");
     }
 
     public void start() {
@@ -98,7 +102,8 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private boolean isEnabled() {
-        return plugin.isEventEnabled() && plugin.getConfig().getBoolean("world-decorations.enabled", true);
+        // Long-lived world decoration is independent of the temporary event toggle.
+        return plugin.getConfig().getBoolean("world-decorations.enabled", true);
     }
 
     private void enqueue(Chunk chunk) {
@@ -119,6 +124,11 @@ public final class HalloweenWorldDecorator implements Listener {
             if (chunk == null) return;
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
             if (!chunk.isLoaded() || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
+            if (chunk.getPersistentDataContainer().has(generatedStructureKey, PersistentDataType.STRING)) {
+                chunk.getPersistentDataContainer().set(decoratedKey, PersistentDataType.BYTE, (byte) 1);
+                continue;
+            }
+            if (isReservedForArena(chunk)) continue;
             try {
                 decorateChunk(chunk);
                 chunk.getPersistentDataContainer().set(decoratedKey, PersistentDataType.BYTE, (byte) 1);
@@ -137,17 +147,20 @@ public final class HalloweenWorldDecorator implements Listener {
         boolean legacyDecorated = chunk.getPersistentDataContainer().has(previousDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(oldestDecoratedKey, PersistentDataType.BYTE)
-                || chunk.getPersistentDataContainer().has(ancientDecoratedKey, PersistentDataType.BYTE);
+                || chunk.getPersistentDataContainer().has(ancientDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(veryAncientDecoratedKey, PersistentDataType.BYTE);
         // Legacy flat gravestones are removed only after at least one replacement was
         // successfully built, so unsuitable chunks never lose their existing decoration.
 
         // Legacy chunks are upgraded with 3D graves/mushrooms only; don't duplicate
         // old pumpkins, webs, candles, lights or small mushrooms on their new pass.
-        int pumpkins = legacyDecorated ? 0 : bounded("pumpkins-per-chunk", 5, 0, 6);
-        int webs = legacyDecorated ? 0 : bounded("cobwebs-per-chunk", 2, 0, 3);
+        // A one-time upgrade pass adds a few seasonal details to legacy-marked chunks
+        // that may have been processed while eventEnabled was false.
+        int pumpkins = legacyDecorated ? Math.min(1, bounded("pumpkins-per-chunk", 5, 0, 6)) : bounded("pumpkins-per-chunk", 5, 0, 6);
+        int webs = legacyDecorated ? Math.min(1, bounded("cobwebs-per-chunk", 2, 0, 3)) : bounded("cobwebs-per-chunk", 2, 0, 3);
         int candles = legacyDecorated ? 0 : bounded("red-candles-per-chunk", 1, 0, 3);
         int graves = bounded("gravestones-per-chunk", 1, 0, 2);
-        int deadPlants = legacyDecorated ? 0 : bounded("dead-plants-per-chunk", 1, 0, 3);
+        int deadPlants = legacyDecorated ? Math.min(1, bounded("dead-plants-per-chunk", 1, 0, 3)) : bounded("dead-plants-per-chunk", 1, 0, 3);
         int largeMushrooms = bounded("large-mushrooms-per-chunk", 1, 0, 1);
         int soulLights = legacyDecorated ? 0 : bounded("soul-lights-per-chunk", 1, 0, 2);
         int attempts = bounded("attempts-per-placement", 32, 8, 80);
@@ -380,6 +393,22 @@ public final class HalloweenWorldDecorator implements Listener {
             ground.getRelative(placement.dx(), placement.dy(), placement.dz()).setType(placement.material(), false);
         }
         return true;
+    }
+
+    private boolean isReservedForArena(Chunk chunk) {
+        String[] paths = {"bosses.vampire.arena.pending", "bosses.vampire.arena"};
+        for (String path : paths) {
+            if (!plugin.getConfig().getBoolean(path + ".configured", false)) continue;
+            String worldName = plugin.getConfig().getString(path + ".world", "");
+            if (worldName == null || !chunk.getWorld().getName().equals(worldName)) continue;
+            double x = plugin.getConfig().getDouble(path + ".x");
+            double z = plugin.getConfig().getDouble(path + ".z");
+            double dx = ((chunk.getX() << 4) + 8.0D) - x;
+            double dz = ((chunk.getZ() << 4) + 8.0D) - z;
+            double radius = VampireArenaBuilder.RADIUS + 8.0D;
+            if (dx * dx + dz * dz <= radius * radius) return true;
+        }
+        return false;
     }
 
     private int bounded(String key, int fallback, int min, int max) {

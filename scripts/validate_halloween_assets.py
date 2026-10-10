@@ -418,7 +418,7 @@ if "resourcePackRebuildInProgress" not in reload_java or "Resource pack je přip
 
 world_decorator = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenWorldDecorator.java").read_text(encoding="utf-8")
 for marker in ("grave_marker", "grave_marker_cracked", "ItemDisplay.class", "Display.Billboard.VERTICAL",
-               "halloween_decorated_v5", "POLISHED_BLACKSTONE_BRICKS", "CHISELED_POLISHED_BLACKSTONE",
+               "halloween_decorated_v6", "POLISHED_BLACKSTONE_BRICKS", "CHISELED_POLISHED_BLACKSTONE",
                "DEEPSLATE_BRICKS", "RED_MUSHROOM_BLOCK", "BROWN_MUSHROOM_BLOCK", "MUSHROOM_STEM",
                "POLISHED_BLACKSTONE_BRICK_WALL"):
     if marker not in world_decorator:
@@ -429,6 +429,11 @@ if "new Vector3f(2.4F, 2.4F, 1.0F)" in world_decorator:
     fail("Gravestones must be built from physical blocks, not rendered as a giant flat ItemDisplay")
 if "resumeWithoutScanning()" not in world_decorator:
     fail("Halloween world decorator must be resumable without re-scanning all loaded chunks on hot reload")
+decorator_enabled_method = world_decorator[world_decorator.find("private boolean isEnabled()"):world_decorator.find("private void enqueue", world_decorator.find("private boolean isEnabled()"))]
+if "plugin.isEventEnabled()" in decorator_enabled_method:
+    fail("Persistent Halloween scenery must be independent from the temporary event toggle")
+if "generatedStructureKey" not in world_decorator or "isReservedForArena(chunk)" not in world_decorator:
+    fail("Scenery decorator must avoid generated structures and the selected arena footprint")
 core_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCore.java").read_text(encoding="utf-8")
 reload_state = core_java[core_java.find("public void reloadEventConfig()"):core_java.find("public void ", core_java.find("public void reloadEventConfig()") + 20)]
 if "worldDecorator.resumeWithoutScanning()" not in reload_state or "worldDecorator.scanLoadedChunks()" in reload_state:
@@ -619,8 +624,8 @@ if root_textures.exists():
     if unexpected:
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
-# Arena generation must choose a site from the admin's current standing block,
-# not require a preconfigured exact center. Confirmation must reuse the saved preview.
+# Arena placement supports current-location and explicitly selected-centre modes.
+# Missing chunks are loaded gradually before preflight and build remains opt-in via confirm.
 arena_command = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
 arena_start = arena_command.find("private boolean buildVampireArena(CommandSender sender, String[] args)")
 arena_end = arena_command.find("private boolean setVampireArena(CommandSender sender)", arena_start)
@@ -628,21 +633,23 @@ if arena_start < 0 or arena_end < 0:
     fail("Vampire arena build command could not be located")
 arena_method = arena_command[arena_start:arena_end]
 for marker in (
+    'args[1].equalsIgnoreCase("selected")',
+    'args[1].equalsIgnoreCase("here")',
     "playerLocation.getBlockX() + 0.5D",
     "playerLocation.getBlockY()",
     "playerLocation.getBlockZ() + 0.5D",
-    'arenaPath + ".pending"',
     'pendingPath + ".configured"',
-    'plugin.getConfig().set(arenaPath + ".configured", true)',
-    'plugin.getConfig().set(pendingPath, null)',
+    "prepareVampireArena(sender, player, world, center, confirm)",
 ):
     if marker not in arena_method:
-        fail(f"Vampire arena auto-placement/confirmation is missing: {marker}")
-if 'if (!plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false))' in arena_method:
-    fail("Arena generation must not require a previous /halloween setvampirearena command")
-if "builder.inspect(center)" not in arena_method or "builder.build(center)" not in arena_method:
-    fail("Arena generation must retain preflight and explicit-confirm safety")
-print("PASS Vampire arena: auto-selects the standing block, stores preview, confirms same site, and keeps safety checks")
+        fail(f"Vampire arena location selection/preview is missing: {marker}")
+arena_helpers_start = arena_command.find("private void prepareVampireArena")
+arena_helpers_end = arena_command.find("private boolean setVampireArena", arena_helpers_start)
+arena_helpers = arena_command[arena_helpers_start:arena_helpers_end]
+for marker in ("world.getChunkAt(coords[0], coords[1])", "builder.inspect(center)", "builder.build(center)"):
+    if marker not in arena_helpers:
+        fail(f"Arena helper must progressively load chunks, inspect, and only build after confirmation: {marker}")
+print("PASS Vampire arena: current position / saved centre, progressive chunk loading, preflight and explicit confirmation")
 
 curse_command = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
 curse_data = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenDataManager.java").read_text(encoding="utf-8")
@@ -659,6 +666,24 @@ if "migrateCrimsonWardenLoreV5" not in core_source:
     fail("Existing configs must migrate away from the duplicated Crimson Warden +Armor lore")
 if "migrateHalloween3dDecorationsV1" not in core_source:
     fail("Existing configs must get the low-density 3D grave/mushroom decoration migration")
+
+structure_source = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenStructureGenerator.java").read_text(encoding="utf-8")
+for marker in ("world-generation.structure-chance-per-chunk", "HAUNTED_VILLAGE", "HAUNTED_GRAVEYARD",
+               "halloween_structure_checked_v1", "isReservedForArena", "MOSSY_COBBLESTONE_WALL",
+               "isGeneratedVillageNear", "no digging, cave or hole"):
+    if marker not in structure_source:
+        fail(f"Random haunted village/graveyard generation is missing: {marker}")
+if "getHighestBlockYAt" not in structure_source or "isReplaceableVegetation" not in structure_source:
+    fail("Procedural structures must check natural ground and clear space instead of excavating terrain")
+runtime_world_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
+if "world-generation:" not in runtime_world_config or "structure-chance-per-chunk:" not in runtime_world_config:
+    fail("Runtime config is missing procedural world-generation settings")
+village_discovery = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenVillageDiscoveryManager.java").read_text(encoding="utf-8")
+if "isGeneratedVillageNear" not in village_discovery:
+    fail("Haunted Village discovery must follow generated structures rather than one configured coordinate")
+core_worldgen = core_java
+if "migrateProceduralWorldGenerationV1" not in core_worldgen:
+    fail("Existing server configs must migrate to random haunted village/graveyard generation")
 
 print("Halloween asset validation passed.")
 print("16 item textures: 32x32 PNG including two custom gravestones; 2 Crimson Warden armor layers: 64x32 PNG")

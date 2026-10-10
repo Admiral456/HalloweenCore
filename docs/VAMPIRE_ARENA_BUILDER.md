@@ -2,14 +2,14 @@
 
 ## Safe usage
 
-1. Travel to a suitable, mostly clear location in the target world and stand on the block where the arena floor should be.
-2. Run `/halloween buildvampirearena`. The command automatically chooses the center from the block under your feet; you do not need to run `/halloween setvampirearena` or find an exact preconfigured center.
-3. Review the read-only preflight, world, chosen block, 97-block diameter and warning.
-4. Only run `/halloween buildvampirearena confirm` after verifying the location. Confirmation uses the saved preview location, so it cannot silently shift the build if you move.
+1. Choose a mostly clear site in the intended world.
+2. To use the block under your feet, run `/halloween buildvampirearena here` (or the shorter `/halloween buildvampirearena`). To use a centre already saved with `/halloween setvampirearena`, run `/halloween buildvampirearena selected`.
+3. The command gradually loads the 7×7 chunks covering the arena, checks the 97-block diameter build footprint and prints the chosen centre.
+4. Review the read-only preflight, then run `/halloween buildvampirearena confirm`. Confirmation reuses the saved preview location rather than reading a new player position.
 
-The builder requires all chunks around the 48-block radius to be loaded. It scans the circular build footprint from the future floor to 20 blocks above it and aborts if it finds non-air blocks, unavailable chunks or terrain holes deeper than six blocks. It never clears trees/buildings automatically. Confirmation replaces the top terrain layer inside the 97-block circular arena with its floor. Make a world backup before confirming; the check/build scans a large field and may cause a short main-thread pause.
+The preflight aborts if it encounters solid overhead obstructions or deep terrain gaps. It does not automatically clear trees/buildings. Arena construction replaces the surface inside the 97-block circle with a flat patterned floor and may cause a brief server pause; back up the world first. The command does not dig a cave or summoning pit — make that hole yourself afterward if your design needs one.
 
-After the build is confirmed, the generated center is also saved as the Vampire King spawn point. `/halloween setvampirearena` remains available only for admins who want to manually change the boss spawn point.
+The confirmed centre is also saved as the Vampire King arena/spawn point.
 
 ## Generated layout
 
@@ -18,5 +18,7 @@ After the build is confirmed, the generated center is also saved as the Vampire 
 - outer 2-block parapet with four 3-block-wide openings
 - eight dark stone towers, gold/obsidian trim and soul lanterns
 - central spawn floor remains flat and open for the boss
+
+World decorations are independent of the temporary event on/off toggle. New chunks can receive random pumpkins, cobwebs, dead plants, 3D mushrooms and graves. The procedural generator separately has a low chance to place a small haunted village or graveyard on flat, clear natural terrain; it never excavates holes and excludes the arena footprint and spawn safety radius.
 
 The arena can be previewed/built without progress. Building it does not enable the normal finale. `/halloween boss test` bypasses the progress/finale/model-ready gates for an admin test only; it requires the configured arena and a working MythicMobs `vampire-king` definition and gives no rewards or finale completion. `bosses.vampire.model.ready` remains `false` until ModelEngine import and client resource-pack testing pass.
