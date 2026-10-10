@@ -14,7 +14,7 @@ The feature build publishes `HalloweenCore-Special-Mobs-ModelEngine.zip`, contai
 
 1. Stop the server and back up `plugins/HalloweenCore/`, `plugins/ItemsAdder/`, `plugins/MythicMobs/` and `plugins/ModelEngine/`.
 2. Install the new `HalloweenCore.jar`, copy `warriorland_halloween` to `plugins/ItemsAdder/contents/`, then extract `HalloweenCore-Special-Mobs-ModelEngine.zip` over `plugins/`.
-3. Confirm that the five `.bbmodel` files are in `plugins/ModelEngine/blueprints/` and the YAML is in `plugins/MythicMobs/Mobs/halloween-special-mobs.yml`. The texture is embedded in each Blockbench blueprint; accompanying PNGs are supplied as editable/external source copies.
+3. Confirm that all eight `.bbmodel` files are in `plugins/ModelEngine/blueprints/` and the YAML is in `plugins/MythicMobs/Mobs/halloween-special-mobs.yml`. The texture is embedded in each Blockbench blueprint; accompanying PNGs are supplied as editable/external source copies.
 4. Run `/meg reload models` (or `/meg reload` if that is the command for your installed version). ModelEngine must report all eight model IDs as loaded and generate `plugins/ModelEngine/resource pack/`.
 5. Run `/mm reload`. Verify that there are no errors for the eight definitions and their `model{mid=...}` skills.
 6. In the existing ItemsAdder config, add `ModelEngine/resource pack` to `merge_other_plugins_resourcepacks_folders` without deleting existing folders. Then run `/iazip` **after** ModelEngine has generated its resource pack.
