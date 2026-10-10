@@ -124,7 +124,10 @@ public final class HalloweenRiftManager implements Listener {
         Player player = event.getPlayer();
         if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isEligibleGameplayWorld(player.getWorld())) return;
 
-        if (plugin.getQuestManager().isActiveObjective(player, "vampire-awakening")) {
+        // Intercept only the intended ritual item. Other right-click uses (food, pearls,
+        // shields, etc.) must remain available while this chapter is active.
+        if (plugin.getQuestManager().isActiveObjective(player, "vampire-awakening")
+                && event.getItem() != null && event.getItem().getType() == Material.NETHER_STAR) {
             event.setCancelled(true);
             tryVampireAwakening(player, event.getItem());
             return;
