@@ -279,6 +279,19 @@ secret-discoveries:
 story-quests:
   enabled: true
 
+# Visible anomaly used by the story. Set its location in-game with /halloween setrift.
+story-rift:
+  enabled: true
+  configured: false
+  visuals-enabled: true
+  world: ""
+  x: 0
+  y: 0
+  z: 0
+  radius-blocks: 5.0
+  # After a successful personal sealing ritual, the rift collapses visually for this long.
+  collapse-seconds: 45
+
 special-mobs:
   enabled: true
   chance: 0.04
