@@ -883,30 +883,31 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         Bukkit.getScheduler().runTask(plugin, () -> {
-            boolean reloadDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iareload");
-            if (!reloadDispatched) {
-                sender.sendMessage(plugin.color("&cItemsAdder nepřijal /iareload. Zkontroluj, zda je plugin plně načtený, a spusť /iareload ručně."));
+            // /iazip reloads ItemsAdder content and generates the merged resource-pack ZIP.
+            boolean zipDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
+            if (!zipDispatched) {
+                sender.sendMessage(plugin.color("&cNepodařilo se spustit /iazip. Spusť ho ručně v konzoli serveru."));
                 return;
             }
 
-            sender.sendMessage(plugin.color("&eItemsAdder: /iareload byl předán ke znovunačtení definic a obsahu."));
-            // ItemsAdder reloads content first; build the merged resource pack only after that call.
+            sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl předán k obnovení obsahu a sestavení resource packu."));
+            sender.sendMessage(plugin.color("&7Za chvíli se požádá i o znovunačtení textur u všech online hráčů."));
+            // Allow the zip-generation task time to finish before telling clients to refresh.
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 var current = Bukkit.getPluginManager().getPlugin("ItemsAdder");
                 if (current == null || !current.isEnabled()) {
-                    sender.sendMessage(plugin.color("&cItemsAdder se během obnovy vypnul; resource pack nebyl sestaven."));
+                    sender.sendMessage(plugin.color("&cItemsAdder se během obnovy vypnul; textury hráčů nebyly obnoveny."));
                     return;
                 }
 
-                boolean zipDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
-                if (zipDispatched) {
-                    sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl předán k sestavení aktuálního resource packu."));
-                    sender.sendMessage(plugin.color("&7Po dokončení sestavení se aktualizace doručí přes hosting ItemsAdderu. Pokud se změna neprojeví, znovu se připoj a pack přijmi."));
-                    sender.sendMessage(plugin.color("&8Pro textury ModelEngine musí být jeho složka resource packu přidaná v ItemsAdder merge konfiguraci."));
+                boolean refreshed = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iatexture all");
+                if (refreshed) {
+                    sender.sendMessage(plugin.color("&aItemsAdder: požadavek /iatexture all byl předán online hráčům."));
+                    sender.sendMessage(plugin.color("&7Pokud se textura neprojeví, zkontroluj hosting resource packu a klientský log; textury ModelEngine vyžadují jeho resource pack ve sloučeném ItemsAdder packu."));
                 } else {
-                    sender.sendMessage(plugin.color("&cNepodařilo se spustit /iazip. Spusť ho ručně v konzoli serveru."));
+                    sender.sendMessage(plugin.color("&cNepodařilo se spustit /iatexture all. Po dokončení /iazip ho spusť ručně."));
                 }
-            }, 20L);
+            }, 200L);
         });
         return true;
     }

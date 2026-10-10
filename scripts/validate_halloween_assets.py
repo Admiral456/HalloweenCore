@@ -310,6 +310,10 @@ if "SoundCategory.AMBIENT, volume, pitch" not in atmosphere_java:
 if "player.stopSound(SoundCategory.MUSIC)" not in atmosphere_java or "}, 1L, 20L);" not in atmosphere_java:
     fail("Halloween ambience must actively stop the vanilla MUSIC category at least once per second")
 
+reload_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
+if '"iazip"' not in reload_java or '"iatexture all"' not in reload_java:
+    fail("/halloween reload must rebuild ItemsAdder assets and request a resource-pack refresh for online players")
+
 passive_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenPassiveEffectManager.java").read_text(encoding="utf-8")
 if "Attribute.MAX_HEALTH" not in passive_java or "getItemInOffHand()" not in passive_java:
     fail("Cursed talisman must add max health while held in either hand")
