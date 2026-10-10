@@ -457,6 +457,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         boolean villageConfigured = plugin.getConfig().getBoolean("haunted-village.enabled", false)
                 && !plugin.getConfig().getString("haunted-village.world", "").isBlank();
         sender.sendMessage(plugin.color("&7Haunted Village: " + (villageConfigured ? "&aKONFIGUROVÁNA" : "&eČEKÁ NA SOUŘADNICE")));
+        boolean riftConfigured = plugin.getRiftManager() != null && plugin.getRiftManager().isConfigured();
+        sender.sendMessage(plugin.color("&7Příběhová trhlina: " + (riftConfigured ? "&aKONFIGUROVÁNA" : "&eČEKÁ NA /halloween setrift")));
         var configErrors = HalloweenConfigValidator.validate(plugin);
         sender.sendMessage(plugin.color("&7Config preflight: " + (configErrors.isEmpty() ? "&aOK" : "&c" + configErrors.size() + " chyba/chyb")));
         if (!configErrors.isEmpty()) {
