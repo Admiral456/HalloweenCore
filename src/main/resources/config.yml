@@ -542,6 +542,27 @@ atmosphere:
   volume-tripled-v2-migrated: true
   pitch: 1.0
   loop-milliseconds: 76136
+  # Per-track values are refreshed from the encoded OGG lengths during the build.
+  track-loop-milliseconds:
+    haunted_theme: 76136
+    horror_atmosphere: 323000
+    creepy_ambient: 30000
+    dark_cavern_ambient: 30000
+  playlist:
+    enabled: true
+    check-interval-ticks: 40
+    night-start-tick: 13000
+    night-end-tick: 23000
+    # Cave audio takes priority underground, including daytime. Underground is
+    # conservatively detected by sky light and depth below the surface.
+    cave-enabled: true
+    cave-min-depth-below-surface: 6
+    cave-sound: "warriorland_halloween:dark_cavern_ambient"
+    # Only these tracks rotate outdoors during the Overworld night.
+    night-sounds:
+      - "warriorland_halloween:haunted_theme"
+      - "warriorland_halloween:horror_atmosphere"
+      - "warriorland_halloween:creepy_ambient"
   send-title-on-join: true
   title: "&6&lHALLOWEEN 2026"
   subtitle: "&7Něco se probudilo..."

@@ -83,6 +83,76 @@ def probe_audio_duration(path: Path) -> float:
     return float(streams[0]["duration"])
 
 
+def update_track_duration(track_key: str, duration_ms: int, update_legacy: bool = False) -> None:
+    config_path = ROOT / "src" / "main" / "resources" / "config.yml"
+    config_text = config_path.read_text(encoding="utf-8")
+    if update_legacy:
+        config_text, count = re.subn(
+            r"(?m)^  loop-milliseconds:\s*\d+\s*$",
+            f"  loop-milliseconds: {duration_ms}",
+            config_text,
+        )
+        if count != 1:
+            raise RuntimeError("Expected exactly one atmosphere.loop-milliseconds setting")
+    pattern = rf"(?m)^    {re.escape(track_key)}:\s*\d+\s*$"
+    config_text, count = re.subn(pattern, f"    {track_key}: {duration_ms}", config_text)
+    if count != 1:
+        raise RuntimeError(f"Expected exactly one atmosphere.track-loop-milliseconds.{track_key} setting")
+    config_path.write_text(config_text, encoding="utf-8")
+
+
+def download_cc0_ogg_track(track_key: str, source_url: str) -> int:
+    """Download a CC0 OGG asset and normalize it for Minecraft/ItemsAdder."""
+    SOUNDS_DIR.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix="halloween-audio-") as tmp:
+        source_path = Path(tmp) / f"{track_key}-source.ogg"
+        output_path = SOUNDS_DIR / f"{track_key}.ogg"
+        request = urllib.request.Request(
+            source_url,
+            headers={"User-Agent": "HalloweenCore-build/1.0 (CC0 audio asset)"},
+        )
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(request, timeout=60) as response:
+                    data = response.read()
+                if len(data) < 20_000:
+                    raise RuntimeError(f"OpenGameArt download looks incomplete ({len(data)} bytes)")
+                if data[:4] != b"OggS":
+                    raise RuntimeError("OpenGameArt response is not an OGG container")
+                source_path.write_bytes(data)
+                break
+            except (OSError, urllib.error.URLError, TimeoutError, RuntimeError) as exc:
+                if attempt == 2:
+                    raise RuntimeError(f"Could not retrieve CC0 audio '{track_key}' from {source_url}: {exc}") from exc
+                time.sleep(2 ** attempt)
+        subprocess.run(
+            [
+                "ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
+                "-i", str(source_path), "-vn", "-map_metadata", "-1",
+                "-ac", "1", "-ar", str(SAMPLE_RATE),
+                "-c:a", "libvorbis", "-q:a", "4", str(output_path),
+            ],
+            check=True,
+        )
+        if not output_path.is_file() or output_path.read_bytes()[:4] != b"OggS":
+            raise RuntimeError(f"ffmpeg did not create a valid OGG for {track_key}")
+        duration_ms = round(probe_audio_duration(output_path) * 1000)
+        update_track_duration(track_key, duration_ms)
+    print(f"Encoded CC0 {track_key}: {duration_ms} ms, {output_path.stat().st_size:,} bytes")
+    return duration_ms
+
+
+def generate_playlist_assets() -> None:
+    # All three tracks are CC0 and may be redistributed inside this resource pack.
+    sources = {
+        "horror_atmosphere": "https://opengameart.org/sites/default/files/Juhani%20Junkala%20-%20Post%20Apocalyptic%20Wastelands%20%5BLoop%20Ready%5D.ogg",
+        "creepy_ambient": "https://opengameart.org/sites/default/files/creepyloop-v2_0.ogg",
+        "dark_cavern_ambient": "https://opengameart.org/sites/default/files/dark_cavern_ambient_002.ogg",
+    }
+    for track_key, source_url in sources.items():
+        download_cc0_ogg_track(track_key, source_url)
+
+
 def generate_haunted_theme() -> None:
     """Fetch the CC0 Spooky Fester track and encode the client-ready OGG."""
     source_url = "https://opengameart.org/sites/default/files/spooky_2.mp3"
@@ -134,18 +204,7 @@ def generate_haunted_theme() -> None:
             raise RuntimeError("ffmpeg did not create a valid OGG container")
 
         duration_ms = round(probe_audio_duration(ogg_path) * 1000)
-        config_path = ROOT / "src" / "main" / "resources" / "config.yml"
-        config_text = config_path.read_text(encoding="utf-8")
-        config_text, replacements = re.subn(
-            r"(?m)^  loop-milliseconds:\s*\d+\s*$",
-            f"  loop-milliseconds: {duration_ms}",
-            config_text,
-        )
-        if replacements != 1:
-            raise RuntimeError(
-                "Expected exactly one 'atmosphere.loop-milliseconds' setting in config.yml"
-            )
-        config_path.write_text(config_text, encoding="utf-8")
+        update_track_duration("haunted_theme", duration_ms, update_legacy=True)
 
     print(
         f"Encoded CC0 Spooky Fester as {ogg_path.relative_to(ROOT)} "
@@ -300,6 +359,7 @@ def main() -> None:
     if shutil.which("ffmpeg") is None:
         raise SystemExit("ffmpeg is required to encode Halloween OGG assets")
     generate_haunted_theme()
+    generate_playlist_assets()
     generate_event_sting()
     generate_event_cues()
     generate_silent_music_asset()

@@ -47,6 +47,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void onEnable() {
         saveDefaultConfig();
         migrateAtmosphereVolume();
+        migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
@@ -208,6 +209,35 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                     : "&8[HALLOWEEN] &7Halloween event byl vypnut."));
         } else if (enabled) {
             getLogger().info("Halloween event is already enabled; next event scheduled shortly.");
+        }
+    }
+
+
+    private void migrateAtmospherePlaylistDefaults() {
+        if (getConfig().getBoolean("migrations.atmosphere-playlist-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; atmosphere playlist migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String sectionPath : List.of("atmosphere.playlist", "atmosphere.track-loop-milliseconds")) {
+                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
+                if (section == null) continue;
+                for (String key : section.getKeys(false)) {
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) {
+                        getConfig().set(path, defaults.get(path));
+                    }
+                }
+            }
+            getConfig().set("migrations.atmosphere-playlist-v1", true);
+            saveConfig();
+            getLogger().info("Halloween night/cave audio playlist settings applied; existing atmosphere settings were preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Atmosphere playlist migration failed: " + ex.getClass().getSimpleName());
         }
     }
 
