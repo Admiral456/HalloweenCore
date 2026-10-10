@@ -66,7 +66,17 @@ EXPECTED_MUSIC_EVENTS = {
 
 
 def png_size(path: Path) -> tuple[int, int]:
-    """Return PNG dimensions after validating every chunk and its CRC."""
+    """Return dimensions for legacy assets using the original basic PNG check."""
+    data = path.read_bytes()
+    if data[:8] != b"\x89PNG\r\n\x1a\n":
+        raise ValueError(f"{path} is not a PNG file")
+    if data[12:16] != b"IHDR":
+        raise ValueError(f"{path} has no PNG IHDR chunk")
+    return struct.unpack(">II", data[16:24])
+
+
+def strict_png_size(path: Path) -> tuple[int, int]:
+    """Validate complete PNG chunk lengths and CRCs, then return its dimensions."""
     data = path.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError(f"{path} is not a PNG file")
@@ -134,7 +144,10 @@ missing_seasonal = sorted(name for name in EXPECTED_SEASONAL_BLOCK_TEXTURES
 if missing_seasonal:
     fail("Missing Halloween vanilla block textures: " + ", ".join(missing_seasonal))
 for name in sorted(EXPECTED_SEASONAL_BLOCK_TEXTURES):
-    width, height = png_size(VANILLA_BLOCK_TEXTURES / name)
+    try:
+        width, height = strict_png_size(VANILLA_BLOCK_TEXTURES / name)
+    except (OSError, ValueError) as exc:
+        fail(f"Invalid seasonal vanilla block texture {name}: {exc}")
     if (width, height) != (16, 16):
         fail(f"Seasonal vanilla block texture {name} must be 16x16, got {width}x{height}")
 
