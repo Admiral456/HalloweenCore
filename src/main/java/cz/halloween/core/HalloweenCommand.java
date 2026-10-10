@@ -30,7 +30,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "setrift", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setgraveyard", "setvampirearena", "buildvampirearena", "setsecret", "setrift", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -77,6 +77,15 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             var secrets = plugin.getConfig().getConfigurationSection("secret-discoveries.locations");
             if (secrets == null) return List.of();
             return secrets.getKeys(false).stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted()
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("setgraveyard")
+                && sender.hasPermission("halloweencore.admin")) {
+            var graveyards = plugin.getConfig().getConfigurationSection("story-graveyards.locations");
+            if (graveyards == null) return List.of();
+            return graveyards.getKeys(false).stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .sorted()
                     .toList();
@@ -148,6 +157,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
         if (args[0].equalsIgnoreCase("buildvampirearena")) return buildVampireArena(sender, args);
         if (args[0].equalsIgnoreCase("setsecret")) return setSecret(sender, args);
+        if (args[0].equalsIgnoreCase("setgraveyard")) return setGraveyard(sender, args);
         if (args[0].equalsIgnoreCase("setrift")) return setRift(sender);
         if (args[0].equalsIgnoreCase("secrets")) return showSecrets(sender);
         if (args[0].equalsIgnoreCase("boss")) return boss(sender, args);
@@ -171,6 +181,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween setgraveyard <id> &7- zaregistrovat hřbitov pro příběhové úkoly (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setrift &7- umístit příběhovou trhlinu na aktuální pozici (admin)"));
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
         sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
@@ -523,6 +534,45 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(plugin.color("&5&lTAJNÝ OBJEV &8» &aMísto &f" + name + " &abylo nastaveno."));
         player.sendMessage(plugin.color("&7Hráči uvidí pouze nápovědu, nikoliv souřadnice."));
         player.sendMessage(plugin.color("&7Po objevení získá každý hráč odměnu pouze jednou."));
+        return true;
+    }
+
+    private boolean setGraveyard(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cPříkaz musíš použít ve hře přímo na hřbitově."));
+            return true;
+        }
+        if (args.length != 2) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween setgraveyard <id>"));
+            sender.sendMessage(plugin.color("&7Příklad ID: old-graveyard, north-cemetery, forgotten-graves"));
+            return true;
+        }
+        String id = args[1].toLowerCase(java.util.Locale.ROOT);
+        if (!id.matches("[a-z0-9][a-z0-9_-]{1,31}")) {
+            sender.sendMessage(plugin.color("&cID musí mít 2–32 znaků: malá písmena, čísla, pomlčka nebo podtržítko."));
+            return true;
+        }
+        String path = "story-graveyards.locations." + id;
+        org.bukkit.Location location = player.getLocation();
+        plugin.getConfig().set("story-graveyards.enabled", true);
+        plugin.getConfig().set(path + ".configured", true);
+        plugin.getConfig().set(path + ".name", id.replace('-', ' ').replace('_', ' '));
+        plugin.getConfig().set(path + ".world", player.getWorld().getName());
+        plugin.getConfig().set(path + ".x", location.getX());
+        plugin.getConfig().set(path + ".y", location.getY());
+        plugin.getConfig().set(path + ".z", location.getZ());
+        if (!plugin.getConfig().contains(path + ".radius-blocks")) {
+            plugin.getConfig().set(path + ".radius-blocks",
+                    plugin.getConfig().getDouble("story-graveyards.default-radius-blocks", 32.0D));
+        }
+        plugin.saveConfig();
+        player.sendMessage(plugin.color("&8HALLOWEEN &7» &aHřbitov &d" + id + " &aje uložen pro příběhové úkoly."));
+        player.sendMessage(plugin.color("&7Svět: &e" + player.getWorld().getName()
+                + " &7• souřadnice: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
+                location.getX(), location.getY(), location.getZ())));
+        player.sendMessage(plugin.color("&7Aktivní hřbitovy: &e" + plugin.getGraveyardManager().getConfiguredGraveyardCount()));
+        player.sendMessage(plugin.color("&8Opakuj příkaz na dalších hřbitovech s jinými ID; lze přidávat po celé mapě."));
         return true;
     }
 
