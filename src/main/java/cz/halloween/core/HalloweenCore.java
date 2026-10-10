@@ -52,6 +52,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
+        migrateAdditionalMobAndQuestDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -155,6 +156,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
+        migrateAdditionalMobAndQuestDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -241,6 +243,37 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Halloween night/cave audio playlist settings applied; existing atmosphere settings were preserved.");
         } catch (IOException ex) {
             getLogger().warning("Atmosphere playlist migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateAdditionalMobAndQuestDefaults() {
+        if (getConfig().getBoolean("migrations.additional-mobs-quests-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; additional mob/quest migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String sectionPath : List.of(
+                    "story-quests",
+                    "special-mobs.types.void-reaper",
+                    "special-mobs.types.frost-stalker",
+                    "special-mobs.types.nightmare")) {
+                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
+                if (section == null) continue;
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
+                }
+            }
+            getConfig().set("migrations.additional-mobs-quests-v1", true);
+            saveConfig();
+            getLogger().info("Additional Halloween mob and story-quest defaults applied without overwriting existing settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Additional mob/quest migration failed: " + ex.getClass().getSimpleName());
         }
     }
 
