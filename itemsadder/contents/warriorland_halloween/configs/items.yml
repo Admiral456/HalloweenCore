@@ -134,7 +134,9 @@ items:
     material: SHIELD
     components_nbt_file: "crimson_warden_shield.json"
     graphics:
-      texture: item/crimson_warden_shield
+      textures:
+        normal: item/crimson_warden_shield
+        blocking: item/crimson_warden_shield_blocking
     durability:
       max_durability: 1600
 

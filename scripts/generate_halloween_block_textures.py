@@ -356,7 +356,7 @@ def cobweb() -> None:
     save_pixels("cobweb.png", pixels)
 
 
-def crimson_warden_shield_texture() -> None:
+def crimson_warden_shield_texture(blocking: bool = False) -> None:
     """Create a 32x32 pixel-art shield with a crimson rim and a glowing sigil."""
     clear = (0, 0, 0, 0)
     pixels = [[clear for _ in range(32)] for _ in range(32)]
@@ -426,7 +426,19 @@ def crimson_warden_shield_texture() -> None:
         put(x + 1, y, outline)
     put(8, 6, gold)
     put(23, 6, gold)
-    save_sized_pixels(ITEM_OUT, "crimson_warden_shield.png", pixels)
+    if blocking:
+        # The blocking pose burns brighter along both edges so the defensive state
+        # stays visually distinct while matching the inventory/idle shield design.
+        for x, y in ((7, 9), (7, 13), (8, 18), (24, 9), (24, 13), (23, 18)):
+            put(x, y, glow)
+        put(11, 8, gold)
+        put(20, 8, gold)
+        put(15, 7, glow)
+        put(16, 7, glow)
+        put(15, 22, (255, 239, 162, 255))
+        put(16, 22, (255, 150, 61, 255))
+    filename = "crimson_warden_shield_blocking.png" if blocking else "crimson_warden_shield.png"
+    save_sized_pixels(ITEM_OUT, filename, pixels)
 
 
 def main() -> None:
@@ -442,9 +454,10 @@ def main() -> None:
     gravestone_texture(cracked=False)
     gravestone_texture(cracked=True)
     crimson_warden_shield_texture()
+    crimson_warden_shield_texture(blocking=True)
     # Remove a legacy texture name not referenced by vanilla 1.21.10 candle models.
     (OUT / "red_candle_lit.png").unlink(missing_ok=True)
-    for path in sorted(OUT.glob("*.png")) + sorted(ITEM_OUT.glob("grave_marker*.png")):
+    for path in sorted(OUT.glob("*.png")) + sorted(ITEM_OUT.glob("grave_marker*.png")) + sorted(ITEM_OUT.glob("crimson_warden_shield*.png")):
         print(f"Generated {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
 
 

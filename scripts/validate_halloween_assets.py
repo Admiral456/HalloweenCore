@@ -52,6 +52,7 @@ EXPECTED = {
     "grave_marker.png",
     "grave_marker_cracked.png",
     "crimson_warden_shield.png",
+    "crimson_warden_shield_blocking.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
 VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
@@ -176,8 +177,8 @@ ARMOR_BALANCE = {
 }
 items_yaml = CONFIG.read_text(encoding="utf-8")
 
-# Validate the link between every ItemsAdder graphics.texture setting and its actual
-# PNG. This catches pack/model typos before a missing icon reaches the game client.
+# Validate the link between every ItemsAdder graphics texture/state and its actual
+# PNG. This also checks state textures such as SHIELD's normal/blocking variants.
 referenced_textures = set()
 texture_root = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures"
 item_sections = re.finditer(
@@ -186,20 +187,31 @@ item_sections = re.finditer(
 )
 for item_section in item_sections:
     item_id, section = item_section.group(1), item_section.group(2)
-    texture_match = re.search(r"(?m)^\s+texture:\s*([A-Za-z0-9_./-]+)\s*$", section)
-    if not texture_match:
+    graphics_match = re.search(r"(?ms)^    graphics:\n(.*?)(?=^    [A-Za-z0-9_-]+:\s*$|\Z)", section)
+    if not graphics_match:
         continue
-    texture_id = texture_match.group(1)
-    referenced_textures.add(texture_id)
-    texture_path = texture_root / (texture_id + ".png")
-    if not texture_path.is_file():
-        fail(f"ItemsAdder item '{item_id}' points to missing texture: {texture_id}.png")
-    try:
-        width, height = strict_png_size(texture_path)
-    except (OSError, ValueError) as exc:
-        fail(f"Texture for ItemsAdder item '{item_id}' is invalid: {exc}")
-    if (width, height) != (32, 32):
-        fail(f"Texture for ItemsAdder item '{item_id}' must be 32x32, got {width}x{height}")
+    graphics = graphics_match.group(1)
+    texture_ids = []
+    single_texture = re.search(r"(?m)^      texture:\s*([A-Za-z0-9_./-]+)\s*$", graphics)
+    if single_texture:
+        texture_ids.append(single_texture.group(1))
+    texture_map = re.search(r"(?ms)^      textures:\s*\n(.*?)(?=^      [A-Za-z0-9_-]+:\s*$|\Z)", graphics)
+    if texture_map:
+        texture_ids.extend(
+            match.group(1)
+            for match in re.finditer(r"(?m)^        [A-Za-z0-9_-]+:\s*([A-Za-z0-9_./-]+)\s*$", texture_map.group(1))
+        )
+    for texture_id in texture_ids:
+        referenced_textures.add(texture_id)
+        texture_path = texture_root / (texture_id + ".png")
+        if not texture_path.is_file():
+            fail(f"ItemsAdder item '{item_id}' points to missing texture: {texture_id}.png")
+        try:
+            width, height = strict_png_size(texture_path)
+        except (OSError, ValueError) as exc:
+            fail(f"Texture for ItemsAdder item '{item_id}' is invalid: {exc}")
+        if (width, height) != (32, 32):
+            fail(f"Texture for ItemsAdder item '{item_id}' must be 32x32, got {width}x{height}")
 
 expected_item_texture_refs = {f"item/{name[:-4]}" for name in EXPECTED}
 if referenced_textures != expected_item_texture_refs:
@@ -244,8 +256,10 @@ shield_match = re.search(r"(?ms)^  crimson_warden_shield:\n(.*?)(?=^  [A-Za-z0-9
 if not shield_match:
     fail("ItemsAdder config is missing crimson_warden_shield")
 shield_section = shield_match.group(1)
-if "material: SHIELD" not in shield_section or "texture: item/crimson_warden_shield" not in shield_section:
-    fail("Crimson Warden shield must use its custom SHIELD material and themed texture")
+if ("material: SHIELD" not in shield_section
+        or "normal: item/crimson_warden_shield" not in shield_section
+        or "blocking: item/crimson_warden_shield_blocking" not in shield_section):
+    fail("Crimson Warden shield must define both its normal and blocking textures")
 shield_component_match = re.search(r'(?m)^    components_nbt_file: "([^"]+)"\s*$', shield_section)
 if not shield_component_match:
     fail("Crimson Warden shield is missing its component JSON")
