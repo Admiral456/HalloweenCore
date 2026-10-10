@@ -88,13 +88,13 @@ def update_track_duration(track_key: str, duration_ms: int, update_legacy: bool 
     config_text = config_path.read_text(encoding="utf-8")
     if update_legacy:
         config_text, count = re.subn(
-            r"(?m)^  loop-milliseconds:\\s*\\d+\\s*$",
+            r"(?m)^  loop-milliseconds:\s*\d+\s*$",
             f"  loop-milliseconds: {duration_ms}",
             config_text,
         )
         if count != 1:
             raise RuntimeError("Expected exactly one atmosphere.loop-milliseconds setting")
-    pattern = rf"(?m)^    {re.escape(track_key)}:\\s*\\d+\\s*$"
+    pattern = rf"(?m)^    {re.escape(track_key)}:\s*\d+\s*$"
     config_text, count = re.subn(pattern, f"    {track_key}: {duration_ms}", config_text)
     if count != 1:
         raise RuntimeError(f"Expected exactly one atmosphere.track-loop-milliseconds.{track_key} setting")
@@ -204,18 +204,7 @@ def generate_haunted_theme() -> None:
             raise RuntimeError("ffmpeg did not create a valid OGG container")
 
         duration_ms = round(probe_audio_duration(ogg_path) * 1000)
-        config_path = ROOT / "src" / "main" / "resources" / "config.yml"
-        config_text = config_path.read_text(encoding="utf-8")
-        config_text, replacements = re.subn(
-            r"(?m)^  loop-milliseconds:\s*\d+\s*$",
-            f"  loop-milliseconds: {duration_ms}",
-            config_text,
-        )
-        if replacements != 1:
-            raise RuntimeError(
-                "Expected exactly one 'atmosphere.loop-milliseconds' setting in config.yml"
-            )
-        config_path.write_text(config_text, encoding="utf-8")
+        update_track_duration("haunted_theme", duration_ms, update_legacy=True)
 
     print(
         f"Encoded CC0 Spooky Fester as {ogg_path.relative_to(ROOT)} "

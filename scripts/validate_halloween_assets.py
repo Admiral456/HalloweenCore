@@ -273,7 +273,7 @@ if abs(configured_loop_ms - round(theme_duration * 1000)) > 100:
 
 track_durations = {}
 for match in re.finditer(
-    r"(?m)^    (haunted_theme|horror_atmosphere|creepy_ambient|dark_cavern_ambient):\\s*(\\d+)\\s*$",
+    r"(?m)^    (haunted_theme|horror_atmosphere|creepy_ambient|dark_cavern_ambient):\s*(\d+)\s*$",
     runtime_config,
 ):
     track_durations[match.group(1)] = int(match.group(2))
@@ -296,8 +296,10 @@ for track_name, track_path in {
     if abs(track_durations[track_name] - actual_ms) > 100:
         fail(f"Playlist loop duration for {track_name} differs from encoded OGG length")
 
-if "atmosphere.playlist" not in shop_config and False:
-    fail("unreachable")
+if "night-sounds:" not in runtime_config or '"warriorland_halloween:dark_cavern_ambient"' not in runtime_config:
+    fail("Runtime config must set the night playlist and cave-only soundtrack")
+if "cave-min-depth-below-surface" not in runtime_config or "night-start-tick" not in runtime_config:
+    fail("Runtime config must define nighttime and underground-cave selection rules")
 
 config = CONFIG.read_text(encoding="utf-8")
 if "namespace: warriorland_halloween" not in config:
