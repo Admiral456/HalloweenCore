@@ -78,6 +78,7 @@ public final class HalloweenQuestManager implements Listener {
                 .get(cursedMobKey, PersistentDataType.STRING);
         if (specialMob != null && !specialMob.isBlank()) {
             recordAction(killer, "special:" + normalizeMobId(specialMob));
+            recordAction(killer, "mob-kill");
             return;
         }
 
