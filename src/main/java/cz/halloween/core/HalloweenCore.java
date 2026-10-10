@@ -54,6 +54,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateStoryRiftDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -279,6 +280,35 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Additional Halloween mob and story-quest defaults applied without overwriting existing settings.");
         } catch (IOException ex) {
             getLogger().warning("Additional mob/quest migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateStoryRiftDefaults() {
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; story-rift migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection section = defaults.getConfigurationSection("story-rift");
+            if (section == null) return;
+
+            boolean changed = false;
+            for (String key : section.getKeys(true)) {
+                if (section.isConfigurationSection(key)) continue;
+                String path = "story-rift." + key;
+                if (!getConfig().contains(path)) {
+                    getConfig().set(path, section.get(key));
+                    changed = true;
+                }
+            }
+            if (changed) {
+                saveConfig();
+                getLogger().info("Story-rift configuration defaults added without overwriting existing values.");
+            }
+        } catch (IOException ex) {
+            getLogger().warning("Story-rift configuration migration failed: " + ex.getClass().getSimpleName());
         }
     }
 
