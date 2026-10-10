@@ -31,3 +31,10 @@ The required order is **copy blueprints → `/meg reload models` → `/mm reload
 - HalloweenCore can use vanilla named mobs as a fallback when MythicMobs/ModelEngine or a custom definition is absent. If an enemy appears as a vanilla entity rather than its unique 3D model, check the model import and resource-pack merge before reporting the Java event code as broken.
 - A green CI result confirms that the source compiles, model/texture files and audio assets pass structural checks, and the deployment zips can be built. It does not certify visual rendering, hosted pack delivery, or sound playback on a real Hostify client.
 - Do not enable the Vampire King production model gate until that separate 10-block model has passed its own client test.
+
+
+## Černo-fialové/rozbité textury custom mobů
+
+Černo-fialový checkerboard obvykle znamená, že klient nedostal textury ModelEngine nebo nenačetl odpovídající MythicMobs definici. Samotný `HalloweenCore.jar` nestačí. Použij artefakt `HalloweenCore-Install-Bundle` z GitHub Actions, případně ručně rozbal `MythicMobs/Mobs/halloween-special-mobs.yml` a soubory `.bbmodel` plus jejich PNG do odpovídajících složek pod `plugins/`.
+
+Potom spusť `/mm reload`, následně `/halloween reload`, zkontroluj `/iainfo` a znovu se připoj, aby klient převzal aktualizovaný pack. Úspěšné sestavení pluginu samo o sobě nepotvrzuje stažení textur klientem.

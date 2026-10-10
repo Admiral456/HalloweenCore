@@ -74,3 +74,34 @@ jobs:
           path: target/HalloweenCore.jar
           if-no-files-found: error
           retention-days: 14
+
+      - name: Package complete HalloweenCore install bundle
+        run: |
+          BUNDLE=target/HalloweenCore-install-bundle
+          mkdir -p "$BUNDLE/plugins/ItemsAdder/contents" "$BUNDLE/plugins/MythicMobs/Mobs" "$BUNDLE/plugins/MythicMobs/Skills" "$BUNDLE/plugins/ModelEngine/blueprints"
+          cp target/HalloweenCore.jar "$BUNDLE/plugins/HalloweenCore.jar"
+          cp -R itemsadder/contents/warriorland_halloween "$BUNDLE/plugins/ItemsAdder/contents/"
+          cp mythicmobs/mobs/halloween-special-mobs.yml mythicmobs/mobs/vampire-king.yml "$BUNDLE/plugins/MythicMobs/Mobs/"
+          cp mythicmobs/skills/vampire-king.yml "$BUNDLE/plugins/MythicMobs/Skills/"
+          cp mythicmobs/models/halloween_*.bbmodel mythicmobs/models/halloween_*.png mythicmobs/models/vampire_king.bbmodel mythicmobs/models/vampire_king.png "$BUNDLE/plugins/ModelEngine/blueprints/"
+          cp mythicmobs/README.md "$BUNDLE/ModelEngine-MythicMobs-README.txt"
+          cat > "$BUNDLE/INSTALL.txt" <<'EOF'
+          HALLOWEENCORE — KOMPLETNÍ INSTALAČNÍ BALÍČEK
+          1. Vypni server a zálohuj svět i složku plugins.
+          2. Rozbal ZIP do kořenové složky serveru; všechny cesty začínají v plugins/.
+          3. Ověř, že máš nainstalované kompatibilní verze ItemsAdder, MythicMobs a ModelEngine.
+          4. Zapni server a spusť /mm reload.
+          5. Spusť /halloween reload; obnoví ModelEngine a sestaví ItemsAdder resource pack.
+          6. Ověř /iainfo a pak se odpoj a znovu připoj, aby klient dostal nové textury.
+          Pokud mob zůstává černo-fialový, zkontroluj plugins/MythicMobs/Mobs/halloween-special-mobs.yml a soubory .bbmodel v plugins/ModelEngine/blueprints. Samotný JAR vlastní modely neobsahuje.
+          EOF
+          cd "$BUNDLE"
+          zip -qr ../HalloweenCore-Install-Bundle.zip .
+          unzip -t ../HalloweenCore-Install-Bundle.zip
+      - name: Upload complete HalloweenCore install bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Install-Bundle
+          path: target/HalloweenCore-Install-Bundle.zip
+          if-no-files-found: error
+          retention-days: 14

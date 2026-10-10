@@ -146,7 +146,7 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 
 Vesničky Haunted Village a malé prokleté hřbitovy se generují náhodně v přirozených rovných místech při načítání chunků v běžných Overworld světech. Není potřeba nastavovat jejich souřadnice příkazem; úspěšné nálezy si plugin uloží do dat chunku a hráči za objevení dostanou odměnu. Generování se vyhýbá oblasti 256 bloků okolo world spawnu. Hroby jsou povrchové dekorace — **plugin nikde nevyhlubuje automatické díry ani šachty**.
 
-- `/halloween boss test` vyvolá testovacího Krále upírů bez globálního progressu, odemčení finále a model-ready gate. Vyžaduje uložený střed arény a funkční MythicMobs mob `vampire-king`; testovací zabití nedává odměny ani neoznačí finále za splněné.
+- `/halloween boss test` vyvolá testovacího Krále upírů před administrátorem bez uložené arény. Testovací zabití nedává odměny ani neodemkne finále. Pokud chybí MythicMobs definice, základní test použije vanilla fallback.
 
 ## Návod: aréna, obchod a resource pack
 
@@ -214,6 +214,12 @@ Krvavý strážce má nastavené brnění 6/12/9/6 podle kusu; celá sada tedy d
 ### Hudba a licence
 
 Halloween soundtrack je **Spooky Fester** od Eldritch Grim z OpenGameArt (CC0); CI jej stáhne a převede do OGG při sestavení packu. Aktuální ID je `warriorland_halloween:haunted_theme`. Hlavní ambient má nakonfigurovaný gain 3.0 (Bukkit volume multiplier), běží v kategorii AMBIENT a server každou sekundu zastavuje vanilla kategorii MUSIC. Resource pack má přepsané 31 běžných událostí vanilla hudby na tichý OGG soubor. Pokud se přesto hraje klasická hudba, nejprve ověř, že hráč skutečně obdržel nový pack přes ItemsAdder — samotný serverový kód nedokáže přepsat zvuk z jiného klientského/resource packu.
+
+## Eventy a instalace assetů
+
+- Přehled chování všech eventů je v [docs/HALLOWEEN_EVENTS.md](docs/HALLOWEEN_EVENTS.md).
+- Pro jednodušší instalaci použij artefakt `HalloweenCore-Install-Bundle` z GitHub Actions. Obsahuje JAR, ItemsAdder obsah, MythicMobs definice a ModelEngine blueprinty.
+- Černo-fialové textury custom mobů obvykle znamenají chybějící modelový asset nebo neobnovený klientský resource pack; samotný JAR nestačí.
 
 ## Build
 
