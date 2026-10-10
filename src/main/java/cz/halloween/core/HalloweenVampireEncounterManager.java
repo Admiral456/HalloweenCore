@@ -1082,6 +1082,12 @@ public final class HalloweenVampireEncounterManager implements Listener {
             }
         }
 
+        for (UUID uuid : qualifiedParticipants) {
+            Player participant = Bukkit.getPlayer(uuid);
+            if (participant != null && plugin.getQuestManager().isActiveObjective(participant, "vampire-king-defeated")) {
+                plugin.getQuestManager().recordAction(participant, "vampire-king-defeated");
+            }
+        }
         plugin.getDataManager().markVampireDefeated();
         plugin.getDataManager().save();
         stopEncounter();
