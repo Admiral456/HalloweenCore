@@ -560,7 +560,6 @@ atmosphere:
     cave-sound: "warriorland_halloween:dark_cavern_ambient"
     # Only these tracks rotate outdoors during the Overworld night.
     night-sounds:
-      - "warriorland_halloween:haunted_theme"
       - "warriorland_halloween:horror_atmosphere"
       - "warriorland_halloween:creepy_ambient"
   send-title-on-join: true
