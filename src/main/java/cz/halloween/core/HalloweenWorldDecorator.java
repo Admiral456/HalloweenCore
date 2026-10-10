@@ -27,6 +27,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
     private final NamespacedKey legacyDecoratedKey;
+    private final NamespacedKey oldestDecoratedKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
@@ -34,8 +35,9 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
-        this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
+        this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
+        this.oldestDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
     }
 
     public void start() {
@@ -104,7 +106,8 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private void decorateChunk(Chunk chunk) {
-        boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE);
+        boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(oldestDecoratedKey, PersistentDataType.BYTE);
         int pumpkins = legacyDecorated ? 0 : bounded("pumpkins-per-chunk", 5, 0, 6);
         int webs = legacyDecorated ? 0 : bounded("cobwebs-per-chunk", 2, 0, 3);
         int candles = bounded("red-candles-per-chunk", 1, 0, 3);
