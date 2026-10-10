@@ -61,7 +61,7 @@ public final class HalloweenItemListener implements Listener {
 
         Player player = event.getPlayer();
         ItemStack item = event.getItem();
-        if (plugin.isEventEnabled() && player.isSneaking() && isCrimsonWardenShield(item)) {
+        if (player.isSneaking() && isCrimsonWardenShield(item)) {
             event.setCancelled(true);
             activateCrimsonWardenShield(player);
             return;
