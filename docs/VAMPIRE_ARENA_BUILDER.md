@@ -2,12 +2,12 @@
 
 ## Safe usage
 
-1. Choose a mostly clear site in the intended world.
-2. To use the block under your feet, run `/halloween buildvampirearena here` (or the shorter `/halloween buildvampirearena`). To use a centre already saved with `/halloween setvampirearena`, run `/halloween buildvampirearena selected`.
-3. The command gradually loads the 7×7 chunks covering the arena, checks the 97-block diameter build footprint and prints the chosen centre.
-4. Review the read-only preflight, then run `/halloween buildvampirearena confirm`. Confirmation reuses the saved preview location rather than reading a new player position.
+1. Choose the world and position for the arena floor.
+2. To choose the block under your feet, run `/halloween buildvampirearena here` (or `/halloween buildvampirearena` if no saved ungenerated center is active). To use a center saved via `/halloween setvampirearena`, run `/halloween buildvampirearena selected`.
+3. The command loads the chunks in the 97-block-diameter footprint, counts the blocks that will be replaced and prints the exact center.
+4. Review the preview, then run `/halloween buildvampirearena confirm`. Confirmation reuses the saved preview, even if the admin has moved or changed position in the meantime.
 
-The preflight aborts if it encounters solid overhead obstructions or deep terrain gaps. It does not automatically clear trees/buildings. Arena construction replaces the surface inside the 97-block circle with a flat patterned floor and may cause a brief server pause; back up the world first. The command does not dig a cave or summoning pit — make that hole yourself afterward if your design needs one.
+**Destructive operation:** confirmation deliberately levels the circle, clears blocks above the chosen floor (including trees and existing buildings), fills low spots, and then places the patterned floor, towers and gates. A backup is required before confirming. The arena builder does not excavate a cave or summoning pit; create any such hole manually after the arena is built.
 
 The confirmed centre is also saved as the Vampire King arena/spawn point.
 

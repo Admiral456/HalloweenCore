@@ -56,7 +56,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
 - /halloween setvampirearena (admin)
-- `/halloween buildvampirearena [confirm]` — admin vybere střed stoupnutím na podlahu; potvrzení postaví arénu přesně kolem něj. Funguje i po `/halloween setvampirearena`.
+- `/halloween buildvampirearena [here|selected|confirm]` — `here` vybere blok pod správcem, `selected` použije střed uložený přes `/halloween setvampirearena`, `confirm` postaví arénu kolem posledního náhledu.
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>
 - /halloween on|off
@@ -150,8 +150,8 @@ Vesničky Haunted Village a malé prokleté hřbitovy se generují náhodně v p
 
 ## Návod: aréna, obchod a resource pack
 
-- Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
-- Střed vybere příkazem `/halloween buildvampirearena` přímo z místa, kde stojí; nemusí ho předem nastavovat druhým příkazem. Náhled načte potřebné chunky, vyhodnotí plochu a uloží výběr. Stavbu potvrdí `/halloween buildvampirearena confirm`. Pokud už byl střed uložený přes `/halloween setvampirearena`, lze potvrdit i tento uložený střed. Potvrzení vyrovná terén, odstraní stromy a existující stavby v kruhu o poloměru 48 bloků a postaví věže až 15 bloků vysoké. Je to záměrně destruktivní operace: před potvrzením vždy zazálohuj svět.
+- Pro ručně zvolený střed správce stojí na cílovém bloku a spustí `/halloween setvampirearena`.
+- Bez předchozího nastavení použij `/halloween buildvampirearena here` (nebo `/halloween buildvampirearena`), aby se střed vzal z bloku pod správcem. Už uložený střed vybereš pomocí `/halloween buildvampirearena selected`. Příkaz zobrazí náhled a uloží přesnou pozici; stavbu pak potvrdíš `/halloween buildvampirearena confirm`. Potvrzení už nevyžaduje stát u stejného místa a nepřepočítá střed podle aktuální polohy. Stavba vyrovná terén a nahradí bloky v kruhu o poloměru 48 bloků, včetně stromů a existujících staveb, a postaví věže až 15 bloků vysoké. Je to záměrně destruktivní operace: před potvrzením vždy zazálohuj svět.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
 - `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
 - `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
@@ -252,7 +252,7 @@ Repozitář obsahuje editovatelný Blockbench blueprint `mythicmobs/models/vampi
 
 ## Generování upíří arény
 
-Příkaz `/halloween buildvampirearena` vybere střed podle bloku pod správcem a připraví náhled; není nutné nejdřív použít `/halloween setvampirearena`. Tenhle příkaz umí také uložit střed, který lze potvrdit stejným příkazem `/halloween buildvampirearena confirm`.
+Příkaz `/halloween buildvampirearena here` vybere střed podle bloku pod správcem a připraví náhled; není nutné nejdřív použít `/halloween setvampirearena`. Pokud je střed uložený, použij `/halloween buildvampirearena selected`. Potvrzení `/halloween buildvampirearena confirm` vždy použije uložený náhled, i když se správce pohne jinam.
 
 Náhled načte chunky v rozsahu arény, zkontroluje výšku světa a ukáže, kolik povrchových bloků bude nahrazeno. Po potvrzení se plocha v kruhu o poloměru 48 bloků vyrovná: vysoký terén, stromy a stavby se odstraní a nízká místa se vyplní. **Potvrzení je destruktivní a může přepsat existující stavby — předem zazálohuj svět.** Plugin nikde automaticky nehloubí šachty ani jámy pro vesnice a hřbitovy; ty se staví pouze ručně.
 
