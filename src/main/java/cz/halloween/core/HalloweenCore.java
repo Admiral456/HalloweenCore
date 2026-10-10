@@ -35,6 +35,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenMobManager mobManager;
     private HalloweenChallengeManager challengeManager;
     private HalloweenQuestManager questManager;
+    private HalloweenRiftManager riftManager;
     private HalloweenBossManager bossManager;
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
@@ -65,6 +66,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         mobManager = new HalloweenMobManager(this);
         challengeManager = new HalloweenChallengeManager(this);
         questManager = new HalloweenQuestManager(this);
+        riftManager = new HalloweenRiftManager(this);
         bossManager = new HalloweenBossManager(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
@@ -87,6 +89,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
+        getServer().getPluginManager().registerEvents(riftManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
@@ -103,6 +106,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         atmosphere.start();
         worldDecorator.start();
         passiveEffectManager.start();
+        riftManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
@@ -124,6 +128,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (riftManager != null) riftManager.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -515,6 +520,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenQuestManager getQuestManager() {
         return questManager;
+    }
+
+    public HalloweenRiftManager getRiftManager() {
+        return riftManager;
     }
 
     public HalloweenBossManager getBossManager() {
