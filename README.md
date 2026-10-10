@@ -87,7 +87,7 @@ Král upírů má připravený vlastní boss bar: HP bar, jméno bosse, automati
 
 ## Vampire encounter assets
 
-V základním repozitáři je připravený dormantní MythicMobs definition `mythicmobs/mobs/vampire-king.yml`. Vlastní 3D model je řízen přes ModelEngine; dokud není `model.ready: true`, MythicMobs a ModelEngine dostupné a aréna nastavená, finální encounter se nespustí.
+V repozitáři jsou připravené dormantní MythicMobs definice `mythicmobs/mobs/vampire-king.yml` a `mythicmobs/skills/vampire-king.yml`. GitHub Actions sestavuje také samostatný artefakt `HalloweenCore-Vampire-King-ModelEngine.zip` s oběma YAML soubory, modelem, PNG texturou a staging checklisty. Vlastní 3D model je řízen přes ModelEngine; dokud není `model.ready: true`, MythicMobs a ModelEngine dostupné a aréna nastavená, finální encounter se nespustí.
 
 Jakmile je finále odemčené a vše připravené, HalloweenCore přirozeně spustí znamení a pětiminutové varování. Potom bosse automaticky vyvolá přesně ve středu arény; příkaz `/halloween boss start` zůstává pouze pro admin testy. Útoky mají výrazné telegraphy a hráč je může přečíst a uhnout jim: Falešná kořist, Krvavý puls, Zrcadlový výpad se třemi klamnými runami a Zatmění s matoucími kruhy.
 
