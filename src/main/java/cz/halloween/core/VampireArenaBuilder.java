@@ -38,7 +38,7 @@ public final class VampireArenaBuilder {
             for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
                 if (!world.isChunkLoaded(cx, cz)) {
                     return new Inspection(false,
-                            "Některé chunky obří arény nejsou načtené. Zvyš dohled a stůj uprostřed lokace.",
+                            "Některé chunky obří arény nejsou načtené. Zvyš dohled, počkej na načtení oblasti a spusť náhled znovu.",
                             0, "");
                 }
             }

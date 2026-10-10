@@ -171,8 +171,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
-        sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween buildvampirearena [confirm] &7- náhled a bezpečná stavba arény (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- ručně nastavit spawn Krále upírů na pozici hráče (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween buildvampirearena [confirm] &7- automaticky vybrat místo pod hráčem, náhled a stavba arény (admin)"));
         sender.sendMessage(plugin.color("&6/halloween boss <status|start|test|stop> &7- finále nebo bezpečný test bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
@@ -563,39 +563,67 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     private boolean buildVampireArena(CommandSender sender, String[] args) {
         if (!checkAdmin(sender)) return true;
         if (!(sender instanceof Player player)) {
-            sender.sendMessage(plugin.color("&cTento příkaz musíš použít přímo ve světě, ve kterém stavíš arénu."));
+            sender.sendMessage(plugin.color("&cTento příkaz musíš použít ve světě, ve kterém chceš arénu postavit."));
             return true;
         }
         if (args.length > 2 || (args.length == 2 && !args[1].equalsIgnoreCase("confirm"))) {
             sender.sendMessage(plugin.color("&cPoužití: /halloween buildvampirearena [confirm]"));
             return true;
         }
-        if (!plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false)) {
-            sender.sendMessage(plugin.color("&cNejdřív stoupni na střed podlahy a použij /halloween setvampirearena."));
-            return true;
-        }
 
-        String worldName = plugin.getConfig().getString("bosses.vampire.arena.world", "");
-        org.bukkit.World world = worldName == null || worldName.isBlank() ? null : Bukkit.getWorld(worldName);
-        if (world == null) {
-            sender.sendMessage(plugin.color("&cSvět uložené arény není načtený."));
-            return true;
-        }
-        if (!player.getWorld().getUID().equals(world.getUID())) {
-            sender.sendMessage(plugin.color("&cPřejdi do světa uložené upíří arény a příkaz spusť z jejího okolí."));
-            return true;
-        }
+        final String arenaPath = "bosses.vampire.arena";
+        final String pendingPath = arenaPath + ".pending";
+        final boolean confirm = args.length == 2;
+        org.bukkit.World world;
+        org.bukkit.Location center;
 
-        org.bukkit.Location center = new org.bukkit.Location(
-                world,
-                plugin.getConfig().getDouble("bosses.vampire.arena.x"),
-                plugin.getConfig().getDouble("bosses.vampire.arena.y"),
-                plugin.getConfig().getDouble("bosses.vampire.arena.z")
-        );
-        double allowedDistance = (VampireArenaBuilder.RADIUS + 8.0D) * (VampireArenaBuilder.RADIUS + 8.0D);
-        if (player.getLocation().distanceSquared(center) > allowedDistance) {
-            sender.sendMessage(plugin.color("&cJsi příliš daleko od středu 97blokové arény. Přijď blíž, aby byly načtené potřebné chunky."));
-            return true;
+        if (!confirm) {
+            // The block the player is standing on defines the arena floor height.
+            // No separate exact-center setup command is required.
+            org.bukkit.Location playerLocation = player.getLocation();
+            world = player.getWorld();
+            center = new org.bukkit.Location(
+                    world,
+                    playerLocation.getBlockX() + 0.5D,
+                    playerLocation.getBlockY(),
+                    playerLocation.getBlockZ() + 0.5D
+            );
+
+            // Save a pending site, not the live boss spawn, until the admin confirms.
+            plugin.getConfig().set(pendingPath + ".configured", true);
+            plugin.getConfig().set(pendingPath + ".world", world.getName());
+            plugin.getConfig().set(pendingPath + ".x", center.getX());
+            plugin.getConfig().set(pendingPath + ".y", center.getY());
+            plugin.getConfig().set(pendingPath + ".z", center.getZ());
+            plugin.saveConfig();
+        } else {
+            if (!plugin.getConfig().getBoolean(pendingPath + ".configured", false)) {
+                sender.sendMessage(plugin.color("&cNejdřív stoupni na blok, kde má být střed podlahy arény, a spusť &6/halloween buildvampirearena&c."));
+                return true;
+            }
+
+            String worldName = plugin.getConfig().getString(pendingPath + ".world", "");
+            world = worldName == null || worldName.isBlank() ? null : Bukkit.getWorld(worldName);
+            if (world == null) {
+                sender.sendMessage(plugin.color("&cSvět navržené arény není načtený. Vrať se na místo a spusť náhled znovu."));
+                return true;
+            }
+            if (!player.getWorld().getUID().equals(world.getUID())) {
+                sender.sendMessage(plugin.color("&cPotvrzení proveď ve stejném světě, kde jsi spustil náhled."));
+                return true;
+            }
+
+            center = new org.bukkit.Location(
+                    world,
+                    plugin.getConfig().getDouble(pendingPath + ".x"),
+                    plugin.getConfig().getDouble(pendingPath + ".y"),
+                    plugin.getConfig().getDouble(pendingPath + ".z")
+            );
+            double allowedDistance = (VampireArenaBuilder.RADIUS + 8.0D) * (VampireArenaBuilder.RADIUS + 8.0D);
+            if (player.getLocation().distanceSquared(center) > allowedDistance) {
+                sender.sendMessage(plugin.color("&cJsi příliš daleko od zvoleného místa. Vrať se do vzdálenosti 56 bloků a potvrď stavbu."));
+                return true;
+            }
         }
 
         VampireArenaBuilder builder = new VampireArenaBuilder();
@@ -606,26 +634,36 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(plugin.color("&7Nalezené překážky v prostoru: &e" + inspection.obstructions()
                         + " &7; první: &e" + inspection.firstObstruction()));
             }
-            sender.sendMessage(plugin.color("&7Odstraň stavby/stromy nad budoucí arénou, načti oblast a zkus to znovu."));
+            sender.sendMessage(plugin.color("&7Odstraň překážky, nech oblast načíst a spusť náhled znovu. Stavba automaticky nemaže stromy ani cizí stavby."));
             return true;
         }
 
-        if (args.length < 2) {
+        if (!confirm) {
             sender.sendMessage(plugin.color("&4&lNÁHLED STAVBY ARÉNY"));
             sender.sendMessage(plugin.color("&7Svět: &e" + world.getName()));
-            sender.sendMessage(plugin.color("&7Střed: &e" + center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ()));
-            sender.sendMessage(plugin.color("&7Průměr arény: &e97 bloků &8• &78 věží, 4 monumentální brány, 8 vnitřních obelisků, obvodová zeď a runový kruh"));
-            sender.sendMessage(plugin.color("&7Kontrola prošla: nad podlahou je 20 bloků volného prostoru. Vrchní vrstva terénu v kruhu bude nahrazena podlahou."));
-            sender.sendMessage(plugin.color("&ePokud je místo správné, potvrď stavbu: &6/halloween buildvampirearena confirm"));
-            sender.sendMessage(plugin.color("&cPotvrzení změní povrch v kruhu o poloměru 48 bloků a přestaví arénu až do 15 bloků výšky. Předem zazálohuj svět!"));
+            sender.sendMessage(plugin.color("&7Místo sis zvolil stoupnutím na blok; střed arény byl nastaven automaticky."));
+            sender.sendMessage(plugin.color("&7Střed podlahy: &e" + center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ()));
+            sender.sendMessage(plugin.color("&7Průměr: &e97 bloků &8• &78 věží, 4 brány, 8 obelisků, obvodová zeď a runový kruh"));
+            sender.sendMessage(plugin.color("&7Kontrola prošla: nad terénem je 20 bloků volného prostoru."));
+            sender.sendMessage(plugin.color("&ePokud místo sedí, potvrď: &6/halloween buildvampirearena confirm"));
+            sender.sendMessage(plugin.color("&cPotvrzení přepíše povrch v kruhu o poloměru 48 bloků a postaví věže. Předem zazálohuj svět!"));
             return true;
         }
 
         int changed = builder.build(center);
-        plugin.getConfig().set("bosses.vampire.arena.generated", true);
+        // The confirmed generated location also becomes the actual boss arena/spawn point.
+        plugin.getConfig().set(arenaPath + ".configured", true);
+        plugin.getConfig().set(arenaPath + ".generated", true);
+        plugin.getConfig().set(arenaPath + ".world", world.getName());
+        plugin.getConfig().set(arenaPath + ".x", center.getX());
+        plugin.getConfig().set(arenaPath + ".y", center.getY());
+        plugin.getConfig().set(arenaPath + ".z", center.getZ());
+        plugin.getConfig().set(pendingPath, null);
         plugin.saveConfig();
-        sender.sendMessage(plugin.color("&aGotovo! Upíří aréna byla postavena."));
+
+        sender.sendMessage(plugin.color("&aHotovo! Upíří aréna byla postavena kolem místa, kde jsi stál při náhledu."));
         sender.sendMessage(plugin.color("&7Změněné bloky: &e" + changed + " &8• &7Průměr arény: &e97 bloků"));
+        sender.sendMessage(plugin.color("&7Tento střed se používá také pro spawn Krále upírů."));
         sender.sendMessage(plugin.color("&7Finální boss zůstává vypnutý, dokud nebude model ověřen přes ModelEngine a resource pack."));
         return true;
     }

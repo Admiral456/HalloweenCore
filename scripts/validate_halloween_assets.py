@@ -604,6 +604,31 @@ if root_textures.exists():
     if unexpected:
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
+# Arena generation must choose a site from the admin's current standing block,
+# not require a preconfigured exact center. Confirmation must reuse the saved preview.
+arena_command = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
+arena_start = arena_command.find("private boolean buildVampireArena(CommandSender sender, String[] args)")
+arena_end = arena_command.find("private boolean setVampireArena(CommandSender sender)", arena_start)
+if arena_start < 0 or arena_end < 0:
+    fail("Vampire arena build command could not be located")
+arena_method = arena_command[arena_start:arena_end]
+for marker in (
+    "playerLocation.getBlockX() + 0.5D",
+    "playerLocation.getBlockY()",
+    "playerLocation.getBlockZ() + 0.5D",
+    'arenaPath + ".pending"',
+    'pendingPath + ".configured"',
+    'plugin.getConfig().set(arenaPath + ".configured", true)',
+    'plugin.getConfig().set(pendingPath, null)',
+):
+    if marker not in arena_method:
+        fail(f"Vampire arena auto-placement/confirmation is missing: {marker}")
+if 'if (!plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false))' in arena_method:
+    fail("Arena generation must not require a previous /halloween setvampirearena command")
+if "builder.inspect(center)" not in arena_method or "builder.build(center)" not in arena_method:
+    fail("Arena generation must retain preflight and explicit-confirm safety")
+print("PASS Vampire arena: auto-selects the standing block, stores preview, confirms same site, and keeps safety checks")
+
 print("Halloween asset validation passed.")
 print("16 item textures: 32x32 PNG including two custom gravestones; 2 Crimson Warden armor layers: 64x32 PNG")
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")

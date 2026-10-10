@@ -2,13 +2,14 @@
 
 ## Safe usage
 
-1. Travel to a suitable clear location in the target world.
-2. Stand on the intended center-floor block and run `/halloween setvampirearena`.
-3. Run `/halloween buildvampirearena` for a read-only preflight.
-4. Review the world, center, 97-block diameter, and warning.
-5. Only run `/halloween buildvampirearena confirm` after verifying the location.
+1. Travel to a suitable, mostly clear location in the target world and stand on the block where the arena floor should be.
+2. Run `/halloween buildvampirearena`. The command automatically chooses the center from the block under your feet; you do not need to run `/halloween setvampirearena` or find an exact preconfigured center.
+3. Review the read-only preflight, world, chosen block, 97-block diameter and warning.
+4. Only run `/halloween buildvampirearena confirm` after verifying the location. Confirmation uses the saved preview location, so it cannot silently shift the build if you move.
 
-The builder requires the configured world and all chunks around a 48-block radius to be loaded. It scans the circular build footprint from the future floor to 20 blocks above it and aborts if it finds non-air blocks or unavailable chunks. It never clears trees or buildings automatically. The confirmation replaces the top terrain layer inside the 97-block circular arena with its floor. Make a world backup before confirming; the check/build scans a large field and may cause a short main-thread pause.
+The builder requires all chunks around the 48-block radius to be loaded. It scans the circular build footprint from the future floor to 20 blocks above it and aborts if it finds non-air blocks, unavailable chunks or terrain holes deeper than six blocks. It never clears trees/buildings automatically. Confirmation replaces the top terrain layer inside the 97-block circular arena with its floor. Make a world backup before confirming; the check/build scans a large field and may cause a short main-thread pause.
+
+After the build is confirmed, the generated center is also saved as the Vampire King spawn point. `/halloween setvampirearena` remains available only for admins who want to manually change the boss spawn point.
 
 ## Generated layout
 
