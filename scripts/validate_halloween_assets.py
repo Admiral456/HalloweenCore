@@ -196,9 +196,14 @@ print("PASS Crimson Warden armor modifiers and displayed totals: 6/12/9/6; durab
 if not SHADER.is_file():
     fail("Missing Halloween sky shader: " + str(SHADER.relative_to(ROOT)))
 shader_text = SHADER.read_text(encoding="utf-8")
-for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "halloweenTint", "fragColor = sky;"):
+for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "#moj_import <minecraft:dynamictransforms.glsl>",
+                "halloweenTint", "fragColor = sky;"):
     if marker not in shader_text:
         fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
+if not re.search(r"(?m)^\s*const vec3 halloweenTint = vec3\(1\.10, 0\.76, 0\.62\);$", shader_text):
+    fail("Sky shader must use the validated restrained Halloween tint (not a harsh full-screen orange cast)")
+if not re.search(r"sky\.rgb\s*=\s*mix\(sky\.rgb,\s*max\(sky\.rgb\s*\*\s*halloweenTint,\s*vec3\(0\.0\)\),\s*0\.24\s*\);", shader_text):
+    fail("Sky shader tint blend is missing or differs from the validated low-intensity grade")
 
 # Explicit vanilla texture overrides give physical Halloween decoration its
 # seasonal appearance while keeping the server-side blocks present with or
@@ -311,8 +316,12 @@ if "player.stopSound(SoundCategory.MUSIC)" not in atmosphere_java or "}, 1L, 20L
     fail("Halloween ambience must actively stop the vanilla MUSIC category at least once per second")
 
 reload_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
-if '"iazip"' not in reload_java or '"iatexture all"' not in reload_java or '"meg reload models"' not in reload_java or "ModelEngine/resource pack" not in reload_java:
-    fail("/halloween reload must refresh ModelEngine models, merge its pack, rebuild ItemsAdder assets and refresh online players")
+if '"iazip"' not in reload_java or '"iatexture " + target.getName()' not in reload_java or '"meg reload models"' not in reload_java or "ModelEngine/resource pack" not in reload_java:
+    fail("/halloween reload must refresh ModelEngine models, merge its pack, rebuild ItemsAdder assets and refresh players")
+if "iatexture all" in reload_java:
+    fail("Resource-pack refresh must be staggered per player instead of sending a burst to every client")
+if "40L" not in reload_java or "resource pack" not in reload_java.lower():
+    fail("Resource-pack refresh must be throttled and report its status")
 
 passive_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenPassiveEffectManager.java").read_text(encoding="utf-8")
 if "Attribute.MAX_HEALTH" not in passive_java or "getItemInOffHand()" not in passive_java:
@@ -505,7 +514,7 @@ print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
 print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
-print("Sky shader: Minecraft 1.21.10 entry point present")
+print("Sky shader: Minecraft 1.21.10 entry point and restrained Halloween tint verified")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")
 print("ItemsAdder sound definitions: present")
 print(f"Verified exact Minecraft 1.21.10 music-event overrides: {len(vanilla_sound_events)}")

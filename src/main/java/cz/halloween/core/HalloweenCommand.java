@@ -907,7 +907,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl předán k obnovení obsahu a sestavení resource packu."));
                 sender.sendMessage(plugin.color("&7Obnovení klientů bude dávkované, aby server neposlal všem hráčům velký objem paketů naráz."));
                 // Wait for zip generation, then refresh one online player every two seconds.
-                // A single /iatexture all can burst resource-pack traffic and trigger packet-limit kicks.
+                // A bulk texture refresh can burst resource-pack traffic and trigger packet-limit kicks.
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     var current = Bukkit.getPluginManager().getPlugin("ItemsAdder");
                     if (current == null || !current.isEnabled()) {
