@@ -30,7 +30,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "setrift", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -148,6 +148,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
         if (args[0].equalsIgnoreCase("buildvampirearena")) return buildVampireArena(sender, args);
         if (args[0].equalsIgnoreCase("setsecret")) return setSecret(sender, args);
+        if (args[0].equalsIgnoreCase("setrift")) return setRift(sender);
         if (args[0].equalsIgnoreCase("secrets")) return showSecrets(sender);
         if (args[0].equalsIgnoreCase("boss")) return boss(sender, args);
         if (args[0].equalsIgnoreCase("bosseffects")) return bossEffects(sender, args);
@@ -170,6 +171,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween setrift &7- umístit příběhovou trhlinu na aktuální pozici (admin)"));
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
         sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween buildvampirearena [confirm] &7- náhled a bezpečná stavba arény (admin)"));
@@ -519,6 +521,31 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         player.sendMessage(plugin.color("&5&lTAJNÝ OBJEV &8» &aMísto &f" + name + " &abylo nastaveno."));
         player.sendMessage(plugin.color("&7Hráči uvidí pouze nápovědu, nikoliv souřadnice."));
         player.sendMessage(plugin.color("&7Po objevení získá každý hráč odměnu pouze jednou."));
+        return true;
+    }
+
+    private boolean setRift(CommandSender sender) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz musíš použít ve hře přímo na místě, kde má být trhlina."));
+            return true;
+        }
+
+        org.bukkit.Location location = player.getLocation();
+        plugin.getConfig().set("story-rift.enabled", true);
+        plugin.getConfig().set("story-rift.configured", true);
+        plugin.getConfig().set("story-rift.world", player.getWorld().getName());
+        plugin.getConfig().set("story-rift.x", location.getX());
+        plugin.getConfig().set("story-rift.y", location.getY());
+        plugin.getConfig().set("story-rift.z", location.getZ());
+        plugin.saveConfig();
+
+        player.sendMessage(plugin.color("&5&lPŘÍBĚHOVÁ TRHLINA &8» &aMísto trhliny bylo nastaveno."));
+        player.sendMessage(plugin.color("&7Svět: &e" + player.getWorld().getName()));
+        player.sendMessage(plugin.color("&7Souřadnice: &e" + String.format(java.util.Locale.ROOT, "%.1f %.1f %.1f",
+                location.getX(), location.getY(), location.getZ())));
+        player.sendMessage(plugin.color("&7Pokud je chunk načtený, trhlina začne pulzovat částicemi. Není potřeba reload."));
+        player.sendMessage(plugin.color("&7Finální rituál vyžaduje noc, 4 Echo Shardy a 1 Crying Obsidian."));
         return true;
     }
 
