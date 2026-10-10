@@ -91,7 +91,7 @@ public final class HalloweenVillageDiscoveryManager implements Listener {
                 }
                 if (kind.equals("graveyard")) {
                     String discoveryId = "random-graveyard:" + world.getUID() + ":" + x + ":" + z;
-                    if (!plugin.getDataManager().hasSecretDiscovery(player.getUniqueId(), discoveryId)) {
+                    if (!plugin.getDataManager().hasDiscoveredSecret(player.getUniqueId(), discoveryId)) {
                         plugin.getDataManager().markSecretDiscovered(player.getUniqueId(), discoveryId);
                         long reward = Math.max(0L, plugin.getConfig().getLong(
                                 "random-structures.graveyard-discovery-reward-fragments", 200L));
