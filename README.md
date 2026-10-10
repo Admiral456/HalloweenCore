@@ -43,7 +43,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
 - /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
-- /halloween quests — příběhová kampaň o devíti kapitolách, uložený postup a automatické odměny
+- /halloween quests — náročná příběhová kampaň o devatenácti kapitolách, uložený postup a automatické odměny
 - /halloween challenge
 - /halloween rewards
 - /halloween claim <id>
@@ -52,12 +52,29 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween debug
 - /halloween setvillage (admin)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
+- /halloween setrift (admin, umístí příběhovou trhlinu na aktuální pozici)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
 - /halloween setvampirearena (admin)
 - /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>
 - /halloween on|off
+
+## Příběhová kampaň, hřbitovy a finále
+
+Příběh má 19 navazujících kapitol. Běžní vanilla mobové postup v bojových úkolech nezvyšují; počítají se jen označení Halloween mobové požadovaného typu. Vybrané cíle vyžadují skutečnou noc ve hře (čas 13 000–23 000).
+
+### Hřbitovy po mapě
+
+Hřbitovy se registrují jednotlivě ve hře. Správce se postaví doprostřed existujícího hřbitova a použije například `/halloween setgraveyard old-graveyard`, potom totéž opakuje na dalších místech s odlišnými ID, například `north-cemetery` a `forgotten-graves`. Příkaz uloží svět, souřadnice a výchozí rádius 32 bloků do `config.yml`; rádius lze změnit v `story-graveyards.locations.<id>.radius-blocks`. Průzkumná kapitola vyžaduje tři různé hřbitovy, každý pouze jednou. Hrobníci se počítají jen při zabití uvnitř nastavené lokace. Plugin hřbitovy automaticky nestaví — správce registruje již existující místa.
+
+### Trhlina a rituál
+
+Správce umístí trhlinu příkazem `/halloween setrift`. Portál používá vanilla částice a vykresluje vysokou rotující trhlinu. Po rituálu se ovál několik sekund zrychleně stáčí a zmenšuje, částice se vtahují dovnitř a následuje tlaková vlna, záblesk a výbuch duší. Poté trhlina na 60 sekund zmizí. Časy upravují `story-rift.collapse-animation-seconds` a `story-rift.collapse-seconds`. K uzavření je nutných **8 Echo Shardů a 2 Crying Obsidiany**, v noci přímo u trhliny.
+
+### Finále: Král upírů
+
+Poslední část hráče zavede do nastavené upíří arény. Obětní rituál s Nether Star v hlavní ruce spotřebuje **8 Echo Shardů, 4 Crying Obsidiany, 4 Ghast Tears a 1 Nether Star**. Teprve poté odemkne společné finále; spawn bosse nadále vyžaduje zbývající serverové podmínky (globální progress, zapnutého bosse, správně nastavenou arénu a připravený MythicMobs/ModelEngine model). Poslední kapitola se započítá hráčům s kvalifikovanou účastí na skutečném vítězném encounteru. Testovací boss příkazem `/halloween boss test` příběh nedokončí.
 
 ## Boss bar
 
@@ -70,7 +87,7 @@ Král upírů má připravený vlastní boss bar: HP bar, jméno bosse, automati
 
 ## Vampire encounter assets
 
-V základním repozitáři je připravený dormantní MythicMobs definition `mythicmobs/mobs/vampire-king.yml`. Vlastní 3D model je řízen přes ModelEngine; dokud není `model.ready: true`, MythicMobs a ModelEngine dostupné a aréna nastavená, finální encounter se nespustí.
+V repozitáři jsou připravené dormantní MythicMobs definice `mythicmobs/mobs/vampire-king.yml` a `mythicmobs/skills/vampire-king.yml`. GitHub Actions sestavuje také samostatný artefakt `HalloweenCore-Vampire-King-ModelEngine.zip` s oběma YAML soubory, modelem, PNG texturou a staging checklisty. Vlastní 3D model je řízen přes ModelEngine; dokud není `model.ready: true`, MythicMobs a ModelEngine dostupné a aréna nastavená, finální encounter se nespustí.
 
 Jakmile je finále odemčené a vše připravené, HalloweenCore přirozeně spustí znamení a pětiminutové varování. Potom bosse automaticky vyvolá přesně ve středu arény; příkaz `/halloween boss start` zůstává pouze pro admin testy. Útoky mají výrazné telegraphy a hráč je může přečíst a uhnout jim: Falešná kořist, Krvavý puls, Zrcadlový výpad se třemi klamnými runami a Zatmění s matoucími kruhy.
 
@@ -138,7 +155,7 @@ Náhodné eventy se spouštějí přibližně 15–24 minut od sebe a trvají 6 
 
 Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/halloween event`, `/halloween event start <id>` a `/halloween event stop` umožňují správcům ověřit jednotlivé eventy. Dostupné ID jsou `soulstorm`, `witching-hour`, `cursed-harvest`, `blood-moon-invasion`, `pumpkin-apocalypse` a `graveyard-rising`.
 
-Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
+Přirozené moby mají šanci změnit se v osm typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
 
 Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
 

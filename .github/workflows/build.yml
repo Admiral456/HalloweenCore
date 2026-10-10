@@ -67,6 +67,43 @@ jobs:
           path: target/HalloweenCore-Special-Mobs-ModelEngine.zip
           if-no-files-found: error
           retention-days: 14
+      - name: Package Vampire King encounter assets
+        run: |
+          mkdir -p target/vampire-king-pack/MythicMobs/Mobs target/vampire-king-pack/MythicMobs/Skills target/vampire-king-pack/ModelEngine/blueprints
+          cp mythicmobs/mobs/vampire-king.yml target/vampire-king-pack/MythicMobs/Mobs/
+          cp mythicmobs/skills/vampire-king.yml target/vampire-king-pack/MythicMobs/Skills/
+          cp mythicmobs/models/vampire_king.bbmodel target/vampire-king-pack/ModelEngine/blueprints/
+          cp mythicmobs/models/vampire_king.png target/vampire-king-pack/ModelEngine/blueprints/
+          cp docs/VAMPIRE_RUNTIME_CHECKLIST.md target/vampire-king-pack/
+          cp docs/VAMPIRE_MODEL_ENGINE.md target/vampire-king-pack/
+          cat > target/vampire-king-pack/README.txt <<'EOF'
+          HalloweenCore - Vampire King ModelEngine/MythicMobs pack
+
+          This archive contains the boss mob definition, reusable animation skills,
+          Blockbench model, external texture and runtime checklists.
+
+          1. Back up plugins/MythicMobs and plugins/ModelEngine before installation.
+          2. Extract this archive over the server's plugins directory.
+          3. Import ModelEngine/blueprints/vampire_king.bbmodel with the PNG beside it.
+          4. Run /meg reload models and verify the model ID vampire_king loaded.
+          5. Run /mm reload and check MythicMobs/Mobs/vampire-king.yml and Skills/vampire-king.yml loaded without errors.
+          6. Merge "ModelEngine/resource pack" into the existing ItemsAdder resource-pack configuration, then run /iazip.
+          7. Accept the rebuilt resource pack on a staging client and verify both wings, texture and all animations.
+          8. Keep bosses.vampire.model.ready false until the in-game checklist passes.
+          9. This pack does not enable the boss or bypass global progress/arena/readiness requirements.
+
+          Paper/Purpur runtime testing is still required; successful packaging alone does not prove client rendering.
+          EOF
+          cd target/vampire-king-pack
+          zip -qr ../HalloweenCore-Vampire-King-ModelEngine.zip .
+          unzip -t ../HalloweenCore-Vampire-King-ModelEngine.zip
+      - name: Upload Vampire King ModelEngine pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Vampire-King-ModelEngine
+          path: target/HalloweenCore-Vampire-King-ModelEngine.zip
+          if-no-files-found: error
+          retention-days: 14
       - name: Upload plugin JAR
         uses: actions/upload-artifact@v4
         with:

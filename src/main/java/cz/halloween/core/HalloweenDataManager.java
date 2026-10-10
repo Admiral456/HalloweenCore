@@ -31,6 +31,10 @@ public final class HalloweenDataManager {
     private final Map<UUID, String> storyQuest = new HashMap<>();
     private final Map<UUID, Integer> storyQuestProgress = new HashMap<>();
     private final Map<UUID, Set<String>> completedStoryQuests = new HashMap<>();
+    private final Map<UUID, Set<String>> storyGraveyardVisits = new HashMap<>();
+    // Persisted proof lets qualified participants finish the campaign even if they were offline
+    // or had not reached its last chapter when the one-time global boss encounter ended.
+    private final Set<UUID> vampireKingDefeatProofs = new HashSet<>();
     private long serverFragments;
     private boolean finaleUnlocked;
     private boolean vampireDefeated;
@@ -55,6 +59,8 @@ public final class HalloweenDataManager {
         storyQuest.clear();
         storyQuestProgress.clear();
         completedStoryQuests.clear();
+        storyGraveyardVisits.clear();
+        vampireKingDefeatProofs.clear();
         serverFragments = 0L;
         finaleUnlocked = false;
         vampireDefeated = false;
@@ -103,13 +109,24 @@ public final class HalloweenDataManager {
                         secretDiscoveries.put(uuid, new HashSet<>(secrets));
                     }
 
-                    String questId = data.getString(base + ".story-quest.active", "");
-                    int questProgress = Math.max(0, data.getInt(base + ".story-quest.progress", 0));
-                    if (!questId.isBlank()) storyQuest.put(uuid, questId);
-                    if (questProgress > 0) storyQuestProgress.put(uuid, questProgress);
-                    java.util.List<String> completedQuests = data.getStringList(base + ".story-quest.completed");
-                    if (!completedQuests.isEmpty()) {
-                        completedStoryQuests.put(uuid, new HashSet<>(completedQuests));
+                    if (data.getBoolean(base + ".story-quest.vampire-king-proof", false)) {
+                        vampireKingDefeatProofs.add(uuid);
+                    }
+
+                    // Campaign v4 adds configured graveyards and the Vampire King finale.
+                    // Start the rebuilt ordered campaign cleanly instead of skipping new chapters.
+                    int questCampaignVersion = data.getInt(base + ".story-quest.campaign-version", 0);
+                    if (questCampaignVersion >= 4) {
+                        String questId = data.getString(base + ".story-quest.active", "");
+                        int questProgress = Math.max(0, data.getInt(base + ".story-quest.progress", 0));
+                        if (!questId.isBlank()) storyQuest.put(uuid, questId);
+                        if (questProgress > 0) storyQuestProgress.put(uuid, questProgress);
+                        java.util.List<String> completedQuests = data.getStringList(base + ".story-quest.completed");
+                        if (!completedQuests.isEmpty()) {
+                            completedStoryQuests.put(uuid, new HashSet<>(completedQuests));
+                        }
+                        java.util.List<String> graveyards = data.getStringList(base + ".story-quest.graveyard-visits");
+                        if (!graveyards.isEmpty()) storyGraveyardVisits.put(uuid, new HashSet<>(graveyards));
                     }
                 } catch (IllegalArgumentException ignored) {
                     plugin.getLogger().warning("Ignoring invalid player UUID in data.yml: " + key);
@@ -139,9 +156,12 @@ public final class HalloweenDataManager {
         players.addAll(storyQuest.keySet());
         players.addAll(storyQuestProgress.keySet());
         players.addAll(completedStoryQuests.keySet());
+        players.addAll(storyGraveyardVisits.keySet());
+        players.addAll(vampireKingDefeatProofs);
 
         for (UUID uuid : players) {
             String base = "players." + uuid;
+            data.set(base + ".story-quest.campaign-version", 4);
             long amount = fragments.getOrDefault(uuid, 0L);
             long join = lastJoin.getOrDefault(uuid, 0L);
             int streak = streaks.getOrDefault(uuid, 0);
@@ -174,6 +194,13 @@ public final class HalloweenDataManager {
             Set<String> completedQuests = completedStoryQuests.get(uuid);
             if (completedQuests != null && !completedQuests.isEmpty()) {
                 data.set(base + ".story-quest.completed", new ArrayList<>(completedQuests));
+            }
+            Set<String> graveyards = storyGraveyardVisits.get(uuid);
+            if (graveyards != null && !graveyards.isEmpty()) {
+                data.set(base + ".story-quest.graveyard-visits", new ArrayList<>(graveyards));
+            }
+            if (vampireKingDefeatProofs.contains(uuid)) {
+                data.set(base + ".story-quest.vampire-king-proof", true);
             }
         }
 
@@ -271,6 +298,15 @@ public final class HalloweenDataManager {
 
     public void markVampireDefeated() {
         vampireDefeated = true;
+    }
+
+    public boolean markVampireKingDefeatProof(UUID uuid) {
+        if (uuid == null) return false;
+        return vampireKingDefeatProofs.add(uuid);
+    }
+
+    public boolean hasVampireKingDefeatProof(UUID uuid) {
+        return uuid != null && vampireKingDefeatProofs.contains(uuid);
     }
 
     public Map<UUID, Long> getAllFragments() {
@@ -371,7 +407,10 @@ public final class HalloweenDataManager {
         String previous = storyQuest.getOrDefault(uuid, "");
         if (safeId.isBlank()) storyQuest.remove(uuid);
         else storyQuest.put(uuid, safeId);
-        if (!safeId.equals(previous)) storyQuestProgress.remove(uuid);
+        if (!safeId.equals(previous)) {
+            storyQuestProgress.remove(uuid);
+            storyGraveyardVisits.remove(uuid);
+        }
     }
 
     public void resetStoryQuests(UUID uuid) {
@@ -379,6 +418,18 @@ public final class HalloweenDataManager {
         storyQuest.remove(uuid);
         storyQuestProgress.remove(uuid);
         completedStoryQuests.remove(uuid);
+        storyGraveyardVisits.remove(uuid);
+    }
+
+    public boolean markStoryGraveyardVisited(UUID uuid, String graveyardId) {
+        if (uuid == null || graveyardId == null || graveyardId.isBlank()) return false;
+        String safeId = graveyardId.trim().toLowerCase(java.util.Locale.ROOT);
+        return storyGraveyardVisits.computeIfAbsent(uuid, ignored -> new HashSet<>()).add(safeId);
+    }
+
+    public Set<String> getStoryGraveyardVisits(UUID uuid) {
+        if (uuid == null) return Set.of();
+        return Set.copyOf(storyGraveyardVisits.getOrDefault(uuid, Collections.emptySet()));
     }
 
     public int getStoryQuestProgress(UUID uuid) {

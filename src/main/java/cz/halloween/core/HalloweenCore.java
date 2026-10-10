@@ -35,6 +35,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenMobManager mobManager;
     private HalloweenChallengeManager challengeManager;
     private HalloweenQuestManager questManager;
+    private HalloweenRiftManager riftManager;
+    private HalloweenGraveyardManager graveyardManager;
     private HalloweenBossManager bossManager;
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
@@ -53,6 +55,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateStoryRiftDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -65,6 +68,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         mobManager = new HalloweenMobManager(this);
         challengeManager = new HalloweenChallengeManager(this);
         questManager = new HalloweenQuestManager(this);
+        riftManager = new HalloweenRiftManager(this);
+        graveyardManager = new HalloweenGraveyardManager(this);
         bossManager = new HalloweenBossManager(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
@@ -87,6 +92,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
+        getServer().getPluginManager().registerEvents(riftManager, this);
+        getServer().getPluginManager().registerEvents(graveyardManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
@@ -103,6 +110,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         atmosphere.start();
         worldDecorator.start();
         passiveEffectManager.start();
+        riftManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
@@ -124,6 +132,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (riftManager != null) riftManager.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -157,6 +166,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateStoryRiftDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -274,6 +284,36 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Additional Halloween mob and story-quest defaults applied without overwriting existing settings.");
         } catch (IOException ex) {
             getLogger().warning("Additional mob/quest migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateStoryRiftDefaults() {
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; story-rift migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            boolean changed = false;
+            for (String sectionPath : List.of("story-rift", "story-graveyards")) {
+                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
+                if (section == null) continue;
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) {
+                        getConfig().set(path, section.get(key));
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                saveConfig();
+                getLogger().info("Story rift and graveyard defaults added without overwriting existing values.");
+            }
+        } catch (IOException ex) {
+            getLogger().warning("Story-rift configuration migration failed: " + ex.getClass().getSimpleName());
         }
     }
 
@@ -515,6 +555,14 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenQuestManager getQuestManager() {
         return questManager;
+    }
+
+    public HalloweenRiftManager getRiftManager() {
+        return riftManager;
+    }
+
+    public HalloweenGraveyardManager getGraveyardManager() {
+        return graveyardManager;
     }
 
     public HalloweenBossManager getBossManager() {

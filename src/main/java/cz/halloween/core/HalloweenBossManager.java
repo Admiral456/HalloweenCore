@@ -45,18 +45,33 @@ public final class HalloweenBossManager {
     }
 
     public boolean isVampireReady() {
+        return plugin.getDataManager().isFinaleUnlocked() && isVampireConfiguredReady();
+    }
+
+    /**
+     * Checks all external/configuration gates required before the story ritual consumes rare items.
+     * This deliberately excludes the finale-unlocked flag because the ritual itself unlocks it.
+     */
+    public boolean isVampireConfiguredReady() {
         VampireSpec spec = getVampireSpec();
         int requiredProgress = plugin.getConfig().getInt("bosses.vampire.spawn-requirements.global-progress-percent", 100);
         long goal = plugin.getService().getGlobalGoal();
         double progress = plugin.getService().getGlobalProgressPercent();
         boolean progressReady = goal <= 0L || progress >= Math.max(0, Math.min(100, requiredProgress));
+        // This separate gate must still require 100% global progress even when an operator
+        // intentionally lowers global-progress-percent for testing or custom server pacing.
+        boolean eventCompletionRequired = plugin.getConfig().getBoolean(
+                "bosses.vampire.spawn-requirements.event-completion", true);
+        boolean globalEventCompleted = goal <= 0L || progress >= 100.0D;
+        boolean eventCompletionReady = !eventCompletionRequired || globalEventCompleted;
         String arenaWorld = plugin.getConfig().getString("bosses.vampire.arena.world", "");
         boolean arenaReady = !arenaWorld.isBlank()
                 && plugin.getServer().getWorlds().stream().anyMatch(world -> world.getName().equalsIgnoreCase(arenaWorld))
                 && plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false);
         ConfigurationSection model = plugin.getConfig().getConfigurationSection("bosses.vampire.model");
+        var modelEngine = plugin.getServer().getPluginManager().getPlugin("ModelEngine");
         boolean mythicMobsReady = plugin.getServer().getPluginManager().getPlugin("MythicMobs") != null
-                && plugin.getServer().getPluginManager().getPlugin("MythicMobs").isEnabled();
+                && plugin.getServer().getPluginManager().isPluginEnabled("MythicMobs");
         boolean modelPluginReady = true;
         boolean modelReady = model == null
                 || !model.getBoolean("required", true)
@@ -64,16 +79,15 @@ public final class HalloweenBossManager {
                 && Math.max(0, model.getInt("min-height-blocks", 0)) >= 10
                 && Math.max(0, model.getInt("min-width-with-wings-blocks", 0)) >= 8
                 && model.getBoolean("wings-required", false));
-        if (model != null && model.getBoolean("plugin-required", true)) {
-            String provider = model.getString("provider", "");
-            if ("MODEL_ENGINE".equalsIgnoreCase(provider)) {
-                modelPluginReady = plugin.getServer().getPluginManager().getPlugin("ModelEngine") != null;
-            }
+        if (model != null && model.getBoolean("plugin-required", true)
+                && "MODEL_ENGINE".equalsIgnoreCase(model.getString("provider", ""))) {
+            modelPluginReady = modelEngine != null
+                    && plugin.getServer().getPluginManager().isPluginEnabled("ModelEngine");
         }
         return spec.enabled()
                 && !plugin.getDataManager().isVampireDefeated()
-                && plugin.getDataManager().isFinaleUnlocked()
                 && progressReady
+                && eventCompletionReady
                 && spec.finalBoss()
                 && spec.arenaRequired()
                 && arenaReady
