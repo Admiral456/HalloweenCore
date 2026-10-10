@@ -50,6 +50,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
+        migrateCrimsonWardenShieldDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCrimsonWardenLoreV4();
         migrateHalloweenEventOverhaul();
@@ -155,6 +156,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         reloadConfig();
         migrateAtmosphereVolume();
         migrateCrimsonWardenShopDefaults();
+        migrateCrimsonWardenShieldDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCrimsonWardenLoreV4();
         migrateHalloweenEventOverhaul();
@@ -364,6 +366,46 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
+
+    /**
+     * Add the Crimson Warden shield to existing installations without resetting shop balance.
+     */
+    private void migrateCrimsonWardenShieldDefaults() {
+        if (getConfig().getBoolean("migrations.crimson-warden-shield-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml unavailable; Crimson Warden shield migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection source = defaults.getConfigurationSection("rewards.shop.crimson-warden-shield");
+            if (source == null) {
+                getLogger().warning("Default Crimson Warden shield shop entry is missing; migration was skipped.");
+                return;
+            }
+            String target = "rewards.shop.crimson-warden-shield";
+            if (!getConfig().isConfigurationSection(target)) {
+                for (String key : source.getKeys(true)) {
+                    if (!source.isConfigurationSection(key)) getConfig().set(target + "." + key, source.get(key));
+                }
+            } else {
+                for (String key : List.of("itemsadder-id", "material", "amount", "name", "lore")) {
+                    if (source.contains(key)) getConfig().set(target + "." + key, source.get(key));
+                }
+                for (String key : List.of("cost", "min-curse")) {
+                    if (!getConfig().contains(target + "." + key) && source.contains(key)) {
+                        getConfig().set(target + "." + key, source.get(key));
+                    }
+                }
+            }
+            getConfig().set("migrations.crimson-warden-shield-v1", true);
+            saveConfig();
+            getLogger().info("Crimson Warden shield shop entry added while preserving custom price and curse requirements.");
+        } catch (IOException ex) {
+            getLogger().warning("Crimson Warden shield migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
 
     private void migrateCrimsonWardenArmorStats() {
         if (getConfig().getBoolean("migrations.crimson-warden-armor-stats-v3", false)) return;

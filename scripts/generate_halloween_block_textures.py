@@ -356,6 +356,79 @@ def cobweb() -> None:
     save_pixels("cobweb.png", pixels)
 
 
+def crimson_warden_shield_texture() -> None:
+    """Create a 32x32 pixel-art shield with a crimson rim and a glowing sigil."""
+    clear = (0, 0, 0, 0)
+    pixels = [[clear for _ in range(32)] for _ in range(32)]
+
+    def put(x: int, y: int, color: tuple[int, int, int, int]) -> None:
+        if 0 <= x < 32 and 0 <= y < 32:
+            pixels[y][x] = color
+
+    def rect(x0: int, y0: int, x1: int, y1: int, color: tuple[int, int, int, int]) -> None:
+        for yy in range(y0, y1 + 1):
+            for xx in range(x0, x1 + 1):
+                put(xx, yy, color)
+
+    outline = (19, 17, 26, 255)
+    iron = (53, 54, 67, 255)
+    iron_light = (105, 108, 123, 255)
+    iron_dark = (31, 29, 42, 255)
+    crimson = (139, 23, 42, 255)
+    crimson_light = (225, 47, 59, 255)
+    glow = (255, 103, 54, 255)
+    gold = (255, 190, 88, 255)
+    profile = {
+        3: (12, 19), 4: (9, 22), 5: (7, 24), 6: (6, 25),
+        7: (5, 26), 8: (5, 26), 9: (5, 26), 10: (5, 26),
+        11: (5, 26), 12: (5, 26), 13: (5, 26), 14: (5, 26),
+        15: (6, 25), 16: (6, 25), 17: (7, 24), 18: (7, 24),
+        19: (8, 23), 20: (9, 22), 21: (10, 21), 22: (11, 20),
+        23: (12, 19), 24: (13, 18), 25: (14, 17), 26: (15, 16),
+    }
+    for y, (left, right) in profile.items():
+        for x in range(left, right + 1):
+            if x in (left, right) or y in (3, 26):
+                color = outline
+            elif x in (left + 1, right - 1):
+                color = crimson_light if x < 16 else crimson
+            elif x < 11:
+                color = iron_light
+            elif x > 20:
+                color = iron_dark
+            else:
+                color = iron if (x + y) % 6 else iron_light
+            put(x, y, color)
+    for y, (left, right) in profile.items():
+        if 5 <= y <= 24:
+            put(left + 2, y, crimson)
+            put(right - 2, y, crimson)
+    for x in range(10, 22):
+        put(x, 5, crimson)
+        put(x, 23, crimson)
+    rect(14, 8, 17, 19, outline)
+    rect(15, 9, 16, 18, crimson_light)
+    rect(12, 11, 19, 14, outline)
+    rect(13, 11, 18, 13, glow)
+    rect(14, 12, 17, 13, gold)
+    put(13, 12, crimson)
+    put(18, 12, crimson)
+    put(14, 14, outline)
+    put(17, 14, outline)
+    rect(13, 15, 18, 16, outline)
+    rect(14, 16, 17, 17, iron_light)
+    rect(15, 18, 16, 21, outline)
+    rect(13, 20, 18, 21, crimson_light)
+    put(15, 22, gold)
+    put(16, 22, glow)
+    for x, y in ((9, 8), (22, 8), (9, 17), (22, 17)):
+        put(x, y, iron_light)
+        put(x + 1, y, outline)
+    put(8, 6, gold)
+    put(23, 6, gold)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_shield.png", pixels)
+
+
 def main() -> None:
     pumpkin_side()
     pumpkin_top()
@@ -368,6 +441,7 @@ def main() -> None:
     dead_bush()
     gravestone_texture(cracked=False)
     gravestone_texture(cracked=True)
+    crimson_warden_shield_texture()
     # Remove a legacy texture name not referenced by vanilla 1.21.10 candle models.
     (OUT / "red_candle_lit.png").unlink(missing_ok=True)
     for path in sorted(OUT.glob("*.png")) + sorted(ITEM_OUT.glob("grave_marker*.png")):

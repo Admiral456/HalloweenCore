@@ -160,6 +160,18 @@ rewards:
       lore:
         - "&c+6 Armor"
 
+    crimson-warden-shield:
+      cost: 42000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:crimson_warden_shield"
+      material: SHIELD
+      amount: 1
+      name: "&4&lŠtít Krvavého strážce"
+      lore:
+        - "&7Krvavá bariéra: přikrč se a klikni pravým tlačítkem."
+        - "&cOdolnost II + absorbce a odražení nepřátel."
+        - "&8Cooldown: 45 sekund"
+
     crimson-warden-sword:
       cost: 35000
       min-curse: 5

@@ -14,13 +14,14 @@ TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "text
 SHADER = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
 CONFIG = CONTENT / "configs" / "items.yml"
 SOUNDS_CONFIG = CONTENT / "configs" / "sounds.yml"
-THEME = CONTENT / "sounds" / "haunted_theme.ogg"
+SOUNDS_DIR = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "sounds"
+THEME = SOUNDS_DIR / "haunted_theme.ogg"
 PLAYLIST_TRACKS = {
-    "horror_atmosphere": CONTENT / "sounds" / "horror_atmosphere.ogg",
-    "creepy_ambient": CONTENT / "sounds" / "creepy_ambient.ogg",
-    "dark_cavern_ambient": CONTENT / "sounds" / "dark_cavern_ambient.ogg",
+    "horror_atmosphere": SOUNDS_DIR / "horror_atmosphere.ogg",
+    "creepy_ambient": SOUNDS_DIR / "creepy_ambient.ogg",
+    "dark_cavern_ambient": SOUNDS_DIR / "dark_cavern_ambient.ogg",
 }
-EVENT_STING = CONTENT / "sounds" / "event_sting.ogg"
+EVENT_STING = SOUNDS_DIR / "event_sting.ogg"
 EVENT_CUES = {
     "soulstorm_sting": 5.2,
     "witching_sting": 4.8,
@@ -50,6 +51,7 @@ EXPECTED = {
     "crimson_warden_hoe.png",
     "grave_marker.png",
     "grave_marker_cracked.png",
+    "crimson_warden_shield.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
 VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
@@ -203,6 +205,22 @@ for item_id, (material, vanilla_armor, bonus_armor, total_armor, durability) in 
         fail(f"{item_id} component max_damage must match {durability}")
     if components.get("minecraft:enchantable", {}).get("value") != 25:
         fail(f"{item_id} must remain normally enchantable (enchantability 25)")
+shield_match = re.search(r"(?ms)^  crimson_warden_shield:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_yaml)
+if not shield_match:
+    fail("ItemsAdder config is missing crimson_warden_shield")
+shield_section = shield_match.group(1)
+if "material: SHIELD" not in shield_section or "texture: item/crimson_warden_shield" not in shield_section:
+    fail("Crimson Warden shield must use its custom SHIELD material and themed texture")
+shield_component_match = re.search(r'(?m)^    components_nbt_file: "([^"]+)"\s*$', shield_section)
+if not shield_component_match:
+    fail("Crimson Warden shield is missing its component JSON")
+try:
+    shield_component = json.loads((CONFIG.parent / shield_component_match.group(1)).read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Crimson Warden shield component JSON is invalid: {exc}")
+if shield_component.get("components", {}).get("minecraft:max_damage") != 1600:
+    fail("Crimson Warden shield must have 1600 durability")
+
 print("PASS Crimson Warden armor modifiers and displayed totals: 6/12/9/6; durability and component JSON verified")
 
 if not SHADER.is_file():
@@ -235,7 +253,7 @@ for name in sorted(EXPECTED_SEASONAL_BLOCK_TEXTURES):
 theme_duration = 0.0
 audio_specs = [(THEME, None), (EVENT_STING, 5.0)]
 audio_specs.extend((path, None) for path in PLAYLIST_TRACKS.values())
-audio_specs.extend((CONTENT / "sounds" / f"{name}.ogg", duration) for name, duration in EVENT_CUES.items())
+audio_specs.extend((SOUNDS_DIR / f"{name}.ogg", duration) for name, duration in EVENT_CUES.items())
 for audio, expected_duration in audio_specs:
     if not audio.is_file():
         fail("Missing Halloween audio asset: " + str(audio.relative_to(ROOT)))
@@ -309,11 +327,20 @@ if not 0.8 <= float(silence_stream.get("duration", 0)) <= 1.2:
 if not SOUNDS_CONFIG.is_file():
     fail("Missing ItemsAdder sounds configuration: " + str(SOUNDS_CONFIG.relative_to(ROOT)))
 sounds_text = SOUNDS_CONFIG.read_text(encoding="utf-8")
-for sound in ("haunted_theme", "event_sting", *EVENT_CUES.keys()):
+for sound in ("haunted_theme", "horror_atmosphere", "creepy_ambient", "dark_cavern_ambient", "event_sting", *EVENT_CUES.keys()):
     if f"  {sound}:" not in sounds_text:
         fail(f"ItemsAdder sound '{sound}' missing from sounds.yml")
     if f"sound.{sound}:" not in sounds_text:
         fail(f"ItemsAdder subtitle for '{sound}' missing from sounds.yml")
+
+# Ensure each ItemsAdder sound resolves to a real file inside the delivered client pack.
+for sound in ("haunted_theme", "horror_atmosphere", "creepy_ambient", "dark_cavern_ambient",
+              "event_sting", *EVENT_CUES.keys()):
+    match = re.search(rf"(?ms)^  {re.escape(sound)}:\s*\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", sounds_text)
+    if not match or not re.search(rf"(?m)^    path: {re.escape(sound)}\s*$", match.group(1)):
+        fail(f"ItemsAdder sound '{sound}' must point to its matching resource-pack OGG")
+    if not (SOUNDS_DIR / f"{sound}.ogg").is_file():
+        fail(f"Missing client resource-pack audio file: {SOUNDS_DIR / (sound + '.ogg')}")
 
 runtime_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
 if not re.search(r"(?m)^  volume:\s*3\.0\s*$", runtime_config):
@@ -401,7 +428,7 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
                 "crimson_warden_helmet", "crimson_warden_chestplate",
                 "crimson_warden_leggings", "crimson_warden_boots",
                 "crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
-                "crimson_warden_shovel", "crimson_warden_hoe"):
+                "crimson_warden_shovel", "crimson_warden_hoe", "crimson_warden_shield"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
 
