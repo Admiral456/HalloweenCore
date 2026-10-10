@@ -26,10 +26,10 @@ public final class HalloweenQuestManager implements Listener {
 
     private final HalloweenCore plugin;
     private final NamespacedKey cursedMobKey;
+
     /*
-     * Story progression deliberately counts only tagged Halloween mobs.
-     * The first chapter additionally requires actual in-game night, so the
-     * "after dark" clue is a real condition rather than flavor text.
+     * Every combat step needs the matching mob's cursed_mob tag. Two story
+     * beats also need a genuine night-time visit/ritual at the configured rift.
      */
     private final List<Quest> quests = List.of(
             new Quest("fog-patrol", "Co se probouzí po setmění",
@@ -47,8 +47,11 @@ public final class HalloweenQuestManager implements Listener {
             new Quest("pumpkin-wraith", "Dýňová pečeť",
                     "Přízraky hlídají rozbitou pečeť. Znič 5 Dýňových přízraků.",
                     "special:pumpkin-wraith", 5, 900),
+            new Quest("rift-investigation", "Sestup k trhlině",
+                    "Vrať se v noci k místu, kde svět praská. Přibliž se k trhlině a prozkoumej ji.",
+                    "rift-investigation", 1, 800),
             new Quest("void-reaper", "Za hranou světa",
-                    "Trhlina zesílila. Vyhledej a poraz 4 Žence prázdnoty.",
+                    "Průzkum trhlinu probudil. Vyhledej a poraz 4 Žence prázdnoty.",
                     "special:void-reaper", 4, 1100),
             new Quest("frost-stalker", "Ledová stopa",
                     "Ledoví stopaři odnášejí poslední části pečeti. Poraz 5 Ledových stopařů.",
@@ -57,8 +60,11 @@ public final class HalloweenQuestManager implements Listener {
                     "Noční můry už znají tvé jméno. Přežij jejich lov a poraz 3 Noční můry.",
                     "special:nightmare", 3, 1600),
             new Quest("last-nightmare", "Poslední noc",
-                    "Trhlina je otevřená naplno. Za noci poraz poslední Noční můru a uzavři příběh.",
-                    "special-night:nightmare", 1, 2500)
+                    "Za skutečné noci poraz poslední Noční můru. Pak se vrať k trhlině a přeruš její spojení.",
+                    "special-night:nightmare", 1, 2500),
+            new Quest("rift-seal", "Cena za uzavření",
+                    "V noci stůj u trhliny. Drž Echo Shard v hlavní ruce a klikni pravým do vzduchu. Rituál spotřebuje 4 Echo Shardy a 1 Crying Obsidian.",
+                    "rift-seal", 1, 3000)
     );
 
     public HalloweenQuestManager(HalloweenCore plugin) {
@@ -71,6 +77,12 @@ public final class HalloweenQuestManager implements Listener {
         Quest quest = ensureActiveQuest(player);
         if (quest == null || !quest.objective().equalsIgnoreCase(source)) return;
         addProgress(player, quest, 1);
+    }
+
+    public boolean isActiveObjective(Player player, String objective) {
+        if (!isEligible(player) || objective == null || objective.isBlank()) return false;
+        Quest active = ensureActiveQuest(player);
+        return active != null && active.objective().equalsIgnoreCase(objective);
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -89,8 +101,7 @@ public final class HalloweenQuestManager implements Listener {
 
         Quest active = ensureActiveQuest(killer);
         if (active == null) return;
-        // Ordinary vanilla hostiles never advance the story. A matching tagged
-        // Halloween mob is required for every combat chapter.
+        // Vanilla hostile mobs can never advance the story.
         if (specialMob == null || specialMob.isBlank()) return;
 
         String mobId = normalizeMobId(specialMob);
@@ -103,7 +114,6 @@ public final class HalloweenQuestManager implements Listener {
 
         if (requiresNight) {
             long worldTime = dead.getWorld().getTime() % 24000L;
-            // Minecraft night: 13000 through 23000 ticks.
             if (worldTime < 13000L || worldTime > 23000L) {
                 killer.sendMessage(plugin.color("&8HALLOWEEN &7» &cTento cíl se počítá pouze v noci."));
                 return;
@@ -133,9 +143,18 @@ public final class HalloweenQuestManager implements Listener {
         player.sendMessage(plugin.color("&7" + active.description()));
         player.sendMessage(plugin.color("&7Postup: &e" + Math.min(progress, active.target())
                 + "&7/&e" + active.target()));
-        player.sendMessage(plugin.color("&8Počítají se pouze označení Halloween mobové."));
-        if (active.objective().startsWith("special-night:")) {
+
+        String objective = active.objective();
+        if (objective.startsWith("special:") || objective.startsWith("special-night:")) {
+            player.sendMessage(plugin.color("&8Počítají se pouze označení Halloween mobové, ne běžná monstra."));
+        }
+        if (objective.startsWith("special-night:") || objective.equals("rift-investigation")
+                || objective.equals("rift-seal")) {
             player.sendMessage(plugin.color("&8Podmínka: skutečná noc ve hře (čas 13 000–23 000)."));
+        }
+        if ((objective.equals("rift-investigation") || objective.equals("rift-seal"))
+                && (plugin.getRiftManager() == null || !plugin.getRiftManager().isConfigured())) {
+            player.sendMessage(plugin.color("&cTrhlina zatím není umístěná. Správce ji musí nastavit příkazem /halloween setrift."));
         }
         player.sendMessage(plugin.color("&7Odměna: &6" + active.reward() + " fragmentů"));
         player.sendMessage(plugin.color("&8Postup se ukládá a přežije restart serveru."));
