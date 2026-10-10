@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import binascii
 import json
 import re
 import struct
@@ -65,12 +66,37 @@ EXPECTED_MUSIC_EVENTS = {
 
 
 def png_size(path: Path) -> tuple[int, int]:
+    """Return PNG dimensions after validating every chunk and its CRC."""
     data = path.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError(f"{path} is not a PNG file")
-    if data[12:16] != b"IHDR":
-        raise ValueError(f"{path} has no PNG IHDR chunk")
-    return struct.unpack(">II", data[16:24])
+    offset = 8
+    width = height = None
+    saw_iend = False
+    while offset + 12 <= len(data):
+        length = struct.unpack(">I", data[offset:offset + 4])[0]
+        kind = data[offset + 4:offset + 8]
+        end = offset + 8 + length
+        if end + 4 > len(data):
+            raise ValueError(f"{path} has a truncated {kind.decode('ascii', 'replace')} chunk")
+        chunk_data = data[offset + 8:end]
+        expected_crc = struct.unpack(">I", data[end:end + 4])[0]
+        if (binascii.crc32(kind + chunk_data) & 0xffffffff) != expected_crc:
+            raise ValueError(f"{path} has a corrupt {kind.decode('ascii', 'replace')} chunk")
+        if kind == b"IHDR":
+            if length != 13:
+                raise ValueError(f"{path} has an invalid PNG IHDR chunk")
+            width, height = struct.unpack(">II", chunk_data[:8])
+        if kind == b"IEND":
+            if length != 0:
+                raise ValueError(f"{path} has an invalid PNG IEND chunk")
+            saw_iend = True
+            offset = end + 4
+            break
+        offset = end + 4
+    if not saw_iend or width is None or height is None or offset != len(data):
+        raise ValueError(f"{path} has missing or trailing PNG data")
+    return width, height
 
 def fail(message: str) -> None:
     print(f"ERROR: {message}", file=sys.stderr)
