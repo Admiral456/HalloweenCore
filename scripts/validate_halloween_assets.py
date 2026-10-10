@@ -43,6 +43,11 @@ EXPECTED = {
     "crimson_warden_hoe.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
+VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
+EXPECTED_SEASONAL_BLOCK_TEXTURES = {
+    "pumpkin_side.png", "pumpkin_top.png", "pumpkin_face.png",
+    "jack_o_lantern.png", "cobweb.png", "red_candle.png", "red_candle_lit.png",
+}
 
 
 EXPECTED_MUSIC_EVENTS = {
@@ -94,6 +99,18 @@ shader_text = SHADER.read_text(encoding="utf-8")
 for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "halloweenTint", "fragColor = sky;"):
     if marker not in shader_text:
         fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
+
+# Explicit vanilla texture overrides give physical Halloween decoration its
+# seasonal appearance while keeping the server-side blocks present with or
+# without the pack. Fail the build if any required 16x16 texture is missing.
+missing_seasonal = sorted(name for name in EXPECTED_SEASONAL_BLOCK_TEXTURES
+                          if not (VANILLA_BLOCK_TEXTURES / name).is_file())
+if missing_seasonal:
+    fail("Missing Halloween vanilla block textures: " + ", ".join(missing_seasonal))
+for name in sorted(EXPECTED_SEASONAL_BLOCK_TEXTURES):
+    width, height = png_size(VANILLA_BLOCK_TEXTURES / name)
+    if (width, height) != (16, 16):
+        fail(f"Seasonal vanilla block texture {name} must be 16x16, got {width}x{height}")
 
 theme_duration = 0.0
 audio_specs = [(THEME, None), (EVENT_STING, 5.0)]
@@ -346,6 +363,7 @@ print("14 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
+print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
 print("Sky shader: Minecraft 1.21.10 entry point present")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")
 print("ItemsAdder sound definitions: present")

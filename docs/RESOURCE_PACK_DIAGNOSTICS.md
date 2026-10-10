@@ -2,21 +2,19 @@
 
 The build validates files and creates deployable artifacts. It cannot verify a client's actual pack-download status or rendering against a live Hostify server. Use this checklist on a staging copy before enabling the event for everyone.
 
-## Install the three deliverables
+## Install the pack and import the mob models
 
-1. Stop the server and back up the world, `plugins/HalloweenCore/`, `plugins/ItemsAdder/`, `plugins/MythicMobs/` and `plugins/ModelEngine/`.
+1. Stop the server and back up the world plus `plugins/HalloweenCore/`, `plugins/ItemsAdder/`, `plugins/MythicMobs/` and `plugins/ModelEngine/`.
 2. Replace `plugins/HalloweenCore.jar` with the current `HalloweenCore.jar` artifact.
-3. Extract `WarriorLand-Halloween-ItemsAdder.zip` and place its `warriorland_halloween` directory in `plugins/ItemsAdder/contents/`.
-4. Extract `HalloweenCore-Special-Mobs-ModelEngine.zip` over `plugins/`. This adds `MythicMobs/Mobs/halloween-special-mobs.yml` and the five model/texture blueprints under `ModelEngine/blueprints/`.
-5. Import the five Blockbench models using the installed ModelEngine version. Keep these model IDs exactly:
-   - `halloween_cursed_zombie`
-   - `halloween_gravekeeper`
-   - `halloween_blood_spider`
-   - `halloween_pumpkin_wraith`
-   - `halloween_hex_witch`
-6. Reload models and mob definitions using the commands supported by your installed versions (commonly `/meg reload models` and `/mm reload`). Check the console for missing model IDs or invalid MythicMobs skills.
-7. In the existing ItemsAdder configuration, append `ModelEngine/resource pack` to `merge_other_plugins_resourcepacks_folders`; preserve all existing entries. The option name and exact import workflow can differ between plugin versions, so confirm the setting against your installed ModelEngine/ItemsAdder builds.
-8. Restart the server if the plugin versions require it. Run `/iazip`, wait for it to finish, then use `/iainfo` to make sure ItemsAdder reports a reachable resource-pack URL.
+3. Extract `WarriorLand-Halloween-ItemsAdder.zip` and place its `warriorland_halloween` directory in `plugins/ItemsAdder/contents/`. This content includes Halloween looks for pumpkins, jack-o'-lanterns, cobwebs and red candles in the vanilla texture namespace.
+4. Extract `HalloweenCore-Special-Mobs-ModelEngine.zip` over the server's `plugins/` folder. The `.bbmodel` blueprints go into `plugins/ModelEngine/blueprints/`; the YAML definitions go into `plugins/MythicMobs/Mobs/`.
+5. Make sure ModelEngine and MythicMobs are installed and compatible with the server. Leave these model IDs unchanged: `halloween_cursed_zombie`, `halloween_gravekeeper`, `halloween_blood_spider`, `halloween_pumpkin_wraith`, and `halloween_hex_witch`.
+6. Run `/meg reload models` (some ModelEngine versions use `/meg reload`). Check the console and confirm all five models load. This generates `plugins/ModelEngine/resource pack/` from the `.bbmodel` files; merely copying them is not enough.
+7. Run `/mm reload` and check that the five MythicMobs definitions have no errors.
+8. In the existing ItemsAdder `config.yml`, append `ModelEngine/resource pack` to `merge_other_plugins_resourcepacks_folders`. **Preserve all existing entries.** If the directory is missing after ModelEngine reload, do not run `/iazip` yet; resolve the ModelEngine import/startup problem first.
+9. Only after ModelEngine has generated its pack and ItemsAdder is configured to merge it, run `/iazip`. Then use `/iainfo` to verify that the generated pack has a reachable URL. Reconnect and accept the newest pack.
+
+The required order is **copy blueprints → `/meg reload models` → `/mm reload` → configure ItemsAdder merge → `/iazip` → reconnect and accept the pack**. Rebuilding ItemsAdder before ModelEngine has generated its assets can produce a pack with Halloween block textures/audio but no custom mob rendering assets.
 
 ## Client-side verification
 
