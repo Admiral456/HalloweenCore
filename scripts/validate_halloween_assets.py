@@ -6,6 +6,7 @@ import re
 import struct
 import subprocess
 import sys
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
@@ -52,7 +53,7 @@ ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" /
 VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
 EXPECTED_SEASONAL_BLOCK_TEXTURES = {
     "pumpkin_side.png", "pumpkin_top.png", "pumpkin_face.png",
-    "jack_o_lantern.png", "cobweb.png", "red_candle.png", "red_candle_lit.png",
+    "jack_o_lantern.png", "cobweb.png", "red_candle.png",
 }
 
 
@@ -81,13 +82,14 @@ def png_size(path: Path) -> tuple[int, int]:
 
 
 def strict_png_size(path: Path) -> tuple[int, int]:
-    """Validate complete PNG chunk lengths and CRCs, then return its dimensions."""
+    """Validate PNG signature, every chunk CRC, IEND and decodable IDAT data."""
     data = path.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError(f"{path} is not a PNG file")
     offset = 8
     width = height = None
     saw_iend = False
+    idat = bytearray()
     while offset + 12 <= len(data):
         length = struct.unpack(">I", data[offset:offset + 4])[0]
         kind = data[offset + 4:offset + 8]
@@ -102,7 +104,9 @@ def strict_png_size(path: Path) -> tuple[int, int]:
             if length != 13:
                 raise ValueError(f"{path} has an invalid PNG IHDR chunk")
             width, height = struct.unpack(">II", chunk_data[:8])
-        if kind == b"IEND":
+        elif kind == b"IDAT":
+            idat.extend(chunk_data)
+        elif kind == b"IEND":
             if length != 0:
                 raise ValueError(f"{path} has an invalid PNG IEND chunk")
             saw_iend = True
@@ -110,8 +114,15 @@ def strict_png_size(path: Path) -> tuple[int, int]:
             break
         offset = end + 4
     if not saw_iend or width is None or height is None or offset != len(data):
-        raise ValueError(f"{path} has missing or trailing PNG data")
+        raise ValueError(f"{path} has missing IEND, invalid dimensions or trailing PNG data")
+    if not idat:
+        raise ValueError(f"{path} has no image data")
+    try:
+        zlib.decompress(bytes(idat))
+    except zlib.error as exc:
+        raise ValueError(f"{path} image data cannot be decoded: {exc}") from exc
     return width, height
+
 
 def fail(message: str) -> None:
     print(f"ERROR: {message}", file=sys.stderr)
@@ -122,7 +133,7 @@ if missing:
     fail("Missing item textures: " + ", ".join(missing))
 
 for name in sorted(EXPECTED):
-    width, height = png_size(TEXTURES / name)
+    width, height = strict_png_size(TEXTURES / name)
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
 
@@ -130,9 +141,57 @@ for layer in ("layer_1.png", "layer_2.png"):
     path = ARMOR_TEXTURES / layer
     if not path.is_file():
         fail("Missing Crimson Warden armor layer: " + str(path.relative_to(ROOT)))
-    width, height = png_size(path)
+    width, height = strict_png_size(path)
     if (width, height) != (64, 32):
         fail(f"{layer} must be 64x32, got {width}x{height}")
+    source = ARMOR_SOURCE_TEXTURES / layer
+    if not source.is_file():
+        fail("Missing source Crimson Warden armor layer: " + str(source.relative_to(ROOT)))
+    source_width, source_height = strict_png_size(source)
+    if (source_width, source_height) != (64, 32):
+        fail(f"Source {layer} must be 64x32, got {source_width}x{source_height}")
+    if source.read_bytes() != path.read_bytes():
+        fail(f"Source and resource-pack copies of {layer} differ; keep both paths in sync")
+
+# Verify that ItemsAdder's equipment modifiers match the advertised armor totals.
+ARMOR_BALANCE = {
+    "crimson_warden_helmet": ("NETHERITE_HELMET", 3, 3, 6, 900),
+    "crimson_warden_chestplate": ("NETHERITE_CHESTPLATE", 8, 4, 12, 1300),
+    "crimson_warden_leggings": ("NETHERITE_LEGGINGS", 6, 3, 9, 1150),
+    "crimson_warden_boots": ("NETHERITE_BOOTS", 3, 3, 6, 950),
+}
+items_yaml = CONFIG.read_text(encoding="utf-8")
+for item_id, (material, vanilla_armor, bonus_armor, total_armor, durability) in ARMOR_BALANCE.items():
+    match = re.search(rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_yaml)
+    if not match:
+        fail(f"ItemsAdder config is missing armor item {item_id}")
+    section = match.group(1)
+    if re.search(rf"(?m)^    material: {re.escape(material)}\s*$", section) is None:
+        fail(f"{item_id} must use base material {material}")
+    bonus_match = re.search(r"(?ms)^    equipment:\s*\n.*?^      slot_attribute_modifiers:\s*\n\s+armor:\s*(\d+)\s*$", section)
+    if not bonus_match or int(bonus_match.group(1)) != bonus_armor:
+        fail(f"{item_id} must add exactly {bonus_armor} Armor through ItemsAdder equipment modifiers")
+    durability_match = re.search(r"(?m)^      max_durability: (\d+)\s*$", section)
+    if not durability_match or int(durability_match.group(1)) != durability:
+        fail(f"{item_id} must have durability {durability}")
+    if vanilla_armor + bonus_armor != total_armor:
+        fail(f"Internal armor balance expectation is incorrect for {item_id}")
+    if re.search(rf'(?m)^      - "&c\+{total_armor} Armor"\s*$', section) is None:
+        fail(f"{item_id} lore must display exactly +{total_armor} Armor")
+    nbt_match = re.search(r'(?m)^    components_nbt_file: "([^"]+)"\s*$', section)
+    if not nbt_match:
+        fail(f"{item_id} is missing its component JSON")
+    component_path = CONFIG.parent / nbt_match.group(1)
+    try:
+        component = json.loads(component_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"{item_id} component JSON is invalid: {exc}")
+    components = component.get("components", {})
+    if components.get("minecraft:max_damage") != durability:
+        fail(f"{item_id} component max_damage must match {durability}")
+    if components.get("minecraft:enchantable", {}).get("value") != 25:
+        fail(f"{item_id} must remain normally enchantable (enchantability 25)")
+print("PASS Crimson Warden armor modifiers and displayed totals: 6/12/9/6; durability and component JSON verified")
 
 if not SHADER.is_file():
     fail("Missing Halloween sky shader: " + str(SHADER.relative_to(ROOT)))

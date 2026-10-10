@@ -49,9 +49,7 @@ items:
   crimson_warden_helmet:
     name: "&4&lHelma Krvavého strážce"
     lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 6 (netherit 3) • výdrž 900."
-      - "&8Lze enchantovat běžnými enchanty."
+      - "&c+6 Armor"
     material: NETHERITE_HELMET
     components_nbt_file: "crimson_warden_helmet.json"
     graphics:
@@ -66,9 +64,7 @@ items:
   crimson_warden_chestplate:
     name: "&4&lKyrys Krvavého strážce"
     lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 12 (netherit 8) • výdrž 1 300."
-      - "&8Lze enchantovat běžnými enchanty."
+      - "&c+12 Armor"
     material: NETHERITE_CHESTPLATE
     components_nbt_file: "crimson_warden_chestplate.json"
     graphics:
@@ -83,9 +79,7 @@ items:
   crimson_warden_leggings:
     name: "&4&lNohavice Krvavého strážce"
     lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 9 (netherit 6) • výdrž 1 150."
-      - "&8Lze enchantovat běžnými enchanty."
+      - "&c+9 Armor"
     material: NETHERITE_LEGGINGS
     components_nbt_file: "crimson_warden_leggings.json"
     graphics:
@@ -100,9 +94,7 @@ items:
   crimson_warden_boots:
     name: "&4&lBoty Krvavého strážce"
     lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 6 (netherit 3) • výdrž 950."
-      - "&8Lze enchantovat běžnými enchanty."
+      - "&c+6 Armor"
     material: NETHERITE_BOOTS
     components_nbt_file: "crimson_warden_boots.json"
     graphics:

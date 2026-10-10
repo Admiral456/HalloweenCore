@@ -51,6 +51,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
+        migrateCrimsonWardenLoreV4();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
 
@@ -155,6 +156,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
+        migrateCrimsonWardenLoreV4();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
@@ -393,6 +395,41 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Crimson Warden armor stats and shop lore migrated once; other server settings were preserved.");
         } catch (IOException ex) {
             getLogger().warning("Crimson Warden armor-stat migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+
+    /**
+     * Remove obsolete Crimson Warden shop lore on existing installations once.
+     * Only presentation text is changed; prices, curse gates and other settings remain untouched.
+     */
+    private void migrateCrimsonWardenLoreV4() {
+        if (getConfig().getBoolean("migrations.crimson-warden-lore-v4", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml is unavailable; Crimson Warden lore migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            String root = "rewards.shop.";
+            for (String id : List.of(
+                    "crimson-warden-helmet",
+                    "crimson-warden-chestplate",
+                    "crimson-warden-leggings",
+                    "crimson-warden-boots")) {
+                ConfigurationSection source = defaults.getConfigurationSection(root + id);
+                String targetPath = root + id;
+                if (source != null && getConfig().isConfigurationSection(targetPath)) {
+                    getConfig().set(targetPath + ".lore", source.getStringList("lore"));
+                }
+            }
+            getConfig().set("migrations.crimson-warden-lore-v4", true);
+            saveConfig();
+            getLogger().info("Crimson Warden armor lore cleaned up once; shop prices and curse requirements were preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Crimson Warden lore migration failed: " + ex.getClass().getSimpleName());
         }
     }
 

@@ -104,6 +104,6 @@ The ItemsAdder ZIP also includes seven **16×16 vanilla-block texture overrides*
 - `pumpkin_side.png`, `pumpkin_top.png`, `pumpkin_face.png` — pumpkin body, top and carved face.
 - `jack_o_lantern.png` — glowing jack-o'-lantern face.
 - `cobweb.png` — crimson web strands with transparent background.
-- `red_candle.png`, `red_candle_lit.png` — dark red candles and a warmer lit state.
+- `red_candle.png` — shared dark-red candle texture for both lit and unlit vanilla candle models.
 
 The HalloweenCore decorator places actual vanilla blocks into the world, so the blocks remain present even if a player declines the resource pack. The accepted pack changes their appearance instead of controlling whether they exist. These are vanilla namespace overrides and therefore affect **all** vanilla pumpkins, jack-o'-lanterns, cobwebs and red candles in resource-pack-enabled clients, not just the ones placed by HalloweenCore. They are checked by `scripts/validate_halloween_assets.py` in CI.

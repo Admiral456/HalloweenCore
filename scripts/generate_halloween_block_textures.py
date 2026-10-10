@@ -112,35 +112,31 @@ def pumpkin_face(lit: bool) -> None:
     save_pixels("jack_o_lantern.png" if lit else "pumpkin_face.png", rows_to_pixels(rows))
 
 
-def candle(lit: bool) -> None:
+def candle() -> None:
+    """Draw the texture referenced by both lit and unlit vanilla candle models."""
     pixels = [[PALETTE["."] for _ in range(W)] for _ in range(H)]
-    for y in range(6 if lit else 4, H):
-        for x in range(5, 11):
-            if lit:
-                color = (94, 15, 29, 255) if x in (5, 10) else (188, 30, 46, 255) if x < 9 else (139, 20, 38, 255)
-            else:
-                color = (87, 15, 30, 255) if x == 5 else (164, 28, 48, 255) if x == 6 else (206, 43, 53, 255) if x in (7, 8) else (152, 22, 40, 255) if x == 9 else (80, 14, 29, 255)
+    body = {
+        5: (84, 11, 28, 255),
+        6: (139, 18, 39, 255),
+        7: (181, 31, 49, 255),
+        8: (168, 24, 44, 255),
+        9: (118, 16, 34, 255),
+        10: (67, 10, 24, 255),
+    }
+    for y in range(4, H):
+        for x, color in body.items():
             pixels[y][x] = color
-    for x in range(5, 11):
-        pixels[6 if lit else 4][x] = (220, 52, 58, 255) if lit else (220, 57, 65, 255)
-    for y in range(7 if lit else 5, H):
-        pixels[y][7] = (240, 79, 75, 255)
-    if lit:
-        flame = [
-            "...B...",
-            "..BCB..",
-            "...C...",
-            ".......",
-        ]
-        for y, row in enumerate(flame, 1):
-            for x, ch in enumerate(row, 4):
-                if ch == "B":
-                    pixels[y][x] = (255, 221, 116, 255)
-                elif ch == "C":
-                    pixels[y][x] = (255, 126, 34, 255)
-    else:
-        pixels[3][7] = pixels[3][8] = (45, 22, 20, 255)
-    save_pixels("red_candle_lit.png" if lit else "red_candle.png", pixels)
+    # Uneven wax rim and a few glossy wax pixels; flame is separate block-model geometry.
+    for x, color in enumerate([
+        (92, 14, 30, 255), (160, 25, 45, 255), (218, 48, 63, 255),
+        (194, 36, 53, 255), (126, 18, 35, 255), (71, 11, 24, 255),
+    ], 5):
+        pixels[4][x] = color
+    pixels[3][7] = pixels[3][8] = (45, 22, 20, 255)
+    pixels[7][7] = (240, 79, 75, 255)
+    pixels[8][7] = (232, 65, 70, 255)
+    pixels[12][8] = (198, 35, 50, 255)
+    save_pixels("red_candle.png", pixels)
 
 
 def cobweb() -> None:
@@ -172,8 +168,9 @@ def main() -> None:
     pumpkin_top()
     pumpkin_face(lit=False)
     pumpkin_face(lit=True)
-    candle(lit=False)
-    candle(lit=True)
+    candle()
+    # Remove a legacy texture name not referenced by vanilla 1.21.10 candle models.
+    (OUT / "red_candle_lit.png").unlink(missing_ok=True)
     cobweb()
     for path in sorted(OUT.glob("*.png")):
         print(f"Generated {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")

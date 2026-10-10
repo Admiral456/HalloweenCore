@@ -780,21 +780,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 ? "&6HALLOWEEN &8» &aKonfigurace načtena. Hudba a dekorace obnoveny; první event je naplánovaný přibližně za "
                     + Math.max(5, plugin.getConfig().getInt("random-events.start-delay-seconds", 30)) + " sekund."
                 : "&6HALLOWEEN &8» &eKonfigurace načtena, ale Halloween je vypnutý v config.yml."));
-
-        var itemsAdder = Bukkit.getPluginManager().getPlugin("ItemsAdder");
-        if (itemsAdder != null && itemsAdder.isEnabled()) {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                boolean started = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
-                if (started) {
-                    sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl spuštěn pro sestavení aktuálního resource packu."));
-                    sender.sendMessage(plugin.color("&7Doručení packu hráčům závisí na funkčním hostingu ItemsAdderu. Pro shader změny se znovu připoj do Minecraftu."));
-                } else {
-                    sender.sendMessage(plugin.color("&cItemsAdder pack se nepodařilo spustit. Spusť /iazip ručně v konzoli."));
-                }
-            });
-        } else {
-            sender.sendMessage(plugin.color("&eItemsAdder není zapnutý; plugin a event konfigurace se načetly, ale resource pack se nesestavil."));
-        }
+        rebuildItemsAdderPack(sender);
         return true;
     }
 
@@ -891,20 +877,36 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     private boolean rebuildItemsAdderPack(CommandSender sender) {
         var itemsAdder = Bukkit.getPluginManager().getPlugin("ItemsAdder");
         if (itemsAdder == null || !itemsAdder.isEnabled()) {
-            sender.sendMessage(plugin.color("&cItemsAdder není zapnutý. Změna shaderu byla uložena, ale pack teď nemohu sestavit."));
-            sender.sendMessage(plugin.color("&7Po zapnutí ItemsAdderu spusť /iazip nebo /halloween shader reload."));
+            sender.sendMessage(plugin.color("&cItemsAdder není zapnutý. Runtime konfigurace HalloweenCore se načetla, ale textury ani resource pack nelze sestavit."));
+            sender.sendMessage(plugin.color("&7Po zapnutí ItemsAdderu spusť /halloween reload."));
             return true;
         }
 
         Bukkit.getScheduler().runTask(plugin, () -> {
-            boolean dispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
-            if (dispatched) {
-                sender.sendMessage(plugin.color("&aPříkaz /iazip byl předán ItemsAdderu."));
-                sender.sendMessage(plugin.color("&7Po dokončení sestavení odpoj a znovu připoj Minecraft, aby se aktualizovaný pack stáhl."));
-                sender.sendMessage(plugin.color("&7To, zda se nový pack hráčům opravdu doručí, závisí také na hostingu resource packu v ItemsAdderu."));
-            } else {
-                sender.sendMessage(plugin.color("&cNepodařilo se zavolat /iazip. Spusť ho ručně v konzoli serveru."));
+            boolean reloadDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iareload");
+            if (!reloadDispatched) {
+                sender.sendMessage(plugin.color("&cItemsAdder nepřijal /iareload. Zkontroluj, zda je plugin plně načtený, a spusť /iareload ručně."));
+                return;
             }
+
+            sender.sendMessage(plugin.color("&eItemsAdder: /iareload byl předán ke znovunačtení definic a obsahu."));
+            // ItemsAdder reloads content first; build the merged resource pack only after that call.
+            Bukkit.getScheduler().runTaskLater(plugin, () -> {
+                var current = Bukkit.getPluginManager().getPlugin("ItemsAdder");
+                if (current == null || !current.isEnabled()) {
+                    sender.sendMessage(plugin.color("&cItemsAdder se během obnovy vypnul; resource pack nebyl sestaven."));
+                    return;
+                }
+
+                boolean zipDispatched = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
+                if (zipDispatched) {
+                    sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl předán k sestavení aktuálního resource packu."));
+                    sender.sendMessage(plugin.color("&7Po dokončení sestavení se aktualizace doručí přes hosting ItemsAdderu. Pokud se změna neprojeví, znovu se připoj a pack přijmi."));
+                    sender.sendMessage(plugin.color("&8Pro textury ModelEngine musí být jeho složka resource packu přidaná v ItemsAdder merge konfiguraci."));
+                } else {
+                    sender.sendMessage(plugin.color("&cNepodařilo se spustit /iazip. Spusť ho ručně v konzoli serveru."));
+                }
+            }, 20L);
         });
         return true;
     }
