@@ -43,7 +43,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
 - /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
-- /halloween quests — příběhová kampaň o jedenácti kapitolách, uložený postup a automatické odměny
+- /halloween quests — náročná příběhová kampaň o devatenácti kapitolách, uložený postup a automatické odměny
 - /halloween challenge
 - /halloween rewards
 - /halloween claim <id>
@@ -60,13 +60,21 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween give <hráč> <počet>
 - /halloween on|off
 
-## Příběhová trhlina a finální rituál
+## Příběhová kampaň, hřbitovy a finále
 
-Příběhová kampaň má 11 navazujících kapitol. Běžní vanilla mobové postup v bojových úkolech nezvyšují; počítají se jen označení Halloween mobové správného typu. První lov i finální Nightmare vyžadují noc ve světě Minecraftu.
+Příběh má 19 navazujících kapitol. Běžní vanilla mobové postup v bojových úkolech nezvyšují; počítají se jen označení Halloween mobové požadovaného typu. Vybrané cíle vyžadují skutečnou noc ve hře (čas 13 000–23 000).
 
-Správce musí jednou vybrat místo trhliny a přímo na něm použít `/halloween setrift`. Trhlina se vykresluje vanilla částicemi portálu a duší, takže kvůli samotnému efektu není nutný resource pack, ItemsAdder ani ModelEngine. Příkaz uloží svět a souřadnice do `config.yml`; místo lze kdykoliv změnit opětovným použitím příkazu. V diagnostice `/halloween debug` se ukazuje, zda je místo nakonfigurované.
+### Hřbitovy po mapě
 
-Po prozkoumání trhliny v noci příběh pokračuje lovem Ženců prázdnoty, Ledových stopařů a Nočních můr. Závěrečný rituál se provádí u trhliny v noci: hráč musí mít v inventáři 4 Echo Shardy a 1 Crying Obsidian, držet Echo Shard v hlavní ruce a kliknout pravým tlačítkem do vzduchu. Materiály se spotřebují a trhlina na krátkou dobu vizuálně zkolabuje. Délku tohoto efektu upravuje `story-rift.collapse-seconds`.
+Hřbitovy se registrují jednotlivě ve hře. Správce se postaví doprostřed existujícího hřbitova a použije například `/halloween setgraveyard old-graveyard`, potom totéž opakuje na dalších místech s odlišnými ID, například `north-cemetery` a `forgotten-graves`. Příkaz uloží svět, souřadnice a výchozí rádius 32 bloků do `config.yml`; rádius lze změnit v `story-graveyards.locations.<id>.radius-blocks`. Průzkumná kapitola vyžaduje tři různé hřbitovy, každý pouze jednou. Hrobníci se počítají jen při zabití uvnitř nastavené lokace. Plugin hřbitovy automaticky nestaví — správce registruje již existující místa.
+
+### Trhlina a rituál
+
+Správce umístí trhlinu příkazem `/halloween setrift`. Portál používá vanilla částice a vykresluje vysokou rotující trhlinu. Po rituálu se ovál několik sekund zrychleně stáčí a zmenšuje, částice se vtahují dovnitř a následuje tlaková vlna, záblesk a výbuch duší. Poté trhlina na 60 sekund zmizí. Časy upravují `story-rift.collapse-animation-seconds` a `story-rift.collapse-seconds`. K uzavření je nutných **8 Echo Shardů a 2 Crying Obsidiany**, v noci přímo u trhliny.
+
+### Finále: Král upírů
+
+Poslední část hráče zavede do nastavené upíří arény. Obětní rituál s Nether Star v hlavní ruce spotřebuje **8 Echo Shardů, 4 Crying Obsidiany, 4 Ghast Tears a 1 Nether Star**. Teprve poté odemkne společné finále; spawn bosse nadále vyžaduje zbývající serverové podmínky (globální progress, zapnutého bosse, správně nastavenou arénu a připravený MythicMobs/ModelEngine model). Poslední kapitola se započítá hráčům s kvalifikovanou účastí na skutečném vítězném encounteru. Testovací boss příkazem `/halloween boss test` příběh nedokončí.
 
 ## Boss bar
 
