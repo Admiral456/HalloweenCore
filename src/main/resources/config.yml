@@ -279,6 +279,14 @@ secret-discoveries:
 story-quests:
   enabled: true
 
+# Add real cemetery areas across the map using /halloween setgraveyard <id>.
+# Hrobník kills only count inside one of these configured radii.
+story-graveyards:
+  enabled: true
+  default-radius-blocks: 32.0
+  survey-at-night: true
+  locations: {}
+
 # Visible anomaly used by the story. Set its location in-game with /halloween setrift.
 story-rift:
   enabled: true
@@ -289,8 +297,11 @@ story-rift:
   y: 0
   z: 0
   radius-blocks: 5.0
-  # After a successful personal sealing ritual, the rift collapses visually for this long.
-  collapse-seconds: 45
+  # Time the rift remains absent after the collapse animation.
+  collapse-seconds: 60
+  collapse-animation-seconds: 4.5
+  # Final ritual activation radius around the configured Vampire King arena.
+  arena-ritual-radius-blocks: 24.0
 
 special-mobs:
   enabled: true
