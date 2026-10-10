@@ -276,6 +276,9 @@ secret-discoveries:
       radius-blocks: 4.5
       reward-fragments: 350
 
+story-quests:
+  enabled: true
+
 special-mobs:
   enabled: true
   chance: 0.04
@@ -298,6 +301,14 @@ special-mobs:
       ability-cooldown-seconds: 12
       soul-siphon-blindness-ticks: 35
       soul-siphon-weakness-ticks: 80
+    void-reaper:
+      name: "&5&lŽenec prázdnoty"
+      glowing: true
+      health-multiplier: 1.65
+      speed-level: 0
+      strength-level: 1
+      ability-cooldown-seconds: 13
+      gloom-ticks: 70
     gravekeeper:
       name: "&8&lHrobník"
       glowing: true
@@ -308,6 +319,14 @@ special-mobs:
       grave-mark-delay-ticks: 24
       grave-mark-radius-blocks: 1.5
       grave-mark-damage: 3.0
+    frost-stalker:
+      name: "&b&lLedový stopař"
+      glowing: true
+      health-multiplier: 1.40
+      speed-level: 1
+      strength-level: 0
+      ability-cooldown-seconds: 10
+      frostbite-ticks: 80
     blood-spider:
       name: "&c&lKrvavý pavouk"
       glowing: true
@@ -317,6 +336,14 @@ special-mobs:
       ability-cooldown-seconds: 8
       blood-web-poison-ticks: 80
       blood-web-slowness-ticks: 45
+    nightmare:
+      name: "&d&lNoční můra"
+      glowing: true
+      health-multiplier: 1.75
+      speed-level: 1
+      strength-level: 1
+      ability-cooldown-seconds: 12
+      night-terror-ticks: 60
     pumpkin-wraith:
       name: "&6&lDýňový přízrak"
       glowing: true
