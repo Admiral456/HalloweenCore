@@ -13,12 +13,13 @@ The feature build publishes `HalloweenCore-Special-Mobs-ModelEngine.zip`, contai
 ## Installation for staging
 
 1. Stop the server and back up `plugins/HalloweenCore/`, `plugins/ItemsAdder/`, `plugins/MythicMobs/` and `plugins/ModelEngine/`.
-2. Install the new `HalloweenCore.jar` in `plugins/`, copy `warriorland_halloween` to `plugins/ItemsAdder/contents/`, then extract `HalloweenCore-Special-Mobs-ModelEngine.zip` over the server's `plugins/` folder.
-3. Import the five Blockbench blueprints through the installed ModelEngine version. Keep the IDs exactly as the filenames: `halloween_cursed_zombie`, `halloween_gravekeeper`, `halloween_blood_spider`, `halloween_pumpkin_wraith`, `halloween_hex_witch`.
-4. Reload ModelEngine and MythicMobs using the commands supported by the installed versions (commonly `/meg reload models` and `/mm reload`). Check their consoles for missing model IDs or invalid skills.
-5. In the existing ItemsAdder config, append `ModelEngine/resource pack` to `merge_other_plugins_resourcepacks_folders` without deleting any folders already listed. Restart if the plugin version requires it.
-6. Run `/iazip`, then `/iainfo` and verify that the generated ZIP has a reachable hosting URL. Accept the pack from the client, disconnect/reconnect, and test custom sounds/models.
-7. Use `/halloween event start soulstorm` and `/halloween event start blood-moon-invasion` in a staging area. Confirm that each special mob renders with the intended texture, that ability particles play, that waves clean up after the event, and that every hostile monster deals 3× damage during Blood Moon.
+2. Install the new `HalloweenCore.jar`, copy `warriorland_halloween` to `plugins/ItemsAdder/contents/`, then extract `HalloweenCore-Special-Mobs-ModelEngine.zip` over `plugins/`.
+3. Confirm that the five `.bbmodel` files are in `plugins/ModelEngine/blueprints/` and the YAML is in `plugins/MythicMobs/Mobs/halloween-special-mobs.yml`. The texture is embedded in each Blockbench blueprint; accompanying PNGs are supplied as editable/external source copies.
+4. Run `/meg reload models` (or `/meg reload` if that is the command for your installed version). ModelEngine must report all five model IDs as loaded and generate `plugins/ModelEngine/resource pack/`.
+5. Run `/mm reload`. Verify that there are no errors for the five definitions and their `model{mid=...}` skills.
+6. In the existing ItemsAdder config, add `ModelEngine/resource pack` to `merge_other_plugins_resourcepacks_folders` without deleting existing folders. Then run `/iazip` **after** ModelEngine has generated its resource pack.
+7. Run `/iainfo` and verify the final pack URL is reachable. Disconnect/reconnect and accept the rebuilt pack. The Halloween pumpkin/web/candle overrides should be visible, and special mobs should use their ModelEngine models rather than vanilla base entities.
+8. Test `/halloween event start soulstorm` and `/halloween event start blood-moon-invasion`. A successful Java build does not replace the live-client rendering check.
 
 ## Fallback and readiness
 
