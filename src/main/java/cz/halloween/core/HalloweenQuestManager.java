@@ -32,39 +32,63 @@ public final class HalloweenQuestManager implements Listener {
      * beats also need a genuine night-time visit/ritual at the configured rift.
      */
     private final List<Quest> quests = List.of(
-            new Quest("fog-patrol", "Co se probouzí po setmění",
-                    "Počkej na noc a poraz 4 Prokleté zombie. Běžní zombie se nepočítají.",
-                    "special-night:cursed-zombie", 4, 350),
-            new Quest("gravekeepers-debt", "Dluh hrobníkovi",
-                    "Hrobníci střeží stopy po prvním útoku. Najdi a poraz 5 Hrobníků.",
-                    "special:gravekeeper", 5, 500),
+            new Quest("fog-patrol", "Znamení po setmění",
+                    "Za skutečné noci poraz 8 Prokletých zombie. Obyčejní zombie se nepočítají.",
+                    "special-night:cursed-zombie", 8, 800),
+            new Quest("graveyard-survey", "Mapa zapomenutých hřbitovů",
+                    "V noci navštiv 3 různé hřbitovy nastavené po mapě. Každé místo se započítá jen jednou.",
+                    "graveyard-survey", 3, 1300),
+            new Quest("gravekeepers-debt", "Dluh hrobníkům",
+                    "Na nastavených hřbitovech poraz 8 Hrobníků. Hrobníci mimo hřbitovy se nepočítají.",
+                    "special-graveyard:gravekeeper", 8, 1600),
             new Quest("blood-silk", "Pavučina svědků",
-                    "Krvaví pavouci obývají místo, kde zmizeli průzkumníci. Poraz 6 Krvavých pavouků.",
-                    "special:blood-spider", 6, 650),
+                    "Krvaví pavouci obývají místa, kde zmizeli průzkumníci. Poraz 8 Krvavých pavouků.",
+                    "special:blood-spider", 8, 1400),
             new Quest("witching-hour", "Výpověď z popela",
-                    "Hexové čarodějky znají jméno toho, kdo otevřel trhlinu. Poraz 4 Hexové čarodějky.",
-                    "special:hex-witch", 4, 750),
-            new Quest("pumpkin-wraith", "Dýňová pečeť",
-                    "Přízraky hlídají rozbitou pečeť. Znič 5 Dýňových přízraků.",
-                    "special:pumpkin-wraith", 5, 900),
+                    "Hexové čarodějky znají další část pravdy. Poraz 6 Hexových čarodějek.",
+                    "special:hex-witch", 6, 1400),
+            new Quest("pumpkin-wraith", "Rozbité pečeti",
+                    "Přízraky hlídají rozbité pečeti. Poraz 8 Dýňových přízraků.",
+                    "special:pumpkin-wraith", 8, 1600),
             new Quest("rift-investigation", "Sestup k trhlině",
-                    "Vrať se v noci k místu, kde svět praská. Přibliž se k trhlině a prozkoumej ji.",
-                    "rift-investigation", 1, 800),
+                    "V noci se vrať k příběhové trhlině a zůstaň poblíž, dokud tě její energie nezaznamená.",
+                    "rift-investigation", 1, 1800),
             new Quest("void-reaper", "Za hranou světa",
-                    "Průzkum trhlinu probudil. Vyhledej a poraz 4 Žence prázdnoty.",
-                    "special:void-reaper", 4, 1100),
+                    "Trhlina se probudila. Vyhledej a poraz 8 Ženců prázdnoty.",
+                    "special:void-reaper", 8, 2000),
             new Quest("frost-stalker", "Ledová stopa",
-                    "Ledoví stopaři odnášejí poslední části pečeti. Poraz 5 Ledových stopařů.",
-                    "special:frost-stalker", 5, 1250),
+                    "Ledoví stopaři odnášejí části pečeti. Poraz 8 Ledových stopařů.",
+                    "special:frost-stalker", 8, 2200),
             new Quest("nightmare", "Lovec ve snech",
-                    "Noční můry už znají tvé jméno. Přežij jejich lov a poraz 3 Noční můry.",
-                    "special:nightmare", 3, 1600),
-            new Quest("last-nightmare", "Poslední noc",
-                    "Za skutečné noci poraz poslední Noční můru. Pak se vrať k trhlině a přeruš její spojení.",
-                    "special-night:nightmare", 1, 2500),
-            new Quest("rift-seal", "Cena za uzavření",
-                    "V noci stůj u trhliny. Drž Echo Shard v hlavní ruce a klikni pravým do vzduchu. Rituál spotřebuje 4 Echo Shardy a 1 Crying Obsidian.",
-                    "rift-seal", 1, 3000)
+                    "Přežij lov a poraz 5 Nočních můr.",
+                    "special:nightmare", 5, 2500),
+            new Quest("graveyard-echo", "Ozvěny pod náhrobky",
+                    "Hrobníci se vrátili. Na některém z nastavených hřbitovů poraz dalších 5 Hrobníků.",
+                    "special-graveyard:gravekeeper", 5, 2600),
+            new Quest("blood-silk-return", "Hnízdo krvavého hedvábí",
+                    "Znič zdroj nákazy: poraz dalších 10 Krvavých pavouků.",
+                    "special:blood-spider", 10, 2600),
+            new Quest("witching-hour-elite", "Kruh třinácti svící",
+                    "Hexové čarodějky se shromáždily. Poraz 10 Hexových čarodějek.",
+                    "special:hex-witch", 10, 2800),
+            new Quest("void-reaper-night", "Ženci po půlnoci",
+                    "Za skutečné noci poraz 4 Žence prázdnoty, než se spojení znovu rozšíří.",
+                    "special-night:void-reaper", 4, 3000),
+            new Quest("rift-seal", "Cena za zborcení",
+                    "V noci se vrať k trhlině. Drž Echo Shard a klikni pravým do vzduchu. Rituál spotřebuje 8 Echo Shardů a 2 Crying Obsidiany.",
+                    "rift-seal", 1, 4000),
+            new Quest("nightmare-last-pack", "Noc bez úniku",
+                    "Za skutečné noci poraz 3 Noční můry. Pouze označené Halloween moby se počítají.",
+                    "special-night:nightmare", 3, 3500),
+            new Quest("cursed-return", "Poslední vlna prokletí",
+                    "Trhlina vysílá posily. Za noci poraz 12 Prokletých zombie.",
+                    "special-night:cursed-zombie", 12, 3500),
+            new Quest("vampire-awakening", "Klíč ke Králi upírů",
+                    "Dostaň se do nastavené upíří arény. Drž Nether Star a klikni pravým do vzduchu; rituál spotřebuje 8 Echo Shardů, 4 Crying Obsidiany, 4 Ghast Tears a 1 Nether Star.",
+                    "vampire-awakening", 1, 5000),
+            new Quest("vampire-king-defeated", "Pád Krále upírů",
+                    "Finále: zapoj se do skutečného souboje v aréně a pomoz porazit Krále upírů. Počítá se jen řádný encounter, ne testovací boss.",
+                    "vampire-king-defeated", 1, 10000)
     );
 
     public HalloweenQuestManager(HalloweenCore plugin) {
@@ -107,8 +131,11 @@ public final class HalloweenQuestManager implements Listener {
         String mobId = normalizeMobId(specialMob);
         String objective = active.objective().toLowerCase(Locale.ROOT);
         boolean requiresNight = objective.startsWith("special-night:");
+        boolean requiresGraveyard = objective.startsWith("special-graveyard:");
         String requiredMob = objective.startsWith("special-night:")
                 ? objective.substring("special-night:".length())
+                : objective.startsWith("special-graveyard:")
+                ? objective.substring("special-graveyard:".length())
                 : objective.startsWith("special:") ? objective.substring("special:".length()) : "";
         if (requiredMob.isBlank() || !requiredMob.equals(mobId)) return;
 
@@ -119,6 +146,8 @@ public final class HalloweenQuestManager implements Listener {
                 return;
             }
         }
+        if (requiresGraveyard && (plugin.getGraveyardManager() == null
+                || !plugin.getGraveyardManager().isAtGraveyard(dead.getLocation()))) return;
         addProgress(killer, active, 1);
     }
 
@@ -145,16 +174,29 @@ public final class HalloweenQuestManager implements Listener {
                 + "&7/&e" + active.target()));
 
         String objective = active.objective();
-        if (objective.startsWith("special:") || objective.startsWith("special-night:")) {
-            player.sendMessage(plugin.color("&8Počítají se pouze označení Halloween mobové, ne běžná monstra."));
+        if (objective.startsWith("special:") || objective.startsWith("special-night:")
+                || objective.startsWith("special-graveyard:")) {
+            player.sendMessage(plugin.color("&8Počítají se jen označení Halloween mobové, ne běžná monstra."));
         }
         if (objective.startsWith("special-night:") || objective.equals("rift-investigation")
-                || objective.equals("rift-seal")) {
-            player.sendMessage(plugin.color("&8Podmínka: skutečná noc ve hře (čas 13 000–23 000)."));
+                || objective.equals("rift-seal") || objective.equals("graveyard-survey")) {
+            player.sendMessage(plugin.color("&8Podmínka: noc ve hře (čas 13 000–23 000)."));
+        }
+        if (objective.startsWith("special-graveyard:") || objective.equals("graveyard-survey")) {
+            int configured = plugin.getGraveyardManager() == null ? 0 : plugin.getGraveyardManager().getConfiguredGraveyardCount();
+            if (configured == 0) {
+                player.sendMessage(plugin.color("&cHřbitovy nejsou nastavené. Správce musí použít /halloween setgraveyard <id> na každém hřbitově."));
+            } else if (objective.equals("graveyard-survey") && configured < active.target()) {
+                player.sendMessage(plugin.color("&cJe potřeba nastavit alespoň " + active.target() + " různé hřbitovy; aktuálně: " + configured + "."));
+            } else player.sendMessage(plugin.color("&8Hrobníci se počítají pouze uvnitř nastavených hřbitovů."));
         }
         if ((objective.equals("rift-investigation") || objective.equals("rift-seal"))
                 && (plugin.getRiftManager() == null || !plugin.getRiftManager().isConfigured())) {
             player.sendMessage(plugin.color("&cTrhlina zatím není umístěná. Správce ji musí nastavit příkazem /halloween setrift."));
+        }
+        if ((objective.equals("vampire-awakening") || objective.equals("vampire-king-defeated"))
+                && !plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false)) {
+            player.sendMessage(plugin.color("&cUpíří aréna není nastavená. Správce musí použít /halloween setvampirearena."));
         }
         player.sendMessage(plugin.color("&7Odměna: &6" + active.reward() + " fragmentů"));
         player.sendMessage(plugin.color("&8Postup se ukládá a přežije restart serveru."));
@@ -200,6 +242,12 @@ public final class HalloweenQuestManager implements Listener {
         if (!plugin.getDataManager().completeStoryQuest(playerId, quest.id())) return;
         plugin.getDataManager().setStoryQuest(playerId, "");
         plugin.getService().addFragments(playerId, quest.reward(), "story-quest");
+        if (quest.id().equals("vampire-awakening")) {
+            plugin.getDataManager().unlockFinale();
+            org.bukkit.Bukkit.broadcastMessage(plugin.color(
+                    "&4&lHALLOWEEN &8» &cRituál u arény byl dokončen. Král upírů se může probudit, jakmile jsou splněny i serverové podmínky finále."
+            ));
+        }
         plugin.getDataManager().save();
 
         player.sendTitle(plugin.color("&6&lKAPITOLA DOKONČENA"),
