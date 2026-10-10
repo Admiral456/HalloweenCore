@@ -1,11 +1,18 @@
 package cz.halloween.core;
 
 import org.bukkit.Chunk;
+import org.bukkit.Display;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.TileState;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Transformation;
+import org.joml.AxisAngle4f;
+import org.joml.Vector3f;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
@@ -26,6 +33,7 @@ import java.util.Set;
 public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
+    private final NamespacedKey previousDecoratedKey;
     private final NamespacedKey legacyDecoratedKey;
     private final NamespacedKey oldestDecoratedKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
@@ -35,7 +43,8 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
+        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v4");
+        this.previousDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
         this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
         this.oldestDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
     }
@@ -106,7 +115,8 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private void decorateChunk(Chunk chunk) {
-        boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE)
+        boolean legacyDecorated = chunk.getPersistentDataContainer().has(previousDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(oldestDecoratedKey, PersistentDataType.BYTE);
         int pumpkins = legacyDecorated ? 0 : bounded("pumpkins-per-chunk", 5, 0, 6);
         int webs = legacyDecorated ? 0 : bounded("cobwebs-per-chunk", 2, 0, 3);
@@ -154,7 +164,8 @@ public final class HalloweenWorldDecorator implements Listener {
             placed++;
         }
 
-        // Small grave markers make the terrain read as a haunted landscape instead of a pumpkin farm.
+        // ItemDisplay gravestones use a dedicated pixel-art ItemsAdder texture.
+        // Older worlds keep their pumpkins/webs but receive the new grave accents once.
         placed = 0;
         for (int i = 0; i < attempts && placed < graves; i++) {
             Block ground = randomSurface(chunk, random);
@@ -163,9 +174,7 @@ public final class HalloweenWorldDecorator implements Listener {
             if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid() || !naturalNeighborhood(ground)
                     || ground.getState() instanceof TileState || !foot.getType().isAir() || !head.getType().isAir()
                     || foot.getState() instanceof TileState || head.getState() instanceof TileState) continue;
-            foot.setType(Material.POLISHED_BLACKSTONE_BRICK_WALL, false);
-            head.setType(random.nextBoolean() ? Material.POLISHED_BLACKSTONE_BRICK_WALL : Material.COBBLESTONE_WALL, false);
-            placed++;
+            if (placeGravestone(foot, head, random)) placed++;
         }
 
         // Dead vegetation only appears where the vanilla block can safely sit; no terrain is removed.
@@ -195,6 +204,52 @@ public final class HalloweenWorldDecorator implements Listener {
                     || air.getState() instanceof TileState) continue;
             air.setType(Material.SOUL_LANTERN, false);
             placed++;
+        }
+    }
+
+    private boolean placeGravestone(Block foot, Block head, Random random) {
+        String itemId = random.nextBoolean()
+                ? "warriorland_halloween:grave_marker"
+                : "warriorland_halloween:grave_marker_cracked";
+        ItemStack marker = plugin.getItemManager() == null
+                ? null : plugin.getItemManager().getItemsAdderItem(itemId, 1);
+
+        if (marker == null) {
+            // Safe fallback for servers where ItemsAdder is not installed or not ready.
+            foot.setType(Material.POLISHED_BLACKSTONE_BRICK_WALL, false);
+            head.setType(random.nextBoolean() ? Material.POLISHED_BLACKSTONE_BRICK_WALL : Material.COBBLESTONE_WALL, false);
+            return true;
+        }
+
+        ItemDisplay display = null;
+        try {
+            Location location = new Location(foot.getWorld(),
+                    foot.getX() + 0.5D, foot.getY() + 0.65D, foot.getZ() + 0.5D);
+            display = foot.getWorld().spawn(location, ItemDisplay.class);
+            display.setItemStack(marker);
+            display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+            display.setBillboard(Display.Billboard.VERTICAL);
+            display.setTransformation(new Transformation(
+                    new Vector3f(0.0F, 0.0F, 0.0F),
+                    new AxisAngle4f(),
+                    new Vector3f(2.4F, 2.4F, 1.0F),
+                    new AxisAngle4f()));
+            display.setPersistent(true);
+            display.setGravity(false);
+            display.setInvulnerable(true);
+            display.setSilent(true);
+            return true;
+        } catch (RuntimeException ex) {
+            if (display != null && display.isValid()) display.remove();
+            // Do not leave a blank grave if the server implementation rejects displays.
+            foot.setType(Material.POLISHED_BLACKSTONE_BRICK_WALL, false);
+            head.setType(random.nextBoolean() ? Material.POLISHED_BLACKSTONE_BRICK_WALL : Material.COBBLESTONE_WALL, false);
+            String warningKey = "gravestone-display|" + ex.getClass().getName();
+            if (warnedErrors.add(warningKey)) {
+                plugin.getLogger().warning("Custom Halloween gravestone display is unavailable; using vanilla wall markers instead ("
+                        + ex.getClass().getSimpleName() + ").");
+            }
+            return true;
         }
     }
 

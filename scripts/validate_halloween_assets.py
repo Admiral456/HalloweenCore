@@ -48,12 +48,15 @@ EXPECTED = {
     "crimson_warden_axe.png",
     "crimson_warden_shovel.png",
     "crimson_warden_hoe.png",
+    "grave_marker.png",
+    "grave_marker_cracked.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
 VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
 EXPECTED_SEASONAL_BLOCK_TEXTURES = {
     "pumpkin_side.png", "pumpkin_top.png", "pumpkin_face.png",
     "jack_o_lantern.png", "cobweb.png", "red_candle.png",
+    "red_mushroom.png", "brown_mushroom.png", "dead_bush.png",
 }
 
 
@@ -136,6 +139,15 @@ for name in sorted(EXPECTED):
     width, height = strict_png_size(TEXTURES / name)
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
+
+items_config = CONFIG.read_text(encoding="utf-8")
+for item_id, texture in (("grave_marker", "item/grave_marker"),
+                         ("grave_marker_cracked", "item/grave_marker_cracked")):
+    match = re.search(rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_config)
+    if not match:
+        fail(f"ItemsAdder config is missing custom gravestone item {item_id}")
+    if f"texture: {texture}" not in match.group(1) or "material: PAPER" not in match.group(1):
+        fail(f"{item_id} must use its generated ItemsAdder pixel-art texture")
 
 for layer in ("layer_1.png", "layer_2.png"):
     path = ARMOR_TEXTURES / layer
@@ -323,6 +335,14 @@ if "iatexture all" in reload_java:
 if "40L" not in reload_java or "resource pack" not in reload_java.lower():
     fail("Resource-pack refresh must be throttled and report its status")
 
+world_decorator = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenWorldDecorator.java").read_text(encoding="utf-8")
+for marker in ("grave_marker", "grave_marker_cracked", "ItemDisplay.class", "Display.Billboard.VERTICAL",
+               "halloween_decorated_v4", "POLISHED_BLACKSTONE_BRICK_WALL"):
+    if marker not in world_decorator:
+        fail(f"Halloween world gravestone pipeline is missing: {marker}")
+if "display.setPersistent(true)" not in world_decorator or "display.setInvulnerable(true)" not in world_decorator:
+    fail("Halloween gravestone displays must persist without taking damage")
+
 passive_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenPassiveEffectManager.java").read_text(encoding="utf-8")
 if "Attribute.MAX_HEALTH" not in passive_java or "getItemInOffHand()" not in passive_java:
     fail("Cursed talisman must add max health while held in either hand")
@@ -509,7 +529,7 @@ if root_textures.exists():
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
 print("Halloween asset validation passed.")
-print("14 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
+print("16 item textures: 32x32 PNG including two custom gravestones; 2 Crimson Warden armor layers: 64x32 PNG")
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")

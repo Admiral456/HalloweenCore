@@ -46,6 +46,24 @@ items:
     graphics:
       texture: item/haunted_map
 
+  grave_marker:
+    name: "&8&lNáhrobek Prokletého hřbitova"
+    lore:
+      - "&7Starý kámen s vyrytým ohnivým symbolem."
+      - "&8Dekorace používaná v opuštěných částech světa."
+    material: PAPER
+    graphics:
+      texture: item/grave_marker
+
+  grave_marker_cracked:
+    name: "&5&lRozpraskaný náhrobek"
+    lore:
+      - "&7Ve škvírách kamene se drží podivná záře."
+      - "&8Dekorace používaná v opuštěných částech světa."
+    material: PAPER
+    graphics:
+      texture: item/grave_marker_cracked
+
   crimson_warden_helmet:
     name: "&4&lHelma Krvavého strážce"
     lore:
