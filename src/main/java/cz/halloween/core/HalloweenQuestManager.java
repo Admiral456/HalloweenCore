@@ -207,12 +207,25 @@ public final class HalloweenQuestManager implements Listener {
         return quests.size();
     }
 
+    /**
+     * Applies a previously saved final-boss proof when a qualified participant is online.
+     * The proof is persisted independently so the player can also finish the campaign later.
+     */
+    public void refreshStoredVampireVictory(Player player) {
+        if (player != null && player.isOnline()) ensureActiveQuest(player);
+    }
+
     private Quest ensureActiveQuest(Player player) {
         UUID id = player.getUniqueId();
         String activeId = plugin.getDataManager().getStoryQuest(id);
         if (!activeId.isBlank()) {
             Quest active = findQuest(activeId);
             if (active != null && !plugin.getDataManager().hasCompletedStoryQuest(id, active.id())) {
+                if (active.id().equals("vampire-king-defeated")
+                        && plugin.getDataManager().hasVampireKingDefeatProof(id)) {
+                    addProgress(player, active, 1);
+                    return ensureActiveQuest(player);
+                }
                 return active;
             }
         }
@@ -220,6 +233,11 @@ public final class HalloweenQuestManager implements Listener {
         for (Quest quest : quests) {
             if (!plugin.getDataManager().hasCompletedStoryQuest(id, quest.id())) {
                 plugin.getDataManager().setStoryQuest(id, quest.id());
+                if (quest.id().equals("vampire-king-defeated")
+                        && plugin.getDataManager().hasVampireKingDefeatProof(id)) {
+                    addProgress(player, quest, 1);
+                    return ensureActiveQuest(player);
+                }
                 return quest;
             }
         }
