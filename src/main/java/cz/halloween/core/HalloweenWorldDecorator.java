@@ -1,7 +1,7 @@
 package cz.halloween.core;
 
 import org.bukkit.Chunk;
-import org.bukkit.Display;
+import org.bukkit.entity.Display;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
