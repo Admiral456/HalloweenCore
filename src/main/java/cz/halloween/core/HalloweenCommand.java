@@ -905,22 +905,38 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 }
 
                 sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl předán k obnovení obsahu a sestavení resource packu."));
-                sender.sendMessage(plugin.color("&7Za chvíli se požádá i o znovunačtení textur u všech online hráčů."));
-                // Allow the zip-generation task time to finish before telling clients to refresh.
+                sender.sendMessage(plugin.color("&7Obnovení klientů bude dávkované, aby server neposlal všem hráčům velký objem paketů naráz."));
+                // Wait for zip generation, then refresh one online player every two seconds.
+                // A single /iatexture all can burst resource-pack traffic and trigger packet-limit kicks.
                 Bukkit.getScheduler().runTaskLater(plugin, () -> {
                     var current = Bukkit.getPluginManager().getPlugin("ItemsAdder");
                     if (current == null || !current.isEnabled()) {
-                        sender.sendMessage(plugin.color("&cItemsAdder se během obnovy vypnul; textury hráčů nebyly obnoveny."));
+                        sender.sendMessage(plugin.color("&cItemsAdder se během obnovy vypnul; klientské textury nebyly obnoveny."));
                         return;
                     }
 
-                    boolean refreshed = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iatexture all");
-                    if (refreshed) {
-                        sender.sendMessage(plugin.color("&aItemsAdder: požadavek /iatexture all byl předán online hráčům."));
-                        sender.sendMessage(plugin.color("&7Pokud se textura neprojeví, zkontroluj hosting resource packu a klientský log."));
-                    } else {
-                        sender.sendMessage(plugin.color("&cNepodařilo se spustit /iatexture all. Po dokončení /iazip ho spusť ručně."));
+                    java.util.List<Player> online = new java.util.ArrayList<>(Bukkit.getOnlinePlayers());
+                    if (online.isEmpty()) {
+                        sender.sendMessage(plugin.color("&7Pack je sestavený. Hráči jej dostanou při dalším připojení."));
+                        return;
                     }
+                    sender.sendMessage(plugin.color("&eResource pack: bezpečně obnovuji textury pro " + online.size() + " hráčů postupně."));
+                    final int[] index = {0};
+                    Bukkit.getScheduler().runTaskTimer(plugin, task -> {
+                        if (index[0] >= online.size()) {
+                            task.cancel();
+                            sender.sendMessage(plugin.color("&aObnovení resource packu bylo odesláno všem hráčům postupně."));
+                            sender.sendMessage(plugin.color("&7Pokud vzhled stále chybí, ověř URL/hash packu v ItemsAdderu a klientský log."));
+                            return;
+                        }
+                        Player target = online.get(index[0]++);
+                        if (!target.isOnline()) return;
+                        boolean refreshed = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iatexture " + target.getName());
+                        if (!refreshed) {
+                            sender.sendMessage(plugin.color("&cNepodařilo se obnovit textury hráče " + target.getName()
+                                    + ". Po sestavení packu zkus ručně /iatexture " + target.getName() + "."));
+                        }
+                    }, 1L, 40L);
                 }, 200L);
             }, 20L);
         });

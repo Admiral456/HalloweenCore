@@ -20,10 +20,10 @@ void main() {
         FogColor
     );
 
-    // Preserve the vanilla sky's time-of-day base, then give it a clearly visible
-    // seasonal orange/crimson cast without replacing the day/night gradient.
-    vec3 halloweenTint = vec3(1.24, 0.52, 0.24);
-    sky.rgb = mix(sky.rgb, sky.rgb * halloweenTint, 0.55);
+    // Keep the vanilla sky gradient and fog intact. A restrained warm/crimson
+    // grade gives the world a seasonal mood without crushing shadows to black.
+    const vec3 halloweenTint = vec3(1.10, 0.76, 0.62);
+    sky.rgb = mix(sky.rgb, max(sky.rgb * halloweenTint, vec3(0.0)), 0.24);
 
     fragColor = sky;
 }

@@ -548,8 +548,12 @@ world-decorations:
   pumpkins-per-chunk: 5
   cobwebs-per-chunk: 2
   red-candles-per-chunk: 1
+  gravestones-per-chunk: 2
+  dead-plants-per-chunk: 3
+  soul-lights-per-chunk: 1
   attempts-per-placement: 32
-  chunks-per-tick: 2
+  # Keep chunk work deliberately low to avoid generation spikes on live servers.
+  chunks-per-tick: 1
 
 atmosphere:
   enabled: true

@@ -1,6 +1,5 @@
 package cz.halloween.core;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -18,12 +17,11 @@ import java.util.HashSet;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 
 /**
- * Adds small, natural-looking Halloween details to safe ground as chunks load.
- * It never replaces a non-air block, never touches block entities, and stores a
- * per-chunk marker to avoid repeated work on every login/restart.
+ * Adds restrained, natural-looking Halloween details to safe ground as chunks load.
+ * Existing blocks and tile entities are never replaced. A per-chunk marker prevents
+ * decoration from being repeatedly stacked after relogs or restarts.
  */
 public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
@@ -70,8 +68,7 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private boolean isEnabled() {
-        return plugin.isEventEnabled()
-                && plugin.getConfig().getBoolean("world-decorations.enabled", true);
+        return plugin.isEventEnabled() && plugin.getConfig().getBoolean("world-decorations.enabled", true);
     }
 
     private void enqueue(Chunk chunk) {
@@ -86,13 +83,12 @@ public final class HalloweenWorldDecorator implements Listener {
             queued.clear();
             return;
         }
-        int budget = Math.max(1, Math.min(4, plugin.getConfig().getInt("world-decorations.chunks-per-tick", 2)));
+        int budget = Math.max(1, Math.min(3, plugin.getConfig().getInt("world-decorations.chunks-per-tick", 1)));
         for (int i = 0; i < budget; i++) {
             Chunk chunk = pending.poll();
             if (chunk == null) return;
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
-            if (!chunk.isLoaded()) continue;
-            if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
+            if (!chunk.isLoaded() || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
             try {
                 decorateChunk(chunk);
                 chunk.getPersistentDataContainer().set(decoratedKey, PersistentDataType.BYTE, (byte) 1);
@@ -100,85 +96,123 @@ public final class HalloweenWorldDecorator implements Listener {
                 String warningKey = ex.getClass().getName();
                 if (warnedErrors.add(warningKey)) {
                     plugin.getLogger().warning("Halloween world decoration encountered " + warningKey
-                            + " at chunk " + chunk.getWorld().getName() + " "
-                            + chunk.getX() + "," + chunk.getZ()
-                            + ". Further errors of this type are suppressed to keep the console readable.");
+                            + " at chunk " + chunk.getWorld().getName() + " " + chunk.getX() + "," + chunk.getZ()
+                            + ". Further errors of this type are suppressed.");
                 }
             }
         }
     }
 
     private void decorateChunk(Chunk chunk) {
-        // Existing decorated chunks get only the new accent layer. Avoid stacking
-        // a second batch of pumpkins/cobwebs when upgrading an already-running world.
         boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE);
-        int pumpkins = legacyDecorated ? 0 : Math.max(0, Math.min(6,
-                plugin.getConfig().getInt("world-decorations.pumpkins-per-chunk", 5)));
-        int webs = legacyDecorated ? 0 : Math.max(0, Math.min(3,
-                plugin.getConfig().getInt("world-decorations.cobwebs-per-chunk", 2)));
-        int candles = Math.max(0, Math.min(3, plugin.getConfig().getInt("world-decorations.red-candles-per-chunk", 1)));
-        int attempts = Math.max(8, Math.min(80, plugin.getConfig().getInt("world-decorations.attempts-per-placement", 32)));
+        int pumpkins = legacyDecorated ? 0 : bounded("pumpkins-per-chunk", 5, 0, 6);
+        int webs = legacyDecorated ? 0 : bounded("cobwebs-per-chunk", 2, 0, 3);
+        int candles = bounded("red-candles-per-chunk", 1, 0, 3);
+        int graves = bounded("gravestones-per-chunk", 2, 0, 4);
+        int deadPlants = bounded("dead-plants-per-chunk", 3, 0, 6);
+        int soulLights = bounded("soul-lights-per-chunk", 1, 0, 2);
+        int attempts = bounded("attempts-per-placement", 32, 8, 80);
         long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C4F574545L;
         Random random = new Random(seed);
-        int pumpkinCount = 0;
-        for (int i = 0; i < attempts && pumpkinCount < pumpkins; i++) {
-            int x = (chunk.getX() << 4) + random.nextInt(16);
-            int z = (chunk.getZ() << 4) + random.nextInt(16);
-            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
-            if (!isNaturalGround(ground.getType())) continue;
-            if (!(ground.getRelative(0, 1, 0).getType().isAir())) continue;
-            if (ground.getState() instanceof TileState) continue;
-            if (!naturalNeighborhood(ground)) continue;
 
+        int placed = 0;
+        for (int i = 0; i < attempts && placed < pumpkins; i++) {
+            Block ground = randomSurface(chunk, random);
+            if (!isNaturalGround(ground.getType()) || !ground.getRelative(0, 1, 0).getType().isAir()
+                    || ground.getState() instanceof TileState || !naturalNeighborhood(ground)) continue;
             Material pumpkin = switch (random.nextInt(5)) {
                 case 0 -> Material.JACK_O_LANTERN;
                 case 1 -> Material.CARVED_PUMPKIN;
                 default -> Material.PUMPKIN;
             };
             ground.getRelative(0, 1, 0).setType(pumpkin, false);
-            pumpkinCount++;
+            placed++;
         }
 
-        int webCount = 0;
-        for (int i = 0; i < attempts && webCount < webs; i++) {
-            int x = (chunk.getX() << 4) + random.nextInt(16);
-            int z = (chunk.getZ() << 4) + random.nextInt(16);
-            Block surface = chunk.getWorld().getHighestBlockAt(x, z);
-            if (!isNaturalWebAnchor(surface.getType())) continue;
-            Block air = surface.getRelative(0, 1, 0);
-            if (!air.getType().isAir() || air.getY() <= chunk.getWorld().getMinHeight()) continue;
-            if (air.getState() instanceof TileState) continue;
-            if (countNearbyWebAnchors(surface) < 2) continue;
-            air.setType(Material.COBWEB, false);
-            webCount++;
-        }
-
-        int candleCount = 0;
-        for (int i = 0; i < attempts && candleCount < candles; i++) {
-            int x = (chunk.getX() << 4) + random.nextInt(16);
-            int z = (chunk.getZ() << 4) + random.nextInt(16);
-            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
-            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid()) continue;
-            if (!naturalNeighborhood(ground) || ground.getState() instanceof TileState) continue;
+        placed = 0;
+        for (int i = 0; i < attempts && placed < webs; i++) {
+            Block ground = randomSurface(chunk, random);
+            if (!isNaturalWebAnchor(ground.getType())) continue;
             Block air = ground.getRelative(0, 1, 0);
-            if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
-            air.setType(Material.RED_CANDLE, false);
-            candleCount++;
+            if (!air.getType().isAir() || air.getState() instanceof TileState || countNearbyWebAnchors(ground) < 2) continue;
+            air.setType(Material.COBWEB, false);
+            placed++;
         }
+
+        placed = 0;
+        for (int i = 0; i < attempts && placed < candles; i++) {
+            Block ground = randomSurface(chunk, random);
+            Block air = ground.getRelative(0, 1, 0);
+            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid() || !naturalNeighborhood(ground)
+                    || ground.getState() instanceof TileState || !air.getType().isAir()
+                    || air.getState() instanceof TileState) continue;
+            air.setType(Material.RED_CANDLE, false);
+            placed++;
+        }
+
+        // Small grave markers make the terrain read as a haunted landscape instead of a pumpkin farm.
+        placed = 0;
+        for (int i = 0; i < attempts && placed < graves; i++) {
+            Block ground = randomSurface(chunk, random);
+            Block foot = ground.getRelative(0, 1, 0);
+            Block head = ground.getRelative(0, 2, 0);
+            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid() || !naturalNeighborhood(ground)
+                    || ground.getState() instanceof TileState || !foot.getType().isAir() || !head.getType().isAir()
+                    || foot.getState() instanceof TileState || head.getState() instanceof TileState) continue;
+            foot.setType(Material.POLISHED_BLACKSTONE_BRICK_WALL, false);
+            head.setType(random.nextBoolean() ? Material.POLISHED_BLACKSTONE_BRICK_WALL : Material.COBBLESTONE_WALL, false);
+            placed++;
+        }
+
+        // Dead vegetation only appears where the vanilla block can safely sit; no terrain is removed.
+        placed = 0;
+        for (int i = 0; i < attempts && placed < deadPlants; i++) {
+            Block ground = randomSurface(chunk, random);
+            Block air = ground.getRelative(0, 1, 0);
+            if (!air.getType().isAir() || air.getState() instanceof TileState || ground.getState() instanceof TileState) continue;
+            Material plant;
+            if (ground.getType() == Material.SAND || ground.getType() == Material.RED_SAND) {
+                plant = Material.DEAD_BUSH;
+            } else if (isNaturalGround(ground.getType()) && ground.getType().isSolid()) {
+                plant = random.nextBoolean() ? Material.BROWN_MUSHROOM : Material.RED_MUSHROOM;
+            } else {
+                continue;
+            }
+            air.setType(plant, false);
+            placed++;
+        }
+
+        placed = 0;
+        for (int i = 0; i < attempts && placed < soulLights; i++) {
+            Block ground = randomSurface(chunk, random);
+            Block air = ground.getRelative(0, 1, 0);
+            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid() || !naturalNeighborhood(ground)
+                    || ground.getState() instanceof TileState || !air.getType().isAir()
+                    || air.getState() instanceof TileState) continue;
+            air.setType(Material.SOUL_LANTERN, false);
+            placed++;
+        }
+    }
+
+    private int bounded(String key, int fallback, int min, int max) {
+        return Math.max(min, Math.min(max, plugin.getConfig().getInt("world-decorations." + key, fallback)));
+    }
+
+    private Block randomSurface(Chunk chunk, Random random) {
+        int x = (chunk.getX() << 4) + random.nextInt(16);
+        int z = (chunk.getZ() << 4) + random.nextInt(16);
+        return chunk.getWorld().getHighestBlockAt(x, z);
     }
 
     private boolean naturalNeighborhood(Block ground) {
         int natural = 0;
-        int checked = 0;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                Block block = ground.getRelative(dx, 0, dz);
-                checked++;
-                if (isNaturalGround(block.getType())) natural++;
+                if (isNaturalGround(ground.getRelative(dx, 0, dz).getType())) natural++;
             }
         }
-        return natural >= Math.min(7, checked);
+        return natural >= 7;
     }
 
     private int countNearbyWebAnchors(Block center) {
@@ -188,9 +222,7 @@ public final class HalloweenWorldDecorator implements Listener {
                 if (dx == 0 && dz == 0) continue;
                 Block neighbor = center.getRelative(dx, 0, dz);
                 if (isNaturalWebAnchor(neighbor.getType())
-                        || isNaturalWebAnchor(neighbor.getRelative(0, -1, 0).getType())) {
-                    anchors++;
-                }
+                        || isNaturalWebAnchor(neighbor.getRelative(0, -1, 0).getType())) anchors++;
             }
         }
         return anchors;
