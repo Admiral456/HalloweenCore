@@ -40,6 +40,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
     private final NamespacedKey previousDecoratedKey;
+    private final NamespacedKey olderDecoratedKey;
     private final NamespacedKey legacyDecoratedKey;
     private final NamespacedKey oldestDecoratedKey;
     private final NamespacedKey ancientDecoratedKey;
@@ -53,8 +54,9 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v7");
-        this.previousDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v6");
+        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v8");
+        this.previousDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v7");
+        this.olderDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v6");
         this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v5");
         this.oldestDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v4");
         this.ancientDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
@@ -141,6 +143,7 @@ public final class HalloweenWorldDecorator implements Listener {
 
     private void decorateChunk(Chunk chunk) {
         boolean legacyDecorated = chunk.getPersistentDataContainer().has(previousDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(olderDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(oldestDecoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(ancientDecoratedKey, PersistentDataType.BYTE)
@@ -262,6 +265,26 @@ public final class HalloweenWorldDecorator implements Listener {
                     || ground.getState() instanceof TileState || !air.getType().isAir()
                     || air.getState() instanceof TileState) continue;
             air.setType(Material.SOUL_LANTERN, false);
+            placed++;
+        }
+
+        // Haunted soil patches add a landscape-wide Halloween look beyond surface props.
+        int soilPatches = bounded("haunted-soil-patches-per-chunk", 3, 0, 8);
+        placed = 0;
+        for (int i = 0; i < attempts && placed < soilPatches; i++) {
+            Block ground = randomSurface(chunk, random);
+            Material original = ground.getType();
+            if (original != Material.GRASS_BLOCK && original != Material.DIRT) continue;
+            Block above = ground.getRelative(0, 1, 0);
+            if (!above.getType().isAir() || ground.getState() instanceof TileState
+                    || above.getState() instanceof TileState || !naturalNeighborhood(ground)) continue;
+            Material cursedSoil = switch (random.nextInt(4)) {
+                case 0 -> Material.SOUL_SOIL;
+                case 1 -> Material.MYCELIUM;
+                case 2 -> Material.COARSE_DIRT;
+                default -> Material.PODZOL;
+            };
+            ground.setType(cursedSoil, false);
             placed++;
         }
     }

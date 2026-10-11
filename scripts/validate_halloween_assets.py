@@ -434,7 +434,7 @@ if 'return plugin.getConfig().getBoolean("world-decorations.enabled", true)' not
 if "Walk down to the real" not in world_decorator or "randomCanopySurface(chunk, random)" not in world_decorator:
     fail("World decoration must distinguish natural ground from canopy anchors so forest chunks can receive decorations")
 structure_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenStructureGenerator.java").read_text(encoding="utf-8")
-for marker in ("ChunkLoadEvent", "halloween_structure_checked_v2", "random-structures.", "buildHauntedVillage",
+for marker in ("ChunkLoadEvent", "halloween_structure_checked_v3", "random-structures.", "buildHauntedVillage",
                "buildGraveyard", "findFlatPlatformY", "preparePlatform", "halloween_structure_type", "Material.WITHER_ROSE"):
     if marker not in structure_java:
         fail(f"Random Halloween structure generator is missing required behavior: {marker}")

@@ -293,6 +293,11 @@ special-mobs:
   relic-item-id: "warriorland_halloween:cursed_candy"
   map-drop-chance: 0.03
   map-item-id: "warriorland_halloween:haunted_map"
+  headless-nick:
+    enabled: true
+    spawn-check-interval-seconds: 30
+    spawn-chance-per-check: 0.12
+    world-cooldown-minutes: 8
   types:
     cursed-zombie:
       name: "&5&lProkletý zombie"
@@ -364,6 +369,15 @@ special-mobs:
       strength-level: 0
       ability-cooldown-seconds: 10
       random-hex-duration-ticks: 65
+    headless-nick:
+      name: "&4&lBEZHLAVÝ NICK"
+      glowing: false
+      health-multiplier: 2.8
+      speed-level: 1
+      strength-level: 1
+      ability-cooldown-seconds: 10
+      charge-slow-ticks: 100
+      charge-wither-ticks: 60
 
 notifications:
   fragment-gain: true
@@ -439,6 +453,7 @@ random-events:
       sound: "warriorland_halloween:witching_sting"
       start-message: "&5&lČARODĚJNICKÁ HODINA &8» &dČarodějnice rozsévají kletby a lovci číhají ze stínů. Těžba i lov mají vyšší odměny."
       end-message: "&5&lČARODĚJNICKÁ HODINA &8» &7Kletby pomalu vyprchávají."
+      darkness-duration-ticks: 180
       multipliers:
         mining: 1.75
         mob-kill: 1.75
@@ -457,8 +472,10 @@ random-events:
     blood-moon-invasion:
       name: "Krvavý měsíc — invaze"
       sound: "warriorland_halloween:blood_moon_rise"
-      start-message: "&4&lKRVAVÝ MĚSÍC &8» &cObloha zrudla! Přichází husté vlny speciálních monster a VŠECHNA monstra udělují 3× poškození. Přežijte invazi!"
-      end-message: "&4&lKRVAVÝ MĚSÍC &8» &7Poslední stíny ustoupily. Trojnásobné poškození skončilo."
+      start-message: "&4&lKRVAVÝ MĚSÍC &8» &cNa obloze se zjevuje krvavě rudá lunární aura! Přichází invaze a monstra udělují 3× poškození."
+      end-message: "&4&lKRVAVÝ MĚSÍC &8» &7Rudá lunární aura pohasíná. Trojnásobné poškození skončilo."
+      red-moon-enabled: true
+      red-moon-refresh-interval-ticks: 30
       multipliers:
         mob-kill: 2.25
         mining: 1.25
@@ -574,6 +591,7 @@ world-decorations:
   dead-plants-per-chunk: 1
   large-mushrooms-per-chunk: 1
   soul-lights-per-chunk: 1
+  haunted-soil-patches-per-chunk: 3
   attempts-per-placement: 96
   # Keep chunk work deliberately low to avoid generation spikes on live servers.
   chunks-per-tick: 1

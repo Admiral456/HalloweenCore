@@ -60,6 +60,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateGraveyardChanceTripledV1();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateNightNickAndVisualDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -108,6 +109,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
+        mobManager.startNightPatrol();
         vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
         worldDecorator.start();
@@ -128,6 +130,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
+        if (mobManager != null) mobManager.stopNightPatrol();
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
@@ -175,6 +178,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateGraveyardChanceTripledV1();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateNightNickAndVisualDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -214,6 +218,27 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 + ", random-events=" + getConfig().getBoolean("random-events.enabled", true)
                 + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", true)
                 + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", true));
+    }
+
+    private void migrateNightNickAndVisualDefaults() {
+        if (getConfig().getBoolean("migrations.halloween-night-nick-visuals-v1", false)) return;
+        if (!getConfig().isSet("random-events.types.witching-hour.darkness-duration-ticks")) getConfig().set("random-events.types.witching-hour.darkness-duration-ticks", 180);
+        if (!getConfig().isSet("random-events.types.blood-moon-invasion.red-moon-enabled")) getConfig().set("random-events.types.blood-moon-invasion.red-moon-enabled", true);
+        if (!getConfig().isSet("random-events.types.blood-moon-invasion.red-moon-refresh-interval-ticks")) getConfig().set("random-events.types.blood-moon-invasion.red-moon-refresh-interval-ticks", 30);
+        if (!getConfig().isSet("special-mobs.headless-nick.enabled")) getConfig().set("special-mobs.headless-nick.enabled", true);
+        if (!getConfig().isSet("special-mobs.headless-nick.spawn-check-interval-seconds")) getConfig().set("special-mobs.headless-nick.spawn-check-interval-seconds", 30);
+        if (!getConfig().isSet("special-mobs.headless-nick.spawn-chance-per-check")) getConfig().set("special-mobs.headless-nick.spawn-chance-per-check", 0.12D);
+        if (!getConfig().isSet("special-mobs.headless-nick.world-cooldown-minutes")) getConfig().set("special-mobs.headless-nick.world-cooldown-minutes", 8);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.name")) getConfig().set("special-mobs.types.headless-nick.name", "&4&lBEZHLAVÝ NICK");
+        if (!getConfig().isSet("special-mobs.types.headless-nick.glowing")) getConfig().set("special-mobs.types.headless-nick.glowing", false);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.health-multiplier")) getConfig().set("special-mobs.types.headless-nick.health-multiplier", 2.8D);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.ability-cooldown-seconds")) getConfig().set("special-mobs.types.headless-nick.ability-cooldown-seconds", 10);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.charge-slow-ticks")) getConfig().set("special-mobs.types.headless-nick.charge-slow-ticks", 100);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.charge-wither-ticks")) getConfig().set("special-mobs.types.headless-nick.charge-wither-ticks", 60);
+        if (!getConfig().isSet("world-decorations.haunted-soil-patches-per-chunk")) getConfig().set("world-decorations.haunted-soil-patches-per-chunk", 3);
+        getConfig().set("migrations.halloween-night-nick-visuals-v1", true);
+        saveConfig();
+        getLogger().info("Halloween night-Nick, Blood Moon visual and haunted soil defaults migrated.");
     }
 
     public void setEventEnabled(boolean enabled) {
