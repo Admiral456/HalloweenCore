@@ -147,6 +147,8 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 Vesničky Haunted Village a malé prokleté hřbitovy se generují náhodně v přirozených rovných místech při načítání chunků v běžných Overworld světech. Není potřeba nastavovat jejich souřadnice příkazem; úspěšné nálezy si plugin uloží do dat chunku a hráči za objevení dostanou odměnu. Generování se vyhýbá oblasti 256 bloků okolo world spawnu. Hroby jsou povrchové dekorace — **plugin nikde nevyhlubuje automatické díry ani šachty**.
 
 - `/halloween boss test` vyvolá testovacího Krále upírů před administrátorem bez uložené arény. Testovací zabití nedává odměny ani neodemkne finále. Pokud chybí MythicMobs definice, základní test použije vanilla fallback.
+- `/halloween spawn all` vyvolá devět testovacích mobů, `/halloween spawn pumpkin-wraith 2` dva Dýňové přízraky a `/halloween spawn vampire-king` testovacího bosse.
+- `/halloween giveitem <hráč> <odměna-ID> [počet]` dá item z katalogu bez placení a bez spotřebování jednorázového claimu.
 
 ## Návod: aréna, obchod a resource pack
 
@@ -286,3 +288,11 @@ Model nyní obsahuje vlastní jednorázové animace false_sigil, blood_pulse, mi
 ## Bezpečný náhled modelu
 
 Administrátor může použít `/halloween modelpreview <idle|walk|attack|fly|false_sigil|blood_pulse|mirror_strike|nightfall>`. Příkaz vytvoří čtyři bloky před hráčem dočasný, nezranitelný model přes MythicMobs a ModelEngine, vypne jeho AI a odstraní ho po 10 sekundách. Náhled nespustí encounter, nepočítá účast a neuděluje odměny. Pořád je nutné ověřit render v klientovi s přijatým resource packem.
+
+
+## Aktualizované Halloween testy
+
+- `/halloween spawn <mob-ID> [1-5]` nebo `/halloween spawn all` testuje jednotlivé speciální moby včetně Bezhlavého Nicka na koni.
+- `/halloween spawn vampire-king` spustí testovacího bosse u hráče bez potřeby uloženého středu arény.
+- `/halloween giveitem <hráč> <odměna-ID> [počet]` předá item přímo z katalogu bez fragmentů a bez claimu.
+- Pro stavbu arény bez předem nastaveného středu použij `/halloween buildvampirearena here`, zkontroluj náhled a až poté potvrď `/halloween buildvampirearena confirm`. Stavba je destruktivní a může nahradit terén, stromy i stavby v okolí.

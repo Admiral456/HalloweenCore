@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the five custom Halloween ModelEngine/Blockbench assets and mob definitions."""
+"""Validate the nine custom Halloween ModelEngine/Blockbench assets and mob definitions."""
 from __future__ import annotations
 
 import base64
