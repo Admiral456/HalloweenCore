@@ -146,3 +146,23 @@ halloween_nightmare:
   - model{mid=halloween_nightmare;n=false} @self ~onSpawn
   - state{mid=halloween_nightmare;s=idle;} @self ~onSpawn
   - state{mid=halloween_nightmare;s=attack} @self ~onAttack
+
+halloween_headless_nick:
+  Type: ZOMBIE
+  Display: '&4&lBEZHLAVÝ NICK'
+  Health: 80
+  Damage: 12
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    PreventSunburn: true
+    Silent: true
+    Despawn: true
+    MovementSpeed: 0.33
+    KnockbackResistance: 0.45
+    FollowRange: 48
+    PreventRenaming: true
+  Skills:
+  - model{mid=halloween_headless_nick;n=false} @self ~onSpawn
+  - state{mid=halloween_headless_nick;s=idle;} @self ~onSpawn
+  - state{mid=halloween_headless_nick;s=attack} @self ~onAttack

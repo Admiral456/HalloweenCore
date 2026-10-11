@@ -3,6 +3,32 @@
     "minecraft:max_damage": 1300,
     "minecraft:enchantable": {
       "value": 25
+    },
+    "minecraft:attribute_modifiers": {
+      "modifiers": [
+        {
+          "type": "minecraft:armor",
+          "id": "warriorland_halloween:crimson_warden_chestplate_armor",
+          "amount": 12,
+          "operation": "add_value",
+          "slot": "chest"
+        },
+        {
+          "type": "minecraft:armor_toughness",
+          "id": "warriorland_halloween:crimson_warden_chestplate_toughness",
+          "amount": 3,
+          "operation": "add_value",
+          "slot": "chest"
+        },
+        {
+          "type": "minecraft:knockback_resistance",
+          "id": "warriorland_halloween:crimson_warden_chestplate_knockback_resistance",
+          "amount": 0.1,
+          "operation": "add_value",
+          "slot": "chest"
+        }
+      ],
+      "show_in_tooltip": true
     }
   }
 }

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate deterministic, CRC-valid 16x16 Halloween vanilla block textures.
+"""Generate deterministic Halloween block textures and pixel-art grave markers.
 
-Uses only the Python standard library so CI and server admins don't need Pillow.
-The outputs are included in the ItemsAdder pack under assets/minecraft/textures/block.
+Uses only the Python standard library. Block textures are 16x16; ItemsAdder grave
+marker sprites are 32x32 RGBA textures generated into the same resource-pack build.
 """
 from __future__ import annotations
 
@@ -12,7 +12,10 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
+CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
+OUT = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
+ITEM_OUT = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
+SHADERPACK_DIR = ROOT / "client-packs" / "HalloweenCore-Iris-Crimson-Sky"
 W = H = 16
 
 PALETTE = {
@@ -38,6 +41,197 @@ def save_pixels(name: str, pixels: list[list[tuple[int, int, int, int]]]) -> Non
     png = b"\x89PNG\r\n\x1a\n" + png_chunk(b"IHDR", ihdr) + png_chunk(b"IDAT", zlib.compress(raw, 9)) + png_chunk(b"IEND", b"")
     OUT.mkdir(parents=True, exist_ok=True)
     (OUT / name).write_bytes(png)
+
+
+def save_sized_pixels(out_dir: Path, name: str, pixels: list[list[tuple[int, int, int, int]]]) -> None:
+    """Write an RGBA PNG at the dimensions provided by the pixel-art canvas."""
+    height = len(pixels)
+    width = len(pixels[0]) if height else 0
+    if width < 1 or height < 1 or any(len(row) != width for row in pixels):
+        raise ValueError(f"{name}: inconsistent or empty pixel canvas")
+    raw = b"".join(b"\x00" + b"".join(bytes(pixel) for pixel in row) for row in pixels)
+    ihdr = struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0)
+    png = b"\x89PNG\r\n\x1a\n" + png_chunk(b"IHDR", ihdr) + png_chunk(b"IDAT", zlib.compress(raw, 9)) + png_chunk(b"IEND", b"")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / name).write_bytes(png)
+
+
+def seasonal_mushroom(red: bool) -> None:
+    """Draw a creepy, shaded mushroom sprite while preserving transparent corners."""
+    clear = (0, 0, 0, 0)
+    pixels = [[clear for _ in range(16)] for _ in range(16)]
+    cap_rows = {1: (7, 8), 2: (5, 10), 3: (3, 12), 4: (2, 13), 5: (2, 13), 6: (3, 12), 7: (5, 10)}
+    for y, (left, right) in cap_rows.items():
+        for x in range(left, right + 1):
+            edge = x in (left, right) or y in (1, 7)
+            if red:
+                color = (43, 20, 37, 255) if edge else (143, 34, 48, 255)
+                if not edge and (x + y) % 7 == 0:
+                    color = (235, 102, 96, 255)
+                if (x, y) in {(5, 3), (10, 3), (4, 5), (11, 5)}:
+                    color = (255, 185, 126, 255)
+                if (x, y) in {(6, 4), (9, 4)}:
+                    color = (36, 20, 34, 255)
+            else:
+                color = (30, 30, 38, 255) if edge else (91, 73, 57, 255)
+                if not edge and (x * 2 + y) % 5 == 0:
+                    color = (123, 99, 65, 255)
+                if (x, y) in {(5, 3), (10, 3), (4, 5), (11, 5)}:
+                    color = (82, 137, 81, 255)
+                if (x, y) in {(6, 4), (9, 4)}:
+                    color = (37, 22, 32, 255)
+            pixels[y][x] = color
+    for x in range(5, 11):
+        pixels[8][x] = (48, 25, 39, 255) if red else (40, 37, 43, 255)
+    for y in range(8, 15):
+        left, right = (6, 9) if y < 11 else (5, 10)
+        for x in range(left, right + 1):
+            if x == left:
+                color = (65, 48, 57, 255)
+            elif x == right:
+                color = (40, 29, 42, 255)
+            else:
+                color = (171, 151, 130, 255) if red else (141, 145, 116, 255)
+            if (x, y) in {(7, 10), (8, 12), (6, 13)}:
+                color = (199, 85, 87, 255) if red else (99, 170, 103, 255)
+            pixels[y][x] = color
+    save_pixels("red_mushroom.png" if red else "brown_mushroom.png", pixels)
+
+
+def dead_bush() -> None:
+    """A dry, thorny burgundy-grey shrub for sandy/deserted patches."""
+    clear = (0, 0, 0, 0)
+    pixels = [[clear for _ in range(16)] for _ in range(16)]
+
+    def line(a: tuple[int, int], b: tuple[int, int], color: tuple[int, int, int, int]) -> None:
+        x0, y0 = a
+        x1, y1 = b
+        dx, dy = abs(x1 - x0), abs(y1 - y0)
+        sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
+        err = dx - dy
+        while True:
+            if 0 <= x0 < 16 and 0 <= y0 < 16:
+                pixels[y0][x0] = color
+            if x0 == x1 and y0 == y1:
+                break
+            twice = 2 * err
+            if twice > -dy:
+                err -= dy
+                x0 += sx
+            if twice < dx:
+                err += dx
+                y0 += sy
+
+    branch = (108, 76, 79, 255)
+    highlight = (169, 117, 103, 255)
+    for a, b in [((8, 15), (8, 2)), ((8, 12), (3, 7)), ((8, 10), (13, 5)),
+                 ((8, 8), (5, 3)), ((8, 13), (12, 10)), ((8, 6), (10, 2)),
+                 ((6, 10), (2, 10)), ((10, 8), (14, 8))]:
+        line(a, b, branch)
+    for a, b in [((8, 15), (8, 2)), ((8, 12), (3, 7)), ((8, 10), (13, 5)),
+                 ((8, 8), (5, 3)), ((8, 13), (12, 10))]:
+        for x, y in (a, b):
+            if 0 <= x < 16 and 0 <= y < 16:
+                pixels[y][x] = highlight
+    thorn_points = [(6, 12), (5, 11), (4, 10), (5, 9), (3, 8), (5, 5), (6, 6),
+                    (10, 10), (11, 8), (12, 7), (12, 4), (10, 5), (7, 4), (9, 3), (13, 8)]
+    for x, y in thorn_points:
+        pixels[y][x] = (42, 30, 43, 255)
+    pixels[14][7] = (82, 42, 55, 255)
+    pixels[14][8] = (126, 58, 61, 255)
+    pixels[13][9] = (192, 91, 73, 255)
+    save_pixels("dead_bush.png", pixels)
+
+
+def gravestone_texture(cracked: bool) -> None:
+    """Draw a 32x32 vertical gravestone sprite for ItemDisplay world decorations."""
+    clear = (0, 0, 0, 0)
+    pixels = [[clear for _ in range(32)] for _ in range(32)]
+
+    def put(x: int, y: int, color: tuple[int, int, int, int]) -> None:
+        if 0 <= x < 32 and 0 <= y < 32:
+            pixels[y][x] = color
+
+    def rect(x0: int, y0: int, x1: int, y1: int, color: tuple[int, int, int, int]) -> None:
+        for yy in range(y0, y1 + 1):
+            for xx in range(x0, x1 + 1):
+                put(xx, yy, color)
+
+    outline = (21, 23, 33, 255)
+    shadow = (42, 46, 58, 255)
+    stone = (76, 84, 99, 255)
+    light = (122, 132, 143, 255)
+    gleam = (174, 177, 172, 255)
+    deep = (30, 30, 43, 255)
+    moss = (50, 76, 56, 255)
+    ember = (204, 59, 59, 255) if cracked else (225, 94, 42, 255)
+    glow = (255, 173, 83, 255) if not cracked else (184, 108, 233, 255)
+
+    profile = {
+        3: (15, 16), 4: (14, 17), 5: (12, 19), 6: (10, 21),
+        7: (9, 22), 8: (8, 23), 9: (8, 23), 10: (8, 23),
+        11: (8, 23), 12: (8, 23), 13: (8, 23), 14: (8, 23),
+        15: (8, 23), 16: (8, 23), 17: (8, 23), 18: (8, 23),
+        19: (8, 23), 20: (8, 23), 21: (8, 23), 22: (8, 23),
+        23: (8, 23), 24: (8, 23), 25: (9, 22), 26: (9, 22),
+    }
+    for y, (left, right) in profile.items():
+        for x in range(left, right + 1):
+            if x in (left, right) or y in (3, 26):
+                color = outline
+            elif x == left + 1:
+                color = gleam if y < 12 else light
+            elif x >= right - 1:
+                color = shadow
+            else:
+                color = stone if (x + 2 * y) % 7 else light
+            put(x, y, color)
+
+    rect(10, 8, 21, 22, deep)
+    for x in range(11, 21):
+        put(x, 8, shadow)
+        put(x, 22, shadow)
+    for y in range(9, 22):
+        put(10, y, light if y < 14 else shadow)
+        put(21, y, outline)
+    for x, y in [(12, 9), (13, 10), (12, 11), (19, 20), (18, 21), (20, 19)]:
+        put(x, y, light if not cracked else (83, 95, 119, 255))
+
+    if cracked:
+        for y in range(10, 15):
+            for x in range(14, 19):
+                dx, dy = x - 16, y - 12
+                if dx * dx + dy * dy <= 5:
+                    put(x, y, glow if dx * dx + dy * dy <= 2 else (91, 59, 127, 255))
+        for a, b in [((12, 13), (14, 16)), ((14, 16), (12, 19)),
+                     ((19, 11), (17, 16)), ((17, 16), (19, 19))]:
+            x0, y0 = a
+            x1, y1 = b
+            steps = max(abs(x1 - x0), abs(y1 - y0))
+            for i in range(steps + 1):
+                x = round(x0 + (x1 - x0) * i / max(1, steps))
+                y = round(y0 + (y1 - y0) * i / max(1, steps))
+                put(x, y, outline)
+    else:
+        rect(14, 10, 17, 21, outline)
+        rect(12, 13, 19, 16, outline)
+        rect(15, 11, 16, 20, glow)
+        rect(13, 14, 18, 15, glow)
+        put(15, 12, (255, 226, 135, 255))
+        put(16, 17, ember)
+        rect(12, 19, 13, 19, light)
+        rect(18, 19, 19, 19, light)
+
+    for x, y in [(10, 23), (11, 24), (12, 23), (19, 24), (20, 23), (21, 24)]:
+        put(x, y, moss)
+    for x, y in [(9, 12), (9, 18), (22, 14), (22, 20), (11, 6), (20, 6)]:
+        put(x, y, gleam if not cracked else light)
+    rect(6, 27, 25, 28, outline)
+    rect(5, 29, 26, 30, shadow)
+    rect(7, 29, 24, 29, light)
+    for x in (7, 11, 16, 21, 25):
+        put(x, 30, outline)
+    save_sized_pixels(ITEM_OUT, "grave_marker_cracked.png" if cracked else "grave_marker.png", pixels)
 
 
 def rows_to_pixels(rows: list[str]) -> list[list[tuple[int, int, int, int]]]:
@@ -112,35 +306,46 @@ def pumpkin_face(lit: bool) -> None:
     save_pixels("jack_o_lantern.png" if lit else "pumpkin_face.png", rows_to_pixels(rows))
 
 
-def candle(lit: bool) -> None:
-    pixels = [[PALETTE["."] for _ in range(W)] for _ in range(H)]
-    for y in range(6 if lit else 4, H):
-        for x in range(5, 11):
-            if lit:
-                color = (94, 15, 29, 255) if x in (5, 10) else (188, 30, 46, 255) if x < 9 else (139, 20, 38, 255)
-            else:
-                color = (87, 15, 30, 255) if x == 5 else (164, 28, 48, 255) if x == 6 else (206, 43, 53, 255) if x in (7, 8) else (152, 22, 40, 255) if x == 9 else (80, 14, 29, 255)
-            pixels[y][x] = color
-    for x in range(5, 11):
-        pixels[6 if lit else 4][x] = (220, 52, 58, 255) if lit else (220, 57, 65, 255)
-    for y in range(7 if lit else 5, H):
-        pixels[y][7] = (240, 79, 75, 255)
-    if lit:
-        flame = [
-            "...B...",
-            "..BCB..",
-            "...C...",
-            ".......",
-        ]
-        for y, row in enumerate(flame, 1):
-            for x, ch in enumerate(row, 4):
-                if ch == "B":
-                    pixels[y][x] = (255, 221, 116, 255)
-                elif ch == "C":
-                    pixels[y][x] = (255, 126, 34, 255)
-    else:
-        pixels[3][7] = pixels[3][8] = (45, 22, 20, 255)
-    save_pixels("red_candle_lit.png" if lit else "red_candle.png", pixels)
+def candle() -> None:
+    """Draw a blood-wax candle with drips, a glossy rim and fine melted highlights."""
+    clear = (0, 0, 0, 0)
+    pixels = [[clear for _ in range(W)] for _ in range(H)]
+    left_right = {
+        4: (6, 9), 5: (5, 10), 6: (5, 10), 7: (5, 10),
+        8: (4, 10), 9: (4, 10), 10: (5, 10), 11: (5, 10),
+        12: (5, 10), 13: (5, 10), 14: (5, 10), 15: (5, 10)
+    }
+    shades = [
+        (52, 10, 26, 255), (83, 12, 29, 255), (123, 16, 36, 255),
+        (164, 25, 45, 255), (194, 37, 53, 255), (224, 58, 67, 255),
+        (244, 91, 86, 255)
+    ]
+    for y, (left, right) in left_right.items():
+        for x in range(left, right + 1):
+            offset = 0 if x <= 5 else 1 if x == 6 else 3 if x in (7, 8) else 4 if x == 9 else 2
+            if y >= 12:
+                offset = max(0, offset - 1)
+            if (x * 3 + y * 5) % 17 == 0:
+                offset = min(6, offset + 1)
+            pixels[y][x] = shades[offset]
+    # Melted side drips catch the light without breaking the candle's silhouette.
+    pixels[7][4] = shades[4]
+    pixels[8][4] = shades[3]
+    pixels[9][4] = shades[2]
+    pixels[6][10] = shades[2]
+    pixels[7][10] = shades[3]
+    pixels[8][10] = shades[2]
+    # The uneven top rim and the dark wick read clearly at Minecraft's native pixel scale.
+    for x, color in enumerate([
+        (89, 13, 29, 255), (145, 20, 39, 255), (218, 48, 63, 255),
+        (237, 71, 75, 255), (186, 30, 48, 255), (87, 12, 28, 255)
+    ], 5):
+        pixels[4][x] = color
+    pixels[3][7] = (45, 22, 20, 255)
+    pixels[3][8] = (74, 23, 24, 255)
+    for x, y in ((7, 6), (8, 7), (6, 10), (9, 12), (8, 14)):
+        pixels[y][x] = (255, 121, 104, 255)
+    save_pixels("red_candle.png", pixels)
 
 
 def cobweb() -> None:
@@ -167,15 +372,397 @@ def cobweb() -> None:
     save_pixels("cobweb.png", pixels)
 
 
+def crimson_warden_shield_texture(blocking: bool = False) -> None:
+    """Create a 32x32 pixel-art shield with a crimson rim and a glowing sigil."""
+    clear = (0, 0, 0, 0)
+    pixels = [[clear for _ in range(32)] for _ in range(32)]
+
+    def put(x: int, y: int, color: tuple[int, int, int, int]) -> None:
+        if 0 <= x < 32 and 0 <= y < 32:
+            pixels[y][x] = color
+
+    def rect(x0: int, y0: int, x1: int, y1: int, color: tuple[int, int, int, int]) -> None:
+        for yy in range(y0, y1 + 1):
+            for xx in range(x0, x1 + 1):
+                put(xx, yy, color)
+
+    outline = (19, 17, 26, 255)
+    iron = (53, 54, 67, 255)
+    iron_light = (105, 108, 123, 255)
+    iron_dark = (31, 29, 42, 255)
+    crimson = (139, 23, 42, 255)
+    crimson_light = (225, 47, 59, 255)
+    glow = (255, 103, 54, 255)
+    gold = (255, 190, 88, 255)
+    profile = {
+        3: (12, 19), 4: (9, 22), 5: (7, 24), 6: (6, 25),
+        7: (5, 26), 8: (5, 26), 9: (5, 26), 10: (5, 26),
+        11: (5, 26), 12: (5, 26), 13: (5, 26), 14: (5, 26),
+        15: (6, 25), 16: (6, 25), 17: (7, 24), 18: (7, 24),
+        19: (8, 23), 20: (9, 22), 21: (10, 21), 22: (11, 20),
+        23: (12, 19), 24: (13, 18), 25: (14, 17), 26: (15, 16),
+    }
+    for y, (left, right) in profile.items():
+        for x in range(left, right + 1):
+            if x in (left, right) or y in (3, 26):
+                color = outline
+            elif x in (left + 1, right - 1):
+                color = crimson_light if x < 16 else crimson
+            elif x < 11:
+                color = iron_light
+            elif x > 20:
+                color = iron_dark
+            else:
+                color = iron if (x + y) % 6 else iron_light
+            put(x, y, color)
+    for y, (left, right) in profile.items():
+        if 5 <= y <= 24:
+            put(left + 2, y, crimson)
+            put(right - 2, y, crimson)
+    for x in range(10, 22):
+        put(x, 5, crimson)
+        put(x, 23, crimson)
+    rect(14, 8, 17, 19, outline)
+    rect(15, 9, 16, 18, crimson_light)
+    rect(12, 11, 19, 14, outline)
+    rect(13, 11, 18, 13, glow)
+    rect(14, 12, 17, 13, gold)
+    put(13, 12, crimson)
+    put(18, 12, crimson)
+    put(14, 14, outline)
+    put(17, 14, outline)
+    rect(13, 15, 18, 16, outline)
+    rect(14, 16, 17, 17, iron_light)
+    rect(15, 18, 16, 21, outline)
+    rect(13, 20, 18, 21, crimson_light)
+    put(15, 22, gold)
+    put(16, 22, glow)
+    for x, y in ((9, 8), (22, 8), (9, 17), (22, 17)):
+        put(x, y, iron_light)
+        put(x + 1, y, outline)
+    put(8, 6, gold)
+    put(23, 6, gold)
+    if blocking:
+        # The blocking pose burns brighter along both edges so the defensive state
+        # stays visually distinct while matching the inventory/idle shield design.
+        for x, y in ((7, 9), (7, 13), (8, 18), (24, 9), (24, 13), (23, 18)):
+            put(x, y, glow)
+        put(11, 8, gold)
+        put(20, 8, gold)
+        put(15, 7, glow)
+        put(16, 7, glow)
+        put(15, 22, (255, 239, 162, 255))
+        put(16, 22, (255, 150, 61, 255))
+    filename = "crimson_warden_shield_blocking.png" if blocking else "crimson_warden_shield.png"
+    save_sized_pixels(ITEM_OUT, filename, pixels)
+
+
+def mushroom_cap_block(red: bool) -> None:
+    """Generate the 16x16 surface of a real 3D mushroom-cap block, not only its tiny plant sprite."""
+    pixels = [[(0, 0, 0, 255) for _ in range(16)] for _ in range(16)]
+    spots_red = {(3, 3), (4, 3), (10, 2), (11, 2), (8, 6), (9, 6), (4, 9), (5, 9), (12, 11), (13, 11)}
+    spots_brown = {(3, 3), (4, 4), (10, 2), (11, 3), (8, 6), (9, 6), (4, 10), (5, 9), (12, 11), (13, 12)}
+    for y in range(16):
+        for x in range(16):
+            edge = x in (0, 15) or y in (0, 15)
+            if red:
+                if (x, y) in spots_red:
+                    color = (255, 191, 132, 255) if (x + y) % 2 else (238, 100, 77, 255)
+                elif x < 4 and y < 8:
+                    color = (111, 22, 42, 255)
+                elif x > 11 and y > 7:
+                    color = (88, 20, 38, 255)
+                elif (x + y) % 7 == 0:
+                    color = (191, 42, 51, 255)
+                else:
+                    color = (156, 30, 47, 255)
+            else:
+                if (x, y) in spots_brown:
+                    color = (92, 151, 88, 255) if (x + y) % 2 else (174, 162, 95, 255)
+                elif x < 4 and y < 8:
+                    color = (61, 43, 50, 255)
+                elif x > 11 and y > 7:
+                    color = (47, 37, 43, 255)
+                elif (x * 3 + y) % 7 == 0:
+                    color = (119, 85, 62, 255)
+                else:
+                    color = (91, 64, 54, 255)
+            pixels[y][x] = color
+    save_pixels("red_mushroom_block.png" if red else "brown_mushroom_block.png", pixels)
+
+
+def mushroom_block_inside() -> None:
+    """Pale fibrous texture for stems and exposed inner cap faces."""
+    pixels = [[(0, 0, 0, 255) for _ in range(16)] for _ in range(16)]
+    for y in range(16):
+        for x in range(16):
+            if x in (0, 15) or y in (0, 15):
+                color = (80, 55, 61, 255)
+            elif x in (4, 11):
+                color = (143, 102, 96, 255)
+            elif (x + 2 * y) % 5 == 0:
+                color = (224, 188, 160, 255)
+            elif (3 * x + y) % 7 == 0:
+                color = (183, 135, 123, 255)
+            else:
+                color = (201, 161, 140, 255)
+            pixels[y][x] = color
+    save_pixels("mushroom_block_inside.png", pixels)
+
+
+def mushroom_stem_texture() -> None:
+    """A pale, vertically fibred stem without a dark border that would form seams between blocks."""
+    pixels = [[(0, 0, 0, 255) for _ in range(16)] for _ in range(16)]
+    for y in range(16):
+        for x in range(16):
+            if x in (0, 15):
+                color = (125, 84, 78, 255)
+            elif x in (4, 11):
+                color = (143, 102, 96, 255)
+            elif (x + 2 * y) % 5 == 0:
+                color = (224, 188, 160, 255)
+            elif (3 * x + y) % 7 == 0:
+                color = (183, 135, 123, 255)
+            else:
+                color = (201, 161, 140, 255)
+            pixels[y][x] = color
+    save_pixels("mushroom_stem.png", pixels)
+
+
+def crimson_warden_weapon_icons() -> None:
+    """Draw bold, high-contrast 32x32 weapon icons so the sprites read clearly in inventory slots."""
+    clear = (0, 0, 0, 0)
+    outline = (18, 14, 24, 255)
+    steel_dark = (37, 32, 43, 255)
+    steel = (79, 88, 108, 255)
+    steel_light = (165, 177, 190, 255)
+    crimson_dark = (77, 12, 30, 255)
+    crimson = (147, 24, 44, 255)
+    red = (231, 49, 61, 255)
+    gold = (250, 172, 55, 255)
+    pale_gold = (255, 224, 130, 255)
+
+    def canvas() -> list[list[tuple[int, int, int, int]]]:
+        return [[clear for _ in range(32)] for _ in range(32)]
+
+    def put(pixels, x: int, y: int, color) -> None:
+        if 0 <= x < 32 and 0 <= y < 32:
+            pixels[y][x] = color
+
+    def rect(pixels, x0: int, y0: int, x1: int, y1: int, color) -> None:
+        for y in range(y0, y1 + 1):
+            for x in range(x0, x1 + 1):
+                put(pixels, x, y, color)
+
+    def line(pixels, x0: int, y0: int, x1: int, y1: int, color, width: int = 1) -> None:
+        dx, dy = abs(x1 - x0), abs(y1 - y0)
+        sx, sy = (1 if x0 < x1 else -1), (1 if y0 < y1 else -1)
+        err, x, y = dx - dy, x0, y0
+        pad = (width - 1) // 2
+        while True:
+            for ox in range(-pad, width - pad):
+                for oy in range(-pad, width - pad):
+                    put(pixels, x + ox, y + oy, color)
+            if x == x1 and y == y1:
+                break
+            twice = 2 * err
+            if twice > -dy:
+                err -= dy
+                x += sx
+            if twice < dx:
+                err += dx
+                y += sy
+
+    def row_shape(pixels, rows, color) -> None:
+        for y, left, right in rows:
+            rect(pixels, left, y, right, y, color)
+
+    # Sword: dark outline, steel edge, blood-red fuller, gold guard/grip.
+    p = canvas()
+    line(p, 8, 24, 24, 5, outline, 5)
+    line(p, 9, 23, 23, 6, steel_light, 3)
+    line(p, 10, 22, 22, 7, crimson, 2)
+    line(p, 11, 21, 22, 8, red, 1)
+    line(p, 9, 16, 16, 23, outline, 4)
+    line(p, 9, 16, 15, 22, gold, 2)
+    line(p, 5, 27, 9, 31, outline, 4)
+    line(p, 5, 27, 9, 31, crimson_dark, 2)
+    rect(p, 4, 25, 6, 27, pale_gold)
+    put(p, 24, 5, pale_gold)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_sword.png", p)
+
+    # Pickaxe: prominent jagged red-black head and a gilded handle.
+    p = canvas()
+    line(p, 8, 28, 22, 8, outline, 4)
+    line(p, 8, 28, 22, 8, gold, 2)
+    line(p, 10, 25, 21, 9, crimson_dark, 1)
+    row_shape(p, [(4, 15, 19), (5, 9, 24), (6, 6, 27), (7, 4, 28),
+                  (8, 5, 26), (9, 8, 23), (10, 11, 19)], outline)
+    row_shape(p, [(5, 11, 21), (6, 8, 25), (7, 6, 26), (8, 7, 24),
+                  (9, 10, 21)], crimson)
+    line(p, 5, 7, 15, 5, steel_light, 2)
+    line(p, 7, 8, 20, 7, red, 1)
+    put(p, 4, 7, pale_gold)
+    put(p, 25, 7, pale_gold)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_pickaxe.png", p)
+
+    # Axe: a broad, readable crimson blade with a steel cutting edge.
+    p = canvas()
+    line(p, 8, 29, 21, 8, outline, 4)
+    line(p, 8, 29, 21, 8, gold, 2)
+    row_shape(p, [(3, 13, 17), (4, 9, 21), (5, 6, 23), (6, 5, 24), (7, 4, 24),
+                  (8, 4, 22), (9, 5, 20), (10, 6, 18), (11, 7, 16), (12, 8, 14)], outline)
+    row_shape(p, [(4, 11, 19), (5, 8, 21), (6, 7, 22), (7, 6, 22),
+                  (8, 6, 20), (9, 7, 18), (10, 8, 16), (11, 9, 14)], steel)
+    row_shape(p, [(5, 12, 17), (6, 10, 19), (7, 9, 18), (8, 9, 17), (9, 10, 15)], crimson)
+    line(p, 6, 6, 13, 4, steel_light, 1)
+    line(p, 5, 8, 8, 13, pale_gold, 1)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_axe.png", p)
+
+    # Shovel: silver bevels frame a red, pointed spade.
+    p = canvas()
+    line(p, 9, 28, 22, 9, outline, 4)
+    line(p, 9, 28, 22, 9, gold, 2)
+    row_shape(p, [(3, 22, 24), (4, 20, 26), (5, 18, 27), (6, 17, 27),
+                  (7, 16, 27), (8, 16, 26), (9, 17, 25), (10, 19, 23)], outline)
+    row_shape(p, [(4, 22, 24), (5, 20, 25), (6, 19, 25), (7, 18, 24),
+                  (8, 18, 23), (9, 19, 22)], steel)
+    row_shape(p, [(5, 22, 23), (6, 21, 23), (7, 20, 22), (8, 20, 22)], crimson)
+    line(p, 21, 4, 24, 5, steel_light, 1)
+    put(p, 27, 7, pale_gold)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_shovel.png", p)
+
+    # Hoe: a hooked head, red inlay and a bright cut edge.
+    p = canvas()
+    line(p, 9, 28, 21, 10, outline, 4)
+    line(p, 9, 28, 21, 10, gold, 2)
+    row_shape(p, [(4, 16, 25), (5, 12, 27), (6, 10, 28), (7, 10, 28),
+                  (8, 11, 26), (9, 14, 23)], outline)
+    row_shape(p, [(5, 16, 25), (6, 13, 26), (7, 12, 25), (8, 14, 23)], steel)
+    row_shape(p, [(6, 18, 23), (7, 17, 22)], crimson)
+    line(p, 11, 6, 23, 6, steel_light, 1)
+    put(p, 27, 6, pale_gold)
+    save_sized_pixels(ITEM_OUT, "crimson_warden_hoe.png", p)
+
+
+def crimson_sky_shaderpack_icon() -> None:
+    """Create a 128x128 pack icon: blood moon, ember haze, bats and a ruined skyline."""
+    size = 128
+    pixels = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            glow = max(0.0, 1.0 - math.hypot(x - 86, y - 45) / 86.0)
+            noise = ((x * 13 + y * 17 + x * y) % 11) / 100.0
+            row.append((
+                min(255, int(7 + 28 * glow + noise * 55)),
+                min(255, int(6 + 8 * glow + noise * 14)),
+                min(255, int(20 + 23 * glow + noise * 35)),
+                255
+            ))
+        pixels.append(row)
+
+    def put(x: int, y: int, color) -> None:
+        if 0 <= x < size and 0 <= y < size:
+            pixels[y][x] = color
+
+    def rect(x0: int, y0: int, x1: int, y1: int, color) -> None:
+        for yy in range(y0, y1 + 1):
+            for xx in range(x0, x1 + 1):
+                put(xx, yy, color)
+
+    # Faint crimson haze behind the moon.
+    for y in range(18, 81):
+        for x in range(25, 120):
+            radius = math.hypot((x - 86) * 0.88, (y - 45) * 1.05)
+            if 22 < radius < 30:
+                put(x, y, (47, 10, 28, 255) if radius > 26 else (80, 12, 31, 255))
+
+    # Blood moon disk with directional shading, craters and a bright rim.
+    for y in range(15, 76):
+        for x in range(55, 117):
+            dx, dy = x - 86, y - 45
+            radius = math.hypot(dx, dy)
+            if radius > 29:
+                continue
+            grain = (x * 7 + y * 11 + x * y) % 17
+            if radius > 27.6:
+                color = (255, 133, 105, 255)
+            elif dx < -9:
+                color = (99, 12, 31, 255) if grain < 7 else (141, 19, 39, 255)
+            elif dx > 12:
+                color = (178, 25, 42, 255) if grain < 8 else (218, 43, 49, 255)
+            else:
+                color = (200, 28, 44, 255) if grain < 9 else (232, 56, 56, 255)
+            put(x, y, color)
+
+    # Crater bands break the disc into painterly, pixel-shaded regions.
+    for x, y, w, h, color in (
+        (68, 28, 8, 4, (120, 18, 37, 255)), (89, 24, 7, 5, (160, 20, 40, 255)),
+        (75, 43, 10, 5, (151, 18, 37, 255)), (95, 50, 8, 6, (129, 17, 35, 255)),
+        (66, 56, 6, 5, (176, 25, 42, 255)), (86, 62, 9, 3, (139, 19, 36, 255))
+    ):
+        rect(x, y, x + w, y + h, color)
+    for x, y in ((68, 32), (69, 33), (70, 31), (98, 53), (100, 54), (78, 48), (83, 65)):
+        put(x, y, (255, 102, 86, 255))
+
+    # Stars are intentionally sparse; they keep the icon legible at menu size.
+    for x, y in ((18, 18), (35, 34), (27, 58), (47, 15), (112, 13), (17, 79), (42, 69), (108, 79)):
+        for dx, dy in ((0, 0), (1, 0), (0, 1)):
+            put(x + dx, y + dy, (255, 174, 151, 255))
+
+    # Bats crossing the moon; every silhouette stays hard-edged at pixel scale.
+    bat = (17, 7, 21, 255)
+    for bx, by, scale in ((32, 51, 1), (102, 36, 1), (46, 28, 1)):
+        for dx in range(9):
+            for dy in range(4):
+                if (dx <= 2 and dy <= 1) or (dx >= 6 and dy <= 1) or (2 <= dx <= 6 and dy >= 2 and (dx + dy) % 2 == 0):
+                    put(bx + dx, by + dy, bat)
+        put(bx + 4, by + 4, bat)
+
+    # Black silhouette of a ruined castle and crooked graveyard wall.
+    rect(0, 105, 127, 127, (9, 7, 18, 255))
+    rect(7, 96, 22, 126, (13, 8, 20, 255))
+    rect(4, 91, 10, 97, (13, 8, 20, 255))
+    rect(19, 88, 25, 97, (13, 8, 20, 255))
+    rect(28, 101, 53, 126, (11, 7, 18, 255))
+    rect(33, 94, 38, 101, (11, 7, 18, 255))
+    rect(47, 92, 51, 101, (11, 7, 18, 255))
+    rect(58, 110, 83, 126, (8, 6, 16, 255))
+    rect(64, 103, 69, 110, (8, 6, 16, 255))
+    rect(78, 105, 86, 111, (8, 6, 16, 255))
+    rect(91, 97, 119, 126, (11, 7, 18, 255))
+    rect(96, 90, 103, 97, (11, 7, 18, 255))
+    rect(112, 87, 117, 97, (11, 7, 18, 255))
+    # A few burning windows and grave lights anchor the skyline.
+    for x, y in ((14, 108), (35, 110), (45, 116), (100, 108), (111, 112), (72, 116)):
+        put(x, y, (174, 33, 44, 255))
+    save_sized_pixels(SHADERPACK_DIR, "pack.png", pixels)
+
+
 def main() -> None:
     pumpkin_side()
     pumpkin_top()
+    crimson_sky_shaderpack_icon()
     pumpkin_face(lit=False)
     pumpkin_face(lit=True)
-    candle(lit=False)
-    candle(lit=True)
+    candle()
     cobweb()
-    for path in sorted(OUT.glob("*.png")):
+    seasonal_mushroom(red=True)
+    seasonal_mushroom(red=False)
+    mushroom_cap_block(red=True)
+    mushroom_cap_block(red=False)
+    mushroom_block_inside()
+    mushroom_stem_texture()
+    crimson_warden_weapon_icons()
+    dead_bush()
+    gravestone_texture(cracked=False)
+    gravestone_texture(cracked=True)
+    crimson_warden_shield_texture()
+    crimson_warden_shield_texture(blocking=True)
+    # Remove a legacy texture name not referenced by vanilla 1.21.10 candle models.
+    (OUT / "red_candle_lit.png").unlink(missing_ok=True)
+    for path in sorted(OUT.glob("*.png")) + sorted(ITEM_OUT.glob("grave_marker*.png")) + sorted(ITEM_OUT.glob("crimson_warden_*.png")):
         print(f"Generated {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
 
 

@@ -22,7 +22,7 @@ import wave
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-SOUNDS_DIR = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "sounds"
+SOUNDS_DIR = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "resourcepack" / "assets" / "warriorland_halloween" / "sounds"
 SAMPLE_RATE = 22050
 TWO_PI = 2.0 * math.pi
 

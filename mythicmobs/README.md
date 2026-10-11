@@ -14,8 +14,8 @@ The feature build publishes `HalloweenCore-Special-Mobs-ModelEngine.zip`, contai
 
 1. Stop the server and back up `plugins/HalloweenCore/`, `plugins/ItemsAdder/`, `plugins/MythicMobs/` and `plugins/ModelEngine/`.
 2. Install the new `HalloweenCore.jar`, copy `warriorland_halloween` to `plugins/ItemsAdder/contents/`, then extract `HalloweenCore-Special-Mobs-ModelEngine.zip` over `plugins/`.
-3. Confirm that the five `.bbmodel` files are in `plugins/ModelEngine/blueprints/` and the YAML is in `plugins/MythicMobs/Mobs/halloween-special-mobs.yml`. The texture is embedded in each Blockbench blueprint; accompanying PNGs are supplied as editable/external source copies.
-4. Run `/meg reload models` (or `/meg reload` if that is the command for your installed version). ModelEngine must report all eight model IDs as loaded and generate `plugins/ModelEngine/resource pack/`.
+3. Confirm that the eight `.bbmodel` files are in `plugins/ModelEngine/blueprints/` and the YAML is in `plugins/MythicMobs/Mobs/halloween-special-mobs.yml`. Textures are embedded in each Blockbench blueprint; accompanying PNGs are supplied as editable/source copies.
+4. Run `/meg reload`. This must generate/update `plugins/ModelEngine/resource pack/assets/`; confirm that the directory contains PNG texture files before running `/iazip`. If it does not, stop and check the ModelEngine console and that the `.bbmodel` files are in `plugins/ModelEngine/blueprints/`.
 5. Run `/mm reload`. Verify that there are no errors for the eight definitions and their `model{mid=...}` skills.
 6. In the existing ItemsAdder config, add `ModelEngine/resource pack` to `merge_other_plugins_resourcepacks_folders` without deleting existing folders. Then run `/iazip` **after** ModelEngine has generated its resource pack.
 7. Run `/iainfo` and verify the final pack URL is reachable. Disconnect/reconnect and accept the rebuilt pack. The Halloween pumpkin/web/candle overrides should be visible, and special mobs should use their ModelEngine models rather than vanilla base entities.

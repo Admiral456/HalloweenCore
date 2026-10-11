@@ -22,16 +22,19 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_2.png
 
 Included client/audio assets:
-- resourcepack/assets/minecraft/shaders/core/sky.fsh — seasonal orange/crimson sky tint
+- Optional client-only Iris shader pack in `client-packs/HalloweenCore-Iris-Crimson-Sky/` (packaged separately; not merged into ItemsAdder)
 - resourcepack/assets/minecraft/sounds.json — replaces vanilla music events with a silent OGG while the Halloween pack is active
 - resourcepack/assets/warriorland_halloween/sounds/halloween_silence.ogg — one-second silent replacement file
-- textures/armor/crimson_warden/layer_1.png and layer_2.png — ItemsAdder equipment source layers
+- textures/armor/crimson_warden/layer_1.png and layer_2.png — custom Crimson Warden equipment source layers
+- textures/armor/crimson_warden/emissive_1.png and emissive_2.png — glowing crimson runes and gold rivets for the legacy renderer
 - sounds/haunted_theme.ogg — Spooky Fester ambient loop (duration measured at build time) (mono OGG/Vorbis)
 - sounds/event_sting.ogg — original 5-second Halloween event cue (mono OGG/Vorbis)
 - configs/sounds.yml — ItemsAdder sound registration
 
 Ambient music is Spooky Fester by Eldritch Grim from OpenGameArt (CC0); it is downloaded and converted to OGG during CI. The short event cue is generated locally. Rebuild the ItemsAdder resource pack with /iazip after installing/updating these contents.
-The custom armor uses a shared Crimson Warden equipment texture set, built from 64x32 layer_1/layer_2 atlases. Place those equipment layers in the source path `plugins/ItemsAdder/contents/warriorland_halloween/textures/armor/crimson_warden/`; item icons, sounds.json, and the sky shader are emitted from `resourcepack/assets/`. It uses Netherite armor materials with configured armor values of 6/12/9/6 (33 armor points total for the full set versus 20 for full vanilla Netherite) and extended durability, while retaining normal enchantability. The Crimson Warden sword, pickaxe, axe, shovel, and hoe each have their own 32x32 transparent PNG icon, increased durability and explicit attribute modifiers; they use netherite base materials and do not block normal enchants.
+The Crimson Warden is a **custom armor set**, not Netherite armor. Its base game materials are `LEATHER_HELMET`, `LEATHER_CHESTPLATE`, `LEATHER_LEGGINGS` and `LEATHER_BOOTS`; ItemsAdder replaces their appearance with the custom 64x32 equipment atlases. Newer clients use the modern `equipments.crimson_warden` asset. The separate `legacy_armor_renderings.crimson_warden_legacy` renderer includes emissive maps for clients that need the old rendering route. The generator paints obsidian-black plate edges, layered oxblood/crimson metal, gold rivets and bright runes; `emissive_1/2` isolate the glowing details. In addition, while all four pieces are equipped, HalloweenCore grants Resistance I and Fire Resistance and draws a subtle soul-flame aura; the effects expire shortly after any piece is removed.
+
+Each component JSON explicitly sets the full Armor value rather than a delta: +6 helmet, +12 chestplate, +9 leggings and +6 boots. It also adds 3 toughness and 0.1 knockback resistance per piece, retains long durability and enchantability, and totals 33 Armor points / 12 toughness / 0.4 knockback resistance. The custom look on the player is carried by ItemsAdder's wear-texture system, while inventory icons remain unique PNGs. The separate optional client shader is under `client-packs/HalloweenCore-Iris-Crimson-Sky/`.
 
 ItemsAdder combines all content namespaces into one generated server resource pack; `warriorland_halloween` is a namespace within the pack, not a second pack in the Minecraft resource-pack menu. After `/iazip`, check `/iainfo` for the hosted URL and request/status. For ItemsAdder 4.0.17+, `resource-pack.hosting.simple_self_host.enabled: true` with `server_address: auto` is often the simplest hosting choice. Set the installed language file's `resourcepack-popup-message` to a branded message such as `&6WarriorLand Halloween 2026` if you want players to recognize the pack prompt.
 
@@ -55,13 +58,13 @@ These values come from `configs/items.yml` and the adjacent `components_nbt_file
 
 ### Armour set
 
-| Piece | Armor points | Durability | Netherite baseline durability |
+| Piece | Full Armor value shown in tooltip | Durability | Netherite baseline durability |
 |---|---:|---:|---:|
-| Helmet | 6 (Netherite 3 + 3) | 900 | 407 |
-| Chestplate | 12 (Netherite 8 + 4) | 1,300 | 592 |
-| Leggings | 9 (Netherite 6 + 3) | 1,150 | 555 |
-| Boots | 6 (Netherite 3 + 3) | 950 | 481 |
-| **Full set** | **33** | — | **20 armor points** |
+| Helmet | 6 | 900 | 407 |
+| Chestplate | 12 | 1,300 | 592 |
+| Leggings | 9 | 1,150 | 555 |
+| Boots | 6 | 950 | 481 |
+| **Full set** | **33 Armor points** | — | **20 Armor points** |
 
 The custom equipment keeps the Netherite base material/toughness and uses the configured per-piece armor values shown above. Each piece uses the original Crimson Warden 64×32 layer textures and enchantability component value 25 (Netherite's normal enchantability is 15).
 
@@ -94,7 +97,7 @@ The generated pack contains a CC0-converted Spooky Fester ambience plus six orig
 
 ## Custom enemy model files
 
-Five ModelEngine blueprints with independent 128×128 atlases are stored in `mythicmobs/models/halloween_*.bbmodel` and `mythicmobs/models/halloween_*.png`. These files are packaged separately from ItemsAdder content in the CI artifact `HalloweenCore-Special-Mobs-ModelEngine.zip`; import the blueprints into ModelEngine and merge `ModelEngine/resource pack` into the ItemsAdder-hosted pack before testing them in-game. The model/texture structure is checked by `scripts/validate_special_mob_models.py`.
+Nine ModelEngine blueprints with independent 128×128 atlases are stored in `mythicmobs/models/halloween_*.bbmodel` and `mythicmobs/models/halloween_*.png`. These files are packaged separately from ItemsAdder content in the CI artifact `HalloweenCore-Special-Mobs-ModelEngine.zip`; import the blueprints into ModelEngine and merge `ModelEngine/resource pack` into the ItemsAdder-hosted pack before testing them in-game. The model/texture structure is checked by `scripts/validate_special_mob_models.py`.
 
 
 ## Halloween world decoration textures
@@ -104,6 +107,9 @@ The ItemsAdder ZIP also includes seven **16×16 vanilla-block texture overrides*
 - `pumpkin_side.png`, `pumpkin_top.png`, `pumpkin_face.png` — pumpkin body, top and carved face.
 - `jack_o_lantern.png` — glowing jack-o'-lantern face.
 - `cobweb.png` — crimson web strands with transparent background.
-- `red_candle.png`, `red_candle_lit.png` — dark red candles and a warmer lit state.
+- `red_candle.png` — shared dark-red candle texture for both lit and unlit vanilla candle models.
 
 The HalloweenCore decorator places actual vanilla blocks into the world, so the blocks remain present even if a player declines the resource pack. The accepted pack changes their appearance instead of controlling whether they exist. These are vanilla namespace overrides and therefore affect **all** vanilla pumpkins, jack-o'-lanterns, cobwebs and red candles in resource-pack-enabled clients, not just the ones placed by HalloweenCore. They are checked by `scripts/validate_halloween_assets.py` in CI.
+
+
+**Multi-version note:** For Java clients older than 1.21.2 through ViaVersion/ViaRewind, enable `advanced.legacy_shader_armor_conversion.append_new_equipment_tag.enabled: true` in `plugins/ItemsAdder/config.yml` and do not force `advanced.completely_convert_to_new_equipment_tag.enabled: true`; then regenerate the pack with `/iazip`. Each piece in this pack defines both `equipment.id` and `legacy_armor_rendering_id`. Clients older than 1.17 may need OptiFine for legacy custom wear textures. Verify the final render with the exact client versions on your network. Armor attributes and full-set effects are server-side and do not depend on cosmetic aura rendering.

@@ -1,12 +1,21 @@
 package cz.halloween.core;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.entity.Display;
+import org.bukkit.entity.Entity;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.TileState;
+import org.bukkit.entity.ItemDisplay;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.util.Transformation;
+import org.joml.AxisAngle4f;
+import org.joml.Vector3f;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
@@ -15,20 +24,30 @@ import org.bukkit.scheduler.BukkitTask;
 
 import java.util.ArrayDeque;
 import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
-import java.util.UUID;
 
 /**
- * Adds small, natural-looking Halloween details to safe ground as chunks load.
- * It never replaces a non-air block, never touches block entities, and stores a
- * per-chunk marker to avoid repeated work on every login/restart.
+ * Adds restrained, natural-looking Halloween details to safe ground as chunks load.
+ * Existing blocks and tile entities are never replaced. A per-chunk marker prevents
+ * decoration from being repeatedly stacked after relogs or restarts.
  */
 public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
+    private final NamespacedKey previousDecoratedKey;
+    private final NamespacedKey olderDecoratedKey;
     private final NamespacedKey legacyDecoratedKey;
+    private final NamespacedKey oldestDecoratedKey;
+    private final NamespacedKey ancientDecoratedKey;
+    private final NamespacedKey oldestDecorationMarkerKey;
+    private final NamespacedKey oldestDecorationMarkerV1Key;
+    private final NamespacedKey oldestDecorationMarkerV0Key;
+    private final NamespacedKey graveAccentKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
@@ -36,8 +55,16 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
-        this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v9");
+        this.previousDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v8");
+        this.olderDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v7");
+        this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v6");
+        this.oldestDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v5");
+        this.ancientDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v4");
+        this.oldestDecorationMarkerKey = new NamespacedKey(plugin, "halloween_decorated_v3");
+        this.oldestDecorationMarkerV1Key = new NamespacedKey(plugin, "halloween_decorated_v2");
+        this.oldestDecorationMarkerV0Key = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.graveAccentKey = new NamespacedKey(plugin, "halloween_grave_accent");
     }
 
     public void start() {
@@ -52,6 +79,15 @@ public final class HalloweenWorldDecorator implements Listener {
         }
         pending.clear();
         queued.clear();
+    }
+
+    /**
+     * Resume background processing without re-queuing every chunk already loaded.
+     * Hot reload must not replay decorations across the entire visible world in one session.
+     */
+    public void resumeWithoutScanning() {
+        if (task != null || !isEnabled()) return;
+        task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::processQueue, 1L, 10L);
     }
 
     public void scanLoadedChunks() {
@@ -70,8 +106,9 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private boolean isEnabled() {
-        return plugin.isEventEnabled()
-                && plugin.getConfig().getBoolean("world-decorations.enabled", true);
+        // World decorations are ambient world-generation content, not event rewards.
+        // Keep them active even when /halloween off disables gameplay events.
+        return plugin.getConfig().getBoolean("world-decorations.enabled", true);
     }
 
     private void enqueue(Chunk chunk) {
@@ -86,13 +123,12 @@ public final class HalloweenWorldDecorator implements Listener {
             queued.clear();
             return;
         }
-        int budget = Math.max(1, Math.min(4, plugin.getConfig().getInt("world-decorations.chunks-per-tick", 2)));
+        int budget = Math.max(1, Math.min(3, plugin.getConfig().getInt("world-decorations.chunks-per-tick", 1)));
         for (int i = 0; i < budget; i++) {
             Chunk chunk = pending.poll();
             if (chunk == null) return;
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
-            if (!chunk.isLoaded()) continue;
-            if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
+            if (!chunk.isLoaded() || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
             try {
                 decorateChunk(chunk);
                 chunk.getPersistentDataContainer().set(decoratedKey, PersistentDataType.BYTE, (byte) 1);
@@ -100,85 +136,397 @@ public final class HalloweenWorldDecorator implements Listener {
                 String warningKey = ex.getClass().getName();
                 if (warnedErrors.add(warningKey)) {
                     plugin.getLogger().warning("Halloween world decoration encountered " + warningKey
-                            + " at chunk " + chunk.getWorld().getName() + " "
-                            + chunk.getX() + "," + chunk.getZ()
-                            + ". Further errors of this type are suppressed to keep the console readable.");
+                            + " at chunk " + chunk.getWorld().getName() + " " + chunk.getX() + "," + chunk.getZ()
+                            + ". Further errors of this type are suppressed.");
                 }
             }
         }
     }
 
     private void decorateChunk(Chunk chunk) {
-        // Existing decorated chunks get only the new accent layer. Avoid stacking
-        // a second batch of pumpkins/cobwebs when upgrading an already-running world.
-        boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE);
-        int pumpkins = legacyDecorated ? 0 : Math.max(0, Math.min(6,
-                plugin.getConfig().getInt("world-decorations.pumpkins-per-chunk", 5)));
-        int webs = legacyDecorated ? 0 : Math.max(0, Math.min(3,
-                plugin.getConfig().getInt("world-decorations.cobwebs-per-chunk", 2)));
-        int candles = Math.max(0, Math.min(3, plugin.getConfig().getInt("world-decorations.red-candles-per-chunk", 1)));
-        int attempts = Math.max(8, Math.min(80, plugin.getConfig().getInt("world-decorations.attempts-per-placement", 32)));
+        boolean legacyDecorated = chunk.getPersistentDataContainer().has(previousDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(olderDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(oldestDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(ancientDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(oldestDecorationMarkerKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(oldestDecorationMarkerV1Key, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(oldestDecorationMarkerV0Key, PersistentDataType.BYTE);
+        // Legacy flat gravestones are removed only after at least one replacement was
+        // successfully built, so unsuitable chunks never lose their existing decoration.
+
+        // Legacy chunks are upgraded with 3D graves/mushrooms only; don't duplicate
+        // old pumpkins, webs, candles, lights or small mushrooms on their new pass.
+        java.util.Map<Material, Integer> existing = countExistingSurfaceDecorations(chunk);
+        int pumpkins = Math.max(0, bounded("pumpkins-per-chunk", 5, 0, 6)
+                - existing.getOrDefault(Material.PUMPKIN, 0)
+                - existing.getOrDefault(Material.CARVED_PUMPKIN, 0)
+                - existing.getOrDefault(Material.JACK_O_LANTERN, 0));
+        int webs = Math.max(0, bounded("cobwebs-per-chunk", 2, 0, 3) - existing.getOrDefault(Material.COBWEB, 0));
+        int candles = Math.max(0, bounded("red-candles-per-chunk", 1, 0, 3) - existing.getOrDefault(Material.RED_CANDLE, 0));
+        boolean existingPhysicalGrave = existing.getOrDefault(Material.CHISELED_POLISHED_BLACKSTONE, 0) > 0
+                || existing.getOrDefault(Material.CRACKED_POLISHED_BLACKSTONE_BRICKS, 0) > 0
+                || existing.getOrDefault(Material.MOSSY_STONE_BRICKS, 0) > 0;
+        int graves = existingPhysicalGrave ? 0 : bounded("gravestones-per-chunk", 1, 0, 2);
+        int deadPlants = Math.max(0, bounded("dead-plants-per-chunk", 1, 0, 3)
+                - existing.getOrDefault(Material.DEAD_BUSH, 0)
+                - existing.getOrDefault(Material.BROWN_MUSHROOM, 0)
+                - existing.getOrDefault(Material.RED_MUSHROOM, 0));
+        int largeMushrooms = (existing.getOrDefault(Material.MUSHROOM_STEM, 0)
+                + existing.getOrDefault(Material.RED_MUSHROOM_BLOCK, 0)
+                + existing.getOrDefault(Material.BROWN_MUSHROOM_BLOCK, 0)) > 0
+                ? 0 : bounded("large-mushrooms-per-chunk", 1, 0, 1);
+        int soulLights = Math.max(0, bounded("soul-lights-per-chunk", 1, 0, 2)
+                - existing.getOrDefault(Material.SOUL_LANTERN, 0));
+        int attempts = bounded("attempts-per-placement", 96, 16, 128);
         long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C4F574545L;
         Random random = new Random(seed);
-        int pumpkinCount = 0;
-        for (int i = 0; i < attempts && pumpkinCount < pumpkins; i++) {
-            int x = (chunk.getX() << 4) + random.nextInt(16);
-            int z = (chunk.getZ() << 4) + random.nextInt(16);
-            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
-            if (!isNaturalGround(ground.getType())) continue;
-            if (!(ground.getRelative(0, 1, 0).getType().isAir())) continue;
-            if (ground.getState() instanceof TileState) continue;
-            if (!naturalNeighborhood(ground)) continue;
 
+        int placed = 0;
+        for (int i = 0; i < attempts && placed < pumpkins; i++) {
+            Block ground = randomSurface(chunk, random);
+            if (!isNaturalGround(ground.getType()) || !ground.getRelative(0, 1, 0).getType().isAir()
+                    || ground.getState() instanceof TileState || !naturalNeighborhood(ground)) continue;
             Material pumpkin = switch (random.nextInt(5)) {
                 case 0 -> Material.JACK_O_LANTERN;
                 case 1 -> Material.CARVED_PUMPKIN;
                 default -> Material.PUMPKIN;
             };
             ground.getRelative(0, 1, 0).setType(pumpkin, false);
-            pumpkinCount++;
+            placed++;
         }
 
-        int webCount = 0;
-        for (int i = 0; i < attempts && webCount < webs; i++) {
-            int x = (chunk.getX() << 4) + random.nextInt(16);
-            int z = (chunk.getZ() << 4) + random.nextInt(16);
-            Block surface = chunk.getWorld().getHighestBlockAt(x, z);
-            if (!isNaturalWebAnchor(surface.getType())) continue;
-            Block air = surface.getRelative(0, 1, 0);
-            if (!air.getType().isAir() || air.getY() <= chunk.getWorld().getMinHeight()) continue;
-            if (air.getState() instanceof TileState) continue;
-            if (countNearbyWebAnchors(surface) < 2) continue;
-            air.setType(Material.COBWEB, false);
-            webCount++;
-        }
-
-        int candleCount = 0;
-        for (int i = 0; i < attempts && candleCount < candles; i++) {
-            int x = (chunk.getX() << 4) + random.nextInt(16);
-            int z = (chunk.getZ() << 4) + random.nextInt(16);
-            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
-            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid()) continue;
-            if (!naturalNeighborhood(ground) || ground.getState() instanceof TileState) continue;
+        placed = 0;
+        for (int i = 0; i < attempts && placed < webs; i++) {
+            Block ground = randomCanopySurface(chunk, random);
+            if (!isNaturalWebAnchor(ground.getType())) continue;
             Block air = ground.getRelative(0, 1, 0);
-            if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
-            air.setType(Material.RED_CANDLE, false);
-            candleCount++;
+            if (!air.getType().isAir() || air.getState() instanceof TileState || countNearbyWebAnchors(ground) < 2) continue;
+            air.setType(Material.COBWEB, false);
+            placed++;
         }
+
+        placed = 0;
+        for (int i = 0; i < attempts && placed < candles; i++) {
+            Block ground = randomSurface(chunk, random);
+            Block air = ground.getRelative(0, 1, 0);
+            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid() || !naturalNeighborhood(ground)
+                    || ground.getState() instanceof TileState || !air.getType().isAir()
+                    || air.getState() instanceof TileState) continue;
+            air.setType(Material.RED_CANDLE, false);
+            placed++;
+        }
+
+        // ItemDisplay gravestones use a dedicated pixel-art ItemsAdder texture.
+        // Older worlds keep their pumpkins/webs but receive the new grave accents once.
+        placed = 0;
+        for (int i = 0; i < attempts && placed < graves; i++) {
+            Block ground = randomSurface(chunk, random);
+            Block foot = ground.getRelative(0, 1, 0);
+            Block head = ground.getRelative(0, 2, 0);
+            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid() || !naturalNeighborhood(ground)
+                    || ground.getState() instanceof TileState || !foot.getType().isAir() || !head.getType().isAir()
+                    || foot.getState() instanceof TileState || head.getState() instanceof TileState) continue;
+            if (placeGravestone(ground, random)) placed++;
+        }
+        if (legacyDecorated && (placed > 0 || existingPhysicalGrave)) removeLegacyFlatGraveDisplays(chunk);
+
+        // Add actual 3D mushrooms formed from mushroom-stem and mushroom-cap blocks.
+        // The seasonal pack changes their cap textures, but the geometry is real blocks.
+        placed = 0;
+        for (int i = 0; i < attempts && placed < largeMushrooms; i++) {
+            Block ground = randomSurface(chunk, random);
+            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid()
+                    || ground.getState() instanceof TileState || !naturalNeighborhood(ground)) continue;
+            if (placeLargeMushroom(ground, random)) placed++;
+        }
+
+        // Dead vegetation only appears where the vanilla block can safely sit; no terrain is removed.
+        placed = 0;
+        for (int i = 0; i < attempts && placed < deadPlants; i++) {
+            Block ground = randomSurface(chunk, random);
+            Block air = ground.getRelative(0, 1, 0);
+            if (!air.getType().isAir() || air.getState() instanceof TileState || ground.getState() instanceof TileState) continue;
+            Material plant;
+            if (ground.getType() == Material.SAND || ground.getType() == Material.RED_SAND) {
+                plant = Material.DEAD_BUSH;
+            } else if (isNaturalGround(ground.getType()) && ground.getType().isSolid()) {
+                plant = random.nextBoolean() ? Material.BROWN_MUSHROOM : Material.RED_MUSHROOM;
+            } else {
+                continue;
+            }
+            air.setType(plant, false);
+            placed++;
+        }
+
+        placed = 0;
+        for (int i = 0; i < attempts && placed < soulLights; i++) {
+            Block ground = randomSurface(chunk, random);
+            Block air = ground.getRelative(0, 1, 0);
+            if (!isNaturalGround(ground.getType()) || !ground.getType().isSolid() || !naturalNeighborhood(ground)
+                    || ground.getState() instanceof TileState || !air.getType().isAir()
+                    || air.getState() instanceof TileState) continue;
+            air.setType(Material.SOUL_LANTERN, false);
+            placed++;
+        }
+
+        // Haunted soil patches add visible 3-6 block clusters instead of isolated pixels.
+        // Existing chunks already have their old cursed-soil patches; avoid duplicating them during a density migration.
+        int soilPatches = legacyDecorated ? 0 : bounded("haunted-soil-patches-per-chunk", 3, 0, 8);
+        int createdPatches = 0;
+        for (int i = 0; i < attempts && createdPatches < soilPatches; i++) {
+            Block patchCenter = randomSurface(chunk, random);
+            Material original = patchCenter.getType();
+            Block seedAbove = patchCenter.getRelative(0, 1, 0);
+            if ((original != Material.GRASS_BLOCK && original != Material.DIRT)
+                    || !seedAbove.getType().isAir() || patchCenter.getState() instanceof TileState
+                    || seedAbove.getState() instanceof TileState || !naturalNeighborhood(patchCenter)) continue;
+
+            Material cursedSoil = switch (random.nextInt(4)) {
+                case 0 -> Material.SOUL_SOIL;
+                case 1 -> Material.MYCELIUM;
+                case 2 -> Material.COARSE_DIRT;
+                default -> Material.PODZOL;
+            };
+            int desiredBlocks = 3 + random.nextInt(4);
+            int changedBlocks = 0;
+            for (int attempt = 0; attempt < desiredBlocks * 8 && changedBlocks < desiredBlocks; attempt++) {
+                int dx = changedBlocks == 0 ? 0 : random.nextInt(3) - 1;
+                int dz = changedBlocks == 0 ? 0 : random.nextInt(3) - 1;
+                int x = patchCenter.getX() + dx;
+                int z = patchCenter.getZ() + dz;
+                if ((x >> 4) != chunk.getX() || (z >> 4) != chunk.getZ()) continue;
+                int highest = chunk.getWorld().getHighestBlockYAt(x, z);
+                Block ground = null;
+                int lowest = Math.max(chunk.getWorld().getMinHeight(), highest - 12);
+                for (int y = highest; y >= lowest; y--) {
+                    Block candidate = chunk.getWorld().getBlockAt(x, y, z);
+                    if (isNaturalGround(candidate.getType()) && candidate.getType().isSolid()
+                            && !(candidate.getState() instanceof TileState)) {
+                        ground = candidate;
+                        break;
+                    }
+                }
+                if (ground == null || (ground.getType() != Material.GRASS_BLOCK && ground.getType() != Material.DIRT)) continue;
+                Block above = ground.getRelative(0, 1, 0);
+                if (!above.getType().isAir() || ground.getState() instanceof TileState
+                        || above.getState() instanceof TileState || !naturalNeighborhood(ground)) continue;
+                ground.setType(cursedSoil, false);
+                changedBlocks++;
+            }
+            if (changedBlocks > 0) createdPatches++;
+        }
+    }
+
+    private record BlockPlacement(int dx, int dy, int dz, Material material) {}
+
+    /**
+     * Remove only legacy ItemDisplays that used the whole flat gravestone sprite.
+     * The current grave is built from real blocks, with a small rune icon used only as an accent.
+     */
+    private void removeLegacyFlatGraveDisplays(Chunk chunk) {
+        for (Entity entity : chunk.getEntities()) {
+            if (!(entity instanceof ItemDisplay display)) continue;
+            ItemStack stack = display.getItemStack();
+            if (stack == null || stack.getType() != Material.PAPER || !stack.hasItemMeta()) continue;
+            ItemMeta meta = stack.getItemMeta();
+            if (meta == null || !meta.hasDisplayName()) continue;
+            String name = ChatColor.stripColor(meta.getDisplayName());
+            if (name == null) continue;
+            String normalized = name.toLowerCase(Locale.ROOT);
+            if (normalized.contains("náhrobek prokletého hřbitova")
+                    || normalized.contains("rozpraskaný náhrobek")) {
+                display.remove();
+            }
+        }
+    }
+
+    private boolean placeGravestone(Block ground, Random random) {
+        boolean cracked = random.nextBoolean();
+        Material baseStone = cracked ? Material.DEEPSLATE_BRICKS : Material.POLISHED_BLACKSTONE_BRICKS;
+        Material stone = cracked ? Material.CRACKED_POLISHED_BLACKSTONE_BRICKS : Material.POLISHED_BLACKSTONE_BRICKS;
+        Material face = cracked ? Material.CRACKED_DEEPSLATE_BRICKS : Material.CHISELED_POLISHED_BLACKSTONE;
+        Material sideWall = cracked ? Material.COBBLESTONE_WALL : Material.POLISHED_BLACKSTONE_BRICK_WALL;
+
+        List<BlockPlacement> plan = new ArrayList<>();
+        // Low six-block plinth makes the grave look grounded rather than like a floating icon.
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = 0; dz <= 1; dz++) {
+                plan.add(new BlockPlacement(dx, 1, dz, baseStone));
+            }
+        }
+        // A real stone cross silhouette, a carved face, side braces and a capstone.
+        plan.add(new BlockPlacement(0, 2, 0, stone));
+        plan.add(new BlockPlacement(0, 3, 0, face));
+        plan.add(new BlockPlacement(-1, 3, 0, stone));
+        plan.add(new BlockPlacement(1, 3, 0, stone));
+        plan.add(new BlockPlacement(0, 4, 0, stone));
+        plan.add(new BlockPlacement(0, 5, 0, Material.POLISHED_BLACKSTONE_BRICK_SLAB));
+        plan.add(new BlockPlacement(-1, 2, 1, sideWall));
+        plan.add(new BlockPlacement(1, 2, 1, sideWall));
+
+        int x = ground.getX();
+        int y = ground.getY();
+        int z = ground.getZ();
+        // Require a flat 3x2 patch of untouched natural ground. Never carve or replace it.
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = 0; dz <= 1; dz++) {
+                Block support = ground.getRelative(dx, 0, dz);
+                if (!isNaturalGround(support.getType()) || support.getState() instanceof TileState
+                        || support.getWorld().getHighestBlockYAt(x + dx, z + dz) != y) return false;
+            }
+        }
+        for (BlockPlacement placement : plan) {
+            Block target = ground.getRelative(placement.dx(), placement.dy(), placement.dz());
+            if (!target.getType().isAir() || target.getState() instanceof TileState) return false;
+        }
+
+        for (BlockPlacement placement : plan) {
+            ground.getRelative(placement.dx(), placement.dy(), placement.dz()).setType(placement.material(), false);
+        }
+
+        // Small custom rune on the front is decorative; the headstone itself is physical geometry.
+        String itemId = cracked
+                ? "warriorland_halloween:grave_marker_cracked"
+                : "warriorland_halloween:grave_marker";
+        ItemStack marker = plugin.getItemManager() == null
+                ? null : plugin.getItemManager().getItemsAdderItem(itemId, 1);
+        if (marker != null) {
+            ItemDisplay display = null;
+            try {
+                Location location = new Location(ground.getWorld(), x + 0.5D, y + 3.5D, z + 1.035D);
+                display = ground.getWorld().spawn(location, ItemDisplay.class);
+                display.setItemStack(marker);
+                display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
+                display.setBillboard(Display.Billboard.VERTICAL);
+                display.setTransformation(new Transformation(
+                        new Vector3f(0.0F, 0.0F, 0.0F),
+                        new AxisAngle4f(),
+                        new Vector3f(0.48F, 0.48F, 0.12F),
+                        new AxisAngle4f()));
+                display.setPersistent(true);
+                display.setGravity(false);
+                display.setInvulnerable(true);
+                display.setSilent(true);
+                display.getPersistentDataContainer().set(graveAccentKey, PersistentDataType.BYTE, (byte) 1);
+            } catch (RuntimeException ex) {
+                if (display != null && display.isValid()) display.remove();
+                String warningKey = "gravestone-accent|" + ex.getClass().getName();
+                if (warnedErrors.add(warningKey)) {
+                    plugin.getLogger().warning("Halloween 3D gravestones were built without the optional rune accent ("
+                            + ex.getClass().getSimpleName() + ").");
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Chunks can already contain vanilla or plugin decorations from previous builds.
+     * Count the surface area before a new version upgrades the chunk, so missing items
+     * are backfilled without stacking a second full set on every upgrade.
+     */
+    private java.util.Map<Material, Integer> countExistingSurfaceDecorations(Chunk chunk) {
+        java.util.Set<Material> tracked = java.util.Set.of(
+                Material.PUMPKIN, Material.CARVED_PUMPKIN, Material.JACK_O_LANTERN,
+                Material.COBWEB, Material.RED_CANDLE, Material.DEAD_BUSH,
+                Material.BROWN_MUSHROOM, Material.RED_MUSHROOM, Material.SOUL_LANTERN,
+                Material.MUSHROOM_STEM, Material.RED_MUSHROOM_BLOCK, Material.BROWN_MUSHROOM_BLOCK,
+                Material.POLISHED_BLACKSTONE_BRICKS, Material.CHISELED_POLISHED_BLACKSTONE,
+                Material.POLISHED_BLACKSTONE_BRICK_SLAB, Material.POLISHED_BLACKSTONE_BRICK_WALL,
+                Material.CRACKED_POLISHED_BLACKSTONE_BRICKS, Material.DEEPSLATE_BRICK_SLAB,
+                Material.CRACKED_DEEPSLATE_BRICKS, Material.MOSSY_STONE_BRICKS, Material.MOSSY_STONE_BRICK_SLAB);
+        java.util.Map<Material, Integer> counts = new java.util.EnumMap<>(Material.class);
+        World world = chunk.getWorld();
+        int baseX = chunk.getX() << 4;
+        int baseZ = chunk.getZ() << 4;
+        for (int x = baseX; x < baseX + 16; x++) {
+            for (int z = baseZ; z < baseZ + 16; z++) {
+                int highest = world.getHighestBlockYAt(x, z);
+                int lowest = Math.max(world.getMinHeight(), highest - 80);
+                for (int y = highest; y >= lowest; y--) {
+                    Material material = world.getBlockAt(x, y, z).getType();
+                    if (tracked.contains(material)) counts.merge(material, 1, Integer::sum);
+                }
+            }
+        }
+        return counts;
+    }
+
+    private boolean placeLargeMushroom(Block ground, Random random) {
+        boolean red = random.nextBoolean();
+        Material cap = red ? Material.RED_MUSHROOM_BLOCK : Material.BROWN_MUSHROOM_BLOCK;
+        List<BlockPlacement> plan = new ArrayList<>();
+        plan.add(new BlockPlacement(0, 1, 0, Material.MUSHROOM_STEM));
+        plan.add(new BlockPlacement(0, 2, 0, Material.MUSHROOM_STEM));
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                plan.add(new BlockPlacement(dx, 3, dz, cap));
+            }
+        }
+        plan.add(new BlockPlacement(0, 4, 0, cap));
+
+        int x = ground.getX();
+        int y = ground.getY();
+        int z = ground.getZ();
+        // A level natural 3x3 patch keeps the mushroom rooted and avoids building over paths,
+        // houses, chest blocks, or sloped terrain.
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                Block support = ground.getRelative(dx, 0, dz);
+                if (!isNaturalGround(support.getType()) || support.getState() instanceof TileState
+                        || support.getWorld().getHighestBlockYAt(x + dx, z + dz) != y) return false;
+            }
+        }
+        for (BlockPlacement placement : plan) {
+            Block target = ground.getRelative(placement.dx(), placement.dy(), placement.dz());
+            if (!target.getType().isAir() || target.getState() instanceof TileState) return false;
+        }
+        for (BlockPlacement placement : plan) {
+            ground.getRelative(placement.dx(), placement.dy(), placement.dz()).setType(placement.material(), false);
+        }
+        return true;
+    }
+
+    private int bounded(String key, int fallback, int min, int max) {
+        return Math.max(min, Math.min(max, plugin.getConfig().getInt("world-decorations." + key, fallback)));
+    }
+
+    private Block randomSurface(Chunk chunk, Random random) {
+        int x = (chunk.getX() << 4) + random.nextInt(16);
+        int z = (chunk.getZ() << 4) + random.nextInt(16);
+        World world = chunk.getWorld();
+        int highest = world.getHighestBlockYAt(x, z);
+        int lowest = Math.max(world.getMinHeight(), highest - 80);
+
+        // getHighestBlockAt can point at a tree canopy. Walk down to the real
+        // natural ground so pumpkins, mushrooms, candles and graves are not
+        // accidentally tested against leaves/logs and silently skipped.
+        for (int y = highest; y >= lowest; y--) {
+            Block candidate = world.getBlockAt(x, y, z);
+            if (isNaturalGround(candidate.getType()) && candidate.getType().isSolid()
+                    && !(candidate.getState() instanceof TileState)) {
+                return candidate;
+            }
+        }
+        return world.getHighestBlockAt(x, z);
+    }
+
+    private Block randomCanopySurface(Chunk chunk, Random random) {
+        int x = (chunk.getX() << 4) + random.nextInt(16);
+        int z = (chunk.getZ() << 4) + random.nextInt(16);
+        return chunk.getWorld().getHighestBlockAt(x, z);
     }
 
     private boolean naturalNeighborhood(Block ground) {
         int natural = 0;
-        int checked = 0;
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                Block block = ground.getRelative(dx, 0, dz);
-                checked++;
-                if (isNaturalGround(block.getType())) natural++;
+                if (isNaturalGround(ground.getRelative(dx, 0, dz).getType())) natural++;
             }
         }
-        return natural >= Math.min(7, checked);
+        return natural >= 5;
     }
 
     private int countNearbyWebAnchors(Block center) {
@@ -188,9 +536,7 @@ public final class HalloweenWorldDecorator implements Listener {
                 if (dx == 0 && dz == 0) continue;
                 Block neighbor = center.getRelative(dx, 0, dz);
                 if (isNaturalWebAnchor(neighbor.getType())
-                        || isNaturalWebAnchor(neighbor.getRelative(0, -1, 0).getType())) {
-                    anchors++;
-                }
+                        || isNaturalWebAnchor(neighbor.getRelative(0, -1, 0).getType())) anchors++;
             }
         }
         return anchors;

@@ -7,6 +7,17 @@ equipments:
     layer_1: armor/crimson_warden/layer_1
     layer_2: armor/crimson_warden/layer_2
 
+# Legacy renderer is retained for ViaVersion clients older than the 1.21.2 equipment system.
+# Modern clients use the equipment asset above; supported older clients use this shader renderer.
+legacy_armor_renderings:
+  crimson_warden_legacy:
+    color: "#570e11"
+    layer_1: armor/crimson_warden/layer_1
+    layer_2: armor/crimson_warden/layer_2
+    emissive_1: armor/crimson_warden/emissive_1
+    emissive_2: armor/crimson_warden/emissive_2
+    use_color: false
+
 items:
   hunter_mask:
     name: "&6&lMaska nočního lovce &8[Halloween 2026]"
@@ -46,13 +57,32 @@ items:
     graphics:
       texture: item/haunted_map
 
+  grave_marker:
+    name: "&8&lNáhrobek Prokletého hřbitova"
+    lore:
+      - "&7Starý kámen s vyrytým ohnivým symbolem."
+      - "&8Dekorace používaná v opuštěných částech světa."
+    material: PAPER
+    graphics:
+      texture: item/grave_marker
+
+  grave_marker_cracked:
+    name: "&5&lRozpraskaný náhrobek"
+    lore:
+      - "&7Ve škvírách kamene se drží podivná záře."
+      - "&8Dekorace používaná v opuštěných částech světa."
+    material: PAPER
+    graphics:
+      texture: item/grave_marker_cracked
+
   crimson_warden_helmet:
     name: "&4&lHelma Krvavého strážce"
     lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 6 (netherit 3) • výdrž 900."
-      - "&8Lze enchantovat běžnými enchanty."
-    material: NETHERITE_HELMET
+      - "&7Vlastní karmínové plátování a obsidiánové hrany."
+      - "&8Zpevněno zlatými nýty a žhnoucími runami."
+      - "&4Kompletní sada: &cOdolnost I + Ohnivzdornost."
+      - "&5Při nošení celé sady se kolem tebe vznáší duševní plamen."
+    material: LEATHER_HELMET
     components_nbt_file: "crimson_warden_helmet.json"
     graphics:
       texture: item/crimson_warden_helmet
@@ -60,16 +90,16 @@ items:
       max_durability: 900
     equipment:
       id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 3
+      legacy_armor_rendering_id: crimson_warden_legacy
 
   crimson_warden_chestplate:
     name: "&4&lKyrys Krvavého strážce"
     lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 12 (netherit 8) • výdrž 1 300."
-      - "&8Lze enchantovat běžnými enchanty."
-    material: NETHERITE_CHESTPLATE
+      - "&7Vlastní karmínové plátování a obsidiánové hrany."
+      - "&8Zpevněno zlatými nýty a žhnoucími runami."
+      - "&4Kompletní sada: &cOdolnost I + Ohnivzdornost."
+      - "&5Při nošení celé sady se kolem tebe vznáší duševní plamen."
+    material: LEATHER_CHESTPLATE
     components_nbt_file: "crimson_warden_chestplate.json"
     graphics:
       texture: item/crimson_warden_chestplate
@@ -77,16 +107,16 @@ items:
       max_durability: 1300
     equipment:
       id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 4
+      legacy_armor_rendering_id: crimson_warden_legacy
 
   crimson_warden_leggings:
     name: "&4&lNohavice Krvavého strážce"
     lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 9 (netherit 6) • výdrž 1 150."
-      - "&8Lze enchantovat běžnými enchanty."
-    material: NETHERITE_LEGGINGS
+      - "&7Vlastní karmínové plátování a obsidiánové hrany."
+      - "&8Zpevněno zlatými nýty a žhnoucími runami."
+      - "&4Kompletní sada: &cOdolnost I + Ohnivzdornost."
+      - "&5Při nošení celé sady se kolem tebe vznáší duševní plamen."
+    material: LEATHER_LEGGINGS
     components_nbt_file: "crimson_warden_leggings.json"
     graphics:
       texture: item/crimson_warden_leggings
@@ -94,16 +124,16 @@ items:
       max_durability: 1150
     equipment:
       id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 3
+      legacy_armor_rendering_id: crimson_warden_legacy
 
   crimson_warden_boots:
     name: "&4&lBoty Krvavého strážce"
     lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 6 (netherit 3) • výdrž 950."
-      - "&8Lze enchantovat běžnými enchanty."
-    material: NETHERITE_BOOTS
+      - "&7Vlastní karmínové plátování a obsidiánové hrany."
+      - "&8Zpevněno zlatými nýty a žhnoucími runami."
+      - "&4Kompletní sada: &cOdolnost I + Ohnivzdornost."
+      - "&5Při nošení celé sady se kolem tebe vznáší duševní plamen."
+    material: LEATHER_BOOTS
     components_nbt_file: "crimson_warden_boots.json"
     graphics:
       texture: item/crimson_warden_boots
@@ -111,8 +141,23 @@ items:
       max_durability: 950
     equipment:
       id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 3
+      legacy_armor_rendering_id: crimson_warden_legacy
+
+  crimson_warden_shield:
+    name: "&4&lŠtít Krvavého strážce"
+    lore:
+      - "&7Štít ukovaný v plamenech Krvavého měsíce."
+      - "&cSchopnost: Krvavá bariéra"
+      - "&7Přikrč se a klikni pravým tlačítkem."
+      - "&8Cooldown: 45 sekund"
+    material: SHIELD
+    components_nbt_file: "crimson_warden_shield.json"
+    graphics:
+      textures:
+        normal: item/crimson_warden_shield
+        blocking: item/crimson_warden_shield_blocking
+    durability:
+      max_durability: 1600
 
   crimson_warden_sword:
     name: "&4&lKrvavý meč"

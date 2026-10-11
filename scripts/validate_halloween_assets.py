@@ -6,20 +6,22 @@ import re
 import struct
 import subprocess
 import sys
+import zlib
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
 TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
-SHADER = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
+SHADER = ROOT / "client-packs" / "HalloweenCore-Iris-Crimson-Sky" / "shaders" / "gbuffers_skybasic.fsh"
 CONFIG = CONTENT / "configs" / "items.yml"
 SOUNDS_CONFIG = CONTENT / "configs" / "sounds.yml"
-THEME = CONTENT / "sounds" / "haunted_theme.ogg"
+SOUNDS_DIR = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "sounds"
+THEME = SOUNDS_DIR / "haunted_theme.ogg"
 PLAYLIST_TRACKS = {
-    "horror_atmosphere": CONTENT / "sounds" / "horror_atmosphere.ogg",
-    "creepy_ambient": CONTENT / "sounds" / "creepy_ambient.ogg",
-    "dark_cavern_ambient": CONTENT / "sounds" / "dark_cavern_ambient.ogg",
+    "horror_atmosphere": SOUNDS_DIR / "horror_atmosphere.ogg",
+    "creepy_ambient": SOUNDS_DIR / "creepy_ambient.ogg",
+    "dark_cavern_ambient": SOUNDS_DIR / "dark_cavern_ambient.ogg",
 }
-EVENT_STING = CONTENT / "sounds" / "event_sting.ogg"
+EVENT_STING = SOUNDS_DIR / "event_sting.ogg"
 EVENT_CUES = {
     "soulstorm_sting": 5.2,
     "witching_sting": 4.8,
@@ -47,12 +49,18 @@ EXPECTED = {
     "crimson_warden_axe.png",
     "crimson_warden_shovel.png",
     "crimson_warden_hoe.png",
+    "grave_marker.png",
+    "grave_marker_cracked.png",
+    "crimson_warden_shield.png",
+    "crimson_warden_shield_blocking.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
 VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
 EXPECTED_SEASONAL_BLOCK_TEXTURES = {
     "pumpkin_side.png", "pumpkin_top.png", "pumpkin_face.png",
-    "jack_o_lantern.png", "cobweb.png", "red_candle.png", "red_candle_lit.png",
+    "jack_o_lantern.png", "cobweb.png", "red_candle.png",
+    "red_mushroom.png", "brown_mushroom.png", "dead_bush.png",
+    "red_mushroom_block.png", "brown_mushroom_block.png", "mushroom_block_inside.png", "mushroom_stem.png",
 }
 
 
@@ -81,13 +89,14 @@ def png_size(path: Path) -> tuple[int, int]:
 
 
 def strict_png_size(path: Path) -> tuple[int, int]:
-    """Validate complete PNG chunk lengths and CRCs, then return its dimensions."""
+    """Validate PNG signature, every chunk CRC, IEND and decodable IDAT data."""
     data = path.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
         raise ValueError(f"{path} is not a PNG file")
     offset = 8
     width = height = None
     saw_iend = False
+    idat = bytearray()
     while offset + 12 <= len(data):
         length = struct.unpack(">I", data[offset:offset + 4])[0]
         kind = data[offset + 4:offset + 8]
@@ -102,7 +111,9 @@ def strict_png_size(path: Path) -> tuple[int, int]:
             if length != 13:
                 raise ValueError(f"{path} has an invalid PNG IHDR chunk")
             width, height = struct.unpack(">II", chunk_data[:8])
-        if kind == b"IEND":
+        elif kind == b"IDAT":
+            idat.extend(chunk_data)
+        elif kind == b"IEND":
             if length != 0:
                 raise ValueError(f"{path} has an invalid PNG IEND chunk")
             saw_iend = True
@@ -110,8 +121,15 @@ def strict_png_size(path: Path) -> tuple[int, int]:
             break
         offset = end + 4
     if not saw_iend or width is None or height is None or offset != len(data):
-        raise ValueError(f"{path} has missing or trailing PNG data")
+        raise ValueError(f"{path} has missing IEND, invalid dimensions or trailing PNG data")
+    if not idat:
+        raise ValueError(f"{path} has no image data")
+    try:
+        zlib.decompress(bytes(idat))
+    except zlib.error as exc:
+        raise ValueError(f"{path} image data cannot be decoded: {exc}") from exc
     return width, height
+
 
 def fail(message: str) -> None:
     print(f"ERROR: {message}", file=sys.stderr)
@@ -122,24 +140,185 @@ if missing:
     fail("Missing item textures: " + ", ".join(missing))
 
 for name in sorted(EXPECTED):
-    width, height = png_size(TEXTURES / name)
+    width, height = strict_png_size(TEXTURES / name)
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
 
-for layer in ("layer_1.png", "layer_2.png"):
+items_config = CONFIG.read_text(encoding="utf-8")
+for item_id, texture in (("grave_marker", "item/grave_marker"),
+                         ("grave_marker_cracked", "item/grave_marker_cracked")):
+    match = re.search(rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_config)
+    if not match:
+        fail(f"ItemsAdder config is missing custom gravestone item {item_id}")
+    if f"texture: {texture}" not in match.group(1) or "material: PAPER" not in match.group(1):
+        fail(f"{item_id} must use its generated ItemsAdder pixel-art texture")
+
+for layer in ("layer_1.png", "layer_2.png", "emissive_1.png", "emissive_2.png"):
     path = ARMOR_TEXTURES / layer
     if not path.is_file():
         fail("Missing Crimson Warden armor layer: " + str(path.relative_to(ROOT)))
-    width, height = png_size(path)
+    width, height = strict_png_size(path)
     if (width, height) != (64, 32):
         fail(f"{layer} must be 64x32, got {width}x{height}")
+    source = ARMOR_SOURCE_TEXTURES / layer
+    if not source.is_file():
+        fail("Missing source Crimson Warden armor layer: " + str(source.relative_to(ROOT)))
+    source_width, source_height = strict_png_size(source)
+    if (source_width, source_height) != (64, 32):
+        fail(f"Source {layer} must be 64x32, got {source_width}x{source_height}")
+    if source.read_bytes() != path.read_bytes():
+        fail(f"Source and resource-pack copies of {layer} differ; keep both paths in sync")
+for emissive in ("emissive_1.png", "emissive_2.png"):
+    # The generator verifies a minimum glow pixel count after rendering the alpha mask.
+    if not (ARMOR_SOURCE_TEXTURES / emissive).is_file():
+        fail(f"Missing legacy emissive texture {emissive}")
+
+# Verify that ItemsAdder's equipment modifiers match the advertised armor totals.
+ARMOR_BALANCE = {
+    # Leather is only the gameplay base material. Both modern equipment assets and the
+    # legacy ItemsAdder renderer replace the worn appearance with the custom Crimson Warden atlas.
+    "crimson_warden_helmet": ("LEATHER_HELMET", 6, 900, "head"),
+    "crimson_warden_chestplate": ("LEATHER_CHESTPLATE", 12, 1300, "chest"),
+    "crimson_warden_leggings": ("LEATHER_LEGGINGS", 9, 1150, "legs"),
+    "crimson_warden_boots": ("LEATHER_BOOTS", 6, 950, "feet"),
+}
+items_yaml = CONFIG.read_text(encoding="utf-8")
+
+# Validate the link between every ItemsAdder graphics texture/state and its actual
+# PNG. This also checks state textures such as SHIELD's normal/blocking variants.
+referenced_textures = set()
+texture_root = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures"
+item_sections = re.finditer(
+    r"(?ms)^  ([A-Za-z0-9_-]+):\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)",
+    items_yaml,
+)
+for item_section in item_sections:
+    item_id, section = item_section.group(1), item_section.group(2)
+    graphics_match = re.search(r"(?ms)^    graphics:\n(.*?)(?=^    [A-Za-z0-9_-]+:\s*$|\Z)", section)
+    if not graphics_match:
+        continue
+    graphics = graphics_match.group(1)
+    texture_ids = []
+    single_texture = re.search(r"(?m)^      texture:\s*([A-Za-z0-9_./-]+)\s*$", graphics)
+    if single_texture:
+        texture_ids.append(single_texture.group(1))
+    texture_map = re.search(r"(?ms)^      textures:\s*\n(.*?)(?=^      [A-Za-z0-9_-]+:\s*$|\Z)", graphics)
+    if texture_map:
+        texture_ids.extend(
+            match.group(1)
+            for match in re.finditer(r"(?m)^        [A-Za-z0-9_-]+:\s*([A-Za-z0-9_./-]+)\s*$", texture_map.group(1))
+        )
+    for texture_id in texture_ids:
+        referenced_textures.add(texture_id)
+        texture_path = texture_root / (texture_id + ".png")
+        if not texture_path.is_file():
+            fail(f"ItemsAdder item '{item_id}' points to missing texture: {texture_id}.png")
+        try:
+            width, height = strict_png_size(texture_path)
+        except (OSError, ValueError) as exc:
+            fail(f"Texture for ItemsAdder item '{item_id}' is invalid: {exc}")
+        if (width, height) != (32, 32):
+            fail(f"Texture for ItemsAdder item '{item_id}' must be 32x32, got {width}x{height}")
+
+expected_item_texture_refs = {f"item/{name[:-4]}" for name in EXPECTED}
+if referenced_textures != expected_item_texture_refs:
+    fail(
+        "ItemsAdder texture references do not match the validated item PNG set. "
+        f"Missing refs={sorted(expected_item_texture_refs - referenced_textures)}; "
+        f"unvalidated refs={sorted(referenced_textures - expected_item_texture_refs)}"
+    )
+print(f"PASS ItemsAdder texture links: {len(referenced_textures)} definitions map to existing, valid 32x32 PNGs")
+
+legacy_renderer = re.search(r"(?ms)^legacy_armor_renderings:\s*\n(.*?)(?=^items:\s*$)", items_yaml)
+if not legacy_renderer:
+    fail("Missing legacy_armor_renderings fallback for ViaVersion clients")
+legacy_renderer_text = legacy_renderer.group(1)
+for marker in (
+    "crimson_warden_legacy:",
+    "layer_1: armor/crimson_warden/layer_1",
+    "layer_2: armor/crimson_warden/layer_2",
+    "emissive_1: armor/crimson_warden/emissive_1",
+    "emissive_2: armor/crimson_warden/emissive_2",
+    "use_color: false",
+):
+    if marker not in legacy_renderer_text:
+        fail(f"Legacy armor renderer missing custom/emissive mapping: {marker}")
+
+for item_id, (material, equipped_armor, durability, slot) in ARMOR_BALANCE.items():
+    match = re.search(rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_yaml)
+    if not match:
+        fail(f"ItemsAdder config is missing armor item {item_id}")
+    section = match.group(1)
+    if re.search(rf"(?m)^    material: {re.escape(material)}\s*$", section) is None:
+        fail(f"{item_id} must use base material {material}")
+    if "slot_attribute_modifiers:" in section:
+        fail(f"{item_id} must use a full-value attribute component, not delta-based slot_attribute_modifiers")
+    if re.search(r'(?m)^\s+- "&c\+\d+ Armor"\s*$', section):
+        fail(f"{item_id} must not duplicate armor stats in lore")
+    if "id: warriorland_halloween:crimson_warden" not in section:
+        fail(f"{item_id} is missing its modern Crimson Warden equipment binding")
+    if "legacy_armor_rendering_id: crimson_warden_legacy" not in section:
+        fail(f"{item_id} is missing its multi-version legacy armor rendering fallback")
+    durability_match = re.search(r"(?m)^      max_durability: (\d+)\s*$", section)
+    if not durability_match or int(durability_match.group(1)) != durability:
+        fail(f"{item_id} must have durability {durability}")
+    nbt_match = re.search(r'(?m)^    components_nbt_file: "([^"]+)"\s*$', section)
+    if not nbt_match:
+        fail(f"{item_id} is missing its component JSON")
+    component_path = CONFIG.parent / nbt_match.group(1)
+    try:
+        component = json.loads(component_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"{item_id} component JSON is invalid: {exc}")
+    components = component.get("components", {})
+    if components.get("minecraft:max_damage") != durability:
+        fail(f"{item_id} component max_damage must match {durability}")
+    if components.get("minecraft:enchantable", {}).get("value") != 25:
+        fail(f"{item_id} must remain normally enchantable (enchantability 25)")
+    attribute_component = components.get("minecraft:attribute_modifiers", {})
+    if attribute_component.get("show_in_tooltip") is not True:
+        fail(f"{item_id} must display its complete attribute modifiers in the tooltip")
+    modifiers = attribute_component.get("modifiers", [])
+    for attribute, amount in (
+        ("minecraft:armor", float(equipped_armor)),
+        ("minecraft:armor_toughness", 3.0),
+        ("minecraft:knockback_resistance", 0.1),
+    ):
+        matching = [mod for mod in modifiers if mod.get("type") == attribute and mod.get("slot") == slot]
+        if len(matching) != 1:
+            fail(f"{item_id} must define exactly one {attribute} modifier for slot {slot}")
+        mod = matching[0]
+        if float(mod.get("amount", 0)) != amount or mod.get("operation") != "add_value":
+            fail(f"{item_id} has an incorrect {attribute} modifier value/operation")
+shield_match = re.search(r"(?ms)^  crimson_warden_shield:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_yaml)
+if not shield_match:
+    fail("ItemsAdder config is missing crimson_warden_shield")
+shield_section = shield_match.group(1)
+if ("material: SHIELD" not in shield_section
+        or "normal: item/crimson_warden_shield" not in shield_section
+        or "blocking: item/crimson_warden_shield_blocking" not in shield_section):
+    fail("Crimson Warden shield must define both its normal and blocking textures")
+shield_component_match = re.search(r'(?m)^    components_nbt_file: "([^"]+)"\s*$', shield_section)
+if not shield_component_match:
+    fail("Crimson Warden shield is missing its component JSON")
+try:
+    shield_component = json.loads((CONFIG.parent / shield_component_match.group(1)).read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Crimson Warden shield component JSON is invalid: {exc}")
+if shield_component.get("components", {}).get("minecraft:max_damage") != 1600:
+    fail("Crimson Warden shield must have 1600 durability")
+
+print("PASS Crimson Warden armor modifiers and displayed totals: 6/12/9/6; durability and component JSON verified")
 
 if not SHADER.is_file():
-    fail("Missing Halloween sky shader: " + str(SHADER.relative_to(ROOT)))
+    fail("Missing optional Iris crimson-sky shader: " + str(SHADER.relative_to(ROOT)))
 shader_text = SHADER.read_text(encoding="utf-8")
-for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "halloweenTint", "fragColor = sky;"):
+for marker in ("#version 120", "uniform int worldTime;", "SKY_CRIMSON_INTENSITY", "gl_FragData[0]"):
     if marker not in shader_text:
-        fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
+        fail(f"Optional Iris sky shader is missing required marker: {marker}")
+legacy_shader = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
+if legacy_shader.exists():
+    fail("The version-specific vanilla sky shader must stay out of the mandatory ItemsAdder resource pack")
 
 # Explicit vanilla texture overrides give physical Halloween decoration its
 # seasonal appearance while keeping the server-side blocks present with or
@@ -159,7 +338,7 @@ for name in sorted(EXPECTED_SEASONAL_BLOCK_TEXTURES):
 theme_duration = 0.0
 audio_specs = [(THEME, None), (EVENT_STING, 5.0)]
 audio_specs.extend((path, None) for path in PLAYLIST_TRACKS.values())
-audio_specs.extend((CONTENT / "sounds" / f"{name}.ogg", duration) for name, duration in EVENT_CUES.items())
+audio_specs.extend((SOUNDS_DIR / f"{name}.ogg", duration) for name, duration in EVENT_CUES.items())
 for audio, expected_duration in audio_specs:
     if not audio.is_file():
         fail("Missing Halloween audio asset: " + str(audio.relative_to(ROOT)))
@@ -233,11 +412,20 @@ if not 0.8 <= float(silence_stream.get("duration", 0)) <= 1.2:
 if not SOUNDS_CONFIG.is_file():
     fail("Missing ItemsAdder sounds configuration: " + str(SOUNDS_CONFIG.relative_to(ROOT)))
 sounds_text = SOUNDS_CONFIG.read_text(encoding="utf-8")
-for sound in ("haunted_theme", "event_sting", *EVENT_CUES.keys()):
+for sound in ("haunted_theme", "horror_atmosphere", "creepy_ambient", "dark_cavern_ambient", "event_sting", *EVENT_CUES.keys()):
     if f"  {sound}:" not in sounds_text:
         fail(f"ItemsAdder sound '{sound}' missing from sounds.yml")
     if f"sound.{sound}:" not in sounds_text:
         fail(f"ItemsAdder subtitle for '{sound}' missing from sounds.yml")
+
+# Ensure each ItemsAdder sound resolves to a real file inside the delivered client pack.
+for sound in ("haunted_theme", "horror_atmosphere", "creepy_ambient", "dark_cavern_ambient",
+              "event_sting", *EVENT_CUES.keys()):
+    match = re.search(rf"(?ms)^  {re.escape(sound)}:\s*\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", sounds_text)
+    if not match or not re.search(rf"(?m)^    path: {re.escape(sound)}\s*$", match.group(1)):
+        fail(f"ItemsAdder sound '{sound}' must point to its matching resource-pack OGG")
+    if not (SOUNDS_DIR / f"{sound}.ogg").is_file():
+        fail(f"Missing client resource-pack audio file: {SOUNDS_DIR / (sound + '.ogg')}")
 
 runtime_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
 if not re.search(r"(?m)^  volume:\s*3\.0\s*$", runtime_config):
@@ -250,6 +438,49 @@ if "SoundCategory.AMBIENT, volume, pitch" not in atmosphere_java:
     fail("Halloween theme must use the AMBIENT category so vanilla MUSIC can be stopped independently")
 if "player.stopSound(SoundCategory.MUSIC)" not in atmosphere_java or "}, 1L, 20L);" not in atmosphere_java:
     fail("Halloween ambience must actively stop the vanilla MUSIC category at least once per second")
+
+reload_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
+if '"iazip"' not in reload_java or '"meg reload"' not in reload_java or '"meg reload models"' in reload_java or "ModelEngine/resource pack" not in reload_java:
+    fail("/halloween reload must use /meg reload to generate ModelEngine's pack, merge it, and then run /iazip")
+if "Files.walk(assetsDirectory)" not in reload_java or "pngCount == 0" not in reload_java:
+    fail("Reload must verify ModelEngine generated real PNG textures before building the ItemsAdder ZIP")
+if "if (!ensureModelEngineResourcePackMerged(sender))" not in reload_java:
+    fail("Reload must abort packaging when ModelEngine textures or the merge config are missing")
+if 'Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iatexture' in reload_java or "iatexture all" in reload_java:
+    fail("/halloween reload must not automatically push resource packs to online players; offer the new pack on reconnect")
+if "resourcePackRebuildInProgress" not in reload_java or "Resource pack je připraven" not in reload_java:
+    fail("Resource-pack rebuild must block overlapping reloads and report completion without a client packet burst")
+
+world_decorator = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenWorldDecorator.java").read_text(encoding="utf-8")
+for marker in ("grave_marker", "grave_marker_cracked", "ItemDisplay.class", "Display.Billboard.VERTICAL",
+               "halloween_decorated_v6", "POLISHED_BLACKSTONE_BRICKS", "CHISELED_POLISHED_BLACKSTONE",
+               "DEEPSLATE_BRICKS", "RED_MUSHROOM_BLOCK", "BROWN_MUSHROOM_BLOCK", "MUSHROOM_STEM",
+               "POLISHED_BLACKSTONE_BRICK_WALL"):
+    if marker not in world_decorator:
+        fail(f"Halloween world gravestone pipeline is missing: {marker}")
+if "display.setPersistent(true)" not in world_decorator or "display.setInvulnerable(true)" not in world_decorator:
+    fail("Halloween gravestone displays must persist without taking damage")
+if "new Vector3f(2.4F, 2.4F, 1.0F)" in world_decorator:
+    fail("Gravestones must be built from physical blocks, not rendered as a giant flat ItemDisplay")
+if "resumeWithoutScanning()" not in world_decorator:
+    fail("Halloween world decorator must be resumable without re-scanning all loaded chunks on hot reload")
+if 'return plugin.getConfig().getBoolean("world-decorations.enabled", true)' not in world_decorator:
+    fail("World decorations must keep generating even when the Halloween gameplay toggle is off")
+if "Walk down to the real" not in world_decorator or "randomCanopySurface(chunk, random)" not in world_decorator:
+    fail("World decoration must distinguish natural ground from canopy anchors so forest chunks can receive decorations")
+structure_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenStructureGenerator.java").read_text(encoding="utf-8")
+for marker in ("ChunkLoadEvent", "halloween_structure_checked_v4", "random-structures.", "buildHauntedVillage",
+               "buildGraveyard", "findFlatPlatformY", "preparePlatform", "halloween_structure_type", "Material.WITHER_ROSE"):
+    if marker not in structure_java:
+        fail(f"Random Halloween structure generator is missing required behavior: {marker}")
+if "plugin.isEventEnabled()" in structure_java:
+    fail("Random Halloween structures must not depend on the gameplay toggle")
+if "set(world, cx, floorY - 1" in structure_java or "set(world.getBlockAt" in structure_java:
+    fail("Random villages/graveyards must never excavate an automatic hole")
+core_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCore.java").read_text(encoding="utf-8")
+reload_state = core_java[core_java.find("public void reloadEventConfig()"):core_java.find("public void ", core_java.find("public void reloadEventConfig()") + 20)]
+if "worldDecorator.resumeWithoutScanning()" not in reload_state or "worldDecorator.scanLoadedChunks()" in reload_state:
+    fail("/halloween reload must not enqueue every loaded chunk for a mass decoration pass")
 
 passive_java = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenPassiveEffectManager.java").read_text(encoding="utf-8")
 if "Attribute.MAX_HEALTH" not in passive_java or "getItemInOffHand()" not in passive_java:
@@ -309,7 +540,7 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
                 "crimson_warden_helmet", "crimson_warden_chestplate",
                 "crimson_warden_leggings", "crimson_warden_boots",
                 "crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
-                "crimson_warden_shovel", "crimson_warden_hoe"):
+                "crimson_warden_shovel", "crimson_warden_hoe", "crimson_warden_shield"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
 
@@ -331,10 +562,12 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
         fail(f"Custom gear '{item_id}' must remain enchantable")
 
 expected_armor_stats = {
-    "crimson_warden_helmet": ("max_durability: 900", "armor: 3"),
-    "crimson_warden_chestplate": ("max_durability: 1300", "armor: 4"),
-    "crimson_warden_leggings": ("max_durability: 1150", "armor: 3"),
-    "crimson_warden_boots": ("max_durability: 950", "armor: 3"),
+    # Exact Armor points are verified against minecraft:attribute_modifiers above;
+    # ItemsAdder YAML must hold the matching durability/component and both renderer references.
+    "crimson_warden_helmet": ("max_durability: 900",),
+    "crimson_warden_chestplate": ("max_durability: 1300",),
+    "crimson_warden_leggings": ("max_durability: 1150",),
+    "crimson_warden_boots": ("max_durability: 950",),
 }
 for item_id, required_stats in expected_armor_stats.items():
     start = config.find(f"  {item_id}:")
@@ -345,8 +578,11 @@ for item_id, required_stats in expected_armor_stats.items():
     for stat in required_stats:
         if stat not in definition:
             fail(f"{item_id} is missing expected full-set armour/durability stat: {stat}")
-    if "equipment:" not in definition or "slot_attribute_modifiers:" not in definition:
-        fail(f"{item_id} must use its Crimson Warden equipment layer and required armor modifier")
+    if ("equipment:" not in definition
+            or "id: warriorland_halloween:crimson_warden" not in definition
+            or "legacy_armor_rendering_id: crimson_warden_legacy" not in definition
+            or "components_nbt_file:" not in definition):
+        fail(f"{item_id} must use the Crimson Warden layer and exact-value component JSON")
 
 expected_gear_stats = {
     "crimson_warden_sword": ("attackDamage: 15.0", "attackSpeed: 0.8", "max_durability: 5000"),
@@ -421,28 +657,129 @@ for shop_id in shop_ids:
 
 # ItemsAdder equipment layers are source assets at contents/<namespace>/textures/armor,
 # while item icons and vanilla overrides are emitted from the resourcepack/assets tree.
-for layer in ("layer_1.png", "layer_2.png"):
+for layer in ("layer_1.png", "layer_2.png", "emissive_1.png", "emissive_2.png"):
     path = ARMOR_SOURCE_TEXTURES / layer
     if not path.is_file():
         fail("Missing ItemsAdder source armor layer: " + str(path.relative_to(ROOT)))
-    width, height = png_size(path)
+    width, height = strict_png_size(path)
     if (width, height) != (64, 32):
         fail(f"ItemsAdder source {layer} must be 64x32, got {width}x{height}")
 
 root_textures = CONTENT / "textures"
 if root_textures.exists():
+    expected_armor_source_files = ("layer_1.png", "layer_2.png", "emissive_1.png", "emissive_2.png")
     unexpected = [p for p in root_textures.rglob("*") if p.is_file()
-                  and not (p.parent == ARMOR_SOURCE_TEXTURES and p.name in ("layer_1.png", "layer_2.png"))]
+                  and not (p.parent == ARMOR_SOURCE_TEXTURES and p.name in expected_armor_source_files)]
     if unexpected:
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
+# Arena generation must choose a site from the admin's current standing block,
+# not require a preconfigured exact center. Confirmation must reuse the saved preview.
+arena_command = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
+arena_start = arena_command.find("private boolean buildVampireArena(CommandSender sender, String[] args)")
+arena_end = arena_command.find("private boolean setVampireArena(CommandSender sender)", arena_start)
+if arena_start < 0 or arena_end < 0:
+    fail("Vampire arena build command could not be located")
+arena_method = arena_command[arena_start:arena_end]
+for marker in (
+    "location.getBlockX() + 0.5D",
+    "floorSurfaceY",
+    "location.getBlockZ() + 0.5D",
+    'arenaPath + ".pending"',
+    'pendingPath + ".configured"',
+    'plugin.getConfig().set(arenaPath + ".configured", true)',
+    'plugin.getConfig().set(pendingPath, null)',
+):
+    if marker not in arena_method:
+        fail(f"Vampire arena auto-placement/confirmation is missing: {marker}")
+if 'if (!plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false))' in arena_method:
+    fail("Arena generation must not require a previous /halloween setvampirearena command")
+if "builder.inspect(center)" not in arena_method or "builder.build(center)" not in arena_method:
+    fail("Arena generation must retain preflight and explicit-confirm safety")
+if "Math.ceil(location.getY() - 1.0E-6D)" not in arena_method or "boolean hasConfiguredSite" not in arena_method or 'mode.equals("selected")' not in arena_method or 'mode.equals("here")' not in arena_method:
+    fail("Arena generation must use the correct standing-floor height and allow a configured center to be confirmed")
+arena_builder = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "VampireArenaBuilder.java").read_text(encoding="utf-8")
+for marker in ("world.getChunkAt(cx, cz)", "Material.AIR", "floorY + 1", "public int build(Location center)"):
+    if marker not in arena_builder:
+        fail(f"Arena builder is missing reliable placement/terrain leveling behavior: {marker}")
+if "terrain is over 6 blocks below arena floor" in arena_builder:
+    fail("Arena preflight must not reject normal uneven terrain that can be levelled after explicit confirmation")
+print("PASS Vampire arena: loads the footprint chunks, uses the selected center, and levels confirmed terrain to the floor")
+
+curse_command = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java").read_text(encoding="utf-8")
+curse_data = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenDataManager.java").read_text(encoding="utf-8")
+curse_service = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenServiceImpl.java").read_text(encoding="utf-8")
+core_source = (ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCore.java").read_text(encoding="utf-8")
+for marker in ("return curse(sender, args)", "curse set <úroveň>", "curse reset", "configuredCurseLevels()"):
+    if marker not in curse_command:
+        fail(f"Admin curse-setting command is missing: {marker}")
+if "setCurseLevelOverride" not in curse_data or "curse-level-override" not in curse_data:
+    fail("Manual curse override must persist in data.yml")
+if "getCurseLevelOverride" not in curse_service:
+    fail("Curse progression must honor the manual level override")
+if "migrateCrimsonWardenLoreV5" not in core_source:
+    fail("Existing configs must migrate away from the duplicated Crimson Warden +Armor lore")
+if "migrateCrimsonWardenCustomArmorV1" not in core_source:
+    fail("Existing configs must migrate to the custom leather-base armor and full-set defaults")
+
+PASSIVE_SOURCE = ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenPassiveEffectManager.java"
+if not PASSIVE_SOURCE.is_file():
+    fail("HalloweenPassiveEffectManager.java is missing")
+passive = PASSIVE_SOURCE.read_text(encoding="utf-8")
+for marker in (
+    "hasFullCrimsonWardenSet",
+    "PotionEffectType.RESISTANCE",
+    "PotionEffectType.FIRE_RESISTANCE",
+    "Particle.SOUL_FIRE_FLAME",
+    'rewards.passive-effects.crimson-warden-set-bonus',
+):
+    if marker not in passive:
+        fail(f"Crimson Warden set bonus is missing: {marker}")
+for shop_id, material in (
+    ("crimson-warden-helmet", "LEATHER_HELMET"),
+    ("crimson-warden-chestplate", "LEATHER_CHESTPLATE"),
+    ("crimson-warden-leggings", "LEATHER_LEGGINGS"),
+    ("crimson-warden-boots", "LEATHER_BOOTS"),
+):
+    head = f"    {shop_id}:"
+    start = shop_config.find(head)
+    if start < 0:
+        fail(f"Shop reward {shop_id} is missing")
+    tail = shop_config[start + len(head):]
+    next_item = re.search(r"(?m)^    [A-Za-z0-9_-]+:\s*$", tail)
+    end = len(tail) if next_item is None else next_item.start()
+    section = tail[:end]
+    if f"material: {material}" not in section:
+        fail(f"Existing shop fallback for {shop_id} must migrate to {material}")
+
+ARMOR_GENERATOR = ROOT / "scripts" / "generate_crimson_warden_armor.py"
+if not ARMOR_GENERATOR.is_file():
+    fail("Custom Crimson Warden armor texture generator is missing")
+armor_generator = ARMOR_GENERATOR.read_text(encoding="utf-8")
+for marker in ("emissive_1.png", "emissive_2.png", "(64, 32)", "gold_light"):
+    if marker not in armor_generator:
+        fail(f"Armor atlas generator is missing custom detail/emission support: {marker}")
+WORKFLOW = (ROOT / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
+if "python3 scripts/generate_crimson_warden_armor.py" not in WORKFLOW:
+    fail("CI must generate custom armor and emissive atlases before packaging")
+if "migrateHalloween3dDecorationsV1" not in core_source:
+    fail("Existing configs must get the low-density 3D grave/mushroom decoration migration")
+
+structure_core_markers = ("structureGenerator.start()", "registerEvents(structureGenerator", "structureGenerator.stop()",
+                          "migrateHalloween3dDecorationsV1", "getStructureGenerator()")
+for marker in structure_core_markers:
+    if marker not in core_java:
+        fail(f"HalloweenCore is missing random-structure lifecycle wiring: {marker}")
+print("PASS random structures: deterministic chunk generation, discovery metadata, no pits, and independent lifecycle")
 print("Halloween asset validation passed.")
-print("14 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
+print("16 item textures: 32x32 PNG including two custom gravestones; 2 Crimson Warden armor layers and 2 emissive atlases: 64x32 PNG")
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
-print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
-print("Sky shader: Minecraft 1.21.10 entry point present")
+print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16, including 3D mushroom cap textures")
+print("Crimson Warden armor: leather gameplay bases with custom modern/legacy wear renderers, emissive sigils, exact armor modifiers and durability verified")
+print("Crimson Warden weapon icons: generated high-contrast pixel-art icons for sword, pickaxe, axe, shovel and hoe")
+print("PASS optional Iris sky shader source: separate client pack source validated")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")
 print("ItemsAdder sound definitions: present")
 print(f"Verified exact Minecraft 1.21.10 music-event overrides: {len(vanilla_sound_events)}")

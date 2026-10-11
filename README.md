@@ -37,12 +37,14 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween
 - /halloween stats
 - /halloween progress
-- /halloween curse
+- `/halloween curse` — zobrazí vlastní úroveň a titul prokletí.
+- `/halloween curse set <úroveň>` — admin nastaví vlastní prokletí; `/halloween curse set <hráč> <úroveň>` nastaví prokletí jinému hráči.
+- `/halloween curse reset [hráč]` — zruší ruční nastavení a vrátí přirozený postup z celoživotních fragmentů.
 - /halloween event
 - /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin, testovací okamžité spuštění)
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
-- /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
+- `/halloween shader [info]` — návod na volitelný klientský Iris shader pack (není součástí serverového ItemsAdder balíčku)
 - /halloween quests — příběhová kampaň o devíti kapitolách, uložený postup a automatické odměny
 - /halloween challenge
 - /halloween rewards
@@ -50,14 +52,24 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
-- /halloween setvillage (admin)
+- /halloween setvillage (admin, nastaví místo Haunted Village)
+- `/halloween buildvillage [confirm]` — bezpečný náhled a potvrzená stavba prokleté vesnice.
+- `/halloween buildgraveyard [confirm]` — bezpečný náhled a potvrzená stavba prokletého hřbitova.
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
 - /halloween setvampirearena (admin)
-- /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
+- Stavby `/halloween buildvillage` a `/halloween buildgraveyard` používají náhled a `confirm`. Odmítnou neprůchodný terén, nenačtené chunky, okolí world spawnu a rezervovanou boss arénu; nevyhlubují díry ani nepřepisují budovy a blokové entity.
+- `/halloween buildvampirearena [here|selected|confirm]` — `here` vybere blok pod správcem, `selected` použije střed uložený přes `/halloween setvampirearena`, `confirm` postaví arénu kolem posledního náhledu.
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>
 - /halloween on|off
+
+## Ultimátní boss aréna
+
+- 97bloková ultimátní gotická aréna s vrstvenými runovými prstenci, osmi dutými strážními věžemi, kruhovou hradbou, opěrnými pilíři a čtyřmi monumentálními branami
+- severní královská svatyně s krvavým portálem z rudého skla, kovovými závěsy, lucernovými věžičkami a trůnem Krále upírů; čtyři kamenné sarkofágy lemují vnější rituální kruh
+- střední prostor zůstává volný pro model bosse; vyvýšené runové sloupy začínají mimo bezpečný spawn kruh
+- hlavní boss aréna se staví potvrzeným destruktivním příkazem a bez předem uloženého středu
 
 ## Boss bar
 
@@ -117,10 +129,14 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - ItemsAdder zvuky jsou registrované v `itemsadder/contents/warriorland_halloween/configs/sounds.yml`. Ambient používá `warriorland_halloween:haunted_theme`, šest eventů má samostatné ID a `event_sting` zůstává jako obecná znělka.
 - Ambientní hudba se spouští hned po připojení a opakuje se samostatně každému hráči podle délky skladby; při odchodu nebo vypnutí eventu se jeho přehrávací úloha zruší, aby nevznikala překrývající se hudba.
 - CI vytvoří ke stažení artefakt `WarriorLand-Halloween-ItemsAdder.zip` včetně zvuků.
-- Shader oblohy je v `itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh`; zachovává základní cyklus dne/noci a přidává oranžovo-karmínový filtr.
+- Povinný ItemsAdder resource pack nepřepisuje interní Minecraft shader, aby se grafický doplněk nemíchal s povinnými texturami ani různými verzemi klientů.
+- Volitelný Iris shader pack `HalloweenCore-Iris-Crimson-Sky` se sestavuje jako samostatný artefakt: nabízí jemné karmínové tónování při úsvitu/soumraku a červenou měsíční texturu v noci. Intenzita sky tintu, červánků a krvavého měsíce je nastavitelná v nastavení shaderu.
+- Cestu ke stažení najdeš v GitHub Actions → poslední úspěšný build → Artifacts → `HalloweenCore-Iris-Crimson-Sky`. ZIP se vloží do `.minecraft/shaderpacks/` a aktivuje v Iris. Bez shader loaderu hráč normálně používá povinný serverový resource pack, jen bez klientského shader efektu.
+- Shader pack míří na Minecraft Java 1.21.10 s Iris; statické CI kontroly nenahrazují test přímo ve hře na různých GPU a ovladačích.
 - Po nasazení obsahu na server spusť `/iazip` a zajisti, že hráči obdrží nový resource pack. ItemsAdder sloučí obsahy do jednoho packu; `warriorland_halloween` je namespace, ne druhý pack v seznamu Minecraftu. V `/iainfo` ověř hlavně hosting URL/status. Pro ItemsAdder 4.0.17+ je obvykle nejjednodušší `resource-pack.hosting.simple_self_host.enabled: true` a `server_address: auto`; dostupnost doručení na Hostify je nutné ověřit na skutečném serveru. V language souboru ItemsAdder lze nastavit `resourcepack-popup-message` na značkovaný text `&6WarriorLand Halloween 2026`. Vizuální vzhled shaderu je potřeba potvrdit v klientu; shaderový mod jej může přepsat.
 - Hlavní hudba má hlasitost zvýšenou na multiplikátor `3.0` (3× výchozí hlasitost). Starší serverové konfigurace se při aktualizaci jednou převedou přes `atmosphere.volume-tripled-v2-migrated`. Resource pack v `resourcepack/assets/minecraft/sounds.json` přepisuje přesně 31 existujících hudebních událostí Minecraftu 1.21.10 tichým OGG; server navíc každou sekundu zastavuje kategorii MUSIC. Halloween soundtrack běží v kategorii AMBIENT, aby ho muter neukončil.
-- Custom shop obsahuje čtyři kusy zbroje Krvavého strážce. Každý používá vlastní PNG ikonu a společné 64×32 armor layer_1/layer_2 textury, netheritový základ, brnění 6/12/9/6 podle kusu a vyšší výdrž; běžné enchantování zůstává povolené. Doplňuje je vlastní meč, krumpáč, sekera, lopatka a motyka s transparentními pixel-art ikonami, vyšší výdrží a posílenými atributy; všechny používají netheritové materiály a enchanty nejsou blokované.
+- Custom shop obsahuje čtyři kusy vlastní zbroje Krvavého strážce — **nejde o netheritovou zbroj**. Používá základní `LEATHER_*` materiály pouze pro kompatibilitu a vlastní ItemsAdder 64×32 wear atlasy v černo-obsidiánové, karmínové a zlaté paletě; moderní i legacy renderer a samostatné emissive vrstvy rozsvěcují runy. Hodnoty zůstávají přesně +6/+12/+9/+6, výdrž je vyšší a enchantování povolené. Celá sada uděluje Odolnost I, Ohnivzdornost a jemnou auru duševního plamene. Doplňuje ji vlastní meč, krumpáč, sekera, lopatka a motyka s vlastními ikonami a posílenými atributy; tyto nástroje nadále používají netheritové materiály.
+- Pro starší klienty přes ViaVersion/ViaRewind musí ItemsAdder zachovat legacy renderer: zapni `advanced.legacy_shader_armor_conversion.append_new_equipment_tag.enabled: true`, nepoužívej `advanced.completely_convert_to_new_equipment_tag.enabled: true` a znovu sestav pack přes `/iazip`. Vykreslení je nutné otestovat na skutečně podporovaných klientských verzích.
 - Pokud se pack hráčům vůbec neukáže, spusť `/iainfo` a ověř, že ItemsAdder hlásí dosažitelnou URL resource packu. `/iazip` pouze sestaví ZIP; doručování vyžaduje funkční hosting v `plugins/ItemsAdder/config.yml`. Na ItemsAdder 4.0.17+ lze použít `simple_self_host`; u starších verzí je třeba podporovaný self-host s otevřeným portem nebo externí hosting. Nezaměňuj tento serverový pack s ručně přidávaným packem v seznamu Minecraftu.
 
 ## Eventy, speciální mobové a dekorace světa
@@ -140,23 +156,27 @@ Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/hallow
 
 Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
 
-Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
+Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Dekorátor nejdřív hledá skutečnou půdu i pod korunami stromů; generování dekorací je nezávislé na `/halloween on|off`. Hřbitovní náhrobky jsou postavené z reálných kamenných bloků s drobnou runou a velké houby z vlastních texturovaných stonků a klobouků. Při upgradu se odstraňuje stará plochá ikona náhrobku a staré dekorace se doplní jen do nakonfigurovaného počtu, aby se zbytečně nezdvojovaly.
 
-- `/halloween boss test` vyvolá testovacího Krále upírů bez globálního progressu, odemčení finále a model-ready gate. Vyžaduje uložený střed arény a funkční MythicMobs mob `vampire-king`; testovací zabití nedává odměny ani neoznačí finále za splněné.
+Haunted Village a prokleté hřbitovy se generují náhodně v bezpečných přirozených plochách při načítání chunků v běžném Overworldu. Vesnice má tři různě barevně laděné zchátralé domky, gotickou kapli s karmínovými okny, zvonem a lucernovou věží, rituální oltář, cesty a oplocené vstupy. Hřbitov má kamennou obvodovou zeď s branou, nadzemní mauzoleum, pět náhrobků, oltář, klikatou cestu, rozsvícené červené svíčky a pokroucené suché stromy s pavučinami. Náhodné materiály a poškozené části střech omezují dojem zkopírovaných staveb. Celá stavba se vejde do jednoho 16×16 chunku; před generováním se kontroluje volný prostor a bezpečný terén. Plugin nevyhlubuje automatické díry ani šachty a nepřepisuje existující stavby či bloky s inventářem.
+
+- `/halloween boss test` vyvolá testovacího Krále upírů před administrátorem bez uložené arény. Testovací zabití nedává odměny ani neodemkne finále. Pokud chybí MythicMobs definice, základní test použije vanilla fallback.
+- `/halloween spawn all` vyvolá devět testovacích mobů, `/halloween spawn pumpkin-wraith 2` dva Dýňové přízraky a `/halloween spawn vampire-king` testovacího bosse.
+- `/halloween giveitem <hráč> <odměna-ID> [počet]` dá item z katalogu bez placení a bez spotřebování jednorázového claimu.
 
 ## Návod: aréna, obchod a resource pack
 
-- Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
-- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
+- Pro ručně zvolený střed správce stojí na cílovém bloku a spustí `/halloween setvampirearena`.
+- Bez předchozího nastavení použij `/halloween buildvampirearena here` (nebo `/halloween buildvampirearena`), aby se střed vzal z bloku pod správcem. Už uložený střed vybereš pomocí `/halloween buildvampirearena selected`. Příkaz zobrazí náhled a uloží přesnou pozici; stavbu pak potvrdíš `/halloween buildvampirearena confirm`. Potvrzení už nevyžaduje stát u stejného místa a nepřepočítá střed podle aktuální polohy. Stavba vyrovná terén a nahradí bloky v kruhu o poloměru 48 bloků, včetně stromů a existujících staveb, a postaví věže až 15 bloků vysoké. Je to záměrně destruktivní operace: před potvrzením vždy zazálohuj svět.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
-- `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
+- `/halloween shader [info]` zobrazí návod k volitelnému klientskému Iris shader packu. Shader se už neupravuje ani neposílá přes ItemsAdder; povinný serverový resource pack zůstává bez interního shader override.
 - `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
 - Prokletý talisman stojí 1 000 000 fragmentů. Při držení v hlavní nebo vedlejší ruce přidá +20 k maximálnímu zdraví (jeden celý řádek srdcí) a zachovává 10% bonus k fragmentům.
 - Po nahrání obsahu do `plugins/ItemsAdder/contents/warriorland_halloween` restartuj server, spusť `/iazip` a ověř `/iainfo`. Pokud není URL resource packu dosažitelná nebo se žádná výzva neobjeví, je nutné opravit hosting resource packu v ItemsAdder, ne plugin HalloweenCore.
 
 ## Směr dalšího vývoje
 
-- Haunted Village
+- rozšiřování procedurálně generovaných Haunted Villages a hřbitovů
 - hlubší systém relikvií
 - resource-pack Halloween obloha
 - ověřit Halloween soundtrack a oranžovo-karmínovou oblohu v reálném klientu Minecraftu 1.21.10
@@ -211,6 +231,12 @@ Krvavý strážce má nastavené brnění 6/12/9/6 podle kusu; celá sada tedy d
 
 Halloween soundtrack je **Spooky Fester** od Eldritch Grim z OpenGameArt (CC0); CI jej stáhne a převede do OGG při sestavení packu. Aktuální ID je `warriorland_halloween:haunted_theme`. Hlavní ambient má nakonfigurovaný gain 3.0 (Bukkit volume multiplier), běží v kategorii AMBIENT a server každou sekundu zastavuje vanilla kategorii MUSIC. Resource pack má přepsané 31 běžných událostí vanilla hudby na tichý OGG soubor. Pokud se přesto hraje klasická hudba, nejprve ověř, že hráč skutečně obdržel nový pack přes ItemsAdder — samotný serverový kód nedokáže přepsat zvuk z jiného klientského/resource packu.
 
+## Eventy a instalace assetů
+
+- Přehled chování všech eventů je v [docs/HALLOWEEN_EVENTS.md](docs/HALLOWEEN_EVENTS.md).
+- Pro jednodušší instalaci použij artefakt `HalloweenCore-Install-Bundle` z GitHub Actions. Obsahuje JAR, ItemsAdder obsah, MythicMobs definice a ModelEngine blueprinty.
+- Černo-fialové textury custom mobů obvykle znamenají chybějící modelový asset nebo neobnovený klientský resource pack; samotný JAR nestačí.
+
 ## Build
 
 Java 21 + Maven.
@@ -228,7 +254,7 @@ Výstup:
 
 Zdrojové Blockbench modely a externí atlasy pro speciální moby jsou v `mythicmobs/models/halloween_*.bbmodel` a `mythicmobs/models/halloween_*.png`. Kontroluje je `python3 scripts/validate_special_mob_models.py`; CI zároveň balí definice a blueprinty do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`.
 
-Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj blueprinty přes ModelEngine, spusť `/meg reload models` a `/mm reload`. Do stávajícího seznamu `merge_other_plugins_resourcepacks_folders` v konfiguraci ItemsAdderu přidej cestu `ModelEngine/resource pack`, aby se modelové textury dostaly do stejného klientského packu. Poté spusť `/iazip`, ověř `/iainfo`, přijmi pack na klientovi a znovu se připoj.
+Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj blueprinty přes ModelEngine, spusť `/meg reload` a `/mm reload`; poté spusť `/iazip` a znovu se připoj, aby klient dostal finální resource pack. Do stávajícího seznamu `merge_other_plugins_resourcepacks_folders` v konfiguraci ItemsAdderu přidej cestu `ModelEngine/resource pack`, aby se modelové textury dostaly do stejného klientského packu. Poté spusť `/iazip`, ověř `/iainfo`, přijmi pack na klientovi a znovu se připoj.
 
 ## Diagnostika hudby a klientského packu
 
@@ -248,7 +274,9 @@ Repozitář obsahuje editovatelný Blockbench blueprint `mythicmobs/models/vampi
 
 ## Generování upíří arény
 
-Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 97 bloků, šest soustředných runových kruhů, obvodové cimbuří, osm gotických věží, čtyři monumentální brány a osm vnitřních obelisků. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, načtené chunky, volný prostor nad podlahou a terén bez hlubokých proláklin. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Po potvrzení se v kruhu o poloměru 48 bloků upraví povrch terénu a vytvoří nová podlaha. Před spuštěním si udělej zálohu světa.
+Příkaz `/halloween buildvampirearena here` vybere střed podle bloku pod správcem a připraví náhled; není nutné nejdřív použít `/halloween setvampirearena`. Pokud je střed uložený, použij `/halloween buildvampirearena selected`. Potvrzení `/halloween buildvampirearena confirm` vždy použije uložený náhled, i když se správce pohne jinam.
+
+Náhled načte chunky v rozsahu arény, zkontroluje výšku světa a ukáže, kolik povrchových bloků bude nahrazeno. Po potvrzení se plocha v kruhu o poloměru 48 bloků vyrovná: vysoký terén, stromy a stavby se odstraní a nízká místa se vyplní. **Potvrzení je destruktivní a může přepsat existující stavby — předem zazálohuj svět.** Plugin nikde automaticky nehloubí šachty ani jámy pro vesnice a hřbitovy; ty se staví pouze ručně.
 
 
 ## Krvavý měsíc — invaze
@@ -274,3 +302,11 @@ Model nyní obsahuje vlastní jednorázové animace false_sigil, blood_pulse, mi
 ## Bezpečný náhled modelu
 
 Administrátor může použít `/halloween modelpreview <idle|walk|attack|fly|false_sigil|blood_pulse|mirror_strike|nightfall>`. Příkaz vytvoří čtyři bloky před hráčem dočasný, nezranitelný model přes MythicMobs a ModelEngine, vypne jeho AI a odstraní ho po 10 sekundách. Náhled nespustí encounter, nepočítá účast a neuděluje odměny. Pořád je nutné ověřit render v klientovi s přijatým resource packem.
+
+
+## Aktualizované Halloween testy
+
+- `/halloween spawn <mob-ID> [1-5]` nebo `/halloween spawn all` testuje jednotlivé speciální moby včetně Bezhlavého Nicka na koni.
+- `/halloween spawn vampire-king` spustí testovacího bosse u hráče bez potřeby uloženého středu arény.
+- `/halloween giveitem <hráč> <odměna-ID> [počet]` předá item přímo z katalogu bez fragmentů a bez claimu.
+- Pro stavbu arény bez předem nastaveného středu použij `/halloween buildvampirearena here`, zkontroluj náhled a až poté potvrď `/halloween buildvampirearena confirm`. Stavba je destruktivní a může nahradit terén, stromy i stavby v okolí.

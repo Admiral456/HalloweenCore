@@ -78,6 +78,11 @@ rewards:
   passive-effects:
     enabled: true
     hunter-mask-night-vision-seconds: 5
+    crimson-warden-set-bonus:
+      enabled: true
+      resistance-seconds: 3
+      fire-resistance-seconds: 3
+      aura-particles: true
 
   shop:
     hunter-mask:
@@ -124,49 +129,49 @@ rewards:
       cost: 9000
       min-curse: 3
       itemsadder-id: "warriorland_halloween:crimson_warden_helmet"
-      material: NETHERITE_HELMET
+      material: LEATHER_HELMET
       amount: 1
       name: "&4&lHelma Krvavého strážce"
-      lore:
-        - "&7Vlastní černo-karmínová zbroj."
-        - "&c6 bodů brnění (netherit 3) • výdrž 900."
-        - "&8Enchantovatelná jako netherit."
+      lore: []
 
     crimson-warden-chestplate:
       cost: 18000
       min-curse: 5
       itemsadder-id: "warriorland_halloween:crimson_warden_chestplate"
-      material: NETHERITE_CHESTPLATE
+      material: LEATHER_CHESTPLATE
       amount: 1
       name: "&4&lKyrys Krvavého strážce"
-      lore:
-        - "&7Vlastní černo-karmínová zbroj."
-        - "&c12 bodů brnění (netherit 8) • výdrž 1 300."
-        - "&8Enchantovatelný jako netherit."
+      lore: []
 
     crimson-warden-leggings:
       cost: 14500
       min-curse: 4
       itemsadder-id: "warriorland_halloween:crimson_warden_leggings"
-      material: NETHERITE_LEGGINGS
+      material: LEATHER_LEGGINGS
       amount: 1
       name: "&4&lNohavice Krvavého strážce"
-      lore:
-        - "&7Vlastní černo-karmínová zbroj."
-        - "&c9 bodů brnění (netherit 6) • výdrž 1 150."
-        - "&8Enchantovatelné jako netherit."
+      lore: []
 
     crimson-warden-boots:
       cost: 10000
       min-curse: 3
       itemsadder-id: "warriorland_halloween:crimson_warden_boots"
-      material: NETHERITE_BOOTS
+      material: LEATHER_BOOTS
       amount: 1
       name: "&4&lBoty Krvavého strážce"
+      lore: []
+
+    crimson-warden-shield:
+      cost: 42000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:crimson_warden_shield"
+      material: SHIELD
+      amount: 1
+      name: "&4&lŠtít Krvavého strážce"
       lore:
-        - "&7Vlastní černo-karmínová zbroj."
-        - "&c6 bodů brnění (netherit 3) • výdrž 950."
-        - "&8Enchantovatelné jako netherit."
+        - "&7Krvavá bariéra: přikrč se a klikni pravým tlačítkem."
+        - "&cOdolnost II + absorbce a odražení nepřátel."
+        - "&8Cooldown: 45 sekund"
 
     crimson-warden-sword:
       cost: 35000
@@ -229,7 +234,9 @@ rewards:
         - "&7Výdrž 4 500 • plně enchantovatelná."
 
 haunted-village:
-  enabled: false
+  enabled: true
+  # Empty world means use the randomized chunk-generated Haunted Villages.
+  # Keep world/x/y/z only for backward-compatible manually configured locations.
   world: ""
   x: 0
   y: 100
@@ -291,6 +298,11 @@ special-mobs:
   relic-item-id: "warriorland_halloween:cursed_candy"
   map-drop-chance: 0.03
   map-item-id: "warriorland_halloween:haunted_map"
+  headless-nick:
+    enabled: true
+    spawn-check-interval-seconds: 30
+    spawn-chance-per-check: 0.12
+    world-cooldown-minutes: 8
   types:
     cursed-zombie:
       name: "&5&lProkletý zombie"
@@ -362,6 +374,15 @@ special-mobs:
       strength-level: 0
       ability-cooldown-seconds: 10
       random-hex-duration-ticks: 65
+    headless-nick:
+      name: "&4&lBEZHLAVÝ NICK"
+      glowing: false
+      health-multiplier: 2.8
+      speed-level: 1
+      strength-level: 1
+      ability-cooldown-seconds: 10
+      charge-slow-ticks: 100
+      charge-wither-ticks: 60
 
 notifications:
   fragment-gain: true
@@ -437,6 +458,7 @@ random-events:
       sound: "warriorland_halloween:witching_sting"
       start-message: "&5&lČARODĚJNICKÁ HODINA &8» &dČarodějnice rozsévají kletby a lovci číhají ze stínů. Těžba i lov mají vyšší odměny."
       end-message: "&5&lČARODĚJNICKÁ HODINA &8» &7Kletby pomalu vyprchávají."
+      darkness-duration-ticks: 180
       multipliers:
         mining: 1.75
         mob-kill: 1.75
@@ -445,7 +467,7 @@ random-events:
     cursed-harvest:
       name: "Prokletá sklizeň"
       sound: "warriorland_halloween:harvest_sting"
-      start-message: "&a&lPROKLETÁ SKLIZEŇ &8» &2Plodiny ožívají pod temnou magií. Sklízej, než pole pohltí prokletí strážci."
+      start-message: "&a&lPROKLETÁ SKLIZEŇ &8» &2Temná magie urychluje růst plodin a láká prokleté strážce. Sklízej zralou úrodu a braň pole!"
       end-message: "&a&lPROKLETÁ SKLIZEŇ &8» &7Pole konečně utichla."
       multipliers:
         farming: 3.0
@@ -455,8 +477,10 @@ random-events:
     blood-moon-invasion:
       name: "Krvavý měsíc — invaze"
       sound: "warriorland_halloween:blood_moon_rise"
-      start-message: "&4&lKRVAVÝ MĚSÍC &8» &cObloha zrudla! Přichází husté vlny speciálních monster a VŠECHNA monstra udělují 3× poškození. Přežijte invazi!"
-      end-message: "&4&lKRVAVÝ MĚSÍC &8» &7Poslední stíny ustoupily. Trojnásobné poškození skončilo."
+      start-message: "&4&lKRVAVÝ MĚSÍC &8» &cNa obloze se zjevuje krvavě rudá lunární aura! Přichází invaze a monstra udělují 3× poškození."
+      end-message: "&4&lKRVAVÝ MĚSÍC &8» &7Rudá lunární aura pohasíná. Trojnásobné poškození skončilo."
+      red-moon-enabled: true
+      red-moon-refresh-interval-ticks: 30
       multipliers:
         mob-kill: 2.25
         mining: 1.25
@@ -550,14 +574,32 @@ bosses:
         phase-4-radius: 10
         phase-4-damage: 7.0
 
+random-structures:
+  enabled: true
+  # Chances are evaluated once per eligible Overworld chunk. 18 = 1.8%, 135 = 13.5%.
+  village-chance-per-thousand: 18
+  graveyard-chance-per-thousand: 135
+  minimum-distance-from-world-spawn-blocks: 256
+  excluded-worlds: []
+  chunks-per-tick: 1
+  discovery-radius-blocks: 10
+  village-discovery-reward-fragments: 250
+  graveyard-discovery-reward-fragments: 200
+
 world-decorations:
   enabled: true
   # Add-only decoration: safe natural ground only; never replaces a solid block or tile entity.
-  pumpkins-per-chunk: 5
-  cobwebs-per-chunk: 2
-  red-candles-per-chunk: 1
-  attempts-per-placement: 32
-  chunks-per-tick: 2
+  pumpkins-per-chunk: 6
+  cobwebs-per-chunk: 3
+  red-candles-per-chunk: 2
+  gravestones-per-chunk: 2
+  dead-plants-per-chunk: 2
+  large-mushrooms-per-chunk: 1
+  soul-lights-per-chunk: 2
+  haunted-soil-patches-per-chunk: 3
+  attempts-per-placement: 96
+  # Keep chunk work deliberately low to avoid generation spikes on live servers.
+  chunks-per-tick: 1
 
 atmosphere:
   enabled: true

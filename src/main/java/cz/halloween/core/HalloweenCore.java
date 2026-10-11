@@ -42,6 +42,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
+    private HalloweenStructureGenerator structureGenerator;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -50,9 +51,17 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
+        migrateCrimsonWardenShieldDefaults();
         migrateCrimsonWardenArmorStats();
+        migrateCrimsonWardenLoreV4();
+        migrateCrimsonWardenLoreV5();
+        migrateCrimsonWardenCustomArmorV1();
+        migrateHalloween3dDecorationsV1();
+        migrateHalloweenDecorationReliabilityV2();
+        migrateGraveyardChanceTripledV1();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateNightNickAndVisualDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -72,6 +81,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
+        structureGenerator = new HalloweenStructureGenerator(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -88,6 +98,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
+        getServer().getPluginManager().registerEvents(structureGenerator, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
@@ -99,9 +110,11 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
+        mobManager.startNightPatrol();
         vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
         worldDecorator.start();
+        structureGenerator.start();
         passiveEffectManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -118,12 +131,14 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
+        if (mobManager != null) mobManager.stopNightPatrol();
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (structureGenerator != null) structureGenerator.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -132,6 +147,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         if (!eventEnabled) return;
         if (vampireEncounterManager != null && vampireEncounterManager.isTrackedVampireBoss(event.getEntity())) return;
+        if (mobManager != null && mobManager.isTestMob(event.getEntity())) return;
 
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
@@ -154,9 +170,17 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         reloadConfig();
         migrateAtmosphereVolume();
         migrateCrimsonWardenShopDefaults();
+        migrateCrimsonWardenShieldDefaults();
         migrateCrimsonWardenArmorStats();
+        migrateCrimsonWardenLoreV4();
+        migrateCrimsonWardenLoreV5();
+        migrateCrimsonWardenCustomArmorV1();
+        migrateHalloween3dDecorationsV1();
+        migrateHalloweenDecorationReliabilityV2();
+        migrateGraveyardChanceTripledV1();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateNightNickAndVisualDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -172,9 +196,21 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         if (atmosphere != null) atmosphere.refreshPlayback();
         if (worldDecorator != null) {
-            worldDecorator.stop();
-            if (eventEnabled && getConfig().getBoolean("world-decorations.enabled", true)) {
-                worldDecorator.scanLoadedChunks();
+            if (getConfig().getBoolean("world-decorations.enabled", true)) {
+                // World ambience is independent of the event gameplay toggle. Never
+                // re-scan all chunks on the standard reload path; avoid packet bursts.
+                worldDecorator.resumeWithoutScanning();
+            } else {
+                worldDecorator.stop();
+            }
+        }
+        if (structureGenerator != null) {
+            if (getConfig().getBoolean("random-structures.enabled", true)) {
+                // The generator only processes chunks without its persistent marker;
+                // already generated/checked chunks are never rebuilt.
+                structureGenerator.scanLoadedChunks();
+            } else {
+                structureGenerator.stop();
             }
         }
 
@@ -184,6 +220,27 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 + ", random-events=" + getConfig().getBoolean("random-events.enabled", true)
                 + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", true)
                 + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", true));
+    }
+
+    private void migrateNightNickAndVisualDefaults() {
+        if (getConfig().getBoolean("migrations.halloween-night-nick-visuals-v1", false)) return;
+        if (!getConfig().isSet("random-events.types.witching-hour.darkness-duration-ticks")) getConfig().set("random-events.types.witching-hour.darkness-duration-ticks", 180);
+        if (!getConfig().isSet("random-events.types.blood-moon-invasion.red-moon-enabled")) getConfig().set("random-events.types.blood-moon-invasion.red-moon-enabled", true);
+        if (!getConfig().isSet("random-events.types.blood-moon-invasion.red-moon-refresh-interval-ticks")) getConfig().set("random-events.types.blood-moon-invasion.red-moon-refresh-interval-ticks", 30);
+        if (!getConfig().isSet("special-mobs.headless-nick.enabled")) getConfig().set("special-mobs.headless-nick.enabled", true);
+        if (!getConfig().isSet("special-mobs.headless-nick.spawn-check-interval-seconds")) getConfig().set("special-mobs.headless-nick.spawn-check-interval-seconds", 30);
+        if (!getConfig().isSet("special-mobs.headless-nick.spawn-chance-per-check")) getConfig().set("special-mobs.headless-nick.spawn-chance-per-check", 0.12D);
+        if (!getConfig().isSet("special-mobs.headless-nick.world-cooldown-minutes")) getConfig().set("special-mobs.headless-nick.world-cooldown-minutes", 8);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.name")) getConfig().set("special-mobs.types.headless-nick.name", "&4&lBEZHLAVÝ NICK");
+        if (!getConfig().isSet("special-mobs.types.headless-nick.glowing")) getConfig().set("special-mobs.types.headless-nick.glowing", false);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.health-multiplier")) getConfig().set("special-mobs.types.headless-nick.health-multiplier", 2.8D);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.ability-cooldown-seconds")) getConfig().set("special-mobs.types.headless-nick.ability-cooldown-seconds", 10);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.charge-slow-ticks")) getConfig().set("special-mobs.types.headless-nick.charge-slow-ticks", 100);
+        if (!getConfig().isSet("special-mobs.types.headless-nick.charge-wither-ticks")) getConfig().set("special-mobs.types.headless-nick.charge-wither-ticks", 60);
+        if (!getConfig().isSet("world-decorations.haunted-soil-patches-per-chunk")) getConfig().set("world-decorations.haunted-soil-patches-per-chunk", 3);
+        getConfig().set("migrations.halloween-night-nick-visuals-v1", true);
+        saveConfig();
+        getLogger().info("Halloween night-Nick, Blood Moon visual and haunted soil defaults migrated.");
     }
 
     public void setEventEnabled(boolean enabled) {
@@ -206,7 +263,15 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             }
         }
         if (atmosphere != null) atmosphere.refreshPlayback();
-        if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
+        // Ambient world generation isn't toggled off by /halloween off.
+        if (worldDecorator != null) {
+            if (getConfig().getBoolean("world-decorations.enabled", true)) worldDecorator.scanLoadedChunks();
+            else worldDecorator.stop();
+        }
+        if (structureGenerator != null) {
+            if (getConfig().getBoolean("random-structures.enabled", true)) structureGenerator.scanLoadedChunks();
+            else structureGenerator.stop();
+        }
 
         if (changed) {
             Bukkit.broadcastMessage(color(enabled
@@ -363,6 +428,46 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     }
 
 
+    /**
+     * Add the Crimson Warden shield to existing installations without resetting shop balance.
+     */
+    private void migrateCrimsonWardenShieldDefaults() {
+        if (getConfig().getBoolean("migrations.crimson-warden-shield-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml unavailable; Crimson Warden shield migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection source = defaults.getConfigurationSection("rewards.shop.crimson-warden-shield");
+            if (source == null) {
+                getLogger().warning("Default Crimson Warden shield shop entry is missing; migration was skipped.");
+                return;
+            }
+            String target = "rewards.shop.crimson-warden-shield";
+            if (!getConfig().isConfigurationSection(target)) {
+                for (String key : source.getKeys(true)) {
+                    if (!source.isConfigurationSection(key)) getConfig().set(target + "." + key, source.get(key));
+                }
+            } else {
+                for (String key : List.of("itemsadder-id", "material", "amount", "name", "lore")) {
+                    if (source.contains(key)) getConfig().set(target + "." + key, source.get(key));
+                }
+                for (String key : List.of("cost", "min-curse")) {
+                    if (!getConfig().contains(target + "." + key) && source.contains(key)) {
+                        getConfig().set(target + "." + key, source.get(key));
+                    }
+                }
+            }
+            getConfig().set("migrations.crimson-warden-shield-v1", true);
+            saveConfig();
+            getLogger().info("Crimson Warden shield shop entry added while preserving custom price and curse requirements.");
+        } catch (IOException ex) {
+            getLogger().warning("Crimson Warden shield migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
     private void migrateCrimsonWardenArmorStats() {
         if (getConfig().getBoolean("migrations.crimson-warden-armor-stats-v3", false)) return;
 
@@ -398,11 +503,178 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
 
     /**
+     * Remove obsolete Crimson Warden shop lore on existing installations once.
+     * Only presentation text is changed; prices, curse gates and other settings remain untouched.
+     */
+    private void migrateCrimsonWardenLoreV4() {
+        if (getConfig().getBoolean("migrations.crimson-warden-lore-v4", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml is unavailable; Crimson Warden lore migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            String root = "rewards.shop.";
+            for (String id : List.of(
+                    "crimson-warden-helmet",
+                    "crimson-warden-chestplate",
+                    "crimson-warden-leggings",
+                    "crimson-warden-boots")) {
+                ConfigurationSection source = defaults.getConfigurationSection(root + id);
+                String targetPath = root + id;
+                if (source != null && getConfig().isConfigurationSection(targetPath)) {
+                    getConfig().set(targetPath + ".lore", source.getStringList("lore"));
+                }
+            }
+            getConfig().set("migrations.crimson-warden-lore-v4", true);
+            saveConfig();
+            getLogger().info("Crimson Warden armor lore cleaned up once; shop prices and curse requirements were preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Crimson Warden lore migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+
+    /**
+     * Replace the old duplicated "+Armor" shop lore with real equipment-tooltip modifiers.
+     * Only presentation lore changes; prices and curse requirements are preserved.
+     */
+    private void migrateCrimsonWardenLoreV5() {
+        if (getConfig().getBoolean("migrations.crimson-warden-lore-v5", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Default config.yml is unavailable; Crimson Warden armor lore v5 migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            String root = "rewards.shop.";
+            for (String id : List.of(
+                    "crimson-warden-helmet",
+                    "crimson-warden-chestplate",
+                    "crimson-warden-leggings",
+                    "crimson-warden-boots")) {
+                ConfigurationSection source = defaults.getConfigurationSection(root + id);
+                String target = root + id;
+                if (source != null && getConfig().isConfigurationSection(target)) {
+                    getConfig().set(target + ".lore", source.getStringList("lore"));
+                }
+            }
+            getConfig().set("migrations.crimson-warden-lore-v5", true);
+            saveConfig();
+            getLogger().info("Crimson Warden armor shop lore now relies on real equipment modifiers; prices and curse gates preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Crimson Warden armor lore v5 migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Migrate existing server configs to the custom Crimson Warden armor base material.
+     * ItemsAdder supplies the actual modern/legacy wear textures; LEATHER_* is only the
+     * compatible base material and avoids presenting the custom set as Netherite gear.
+     * Unrelated shop prices, curse gates, and other server settings are preserved.
+     */
+    private void migrateCrimsonWardenCustomArmorV1() {
+        if (getConfig().getBoolean("migrations.crimson-warden-custom-armor-v1", false)) return;
+
+        for (String[] piece : new String[][]{
+                {"crimson-warden-helmet", "LEATHER_HELMET"},
+                {"crimson-warden-chestplate", "LEATHER_CHESTPLATE"},
+                {"crimson-warden-leggings", "LEATHER_LEGGINGS"},
+                {"crimson-warden-boots", "LEATHER_BOOTS"}
+        }) {
+            String path = "rewards.shop." + piece[0];
+            if (getConfig().isConfigurationSection(path)) {
+                getConfig().set(path + ".material", piece[1]);
+            }
+        }
+        if (!getConfig().contains("rewards.passive-effects.crimson-warden-set-bonus.enabled")) {
+            getConfig().set("rewards.passive-effects.crimson-warden-set-bonus.enabled", true);
+        }
+        if (!getConfig().contains("rewards.passive-effects.crimson-warden-set-bonus.resistance-seconds")) {
+            getConfig().set("rewards.passive-effects.crimson-warden-set-bonus.resistance-seconds", 3);
+        }
+        if (!getConfig().contains("rewards.passive-effects.crimson-warden-set-bonus.fire-resistance-seconds")) {
+            getConfig().set("rewards.passive-effects.crimson-warden-set-bonus.fire-resistance-seconds", 3);
+        }
+        if (!getConfig().contains("rewards.passive-effects.crimson-warden-set-bonus.aura-particles")) {
+            getConfig().set("rewards.passive-effects.crimson-warden-set-bonus.aura-particles", true);
+        }
+
+        getConfig().set("migrations.crimson-warden-custom-armor-v1", true);
+        saveConfig();
+        getLogger().info("Crimson Warden custom armor migrated to leather bases with modern/legacy custom renderers and full-set effects.");
+    }
+
+    /**
+     * Reduce the add-only decoration density when upgrading to physical 3D graves and mushrooms.
+     * This migration only changes the three decoration counts, preserving all unrelated settings.
+     */
+    private void migrateHalloween3dDecorationsV1() {
+        if (getConfig().getBoolean("migrations.halloween-3d-decorations-v1", false)) return;
+        getConfig().set("world-decorations.gravestones-per-chunk", 1);
+        getConfig().set("world-decorations.dead-plants-per-chunk", 1);
+        if (!getConfig().contains("world-decorations.large-mushrooms-per-chunk")) {
+            getConfig().set("world-decorations.large-mushrooms-per-chunk", 1);
+        }
+        // New structure-generation options must also be written into existing
+        // config.yml files; saveDefaultConfig() does not merge new keys on upgrades.
+        if (!getConfig().contains("random-structures.enabled")) getConfig().set("random-structures.enabled", true);
+        if (!getConfig().contains("random-structures.village-chance-per-thousand")) {
+            getConfig().set("random-structures.village-chance-per-thousand", 18);
+        }
+        if (!getConfig().contains("random-structures.graveyard-chance-per-thousand")) {
+            getConfig().set("random-structures.graveyard-chance-per-thousand", 135);
+        }
+        if (!getConfig().contains("random-structures.chunks-per-tick")) getConfig().set("random-structures.chunks-per-tick", 1);
+        if (!getConfig().contains("random-structures.minimum-distance-from-world-spawn-blocks")) {
+            getConfig().set("random-structures.minimum-distance-from-world-spawn-blocks", 256);
+        }
+        if (!getConfig().contains("random-structures.discovery-radius-blocks")) getConfig().set("random-structures.discovery-radius-blocks", 10);
+        if (!getConfig().contains("random-structures.village-discovery-reward-fragments")) {
+            getConfig().set("random-structures.village-discovery-reward-fragments", 250);
+        }
+        if (!getConfig().contains("random-structures.graveyard-discovery-reward-fragments")) {
+            getConfig().set("random-structures.graveyard-discovery-reward-fragments", 200);
+        }
+        // Legacy manual coordinates stay intact; generated village discovery is enabled.
+        getConfig().set("haunted-village.enabled", true);
+        getConfig().set("migrations.halloween-3d-decorations-v1", true);
+        saveConfig();
+        getLogger().info("Halloween 3D graves/mushrooms enabled with low per-chunk density; unrelated world settings preserved.");
+    }
+
+    private void migrateHalloweenDecorationReliabilityV2() {
+        if (getConfig().getBoolean("migrations.halloween-decoration-reliability-v2", false)) return;
+        // 48 attempts was the previous default and often missed eligible sites in sloped/forested chunks.
+        // Preserve a custom value above the old default.
+        int attempts = getConfig().getInt("world-decorations.attempts-per-placement", 48);
+        if (attempts <= 48) getConfig().set("world-decorations.attempts-per-placement", 96);
+        getConfig().set("migrations.halloween-decoration-reliability-v2", true);
+        saveConfig();
+        getLogger().info("Halloween decoration reliability migration applied.");
+    }
+
+    /**
      * Apply the intentional Halloween event overhaul to existing installations once.
      * It updates event timings/balance/cues and world decoration density, while keeping
      * the administrator's global event enable switch, arena coordinates, prices and
      * all unrelated gameplay settings intact.
      */
+    /** Triples the graveyard generation chance once and preserves an explicit zero. */
+    private void migrateGraveyardChanceTripledV1() {
+        if (getConfig().getBoolean("migrations.halloween-graveyard-chance-tripled-v1", false)) return;
+        int chance = Math.max(0, getConfig().getInt("random-structures.graveyard-chance-per-thousand", 45));
+        if (chance > 0 && chance < 135) {
+            getConfig().set("random-structures.graveyard-chance-per-thousand", Math.min(1000, chance * 3));
+        }
+        getConfig().set("migrations.halloween-graveyard-chance-tripled-v1", true);
+        saveConfig();
+        getLogger().info("Halloween graveyard generation chance migration applied.");
+    }
+
     private void migrateHalloweenEventOverhaul() {
         if (getConfig().getBoolean("migrations.halloween-event-overhaul-v1", false)) return;
 
@@ -487,6 +759,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         // If an admin fixes an issue, allow the same error to be reported again
         // if it comes back later, without printing the same error every reload.
         reportedConfigErrors.retainAll(currentErrors);
+    }
+
+    public HalloweenStructureGenerator getStructureGenerator() {
+        return structureGenerator;
     }
 
     public boolean isEventEnabled() {

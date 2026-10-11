@@ -24,14 +24,20 @@ jobs:
           fi
       - name: Generate Halloween audio
         run: python3 scripts/generate_halloween_audio.py
+      - name: Install Pillow for armor and model textures
+        run: python3 -m pip install --user Pillow
       - name: Generate Halloween block textures
         run: python3 scripts/generate_halloween_block_textures.py
+      - name: Generate Crimson Warden custom armor
+        run: python3 scripts/generate_crimson_warden_armor.py
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
+      - name: Validate optional client shader pack
+        run: python3 scripts/validate_client_packs.py
+      - name: Validate Halloween structures
+        run: python3 scripts/validate_halloween_structures.py
       - name: Validate Vampire King model
         run: python3 scripts/validate_vampire_model.py
-      - name: Install Blockbench texture generator dependency
-        run: python3 -m pip install --user Pillow
       - name: Generate additional Halloween mob models
         run: python3 scripts/generate_additional_halloween_mobs.py
       - name: Validate custom Halloween mob models
@@ -48,6 +54,19 @@ jobs:
         with:
           name: WarriorLand-Halloween-ItemsAdder
           path: target/WarriorLand-Halloween-ItemsAdder.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Package optional Iris shader pack
+        run: |
+          mkdir -p target
+          cd client-packs/HalloweenCore-Iris-Crimson-Sky
+          zip -qr ../../target/HalloweenCore-Iris-Crimson-Sky.zip .
+          unzip -t ../../target/HalloweenCore-Iris-Crimson-Sky.zip
+      - name: Upload optional Iris shader pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Iris-Crimson-Sky
+          path: target/HalloweenCore-Iris-Crimson-Sky.zip
           if-no-files-found: error
           retention-days: 14
       - name: Package special mob models
@@ -72,5 +91,38 @@ jobs:
         with:
           name: HalloweenCore-jar
           path: target/HalloweenCore.jar
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Package complete HalloweenCore install bundle
+        run: |
+          BUNDLE=target/HalloweenCore-install-bundle
+          mkdir -p "$BUNDLE/plugins/ItemsAdder/contents" "$BUNDLE/plugins/MythicMobs/Mobs" "$BUNDLE/plugins/MythicMobs/Skills" "$BUNDLE/plugins/ModelEngine/blueprints"
+          cp target/HalloweenCore.jar "$BUNDLE/plugins/HalloweenCore.jar"
+          cp -R itemsadder/contents/warriorland_halloween "$BUNDLE/plugins/ItemsAdder/contents/"
+          cp mythicmobs/mobs/halloween-special-mobs.yml mythicmobs/mobs/vampire-king.yml "$BUNDLE/plugins/MythicMobs/Mobs/"
+          cp mythicmobs/skills/vampire-king.yml "$BUNDLE/plugins/MythicMobs/Skills/"
+          cp mythicmobs/models/halloween_*.bbmodel mythicmobs/models/halloween_*.png mythicmobs/models/vampire_king.bbmodel mythicmobs/models/vampire_king.png "$BUNDLE/plugins/ModelEngine/blueprints/"
+          cp mythicmobs/README.md "$BUNDLE/ModelEngine-MythicMobs-README.txt"
+          cat > "$BUNDLE/INSTALL.txt" <<'EOF'
+          HALLOWEENCORE — KOMPLETNÍ INSTALAČNÍ BALÍČEK
+          1. Vypni server a zálohuj svět i složku plugins.
+          2. Rozbal ZIP do kořenové složky serveru; všechny cesty začínají v plugins/.
+          3. Ověř, že máš nainstalované kompatibilní verze ItemsAdder, MythicMobs a ModelEngine.
+          4. Zapni server a spusť /mm reload.
+          5. Spusť /halloween reload; obnoví ModelEngine a sestaví ItemsAdder resource pack.
+          6. Ověř /iainfo a pak se odpoj a znovu připoj, aby klient dostal nové textury.
+          7. Pro klienty starší než Java 1.21.2 přes ViaVersion/ViaRewind nastav v plugins/ItemsAdder/config.yml advanced.legacy_shader_armor_conversion.append_new_equipment_tag.enabled: true a nenechávej advanced.completely_convert_to_new_equipment_tag.enabled: true; tím se zachová moderní i starší vykreslení. Poté znovu spusť /iazip. Klienti starší než 1.17 mohou potřebovat OptiFine; vykreslení ověř na skutečné klientské verzi.
+          8. Volitelný grafický efekt stáhni zvlášť z artefaktu HalloweenCore-Iris-Crimson-Sky a nainstaluj do .minecraft/shaderpacks/ přes Iris. Není potřeba pro základní Halloween předměty.
+          Pokud mob zůstává černo-fialový, zkontroluj plugins/MythicMobs/Mobs/halloween-special-mobs.yml a soubory .bbmodel v plugins/ModelEngine/blueprints. Samotný JAR vlastní modely neobsahuje.
+          EOF
+          cd "$BUNDLE"
+          zip -qr ../HalloweenCore-Install-Bundle.zip .
+          unzip -t ../HalloweenCore-Install-Bundle.zip
+      - name: Upload complete HalloweenCore install bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Install-Bundle
+          path: target/HalloweenCore-Install-Bundle.zip
           if-no-files-found: error
           retention-days: 14

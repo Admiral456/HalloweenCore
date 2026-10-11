@@ -21,6 +21,7 @@ public final class HalloweenDataManager {
     private final Map<UUID, Long> lifetimeFragments = new HashMap<>();
     private final Map<UUID, Long> lastJoin = new HashMap<>();
     private final Map<UUID, Integer> streaks = new HashMap<>();
+    private final Map<UUID, Integer> curseLevelOverrides = new HashMap<>();
     private final Map<UUID, Set<String>> claimedRewards = new HashMap<>();
     private final Map<UUID, String> challengeDay = new HashMap<>();
     private final Map<UUID, String> challengeType = new HashMap<>();
@@ -45,6 +46,7 @@ public final class HalloweenDataManager {
         lifetimeFragments.clear();
         lastJoin.clear();
         streaks.clear();
+        curseLevelOverrides.clear();
         claimedRewards.clear();
         challengeDay.clear();
         challengeType.clear();
@@ -75,6 +77,10 @@ public final class HalloweenDataManager {
                     long lifetime = Math.max(0L, data.getLong(base + ".lifetime-fragments", amount));
                     long join = Math.max(0L, data.getLong(base + ".last-join", 0L));
                     int streak = Math.max(0, data.getInt(base + ".streak", 0));
+                    if (data.contains(base + ".curse-level-override")) {
+                        int overrideLevel = data.getInt(base + ".curse-level-override", -1);
+                        if (overrideLevel >= 0 && overrideLevel <= 100) curseLevelOverrides.put(uuid, overrideLevel);
+                    }
 
                     if (amount > 0L) fragments.put(uuid, amount);
                     if (lifetime > 0L) lifetimeFragments.put(uuid, lifetime);
@@ -129,6 +135,7 @@ public final class HalloweenDataManager {
         players.addAll(lifetimeFragments.keySet());
         players.addAll(lastJoin.keySet());
         players.addAll(streaks.keySet());
+        players.addAll(curseLevelOverrides.keySet());
         players.addAll(claimedRewards.keySet());
         players.addAll(challengeDay.keySet());
         players.addAll(challengeType.keySet());
@@ -151,6 +158,7 @@ public final class HalloweenDataManager {
             if (lifetime > 0L) data.set(base + ".lifetime-fragments", lifetime);
             if (join > 0L) data.set(base + ".last-join", join);
             if (streak > 0) data.set(base + ".streak", streak);
+            if (curseLevelOverrides.containsKey(uuid)) data.set(base + ".curse-level-override", curseLevelOverrides.get(uuid));
 
             Set<String> rewards = claimedRewards.get(uuid);
             if (rewards != null && !rewards.isEmpty()) {
@@ -287,6 +295,17 @@ public final class HalloweenDataManager {
 
     public int getStreak(UUID uuid) {
         return streaks.getOrDefault(uuid, 0);
+    }
+
+    /** Manual admin override; null means lifetime-fragment progression is active. */
+    public Integer getCurseLevelOverride(UUID uuid) {
+        return curseLevelOverrides.get(uuid);
+    }
+
+    public void setCurseLevelOverride(UUID uuid, Integer level) {
+        if (uuid == null) return;
+        if (level == null) curseLevelOverrides.remove(uuid);
+        else curseLevelOverrides.put(uuid, Math.max(0, Math.min(100, level)));
     }
 
     public void recordJoin(UUID uuid, long timestamp, int streak) {

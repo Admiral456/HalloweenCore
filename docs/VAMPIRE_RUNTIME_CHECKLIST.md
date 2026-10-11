@@ -12,7 +12,7 @@ This is a staging checklist. Production spawn remains disabled until all checks 
 ## Model checklist
 1. Run `python3 scripts/validate_vampire_model.py` in the repo/CI and verify PASS.
 2. Import `vampire_king.bbmodel` into `plugins/ModelEngine/blueprints`.
-3. Run `/meg reload models` and inspect logs.
+3. Run `/meg reload` and inspect logs.
 4. Verify the vampire's texture, crown, sword, cape and both wings.
 5. Confirm idle, walk (by previewing the animation in the editor), attack and fly animation tracks.
 6. Verify the weapon remains attached to the right arm and the wings articulate from the torso.
