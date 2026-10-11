@@ -326,6 +326,9 @@ public final class HalloweenStructureGenerator implements Listener {
         put(world, cx, floorY + 1, cz, Material.CRYING_OBSIDIAN);
         put(world, cx, floorY + 2, cz, Material.CHISELED_POLISHED_BLACKSTONE);
         put(world, cx, floorY + 3, cz, Material.SOUL_LANTERN);
+        for (int dx : new int[]{-1, 1}) {
+            for (int dz : new int[]{-1, 1}) put(world, cx + dx, floorY, cz + dz, Material.MOSSY_COBBLESTONE);
+        }
         putLitCandle(world, cx - 1, floorY + 1, cz - 1);
         putLitCandle(world, cx + 1, floorY + 1, cz - 1);
         putLitCandle(world, cx - 1, floorY + 1, cz + 1);
@@ -432,14 +435,14 @@ public final class HalloweenStructureGenerator implements Listener {
         if (eastDoor) {
             placeStairs(world, cx + 3, floorY, cz, Material.COBBLED_DEEPSLATE_STAIRS, BlockFace.EAST);
             for (int side : new int[]{-1, 1}) {
-                put(world, cx + 3, floorY + 1, cz + side, Material.SPRUCE_FENCE);
-                put(world, cx + 3, floorY + 2, cz + side, Material.SOUL_LANTERN);
+                put(world, cx + 3, floorY, cz + side, Material.SPRUCE_FENCE);
+                put(world, cx + 3, floorY + 1, cz + side, Material.SOUL_LANTERN);
             }
         } else {
             placeStairs(world, cx, floorY, cz + 3, Material.COBBLED_DEEPSLATE_STAIRS, BlockFace.SOUTH);
             for (int side : new int[]{-1, 1}) {
-                put(world, cx + side, floorY + 1, cz + 3, Material.SPRUCE_FENCE);
-                put(world, cx + side, floorY + 2, cz + 3, Material.SOUL_LANTERN);
+                put(world, cx + side, floorY, cz + 3, Material.SPRUCE_FENCE);
+                put(world, cx + side, floorY + 1, cz + 3, Material.SOUL_LANTERN);
             }
         }
     }
@@ -553,6 +556,8 @@ public final class HalloweenStructureGenerator implements Listener {
 
         // Crimson candles and wither roses border the path without filling the walking lane.
         for (int x : new int[]{-2, 2}) {
+            put(world, cx + x, floorY, cz + 1, Material.MOSSY_COBBLESTONE);
+            put(world, cx + x, floorY, cz + 2, Material.MOSSY_COBBLESTONE);
             putLitCandle(world, cx + x, floorY + 1, cz + 1);
             putLitCandle(world, cx + x, floorY + 1, cz + 2);
         }
@@ -562,8 +567,8 @@ public final class HalloweenStructureGenerator implements Listener {
         put(world, cx + 4, floorY, cz + 2, Material.WITHER_ROSE);
         put(world, cx - 4, floorY + 2, cz - 5, Material.COBWEB);
         put(world, cx + 4, floorY + 2, cz - 5, Material.COBWEB);
-        if (random.nextBoolean()) put(world, cx - 4, floorY + 1, cz + 4, Material.BROWN_MUSHROOM);
-        if (random.nextBoolean()) put(world, cx + 4, floorY + 1, cz + 4, Material.RED_MUSHROOM);
+        if (random.nextBoolean()) put(world, cx - 4, floorY, cz + 4, Material.BROWN_MUSHROOM);
+        if (random.nextBoolean()) put(world, cx + 4, floorY, cz + 4, Material.RED_MUSHROOM);
     }
 
     private void buildMausoleum(World world, int cx, int floorY, int cz) {
