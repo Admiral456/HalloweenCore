@@ -597,9 +597,12 @@ public final class HalloweenMobManager implements Listener {
     public int spawnTestMob(Player player, String mobId, int amount) {
         if (player == null || !player.isOnline() || !isKnownSpecialMob(mobId)) return 0;
         int requested = Math.max(1, Math.min(5, amount));
+        int alreadySpawned = (int) player.getNearbyEntities(40.0D, 20.0D, 40.0D).stream()
+                .filter(LivingEntity.class::isInstance).map(LivingEntity.class::cast)
+                .filter(this::isTestMob).count();
         int spawnedCount = 0;
         for (int index = 0; index < requested; index++) {
-            Location spawnLocation = findSafeTestLocation(player, index);
+            Location spawnLocation = findSafeTestLocation(player, alreadySpawned + index);
             if (spawnLocation == null) continue;
             LivingEntity living;
             if ("headless-nick".equalsIgnoreCase(mobId)) {

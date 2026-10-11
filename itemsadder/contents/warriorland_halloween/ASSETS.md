@@ -94,7 +94,7 @@ The generated pack contains a CC0-converted Spooky Fester ambience plus six orig
 
 ## Custom enemy model files
 
-Five ModelEngine blueprints with independent 128×128 atlases are stored in `mythicmobs/models/halloween_*.bbmodel` and `mythicmobs/models/halloween_*.png`. These files are packaged separately from ItemsAdder content in the CI artifact `HalloweenCore-Special-Mobs-ModelEngine.zip`; import the blueprints into ModelEngine and merge `ModelEngine/resource pack` into the ItemsAdder-hosted pack before testing them in-game. The model/texture structure is checked by `scripts/validate_special_mob_models.py`.
+Nine ModelEngine blueprints with independent 128×128 atlases are stored in `mythicmobs/models/halloween_*.bbmodel` and `mythicmobs/models/halloween_*.png`. These files are packaged separately from ItemsAdder content in the CI artifact `HalloweenCore-Special-Mobs-ModelEngine.zip`; import the blueprints into ModelEngine and merge `ModelEngine/resource pack` into the ItemsAdder-hosted pack before testing them in-game. The model/texture structure is checked by `scripts/validate_special_mob_models.py`.
 
 
 ## Halloween world decoration textures

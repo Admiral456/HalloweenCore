@@ -23,7 +23,7 @@ U vybraného hráče se zkusí posunout růst až 5 okolních nedozrálých plod
 **Důležité:** aktuální kód pole ani plodiny neničí. Staré oznámení naznačovalo, že strážci pole pohltí; to bylo zavádějící. Event urychluje plodiny a přivolává nepřátele, ale farma zůstává nedotčená.
 
 ### 4. Krvavý měsíc — invaze
-Každá vlna se pokusí přivolat 4 nepřátele z Prokletého zombie, Hrobníka, Krvavého pavouka, Dýňového přízraku a Hexové čarodějky. Během posledních 2 minut se jednou pokusí objevit Kapitán invaze poblíž způsobilého hráče. Před hráči se vykresluje rudý lunární disk z částic. Bukkit ale nedokáže přebarvit skutečnou texturu měsíce nebo základní nebe klienta, takže jde o herní efekt, nikoli o změnu klientského skyboxu. Hráči dostávají 3× poškození od monster. Limit je 48 eventových mobů na svět; zabíjení dává 2,25× fragmenty a těžba 1,25×.
+Každá vlna se pokusí přivolat 4 nepřátele z Prokletého zombie, Hrobníka, Krvavého pavouka, Dýňového přízraku a Hexové čarodějky. Během posledních 2 minut se jednou pokusí objevit Kapitán invaze poblíž způsobilého hráče. Při události se každému způsobilému hráči dočasně nastaví klientský pohled na noc, aby přibalený červeno-oranžový sky shader skutečně změnil barvu noční oblohy; původní čas hráče se po eventu obnoví. Navíc se před hráči vykresluje rudý lunární disk z částic, protože server bez úpravy textury/resource packu neumí přebarvit původní texturu měsíce. Hráči dostávají 3× poškození od monster. Limit je 48 eventových mobů na svět; zabíjení dává 2,25× fragmenty a těžba 1,25×.
 
 ### 5. Dýňová apokalypsa
 Každá vlna se pokusí přivolat 5 nepřátel; Dýňový přízrak má ve výběru dvojnásobnou váhu oproti Prokletému zombie. Objevují se plameny, láva a popel. Zabíjení dává 2,5× fragmenty, sklizeň 1,5×.

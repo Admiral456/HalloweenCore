@@ -13,8 +13,11 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class HalloweenEventManager {
@@ -26,6 +29,9 @@ public final class HalloweenEventManager {
     private long lastSurgeAt;
     private long lastBloodMoonVisualAt;
     private boolean invasionCaptainSpawned;
+    private final Map<UUID, SavedPlayerTime> savedBloodMoonTimes = new HashMap<>();
+
+    private record SavedPlayerTime(long time, boolean relative) {}
 
     public HalloweenEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -95,6 +101,7 @@ public final class HalloweenEventManager {
     }
 
     public void stop() {
+        restoreBloodMoonClientTimes();
         if (activeEventId != null && plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
@@ -158,6 +165,8 @@ public final class HalloweenEventManager {
         lastBloodMoonVisualAt = 0L;
         invasionCaptainSpawned = false;
 
+        if ("blood-moon-invasion".equalsIgnoreCase(activeEventId)) applyBloodMoonClientTime();
+
         String path = "random-events.types." + activeEventId;
         String name = plugin.getConfig().getString(path + ".name", activeEventId);
         String message = plugin.getConfig().getString(path + ".start-message",
@@ -173,6 +182,7 @@ public final class HalloweenEventManager {
         String message = plugin.getConfig().getString(path + ".end-message",
                 "&6&lHALLOWEEN &8» &7Halloween událost skončila.");
         Bukkit.broadcastMessage(plugin.color(message));
+        if ("blood-moon-invasion".equalsIgnoreCase(activeEventId)) restoreBloodMoonClientTimes();
         if (plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
@@ -200,13 +210,15 @@ public final class HalloweenEventManager {
     }
 
     private void runActiveEventEffects(long now) {
-        if ("blood-moon-invasion".equalsIgnoreCase(activeEventId)
-                && plugin.getConfig().getBoolean("random-events.types.blood-moon-invasion.red-moon-enabled", true)) {
-            long refreshMillis = Math.max(1000L, Math.min(10_000L,
-                    plugin.getConfig().getLong("random-events.types.blood-moon-invasion.red-moon-refresh-interval-ticks", 30L) * 50L));
-            if (now - lastBloodMoonVisualAt >= refreshMillis) {
-                renderBloodMoon();
-                lastBloodMoonVisualAt = now;
+        if ("blood-moon-invasion".equalsIgnoreCase(activeEventId)) {
+            applyBloodMoonClientTime();
+            if (plugin.getConfig().getBoolean("random-events.types.blood-moon-invasion.red-moon-enabled", true)) {
+                long refreshMillis = Math.max(1000L, Math.min(10_000L,
+                        plugin.getConfig().getLong("random-events.types.blood-moon-invasion.red-moon-refresh-interval-ticks", 30L) * 50L));
+                if (now - lastBloodMoonVisualAt >= refreshMillis) {
+                    renderBloodMoon();
+                    lastBloodMoonVisualAt = now;
+                }
             }
         }
         long surgeIntervalSeconds = Math.max(10L,
@@ -307,6 +319,26 @@ public final class HalloweenEventManager {
      * Bukkit cannot tint the client's vanilla sky or moon texture server-side, so this
      * renders an in-world particle illusion rather than claiming a true sky tint.
      */
+    private void applyBloodMoonClientTime() {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            boolean eligible = plugin.isEligibleGameplayPlayer(player) && plugin.isEligibleGameplayWorld(player.getWorld());
+            if (!eligible) { restoreBloodMoonClientTime(player); continue; }
+            savedBloodMoonTimes.computeIfAbsent(player.getUniqueId(), id ->
+                    new SavedPlayerTime(player.getPlayerTime(), player.isPlayerTimeRelative()));
+            player.setPlayerTime(18_000L, false);
+        }
+    }
+
+    private void restoreBloodMoonClientTime(Player player) {
+        SavedPlayerTime saved = savedBloodMoonTimes.remove(player.getUniqueId());
+        if (saved != null && player.isOnline()) player.setPlayerTime(saved.time(), saved.relative());
+    }
+
+    private void restoreBloodMoonClientTimes() {
+        for (Player player : Bukkit.getOnlinePlayers()) restoreBloodMoonClientTime(player);
+        savedBloodMoonTimes.clear();
+    }
+
     private void renderBloodMoon() {
         Particle.DustOptions crimson = new Particle.DustOptions(Color.fromRGB(176, 4, 18), 2.4F);
         Particle.DustOptions ember = new Particle.DustOptions(Color.fromRGB(255, 40, 28), 1.35F);
