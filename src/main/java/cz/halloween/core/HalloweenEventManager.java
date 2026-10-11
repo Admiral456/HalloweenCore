@@ -13,6 +13,7 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
 
