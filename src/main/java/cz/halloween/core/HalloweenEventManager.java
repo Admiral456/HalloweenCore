@@ -369,38 +369,67 @@ public final class HalloweenEventManager {
     }
 
     private int spawnHarvestWave(Player target, int count) {
-        if (target == null) return 0;
+        if (target == null || count <= 0) return 0;
+        // Cursed Harvest is the one event whose enemies must emerge from farm blocks.
+        // Never fall back to ordinary terrain: that made the event look like another
+        // generic mob wave when the randomly selected player was away from a farm.
         List<Location> farmLocations = findNearbyFarmland(target, 24, count);
+        if (farmLocations.isEmpty()) {
+            target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Do 24 bloků není vhodné obdělávané pole. Monstra se mimo pole nevyvolají."));
+            return 0;
+        }
+
         String[] mobIds = {"blood-spider", "pumpkin-wraith"};
         int spawned = 0;
-        for (int i = 0; i < count; i++) {
+        int waveSize = Math.min(count, farmLocations.size());
+        for (int i = 0; i < waveSize; i++) {
             String mobId = mobIds[ThreadLocalRandom.current().nextInt(mobIds.length)];
-            boolean success = i < farmLocations.size() ? plugin.getMobManager().spawnEventMobAt(target, mobId, farmLocations.get(i)) : plugin.getMobManager().spawnEventMob(target, mobId);
-            if (success) spawned++;
+            if (plugin.getMobManager().spawnEventMobAt(target, mobId, farmLocations.get(i))) spawned++;
+        }
+        if (spawned < waveSize) {
+            target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Část vlny se na poli nemohla objevit; limit mobů nebo volné místo nedovolily spawn."));
         }
         return spawned;
     }
 
     private List<Location> findNearbyFarmland(Player target, int radius, int maximum) {
         List<Location> locations = new java.util.ArrayList<>();
+        if (target == null || target.getWorld() == null || maximum <= 0) return locations;
         Location origin = target.getLocation();
         var world = target.getWorld();
-        for (int dx = -radius; dx <= radius && locations.size() < maximum; dx++) {
-            for (int dz = -radius; dz <= radius && locations.size() < maximum; dz++) {
+
+        // Inspect the whole radius before sorting. Stopping after the first N hits
+        // biased spawns toward one corner of the search square rather than the
+        // nearest usable farm rows.
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
                 if (dx * dx + dz * dz > radius * radius) continue;
-                int x = origin.getBlockX() + dx; int z = origin.getBlockZ() + dz;
+                int x = origin.getBlockX() + dx;
+                int z = origin.getBlockZ() + dz;
                 if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
-                int highest = world.getHighestBlockYAt(x, z); int minY = Math.max(world.getMinHeight(), highest - 4);
+
+                int highest = world.getHighestBlockYAt(x, z);
+                int minY = Math.max(world.getMinHeight(), highest - 4);
                 for (int y = highest; y >= minY; y--) {
                     Block ground = world.getBlockAt(x, y, z);
                     if (ground.getType() != org.bukkit.Material.FARMLAND) continue;
-                    Block feet = ground.getRelative(0, 1, 0); Block head = ground.getRelative(0, 2, 0);
+                    Block feet = ground.getRelative(0, 1, 0);
+                    Block head = ground.getRelative(0, 2, 0);
                     if (!feet.isPassable() || !head.isPassable() || feet.isLiquid() || head.isLiquid()) continue;
-                    locations.add(new Location(world, x + 0.5D, y + 1.0D, z + 0.5D)); break;
+
+                    // Entity feet are placed one block above FARMLAND. Crops are
+                    // passable, so they stay intact while the monster rises from
+                    // the cultivated row.
+                    locations.add(new Location(world, x + 0.5D, y + 1.0D, z + 0.5D));
+                    break;
                 }
             }
         }
+
         locations.sort(java.util.Comparator.comparingDouble(location -> location.distanceSquared(origin)));
+        if (locations.size() > maximum) {
+            return new java.util.ArrayList<>(locations.subList(0, maximum));
+        }
         return locations;
     }
 
