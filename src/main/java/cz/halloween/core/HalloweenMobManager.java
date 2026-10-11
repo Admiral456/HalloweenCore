@@ -104,6 +104,13 @@ public final class HalloweenMobManager implements Listener {
             for (Entity entity : observer.getNearbyEntities(72.0D, 36.0D, 72.0D)) {
                 if (!(entity instanceof LivingEntity nick) || !updated.add(nick.getUniqueId())) continue;
                 if (!"headless-nick".equals(nick.getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING))) continue;
+                boolean testNick = isTestMob(nick);
+                long worldTime = nick.getWorld().getTime() % 24_000L;
+                if (!testNick && (worldTime < 13_000L || worldTime > 23_000L)) {
+                    removeHeadlessNickHorse(nick);
+                    nick.remove();
+                    continue;
+                }
                 Player target = findHeadlessNickTarget(nick, 56.0D);
                 if (target == null) continue;
                 if (nick instanceof Mob mob) { mob.setAware(true); mob.setTarget(target); }
@@ -125,6 +132,7 @@ public final class HalloweenMobManager implements Listener {
         double bestDistance = maxDistance * maxDistance;
         for (Player player : nick.getWorld().getPlayers()) {
             if (player.getGameMode() == org.bukkit.GameMode.CREATIVE || player.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
+            if (nick instanceof Mob mob && !mob.hasLineOfSight(player)) continue;
             double distance = player.getLocation().distanceSquared(nick.getLocation());
             if (distance <= bestDistance) { nearest = player; bestDistance = distance; }
         }
@@ -155,7 +163,8 @@ public final class HalloweenMobManager implements Listener {
         World world = location.getWorld();
         Entity mountEntity = world.spawnEntity(location, EntityType.SKELETON_HORSE);
         if (!(mountEntity instanceof SkeletonHorse horse)) { mountEntity.remove(); return null; }
-        horse.setPersistent(true);
+        horse.setPersistent(test);
+        if (horse instanceof Mob mountMob) mountMob.setRemoveWhenFarAway(!test);
         horse.getPersistentDataContainer().set(headlessNickHorseKey, PersistentDataType.BYTE, (byte) 1);
         horse.setCustomName(plugin.color("&8&lKŮŇ BEZ DUŠE")); horse.setCustomNameVisible(false);
         if (test) horse.getPersistentDataContainer().set(testMobKey, PersistentDataType.BYTE, (byte) 1);
@@ -167,8 +176,8 @@ public final class HalloweenMobManager implements Listener {
         }
         configureSpecialMob(nick, "headless-nick");
         nick.setCustomName(plugin.color(test ? "&e[TEST] &4&lBEZHLAVÝ NICK" : "&4&lBEZHLAVÝ NICK"));
-        nick.setCustomNameVisible(true); nick.setPersistent(true);
-        if (nick instanceof Mob mob) { mob.setRemoveWhenFarAway(false); mob.setAware(true); }
+        nick.setCustomNameVisible(true); nick.setPersistent(test);
+        if (nick instanceof Mob mob) { mob.setRemoveWhenFarAway(!test); mob.setAware(true); }
         if (nick.getEquipment() != null) {
             nick.getEquipment().setItemInMainHand(new ItemStack(Material.NETHERITE_SWORD));
             nick.getEquipment().setItemInMainHandDropChance(0.0F);
