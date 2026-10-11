@@ -112,7 +112,8 @@ jobs:
           4. Zapni server a spusť /mm reload.
           5. Spusť /halloween reload; obnoví ModelEngine a sestaví ItemsAdder resource pack.
           6. Ověř /iainfo a pak se odpoj a znovu připoj, aby klient dostal nové textury.
-          7. Volitelný grafický efekt stáhni zvlášť z artefaktu HalloweenCore-Iris-Crimson-Sky a nainstaluj do .minecraft/shaderpacks/ přes Iris. Není potřeba pro základní Halloween předměty.
+          7. Pro starší klienty přes ViaVersion zkontroluj plugins/ItemsAdder/config.yml: advanced.completely_convert_to_new_equipment_tag.enabled musí zůstat false, aby se mohl použít legacy renderer. Klienti starší než 1.17 mohou potřebovat OptiFine; vykreslení závisí na jejich klientovi a resource packu.
+          8. Volitelný grafický efekt stáhni zvlášť z artefaktu HalloweenCore-Iris-Crimson-Sky a nainstaluj do .minecraft/shaderpacks/ přes Iris. Není potřeba pro základní Halloween předměty.
           Pokud mob zůstává černo-fialový, zkontroluj plugins/MythicMobs/Mobs/halloween-special-mobs.yml a soubory .bbmodel v plugins/ModelEngine/blueprints. Samotný JAR vlastní modely neobsahuje.
           EOF
           cd "$BUNDLE"

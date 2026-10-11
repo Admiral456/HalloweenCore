@@ -561,7 +561,7 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
     if "blocked_enchants:" in definition and "blocked_enchants:\n      - ALL" in definition:
         fail(f"Custom gear '{item_id}' must remain enchantable")
 
-"expected_armor_stats = {
+expected_armor_stats = {
     # Exact Armor points are verified against minecraft:attribute_modifiers above;
     # ItemsAdder YAML must hold the matching durability/component and both renderer references.
     "crimson_warden_helmet": ("max_durability: 900",),

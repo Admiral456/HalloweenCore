@@ -110,3 +110,6 @@ The ItemsAdder ZIP also includes seven **16×16 vanilla-block texture overrides*
 - `red_candle.png` — shared dark-red candle texture for both lit and unlit vanilla candle models.
 
 The HalloweenCore decorator places actual vanilla blocks into the world, so the blocks remain present even if a player declines the resource pack. The accepted pack changes their appearance instead of controlling whether they exist. These are vanilla namespace overrides and therefore affect **all** vanilla pumpkins, jack-o'-lanterns, cobwebs and red candles in resource-pack-enabled clients, not just the ones placed by HalloweenCore. They are checked by `scripts/validate_halloween_assets.py` in CI.
+
+
+**Multi-version note:** For clients older than 1.21.2, keep `advanced.completely_convert_to_new_equipment_tag.enabled: false` in `plugins/ItemsAdder/config.yml`; otherwise ItemsAdder can convert armor entirely to the modern equipment tag and bypass the legacy fallback. The content defines both `equipment.id` and `legacy_armor_rendering_id`. Client versions older than 1.17 may need OptiFine for legacy custom wear textures, so ViaRewind compatibility must be tested with the actual client builds. The combat stats and full-set effects are server-side and do not depend on the cosmetic aura rendering.
