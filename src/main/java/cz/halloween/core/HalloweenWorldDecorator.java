@@ -268,24 +268,50 @@ public final class HalloweenWorldDecorator implements Listener {
             placed++;
         }
 
-        // Haunted soil patches add a landscape-wide Halloween look beyond surface props.
+        // Haunted soil patches add visible 3-6 block clusters instead of isolated pixels.
         int soilPatches = bounded("haunted-soil-patches-per-chunk", 3, 0, 8);
-        placed = 0;
-        for (int i = 0; i < attempts && placed < soilPatches; i++) {
-            Block ground = randomSurface(chunk, random);
-            Material original = ground.getType();
-            if (original != Material.GRASS_BLOCK && original != Material.DIRT) continue;
-            Block above = ground.getRelative(0, 1, 0);
-            if (!above.getType().isAir() || ground.getState() instanceof TileState
-                    || above.getState() instanceof TileState || !naturalNeighborhood(ground)) continue;
+        int createdPatches = 0;
+        for (int i = 0; i < attempts && createdPatches < soilPatches; i++) {
+            Block seed = randomSurface(chunk, random);
+            Material original = seed.getType();
+            Block seedAbove = seed.getRelative(0, 1, 0);
+            if ((original != Material.GRASS_BLOCK && original != Material.DIRT)
+                    || !seedAbove.getType().isAir() || seed.getState() instanceof TileState
+                    || seedAbove.getState() instanceof TileState || !naturalNeighborhood(seed)) continue;
+
             Material cursedSoil = switch (random.nextInt(4)) {
                 case 0 -> Material.SOUL_SOIL;
                 case 1 -> Material.MYCELIUM;
                 case 2 -> Material.COARSE_DIRT;
                 default -> Material.PODZOL;
             };
-            ground.setType(cursedSoil, false);
-            placed++;
+            int desiredBlocks = 3 + random.nextInt(4);
+            int changedBlocks = 0;
+            for (int attempt = 0; attempt < desiredBlocks * 8 && changedBlocks < desiredBlocks; attempt++) {
+                int dx = changedBlocks == 0 ? 0 : random.nextInt(3) - 1;
+                int dz = changedBlocks == 0 ? 0 : random.nextInt(3) - 1;
+                int x = seed.getX() + dx;
+                int z = seed.getZ() + dz;
+                if ((x >> 4) != chunk.getX() || (z >> 4) != chunk.getZ()) continue;
+                int highest = chunk.getWorld().getHighestBlockYAt(x, z);
+                Block ground = null;
+                int lowest = Math.max(chunk.getWorld().getMinHeight(), highest - 12);
+                for (int y = highest; y >= lowest; y--) {
+                    Block candidate = chunk.getWorld().getBlockAt(x, y, z);
+                    if (isNaturalGround(candidate.getType()) && candidate.getType().isSolid()
+                            && !(candidate.getState() instanceof TileState)) {
+                        ground = candidate;
+                        break;
+                    }
+                }
+                if (ground == null || (ground.getType() != Material.GRASS_BLOCK && ground.getType() != Material.DIRT)) continue;
+                Block above = ground.getRelative(0, 1, 0);
+                if (!above.getType().isAir() || ground.getState() instanceof TileState
+                        || above.getState() instanceof TileState || !naturalNeighborhood(ground)) continue;
+                ground.setType(cursedSoil, false);
+                changedBlocks++;
+            }
+            if (changedBlocks > 0) createdPatches++;
         }
     }
 
