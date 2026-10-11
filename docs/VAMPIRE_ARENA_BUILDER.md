@@ -11,13 +11,15 @@
 
 The confirmed centre is also saved as the Vampire King arena/spawn point.
 
-## Generated layout
+## Generated layout — ultimate gothic raid arena
 
-- 97-block diameter circular blackstone/deepslate floor
-- concentric crying-obsidian rings and cardinal/diagonal red runes
-- outer 2-block parapet with four 3-block-wide openings
-- eight dark stone towers, gold/obsidian trim and soul lanterns
-- central spawn floor remains flat and open for the boss
+- 97-block diameter circular floor with layered blackstone/deepslate rings, occult compass rays, crimson inlays and a clear central boss spawn circle
+- eight hollow 7×7 watchtowers with interior levels, narrow red-glass slits, gilded mouldings, crenellated crowns and soul-lantern beacons
+- circular curtain wall, eight external lantern buttresses and four monumental gatehouses with side pylons and blood-glass details
+- 17×9 royal sanctuary: giant gothic blood-moon portal, five-wide crimson-glass heart, gilded trim, hanging chains, lantern pinnacles and a raised Vampire King's throne
+- four raised sarcophagi on the outer ritual ring, outside the main boss spawn space
+- the central 15-block spawn area remains clear of raised pillars; cardinal rune pylons start outside it
+- 24-block vertical preflight clearance covers the tallest tower crowns and portal ornaments
 
 World decorations are independent of the temporary event on/off toggle. New chunks can receive random pumpkins, cobwebs, dead plants, 3D mushrooms and graves. The procedural generator separately has a low chance to place a small haunted village or graveyard on flat, clear natural terrain; it never excavates holes and excludes the arena footprint and spawn safety radius.
 

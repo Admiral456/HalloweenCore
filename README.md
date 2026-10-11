@@ -61,6 +61,13 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween give <hráč> <počet>
 - /halloween on|off
 
+## Ultimátní boss aréna
+
+- 97bloková ultimátní gotická aréna s vrstvenými runovými prstenci, osmi dutými strážními věžemi, kruhovou hradbou, opěrnými pilíři a čtyřmi monumentálními branami
+- severní královská svatyně s krvavým portálem z rudého skla, řetězy, lucernovými věžičkami a trůnem Krále upírů; čtyři kamenné sarkofágy lemují vnější rituální kruh
+- střední prostor zůstává volný pro model bosse; vyvýšené runové sloupy začínají mimo bezpečný spawn kruh
+- hlavní boss aréna se staví potvrzeným destruktivním příkazem a bez předem uloženého středu
+
 ## Boss bar
 
 ### Model readiness
