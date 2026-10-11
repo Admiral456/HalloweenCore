@@ -3,6 +3,32 @@
     "minecraft:max_damage": 1150,
     "minecraft:enchantable": {
       "value": 25
+    },
+    "minecraft:attribute_modifiers": {
+      "modifiers": [
+        {
+          "type": "minecraft:armor",
+          "id": "warriorland_halloween:crimson_warden_leggings_armor",
+          "amount": 9,
+          "operation": "add_value",
+          "slot": "legs"
+        },
+        {
+          "type": "minecraft:armor_toughness",
+          "id": "warriorland_halloween:crimson_warden_leggings_toughness",
+          "amount": 3,
+          "operation": "add_value",
+          "slot": "legs"
+        },
+        {
+          "type": "minecraft:knockback_resistance",
+          "id": "warriorland_halloween:crimson_warden_leggings_knockback_resistance",
+          "amount": 0.1,
+          "operation": "add_value",
+          "slot": "legs"
+        }
+      ],
+      "show_in_tooltip": true
     }
   }
 }

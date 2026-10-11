@@ -297,30 +297,42 @@ public final class HalloweenStructureGenerator implements Listener {
     }
 
     private void buildHauntedVillage(World world, int cx, int baseY, int cz, Random random) {
-        house(world, cx - 3, baseY + 1, cz - 3, true);
-        house(world, cx + 3, baseY + 1, cz - 3, false);
-        house(world, cx - 3, baseY + 1, cz + 3, true);
+        house(world, cx - 3, baseY + 1, cz - 3, true, random);
+        house(world, cx + 3, baseY + 1, cz - 3, false, random);
+        house(world, cx - 3, baseY + 1, cz + 3, true, random);
+        house(world, cx + 3, baseY + 1, cz + 3, false, random);
 
         int floorY = baseY + 1;
-        // Raised crooked paths, a shrine (not a well/pit), pumpkins and webby fence corners.
+        // A crooked crossroad ties four ruined cottages to the central ritual shrine.
         for (int z = -4; z <= 4; z++) {
-            put(world, cx, floorY, cz + z, Material.COARSE_DIRT);
+            put(world, cx, floorY, cz + z, (Math.abs(z) % 2 == 0) ? Material.COARSE_DIRT : Material.GRAVEL);
         }
         for (int x = -4; x <= 4; x++) {
-            put(world, cx + x, floorY, cz + 1, Material.GRAVEL);
+            put(world, cx + x, floorY, cz + 1, (Math.abs(x) % 2 == 0) ? Material.GRAVEL : Material.COARSE_DIRT);
         }
-        put(world, cx + 2, floorY, cz + 2, Material.MOSSY_COBBLESTONE);
-        put(world, cx + 2, floorY + 1, cz + 2, Material.CRYING_OBSIDIAN);
-        put(world, cx + 2, floorY + 2, cz + 2, Material.SOUL_LANTERN);
+        // The shrine is deliberately on the open square, never beneath a cottage roof.
+        put(world, cx, floorY, cz, Material.COARSE_DIRT);
+        put(world, cx, floorY + 1, cz, Material.CRYING_OBSIDIAN);
+        put(world, cx, floorY + 2, cz, Material.CHISELED_POLISHED_BLACKSTONE);
+        put(world, cx, floorY + 3, cz, Material.SOUL_LANTERN);
         put(world, cx - 1, floorY, cz, Material.JACK_O_LANTERN);
         put(world, cx + 1, floorY, cz, Material.CARVED_PUMPKIN);
+
+        // Two crooked soul-lantern posts illuminate the entrance path.
+        for (int side : new int[]{-1, 1}) {
+            int x = cx + side * 4;
+            put(world, x, floorY, cz, Material.SPRUCE_FENCE);
+            put(world, x, floorY + 1, cz, Material.SOUL_LANTERN);
+        }
         put(world, cx + 5, floorY, cz + 2, Material.SPRUCE_FENCE);
         put(world, cx + 5, floorY + 1, cz + 2, Material.COBWEB);
         put(world, cx - 5, floorY, cz - 1, Material.SPRUCE_FENCE);
         put(world, cx - 5, floorY + 1, cz - 1, Material.COBWEB);
+        put(world, cx - 4, floorY, cz + 2, Material.WITHER_ROSE);
+        put(world, cx + 4, floorY, cz - 2, Material.BROWN_MUSHROOM);
     }
 
-    private void house(World world, int cx, int floorY, int cz, boolean eastDoor) {
+    private void house(World world, int cx, int floorY, int cz, boolean eastDoor, Random random) {
         // A 5x5 ruined timber cottage: raised floor, exposed corner logs, dark walls and stair roof.
         for (int dx = -2; dx <= 2; dx++) {
             for (int dz = -2; dz <= 2; dz++) {
@@ -356,7 +368,14 @@ public final class HalloweenStructureGenerator implements Listener {
                 }
             }
         }
-        put(world, cx, floorY + 1, cz, Material.COBWEB);
+        // Small props differ by cottage, so each house feels abandoned rather than stamped.
+        put(world, cx, floorY + 1, cz, Material.SOUL_TORCH);
+        if (random.nextBoolean()) put(world, cx + 1, floorY + 1, cz + 1, Material.CAULDRON);
+        if (random.nextBoolean()) put(world, cx - 1, floorY + 3, cz + 1, Material.COBWEB);
+        // A broken chimney and an occasional roof web add skyline detail.
+        put(world, cx + 1, roofY + 1, cz + 1, Material.COBBLED_DEEPSLATE_WALL);
+        put(world, cx + 1, roofY + 2, cz + 1, Material.SOUL_LANTERN);
+        if (random.nextBoolean()) put(world, cx - 2, roofY + 1, cz + 2, Material.COBWEB);
     }
 
     private void buildGraveyard(World world, int cx, int baseY, int cz, Random random) {
@@ -377,11 +396,25 @@ public final class HalloweenStructureGenerator implements Listener {
         for (int[] grave : new int[][]{{-2,-2},{2,-2},{-2,2},{2,2}}) {
             graveMarker(world, cx + grave[0], floorY, cz + grave[1], random.nextBoolean());
         }
+        // A worn plus-shaped path guides visitors to the altar and separates grave plots.
+        for (int offset = -4; offset <= 4; offset++) {
+            if (offset == 0) continue;
+            put(world, cx, floorY, cz + offset, (Math.abs(offset) % 2 == 0) ? Material.GRAVEL : Material.COARSE_DIRT);
+            put(world, cx + offset, floorY, cz, (Math.abs(offset) % 2 == 0) ? Material.COARSE_DIRT : Material.GRAVEL);
+        }
         put(world, cx, floorY, cz, Material.COARSE_DIRT);
-        put(world, cx, floorY + 1, cz, Material.CHISELED_POLISHED_BLACKSTONE);
-        put(world, cx, floorY + 2, cz, Material.SOUL_LANTERN);
-        put(world, cx - 1, floorY, cz, Material.GRAVEL);
-        put(world, cx + 1, floorY, cz, Material.GRAVEL);
+        put(world, cx, floorY + 1, cz, Material.CRYING_OBSIDIAN);
+        put(world, cx, floorY + 2, cz, Material.CHISELED_POLISHED_BLACKSTONE);
+        put(world, cx, floorY + 3, cz, Material.SOUL_LANTERN);
+        // Four ritual candles, cobwebs and dead vegetation enrich the otherwise bare plots.
+        put(world, cx - 1, floorY + 1, cz, Material.RED_CANDLE);
+        put(world, cx + 1, floorY + 1, cz, Material.RED_CANDLE);
+        put(world, cx, floorY + 1, cz - 1, Material.RED_CANDLE);
+        put(world, cx, floorY + 1, cz + 1, Material.RED_CANDLE);
+        put(world, cx - 4, floorY + 2, cz - 4, Material.COBWEB);
+        put(world, cx + 4, floorY + 2, cz + 4, Material.COBWEB);
+        put(world, cx - 4, floorY, cz + 2, Material.WITHER_ROSE);
+        put(world, cx + 4, floorY, cz - 2, Material.WITHER_ROSE);
         // Distinct wither roses identify the place as a graveyard; no hole is dug.
         put(world, cx - 3, floorY, cz + 3, Material.WITHER_ROSE);
         put(world, cx + 3, floorY, cz + 3, Material.WITHER_ROSE);

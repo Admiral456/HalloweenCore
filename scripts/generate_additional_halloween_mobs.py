@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate three extra editable Blockbench/ModelEngine mobs from existing Halloween model bases."""
+"""Generate four detailed, individually textured Blockbench/ModelEngine Halloween mobs."""
 from __future__ import annotations
 
 import base64
@@ -17,10 +17,10 @@ MODEL_DIR = ROOT / "mythicmobs" / "models"
 
 # New ID, template ID, hue shift, saturation multiplier, brightness multiplier, highlight hue.
 MODELS = (
-    ("halloween_void_reaper", "halloween_gravekeeper", 0.72, 1.30, 0.72, 0.78),
-    ("halloween_frost_stalker", "halloween_gravekeeper", 0.52, 0.85, 1.18, 0.50),
-    ("halloween_nightmare", "halloween_hex_witch", 0.94, 1.40, 0.78, 0.96),
-    ("halloween_headless_nick", "halloween_gravekeeper", 0.99, 1.15, 0.58, 0.00),
+    ("halloween_void_reaper", "halloween_gravekeeper", 0.72, 1.30, 0.82, 0.78),
+    ("halloween_frost_stalker", "halloween_gravekeeper", 0.52, 0.95, 1.12, 0.50),
+    ("halloween_nightmare", "halloween_hex_witch", 0.94, 1.40, 0.86, 0.96),
+    ("halloween_headless_nick", "halloween_gravekeeper", 0.99, 1.25, 0.68, 0.00),
 )
 
 
@@ -34,13 +34,18 @@ def recolor_texture(source: bytes, hue_shift: float, saturation: float,
             pixels.append((red, green, blue, alpha))
             continue
         hue, sat, value = colorsys.rgb_to_hsv(red / 255.0, green / 255.0, blue / 255.0)
+        source_value = value
         if sat < 0.12 and value > 0.65:
             hue = accent_hue
-            sat = max(sat, 0.35)
+            sat = max(sat, 0.42)
         else:
             hue = (hue + hue_shift) % 1.0
         sat = max(0.15, min(1.0, sat * saturation))
-        value = max(0.04, min(1.0, value * brightness))
+        # Preserve painted shadows, deepen mid-tones, and keep bright accents legible.
+        contrasted = max(0.0, min(1.0, (value - 0.48) * 1.18 + 0.48))
+        value = max(0.035, min(1.0, contrasted * brightness))
+        if source_value > 0.82:
+            sat = max(sat, 0.48)
         nr, ng, nb = colorsys.hsv_to_rgb(hue, sat, value)
         pixels.append((round(nr * 255), round(ng * 255), round(nb * 255), alpha))
     image.putdata(pixels)
@@ -154,29 +159,40 @@ def add_accessory_cube(model: dict, parent_name: str, name: str,
 def add_distinctive_geometry(model: dict, mob_id: str) -> None:
     # Give each new model a silhouette detail as well as its individually recolored atlas.
     if mob_id == "halloween_void_reaper":
-        for name, start, end in (
-            ("void_horn_left", (-5.5, 40, -2), (-3.0, 47, 1)),
-            ("void_horn_right", (3.0, 40, -2), (5.5, 47, 1)),
-            ("reaper_scythe_blade", (9.0, 27.0, -2.0), (15.0, 31.0, 1.0)),
-            ("reaper_scythe_tip", (13.0, 30.0, -1.0), (17.0, 35.0, 2.0)),
+        for name, start, end, parent, uv in (
+            ("void_horn_left", (-5.5, 40, -2), (-3.0, 47, 1), "head", (96, 0, 8, 8)),
+            ("void_horn_right", (3.0, 40, -2), (5.5, 47, 1), "head", (104, 0, 8, 8)),
+            ("reaper_scythe_blade", (9.0, 27.0, -2.0), (15.0, 31.0, 1.0), "weapon", (112, 0, 8, 8)),
+            ("reaper_scythe_tip", (13.0, 30.0, -1.0), (17.0, 35.0, 2.0), "weapon", (120, 0, 8, 8)),
+            ("void_pauldron_left", (-7.5, 27.0, -2.5), (-3.5, 32.0, 2.0), "body", (96, 8, 8, 8)),
+            ("void_pauldron_right", (3.5, 27.0, -2.5), (7.5, 32.0, 2.0), "body", (104, 8, 8, 8)),
+            ("void_cloak_tatter_left", (-7.0, 8.0, 3.0), (-3.5, 18.0, 6.0), "body", (112, 8, 8, 8)),
+            ("void_cloak_tatter_right", (3.5, 8.0, 3.0), (7.0, 18.0, 6.0), "body", (120, 8, 8, 8)),
         ):
-            parent = "head" if "horn" in name else "weapon"
-            add_accessory_cube(model, parent, name, start, end, (96, 0, 8, 8))
+            add_accessory_cube(model, parent, name, start, end, uv)
     elif mob_id == "halloween_frost_stalker":
         for name, start, end, uv in (
             ("frost_spike_left", (-8.0, 25.0, -2.0), (-5.0, 32.0, 2.0), (0, 0, 6, 8)),
-            ("frost_spike_right", (5.0, 25.0, -2.0), (8.0, 32.0, 2.0), (0, 0, 6, 8)),
-            ("frost_back_spike", (-2.5, 23.0, 3.5), (2.5, 31.0, 7.0), (0, 0, 6, 8)),
+            ("frost_spike_right", (5.0, 25.0, -2.0), (8.0, 32.0, 2.0), (8, 0, 6, 8)),
+            ("frost_back_spike", (-2.5, 23.0, 3.5), (2.5, 31.0, 7.0), (16, 0, 6, 8)),
+            ("frost_pauldron_left", (-7.5, 21.0, -2.0), (-4.0, 26.0, 2.0), (96, 16, 8, 8)),
+            ("frost_pauldron_right", (4.0, 21.0, -2.0), (7.5, 26.0, 2.0), (104, 16, 8, 8)),
+            ("frost_forearm_crystal_left", (-7.0, 12.0, -2.0), (-4.0, 17.0, 2.0), (112, 16, 8, 8)),
+            ("frost_forearm_crystal_right", (4.0, 12.0, -2.0), (7.0, 17.0, 2.0), (120, 16, 8, 8)),
         ):
             add_accessory_cube(model, "body", name, start, end, uv)
     elif mob_id == "halloween_nightmare":
-        for name, start, end, parent in (
-            ("nightmare_wisp_left", (-12.0, 21.0, 2.0), (-6.0, 28.0, 6.0), "body"),
-            ("nightmare_wisp_right", (6.0, 21.0, 2.0), (12.0, 28.0, 6.0), "body"),
-            ("nightmare_crown_left", (-5.0, 39.0, 0.0), (-2.5, 45.0, 2.0), "head"),
-            ("nightmare_crown_right", (2.5, 39.0, 0.0), (5.0, 45.0, 2.0), "head"),
+        for name, start, end, parent, uv in (
+            ("nightmare_wisp_left", (-12.0, 21.0, 2.0), (-6.0, 28.0, 6.0), "body", (96, 0, 8, 8)),
+            ("nightmare_wisp_right", (6.0, 21.0, 2.0), (12.0, 28.0, 6.0), "body", (104, 0, 8, 8)),
+            ("nightmare_crown_left", (-5.0, 39.0, 0.0), (-2.5, 45.0, 2.0), "head", (112, 0, 8, 8)),
+            ("nightmare_crown_right", (2.5, 39.0, 0.0), (5.0, 45.0, 2.0), "head", (120, 0, 8, 8)),
+            ("nightmare_rib_left", (-5.0, 17.0, -3.0), (-2.0, 21.0, -1.0), "body", (96, 24, 8, 8)),
+            ("nightmare_rib_right", (2.0, 17.0, -3.0), (5.0, 21.0, -1.0), "body", (104, 24, 8, 8)),
+            ("nightmare_mantle_left", (-8.0, 25.0, 1.0), (-5.0, 32.0, 4.0), "body", (112, 24, 8, 8)),
+            ("nightmare_mantle_right", (5.0, 25.0, 1.0), (8.0, 32.0, 4.0), "body", (120, 24, 8, 8)),
         ):
-            add_accessory_cube(model, parent, name, start, end, (96, 0, 8, 8))
+            add_accessory_cube(model, parent, name, start, end, uv)
     elif mob_id == "halloween_headless_nick":
         # Make the absent head real geometry removal, not an invisible/default face.
         remove_named_group(model, "head")
@@ -186,6 +202,12 @@ def add_distinctive_geometry(model: dict, mob_id: str) -> None:
                            (-4.5, 26.0, -2.5), (4.5, 30.0, 2.5), (104, 0, 8, 8))
         add_accessory_cube(model, "body", "ragged_cape",
                            (-6.0, 17.0, 2.0), (6.0, 30.0, 6.0), (112, 0, 8, 8))
+        add_accessory_cube(model, "body", "nick_mantle_left",
+                           (-7.0, 22.0, 1.5), (-4.5, 28.0, 4.5), (120, 0, 8, 8))
+        add_accessory_cube(model, "body", "nick_mantle_right",
+                           (4.5, 22.0, 1.5), (7.0, 28.0, 4.5), (96, 8, 8, 8))
+        add_accessory_cube(model, "body", "nick_belt_buckle",
+                           (-2.0, 23.0, -3.0), (2.0, 26.0, -2.0), (104, 8, 8, 8))
 
 
 def create_model(new_id: str, template_id: str, hue_shift: float, saturation: float,

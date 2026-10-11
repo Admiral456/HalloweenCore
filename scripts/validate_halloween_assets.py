@@ -171,10 +171,10 @@ for layer in ("layer_1.png", "layer_2.png"):
 
 # Verify that ItemsAdder's equipment modifiers match the advertised armor totals.
 ARMOR_BALANCE = {
-    "crimson_warden_helmet": ("NETHERITE_HELMET", 6, 900),
-    "crimson_warden_chestplate": ("NETHERITE_CHESTPLATE", 12, 1300),
-    "crimson_warden_leggings": ("NETHERITE_LEGGINGS", 9, 1150),
-    "crimson_warden_boots": ("NETHERITE_BOOTS", 6, 950),
+    "crimson_warden_helmet": ("NETHERITE_HELMET", 6, 900, "head"),
+    "crimson_warden_chestplate": ("NETHERITE_CHESTPLATE", 12, 1300, "chest"),
+    "crimson_warden_leggings": ("NETHERITE_LEGGINGS", 9, 1150, "legs"),
+    "crimson_warden_boots": ("NETHERITE_BOOTS", 6, 950, "feet"),
 }
 items_yaml = CONFIG.read_text(encoding="utf-8")
 
@@ -223,16 +223,15 @@ if referenced_textures != expected_item_texture_refs:
     )
 print(f"PASS ItemsAdder texture links: {len(referenced_textures)} definitions map to existing, valid 32x32 PNGs")
 
-for item_id, (material, equipped_armor, durability) in ARMOR_BALANCE.items():
+for item_id, (material, equipped_armor, durability, slot) in ARMOR_BALANCE.items():
     match = re.search(rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_yaml)
     if not match:
         fail(f"ItemsAdder config is missing armor item {item_id}")
     section = match.group(1)
     if re.search(rf"(?m)^    material: {re.escape(material)}\s*$", section) is None:
         fail(f"{item_id} must use base material {material}")
-    bonus_match = re.search(r"(?ms)^    equipment:\s*\n.*?^      slot_attribute_modifiers:\s*\n\s+armor:\s*(\d+)\s*$", section)
-    if not bonus_match or int(bonus_match.group(1)) != equipped_armor:
-        fail(f"{item_id} must show the actual When Equipped attribute +{equipped_armor} Armor")
+    if "slot_attribute_modifiers:" in section:
+        fail(f"{item_id} must use a full-value attribute component, not delta-based slot_attribute_modifiers")
     if re.search(r'(?m)^\s+- "&c\+\d+ Armor"\s*$', section):
         fail(f"{item_id} must not duplicate armor stats in lore")
     if "id: warriorland_halloween:crimson_warden" not in section:
@@ -253,6 +252,21 @@ for item_id, (material, equipped_armor, durability) in ARMOR_BALANCE.items():
         fail(f"{item_id} component max_damage must match {durability}")
     if components.get("minecraft:enchantable", {}).get("value") != 25:
         fail(f"{item_id} must remain normally enchantable (enchantability 25)")
+    attribute_component = components.get("minecraft:attribute_modifiers", {})
+    if attribute_component.get("show_in_tooltip") is not True:
+        fail(f"{item_id} must display its complete attribute modifiers in the tooltip")
+    modifiers = attribute_component.get("modifiers", [])
+    for attribute, amount in (
+        ("minecraft:armor", float(equipped_armor)),
+        ("minecraft:armor_toughness", 3.0),
+        ("minecraft:knockback_resistance", 0.1),
+    ):
+        matching = [mod for mod in modifiers if mod.get("type") == attribute and mod.get("slot") == slot]
+        if len(matching) != 1:
+            fail(f"{item_id} must define exactly one {attribute} modifier for slot {slot}")
+        mod = matching[0]
+        if float(mod.get("amount", 0)) != amount or mod.get("operation") != "add_value":
+            fail(f"{item_id} has an incorrect {attribute} modifier value/operation")
 shield_match = re.search(r"(?ms)^  crimson_warden_shield:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_yaml)
 if not shield_match:
     fail("ItemsAdder config is missing crimson_warden_shield")
@@ -541,8 +555,10 @@ for item_id, required_stats in expected_armor_stats.items():
     for stat in required_stats:
         if stat not in definition:
             fail(f"{item_id} is missing expected full-set armour/durability stat: {stat}")
-    if "equipment:" not in definition or "slot_attribute_modifiers:" not in definition:
-        fail(f"{item_id} must use its Crimson Warden equipment layer and required armor modifier")
+    if ("equipment:" not in definition
+            or "id: warriorland_halloween:crimson_warden" not in definition
+            or "components_nbt_file:" not in definition):
+        fail(f"{item_id} must use the Crimson Warden layer and exact-value component JSON")
 
 expected_gear_stats = {
     "crimson_warden_sword": ("attackDamage: 15.0", "attackSpeed: 0.8", "max_durability: 5000"),

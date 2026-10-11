@@ -75,8 +75,6 @@ items:
       max_durability: 900
     equipment:
       id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 6
 
   crimson_warden_chestplate:
     name: "&4&lKyrys Krvavého strážce"
@@ -89,8 +87,6 @@ items:
       max_durability: 1300
     equipment:
       id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 12
 
   crimson_warden_leggings:
     name: "&4&lNohavice Krvavého strážce"
@@ -103,8 +99,6 @@ items:
       max_durability: 1150
     equipment:
       id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 9
 
   crimson_warden_boots:
     name: "&4&lBoty Krvavého strážce"
@@ -117,8 +111,6 @@ items:
       max_durability: 950
     equipment:
       id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 6
 
   crimson_warden_shield:
     name: "&4&lŠtít Krvavého strážce"

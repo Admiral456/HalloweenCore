@@ -584,13 +584,13 @@ random-structures:
 world-decorations:
   enabled: true
   # Add-only decoration: safe natural ground only; never replaces a solid block or tile entity.
-  pumpkins-per-chunk: 5
-  cobwebs-per-chunk: 2
-  red-candles-per-chunk: 1
-  gravestones-per-chunk: 1
-  dead-plants-per-chunk: 1
+  pumpkins-per-chunk: 6
+  cobwebs-per-chunk: 3
+  red-candles-per-chunk: 2
+  gravestones-per-chunk: 2
+  dead-plants-per-chunk: 2
   large-mushrooms-per-chunk: 1
-  soul-lights-per-chunk: 1
+  soul-lights-per-chunk: 2
   haunted-soil-patches-per-chunk: 3
   attempts-per-placement: 96
   # Keep chunk work deliberately low to avoid generation spikes on live servers.

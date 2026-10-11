@@ -31,7 +31,7 @@ Included client/audio assets:
 - configs/sounds.yml — ItemsAdder sound registration
 
 Ambient music is Spooky Fester by Eldritch Grim from OpenGameArt (CC0); it is downloaded and converted to OGG during CI. The short event cue is generated locally. Rebuild the ItemsAdder resource pack with /iazip after installing/updating these contents.
-The custom armor uses a shared Crimson Warden equipment texture set, built from 64x32 layer_1/layer_2 atlases. Place those equipment layers in the source path `plugins/ItemsAdder/contents/warriorland_halloween/textures/armor/crimson_warden/`; item icons, sounds.json, and the sky shader are emitted from `resourcepack/assets/`. It uses Netherite armor materials with configured armor values of 6/12/9/6 (33 armor points total for the full set versus 20 for full vanilla Netherite) and extended durability, while retaining normal enchantability. The Crimson Warden sword, pickaxe, axe, shovel, and hoe each have their own 32x32 transparent PNG icon, increased durability and explicit attribute modifiers; they use netherite base materials and do not block normal enchants.
+The custom armor uses a shared Crimson Warden equipment texture set, built from 64x32 layer_1/layer_2 atlases. Place those equipment layers in the source path `plugins/ItemsAdder/contents/warriorland_halloween/textures/armor/crimson_warden/`; item icons, sounds.json, and the sky shader are emitted from `resourcepack/assets/`. Each armor JSON explicitly overrides the material's default `minecraft:attribute_modifiers` component with the requested full Armor value (6/12/9/6), instead of relying on delta-style `slot_attribute_modifiers`. The tooltip will show the same full values that count when worn: +6 for the helmet, +12 for the chestplate, +9 for leggings and +6 for boots. Netherite's 3 toughness and 0.1 knockback resistance per piece are retained, as are extended durability and enchantability. The complete set supplies 33 Armor points, 12 toughness and 0.4 knockback resistance. The Crimson Warden sword, pickaxe, axe, shovel, and hoe each have their own 32x32 transparent PNG icon, increased durability and explicit attribute modifiers; they use netherite base materials and do not block normal enchants.
 
 ItemsAdder combines all content namespaces into one generated server resource pack; `warriorland_halloween` is a namespace within the pack, not a second pack in the Minecraft resource-pack menu. After `/iazip`, check `/iainfo` for the hosted URL and request/status. For ItemsAdder 4.0.17+, `resource-pack.hosting.simple_self_host.enabled: true` with `server_address: auto` is often the simplest hosting choice. Set the installed language file's `resourcepack-popup-message` to a branded message such as `&6WarriorLand Halloween 2026` if you want players to recognize the pack prompt.
 
@@ -55,13 +55,13 @@ These values come from `configs/items.yml` and the adjacent `components_nbt_file
 
 ### Armour set
 
-| Piece | Armor points | Durability | Netherite baseline durability |
+| Piece | Full Armor value shown in tooltip | Durability | Netherite baseline durability |
 |---|---:|---:|---:|
-| Helmet | 6 (Netherite 3 + 3) | 900 | 407 |
-| Chestplate | 12 (Netherite 8 + 4) | 1,300 | 592 |
-| Leggings | 9 (Netherite 6 + 3) | 1,150 | 555 |
-| Boots | 6 (Netherite 3 + 3) | 950 | 481 |
-| **Full set** | **33** | — | **20 armor points** |
+| Helmet | 6 | 900 | 407 |
+| Chestplate | 12 | 1,300 | 592 |
+| Leggings | 9 | 1,150 | 555 |
+| Boots | 6 | 950 | 481 |
+| **Full set** | **33 Armor points** | — | **20 Armor points** |
 
 The custom equipment keeps the Netherite base material/toughness and uses the configured per-piece armor values shown above. Each piece uses the original Crimson Warden 64×32 layer textures and enchantability component value 25 (Netherite's normal enchantability is 15).
 

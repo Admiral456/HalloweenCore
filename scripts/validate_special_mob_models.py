@@ -26,6 +26,12 @@ MOB_IDS = (
     "halloween_nightmare",
     "halloween_headless_nick",
 )
+DISTINCTIVE_GEOMETRY = {
+    "halloween_void_reaper": {"void_horn_left", "void_horn_right", "reaper_scythe_blade", "void_pauldron_left", "void_cloak_tatter_left"},
+    "halloween_frost_stalker": {"frost_spike_left", "frost_spike_right", "frost_back_spike", "frost_pauldron_left", "frost_forearm_crystal_left"},
+    "halloween_nightmare": {"nightmare_wisp_left", "nightmare_crown_left", "nightmare_rib_left", "nightmare_mantle_right"},
+    "halloween_headless_nick": {"headless_ember_stump", "torn_riding_collar", "ragged_cape", "nick_mantle_left", "nick_belt_buckle"},
+}
 
 
 def fail(message: str) -> None:
@@ -104,6 +110,10 @@ def validate_model(mob_id: str) -> None:
     elements = model.get("elements", [])
     if len(elements) < 15:
         fail(f"{model_path.name} should contain detailed geometry (at least 15 cubes)")
+    element_names = {element.get("name") for element in elements}
+    required_geometry = DISTINCTIVE_GEOMETRY.get(mob_id, set())
+    if not required_geometry.issubset(element_names):
+        fail(f"{model_path.name} is missing distinctive detail cubes: {sorted(required_geometry - element_names)}")
     uuids: list[str] = []
     element_ids = set()
     for element in elements:
