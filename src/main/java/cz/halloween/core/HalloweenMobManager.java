@@ -269,7 +269,7 @@ public final class HalloweenMobManager implements Listener {
         if (attacker == null) return;
 
         String mobId = attacker.getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
-        if (mobId == null || (!plugin.isEventEnabled() && !isTestMob(attacker))) return;
+        if (mobId == null || (!plugin.isEventEnabled() && !isTestMob(attacker) && !"headless-nick".equals(mobId))) return;
 
         switch (mobId) {
             case "cursed-zombie" -> {
