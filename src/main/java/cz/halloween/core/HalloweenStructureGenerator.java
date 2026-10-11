@@ -494,7 +494,7 @@ public final class HalloweenStructureGenerator implements Listener {
         putLitCandle(world, cx - 1, floorY + 1, cz - 1);
         putLitCandle(world, cx + 1, floorY + 1, cz - 1);
         put(world, cx, floorY + 7, cz - 1, Material.POLISHED_BLACKSTONE_BRICKS);
-        put(world, cx, floorY + 8, cz - 1, Material.CHAIN);
+        put(world, cx, floorY + 8, cz - 1, Material.IRON_BARS);
         put(world, cx, floorY + 9, cz - 1, Material.SOUL_LANTERN);
         if (random.nextBoolean()) put(world, cx + 1, floorY + 1, cz + 1, Material.CAULDRON);
     }
