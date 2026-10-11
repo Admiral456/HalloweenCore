@@ -387,10 +387,10 @@ public final class VampireArenaBuilder {
         changed += set(world.getBlockAt(cx - 1, floorY + 2, cz - 25), Material.POLISHED_BLACKSTONE_BRICKS);
         changed += set(world.getBlockAt(cx + 1, floorY + 2, cz - 25), Material.POLISHED_BLACKSTONE_BRICKS);
 
-        // Hanging chains and lanterns deepen the portal recess.
+        // Hanging iron tracery and lanterns deepen the portal recess.
         for (int side : new int[]{-1, 1}) {
             for (int dy = 0; dy <= 3; dy++) {
-                changed += set(world.getBlockAt(cx + side * 4, centerY + 10 - dy, portalZ + 1), Material.CHAIN);
+                changed += set(world.getBlockAt(cx + side * 4, centerY + 10 - dy, portalZ + 1), Material.IRON_BARS);
             }
             changed += set(world.getBlockAt(cx + side * 4, centerY + 6, portalZ + 1), Material.SOUL_LANTERN);
         }

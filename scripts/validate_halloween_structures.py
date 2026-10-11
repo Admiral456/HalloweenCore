@@ -63,7 +63,7 @@ arena_required = {
     "four monumental gates": "Point[] gates = {new Point(0, -43), new Point(43, 0), new Point(0, 43), new Point(-43, 0)};",
     "king's blood-moon portal and throne": "private int buildThroneSanctum(",
     "crimson portal glass": "Material.RED_STAINED_GLASS",
-    "hanging sanctuary chains": "Material.CHAIN",
+    "hanging iron tracery": "Material.IRON_BARS",
     "four ceremonial sarcophagi": "private int buildSarcophagus(",
     "outer rune pylons outside boss spawn": "int[][] sigils = {{0, -16}, {16, 0}, {0, 16}, {-16, 0}};",
     "ritual compass floor": "Eight directional rays read as an occult compass",

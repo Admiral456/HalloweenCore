@@ -16,7 +16,7 @@ The confirmed centre is also saved as the Vampire King arena/spawn point.
 - 97-block diameter circular floor with layered blackstone/deepslate rings, occult compass rays, crimson inlays and a clear central boss spawn circle
 - eight hollow 7×7 watchtowers with interior levels, narrow red-glass slits, gilded mouldings, crenellated crowns and soul-lantern beacons
 - circular curtain wall, eight external lantern buttresses and four monumental gatehouses with side pylons and blood-glass details
-- 17×9 royal sanctuary: giant gothic blood-moon portal, five-wide crimson-glass heart, gilded trim, hanging chains, lantern pinnacles and a raised Vampire King's throne
+- 17×9 royal sanctuary: giant gothic blood-moon portal, five-wide crimson-glass heart, gilded trim, hanging iron tracery, lantern pinnacles and a raised Vampire King's throne
 - four raised sarcophagi on the outer ritual ring, outside the main boss spawn space
 - the central 15-block spawn area remains clear of raised pillars; cardinal rune pylons start outside it
 - 24-block vertical preflight clearance covers the tallest tower crowns and portal ornaments
