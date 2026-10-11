@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
 OUT = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
 ITEM_OUT = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
+SHADERPACK_DIR = ROOT / "client-packs" / "HalloweenCore-Iris-Crimson-Sky"
 W = H = 16
 
 PALETTE = {
