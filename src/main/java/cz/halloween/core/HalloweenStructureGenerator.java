@@ -402,33 +402,31 @@ public final class HalloweenStructureGenerator implements Listener {
             }
         }
 
-        // The stair roof gets a clear ridge; a few roofs deliberately look damaged.
+        // Real gabled roof: lower eaves, raised slopes, dark ridge and two timber gable ends.
         int roofY = floorY + 4;
-        for (int dx = -2; dx <= 2; dx++) {
-            for (int dz = -2; dz <= 2; dz++) {
-                boolean edgeX = Math.abs(dx) == 2;
-                boolean edgeZ = Math.abs(dz) == 2;
-                if (edgeX || edgeZ) {
-                    BlockFace face = edgeZ ? (dz < 0 ? BlockFace.NORTH : BlockFace.SOUTH)
-                            : (dx < 0 ? BlockFace.WEST : BlockFace.EAST);
-                    BlockData data = roofStairs.createBlockData();
-                    if (data instanceof Stairs stairs) stairs.setFacing(face);
-                    world.getBlockAt(cx + dx, roofY, cz + dz).setBlockData(data, false);
-                } else {
-                    put(world, cx + dx, roofY, cz + dz, roofPlanks);
-                }
-            }
+        for (int z = -2; z <= 2; z++) {
+            placeStairs(world, cx - 2, roofY, cz + z, roofStairs, BlockFace.WEST);
+            placeStairs(world, cx - 1, roofY + 1, cz + z, roofStairs, BlockFace.WEST);
+            put(world, cx, roofY + 2, cz + z, roofPlanks);
+            placeStairs(world, cx + 1, roofY + 1, cz + z, roofStairs, BlockFace.EAST);
+            placeStairs(world, cx + 2, roofY, cz + z, roofStairs, BlockFace.EAST);
+        }
+        for (int z : new int[]{-2, 2}) {
+            put(world, cx - 1, roofY, cz + z, wallMaterial);
+            put(world, cx, roofY, cz + z, windowMaterial);
+            put(world, cx + 1, roofY, cz + z, wallMaterial);
+            put(world, cx, roofY + 1, cz + z, wallMaterial);
         }
         if (random.nextInt(4) == 0) {
-            put(world, cx + (random.nextBoolean() ? -1 : 1), roofY, cz + 2, Material.AIR);
+            put(world, cx + (random.nextBoolean() ? -1 : 1), roofY + 1, cz + 2, Material.AIR);
         }
 
         // Interior props, chimney and one or two hanging webs make the houses less repetitive.
         put(world, cx, floorY + 1, cz, Material.SOUL_TORCH);
         if (random.nextBoolean()) put(world, cx + 1, floorY + 1, cz + 1, Material.CAULDRON);
         if (random.nextBoolean()) put(world, cx - 1, floorY + 3, cz + 1, Material.COBWEB);
-        put(world, cx + 1, roofY + 1, cz + 1, Material.COBBLED_DEEPSLATE_WALL);
-        put(world, cx + 1, roofY + 2, cz + 1, Material.SOUL_LANTERN);
+        put(world, cx, roofY + 3, cz + 1, Material.COBBLED_DEEPSLATE_WALL);
+        put(world, cx, roofY + 4, cz + 1, Material.SOUL_LANTERN);
         if (random.nextBoolean()) put(world, cx - 2, roofY + 1, cz + 2, Material.COBWEB);
 
         // A single exterior step and lantern posts make each entrance readable at night.
