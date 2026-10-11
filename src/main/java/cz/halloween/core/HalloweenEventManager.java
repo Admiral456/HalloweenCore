@@ -1,6 +1,8 @@
 package cz.halloween.core;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.Location;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.Particle;
@@ -9,6 +11,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
@@ -20,6 +23,7 @@ public final class HalloweenEventManager {
     private long nextEventAt;
     private boolean started;
     private long lastSurgeAt;
+    private long lastBloodMoonVisualAt;
     private boolean invasionCaptainSpawned;
 
     public HalloweenEventManager(HalloweenCore plugin) {
@@ -150,6 +154,7 @@ public final class HalloweenEventManager {
                 + Math.min(3, phase / 2));
         activeUntil = System.currentTimeMillis() + duration * 60_000L;
         lastSurgeAt = 0L;
+        lastBloodMoonVisualAt = 0L;
         invasionCaptainSpawned = false;
 
         String path = "random-events.types." + activeEventId;
@@ -173,6 +178,7 @@ public final class HalloweenEventManager {
 
         activeEventId = null;
         activeUntil = 0L;
+        lastBloodMoonVisualAt = 0L;
         invasionCaptainSpawned = false;
         scheduleNextEvent();
     }
@@ -193,6 +199,15 @@ public final class HalloweenEventManager {
     }
 
     private void runActiveEventEffects(long now) {
+        if ("blood-moon-invasion".equalsIgnoreCase(activeEventId)
+                && plugin.getConfig().getBoolean("random-events.types.blood-moon-invasion.red-moon-enabled", true)) {
+            long refreshMillis = Math.max(1000L, Math.min(10_000L,
+                    plugin.getConfig().getLong("random-events.types.blood-moon-invasion.red-moon-refresh-interval-ticks", 30L) * 50L));
+            if (now - lastBloodMoonVisualAt >= refreshMillis) {
+                renderBloodMoon();
+                lastBloodMoonVisualAt = now;
+            }
+        }
         long surgeIntervalSeconds = Math.max(10L,
                 plugin.getConfig().getLong("random-events.surge-interval-seconds", 25L));
         if (now - lastSurgeAt < surgeIntervalSeconds * 1000L) return;
@@ -221,21 +236,23 @@ public final class HalloweenEventManager {
                 target.getWorld().spawnParticle(Particle.PORTAL, target.getLocation().clone().add(0, 0.7D, 0),
                         28, 1.2D, 0.7D, 1.2D, 0.15D);
                 if (ThreadLocalRandom.current().nextBoolean()) {
-                    target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 35, 0, true, false, false));
-                    target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7čarodějnice ti na okamžik zastřela zrak."));
+                    int darknessTicks = Math.max(40, Math.min(600,
+                            plugin.getConfig().getInt("random-events.types.witching-hour.darkness-duration-ticks", 180)));
+                    target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, darknessTicks, 0, true, false, false));
+                    target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7Kletba ti zastřela zrak na několik sekund."));
                 } else if (spawned > 0) {
                     target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7Z temnoty se vynořila lovící smečka."));
                 }
             }
             case "cursed-harvest" -> {
                 int cropsGrown = empowerNearbyCrops(target, 8, 5);
-                int spawned = spawnWave(target, new String[]{"blood-spider", "pumpkin-wraith"}, 2);
+                int spawned = spawnHarvestWave(target, 2);
                 target.getWorld().spawnParticle(Particle.COMPOSTER, target.getLocation().clone().add(0, 1.0D, 0),
                         24, 1.5D, 0.8D, 1.5D, 0.04D);
                 target.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().clone().add(0, 1.0D, 0),
                         14, 1.1D, 0.7D, 1.1D, 0.02D);
                 if (cropsGrown > 0) target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Temná magie popohnala růst okolních plodin."));
-                if (spawned > 0) target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Ze záhonů vylézají prokletí strážci."));
+                if (spawned > 0) target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Prokletí strážci se vynořili z obdělávané půdy."));
             }
             case "blood-moon-invasion" -> {
                 if (!invasionCaptainSpawned && activeUntil - now <= 120_000L
@@ -282,6 +299,76 @@ public final class HalloweenEventManager {
             }
         }
         lastSurgeAt = now;
+    }
+
+    /**
+     * Draws a red lunar disk and drifting crimson particles in each player's view.
+     * Bukkit cannot tint the client's vanilla sky or moon texture server-side, so this
+     * renders an in-world particle illusion rather than claiming a true sky tint.
+     */
+    private void renderBloodMoon() {
+        Particle.DustOptions crimson = new Particle.DustOptions(Color.fromRGB(176, 4, 18), 2.4F);
+        Particle.DustOptions ember = new Particle.DustOptions(Color.fromRGB(255, 40, 28), 1.35F);
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
+            Location eye = player.getEyeLocation();
+            Vector facing = eye.getDirection().clone().setY(0.0D);
+            if (facing.lengthSquared() < 0.001D) facing = new Vector(0.0D, 0.0D, -1.0D);
+            facing.normalize();
+            Vector right = new Vector(-facing.getZ(), 0.0D, facing.getX()).normalize();
+            Location center = eye.clone().add(facing.clone().multiply(36.0D)).add(0.0D, 20.0D, 0.0D);
+            for (int i = 0; i < 36; i++) {
+                double angle = Math.PI * 2.0D * i / 36.0D;
+                Location point = center.clone().add(right.clone().multiply(Math.cos(angle) * 5.0D)).add(0.0D, Math.sin(angle) * 5.0D, 0.0D);
+                player.getWorld().spawnParticle(Particle.DUST, point, 1, 0.0D, 0.0D, 0.0D, 0.0D, crimson);
+            }
+            for (int i = 0; i < 22; i++) {
+                double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0D);
+                double radius = Math.sqrt(ThreadLocalRandom.current().nextDouble()) * 3.9D;
+                Location point = center.clone().add(right.clone().multiply(Math.cos(angle) * radius)).add(0.0D, Math.sin(angle) * radius, 0.0D);
+                player.getWorld().spawnParticle(Particle.DUST, point, 1, 0.0D, 0.0D, 0.0D, 0.0D, ember);
+            }
+            for (int i = 0; i < 10; i++) {
+                Location point = center.clone().add(right.clone().multiply(ThreadLocalRandom.current().nextDouble(-7.0D, 7.0D))).add(0.0D, ThreadLocalRandom.current().nextDouble(-6.0D, 6.0D), 0.0D);
+                player.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, point, 1, 0.05D, 0.05D, 0.05D, 0.0D);
+            }
+        }
+    }
+
+    private int spawnHarvestWave(Player target, int count) {
+        if (target == null) return 0;
+        List<Location> farmLocations = findNearbyFarmland(target, 24, count);
+        String[] mobIds = {"blood-spider", "pumpkin-wraith"};
+        int spawned = 0;
+        for (int i = 0; i < count; i++) {
+            String mobId = mobIds[ThreadLocalRandom.current().nextInt(mobIds.length)];
+            boolean success = i < farmLocations.size() ? plugin.getMobManager().spawnEventMobAt(target, mobId, farmLocations.get(i)) : plugin.getMobManager().spawnEventMob(target, mobId);
+            if (success) spawned++;
+        }
+        return spawned;
+    }
+
+    private List<Location> findNearbyFarmland(Player target, int radius, int maximum) {
+        List<Location> locations = new java.util.ArrayList<>();
+        Location origin = target.getLocation();
+        var world = target.getWorld();
+        for (int dx = -radius; dx <= radius && locations.size() < maximum; dx++) {
+            for (int dz = -radius; dz <= radius && locations.size() < maximum; dz++) {
+                if (dx * dx + dz * dz > radius * radius) continue;
+                int x = origin.getBlockX() + dx; int z = origin.getBlockZ() + dz;
+                if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+                int highest = world.getHighestBlockYAt(x, z); int minY = Math.max(world.getMinHeight(), highest - 4);
+                for (int y = highest; y >= minY; y--) {
+                    Block ground = world.getBlockAt(x, y, z);
+                    if (ground.getType() != org.bukkit.Material.FARMLAND) continue;
+                    Block feet = ground.getRelative(0, 1, 0); Block head = ground.getRelative(0, 2, 0);
+                    if (!feet.isPassable() || !head.isPassable() || feet.isLiquid() || head.isLiquid()) continue;
+                    locations.add(new Location(world, x + 0.5D, y + 1.0D, z + 0.5D)); break;
+                }
+            }
+        }
+        locations.sort(java.util.Comparator.comparingDouble(location -> location.distanceSquared(origin)));
+        return locations;
     }
 
     private int spawnWave(Player target, String[] mobIds, int count) {
