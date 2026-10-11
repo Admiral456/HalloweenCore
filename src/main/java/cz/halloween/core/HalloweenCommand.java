@@ -31,7 +31,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "giveitem", "spawn", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -152,6 +152,36 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .sorted()
                     .toList();
         }
+        if (args.length == 2 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("spawnmob"))
+                && sender.hasPermission("hallowencore.admin")) {
+            return java.util.stream.Stream.of("all", "vampire-king", "cursed-zombie", "void-reaper", "gravekeeper",
+                            "frost-stalker", "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare", "headless-nick")
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT))).toList();
+        }
+        if (args.length == 3 && (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("spawnmob"))
+                && sender.hasPermission("hallowencore.admin") && !args[1].equalsIgnoreCase("all")
+                && !args[1].equalsIgnoreCase("vampire-king")) {
+            return List.of("1", "2", "3", "4", "5").stream().filter(value -> value.startsWith(args[2])).toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("giveitem")
+                && sender.hasPermission("hallowencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted().toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("giveitem")
+                && sender.hasPermission("hallowencore.admin")) {
+            var section = plugin.getConfig().getConfigurationSection("rewards.shop");
+            if (section == null) return List.of();
+            return section.getKeys(false).stream()
+                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted().toList();
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("giveitem")
+                && sender.hasPermission("hallowencore.admin")) {
+            return List.of("1", "2", "4", "8", "16", "32", "64").stream()
+                    .filter(value -> value.startsWith(args[3])).toList();
+        }
         return List.of();
     }
 
@@ -178,6 +208,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("bosseffects")) return bossEffects(sender, args);
         if (args[0].equalsIgnoreCase("modelpreview")) return modelPreview(sender, args);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
+        if (args[0].equalsIgnoreCase("giveitem")) return giveItem(sender, args);
+        if (args[0].equalsIgnoreCase("spawn") || args[0].equalsIgnoreCase("spawnmob")) return spawn(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
@@ -933,10 +965,13 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     sender.sendMessage(plugin.color("&eEncounter už běží."));
                     return true;
                 }
-                if (encounter.startTestEncounter()) {
-                    sender.sendMessage(plugin.color("&aTestovací boss byl vyvolán bez progressu a bez odměn."));
+                boolean started = sender instanceof Player player
+                        ? encounter.startTestEncounter(player)
+                        : encounter.startTestEncounter();
+                if (started) {
+                    sender.sendMessage(plugin.color("&aTestovací boss byl vyvolán bez uloženého středu arény, bez progressu a bez odměn."));
                 } else {
-                    sender.sendMessage(plugin.color("&cTestovací boss se nepodařilo vyvolat. Potřebuje nastavené místo arény a funkční MythicMobs definici vampire-king."));
+                    sender.sendMessage(plugin.color("&cTestovacího bosse se nepodařilo vyvolat. Hráč ve hře nepotřebuje uloženou arénu; konzole pro test ano."));
                     sender.sendMessage(plugin.color("&7Zkontroluj /halloween debug, /mm mobs a konzoli."));
                 }
             }
@@ -966,6 +1001,62 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             }
             default -> sender.sendMessage(plugin.color("&cPoužití: /halloween boss <status|start|test|stop>"));
         }
+        return true;
+    }
+
+    private boolean spawn(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (args.length < 2 || args.length > 3) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween spawn <mob-ID|all|vampire-king> [1-5]")); return true;
+        }
+        String id = args[1].toLowerCase(java.util.Locale.ROOT);
+        if (id.equals("vampire-king")) return boss(sender, new String[]{"boss", "test"});
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cMobové se vyvolávají z místa hráče; spusť tento příkaz ve hře.")); return true;
+        }
+        if (id.equals("all")) {
+            if (args.length > 2) { sender.sendMessage(plugin.color("&cPoužití: /halloween spawn all")); return true; }
+            String[] ids = {"cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker", "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare", "headless-nick"};
+            int total = 0;
+            for (String mobId : ids) total += plugin.getMobManager().spawnTestMob(player, mobId, 1);
+            sender.sendMessage(plugin.color("&aVyvoláno &e" + total + "&a/9 testovacích mobů. Modely vyžadují MythicMobs, ModelEngine a resource pack."));
+            return true;
+        }
+        int amount = 1;
+        if (args.length == 3) {
+            try { amount = Integer.parseInt(args[2]); } catch (NumberFormatException ex) {
+                sender.sendMessage(plugin.color("&cPočet musí být číslo od 1 do 5.")); return true;
+            }
+        }
+        if (amount < 1 || amount > 5) { sender.sendMessage(plugin.color("&cPočet musí být od 1 do 5.")); return true; }
+        int spawned = plugin.getMobManager().spawnTestMob(player, id, amount);
+        if (spawned == 0) sender.sendMessage(plugin.color("&cMoba se nepodařilo vyvolat. Zkontroluj ID a volné místo kolem sebe."));
+        else sender.sendMessage(plugin.color("&aVyvoláno &e" + spawned + " &atestovacích mobů: &f" + id + "&a. Za 5 minut zmizí a nedávají odměny."));
+        return true;
+    }
+
+    private boolean giveItem(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (args.length < 3 || args.length > 4) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween giveitem <hráč> <odměna-ID> [počet]")); return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) { sender.sendMessage(plugin.color("&cCílový hráč není online.")); return true; }
+        int amount = 1;
+        if (args.length == 4) {
+            try { amount = Integer.parseInt(args[3]); } catch (NumberFormatException ex) {
+                sender.sendMessage(plugin.color("&cPočet musí být číslo od 1 do 64.")); return true;
+            }
+        }
+        if (amount < 1 || amount > 64) { sender.sendMessage(plugin.color("&cPočet musí být od 1 do 64.")); return true; }
+        var item = plugin.getRewardManager().createAdminItem(args[2], amount);
+        if (item == null) {
+            sender.sendMessage(plugin.color("&cNeznámá odměna: &e" + args[2] + "&c. Použij ID z /halloween rewards nebo rewards.shop v config.yml.")); return true;
+        }
+        var overflow = target.getInventory().addItem(item);
+        overflow.values().forEach(stack -> target.getWorld().dropItemNaturally(target.getLocation(), stack));
+        sender.sendMessage(plugin.color("&aPředmět &e" + args[2] + " &ax" + amount + " předán hráči &e" + target.getName() + "&a bez platby a claimu."));
+        target.sendMessage(plugin.color("&6Administrátor ti předal Halloween předmět: &e" + args[2] + " &7(x" + amount + ")."));
         return true;
     }
 
