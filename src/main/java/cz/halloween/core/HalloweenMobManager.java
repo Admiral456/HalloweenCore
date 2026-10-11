@@ -18,16 +18,20 @@ import org.bukkit.event.entity.PotionSplashEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class HalloweenMobManager implements Listener {
@@ -36,8 +40,12 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey relicKey;
     private final NamespacedKey eventMobKey;
     private final NamespacedKey testMobKey;
+    private final NamespacedKey headlessNickHorseKey;
     private final NamespacedKey abilityCooldownKey;
     private final Set<String> warnedCustomModelIssues = new HashSet<>();
+    private final Map<UUID, Long> lastHeadlessNickSpawnByWorld = new HashMap<>();
+    private BukkitTask nightPatrolTask;
+    private long lastHeadlessNickCheckAt;
 
     public HalloweenMobManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -45,7 +53,140 @@ public final class HalloweenMobManager implements Listener {
         this.relicKey = new NamespacedKey(plugin, "halloween_relic");
         this.eventMobKey = new NamespacedKey(plugin, "event_mob");
         this.testMobKey = new NamespacedKey(plugin, "halloween_test_mob");
+        this.headlessNickHorseKey = new NamespacedKey(plugin, "headless_nick_mount");
         this.abilityCooldownKey = new NamespacedKey(plugin, "special_ability_cooldown");
+    }
+
+    public void startNightPatrol() {
+        if (nightPatrolTask != null) return;
+        nightPatrolTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tickHeadlessNickPatrol, 40L, 20L);
+    }
+
+    public void stopNightPatrol() {
+        if (nightPatrolTask != null) { nightPatrolTask.cancel(); nightPatrolTask = null; }
+        lastHeadlessNickSpawnByWorld.clear();
+    }
+
+    private void tickHeadlessNickPatrol() {
+        maintainHeadlessNickRiders();
+        if (!plugin.getConfig().getBoolean("special-mobs.headless-nick.enabled", true)) return;
+        long now = System.currentTimeMillis();
+        long checkMillis = Math.max(10L, plugin.getConfig().getLong("special-mobs.headless-nick.spawn-check-interval-seconds", 30L)) * 1000L;
+        if (now - lastHeadlessNickCheckAt < checkMillis) return;
+        lastHeadlessNickCheckAt = now;
+        long cooldown = Math.max(1L, plugin.getConfig().getLong("special-mobs.headless-nick.world-cooldown-minutes", 8L)) * 60_000L;
+        double chance = Math.max(0.0D, Math.min(1.0D, plugin.getConfig().getDouble("special-mobs.headless-nick.spawn-chance-per-check", 0.12D)));
+        for (Player player : plugin.getServer().getOnlinePlayers()) {
+            World world = player.getWorld();
+            long time = world.getTime() % 24_000L;
+            if (world.getEnvironment() != World.Environment.NORMAL || time < 13_000L || time > 23_000L) continue;
+            if (player.getGameMode() == org.bukkit.GameMode.CREATIVE || player.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
+            if (!plugin.isEligibleGameplayWorld(world)) continue;
+            if (now - lastHeadlessNickSpawnByWorld.getOrDefault(world.getUID(), 0L) < cooldown) continue;
+            boolean nearbyNick = world.getNearbyEntities(player.getLocation(), 96.0D, 48.0D, 96.0D).stream()
+                    .filter(LivingEntity.class::isInstance).map(LivingEntity.class::cast)
+                    .anyMatch(entity -> "headless-nick".equals(entity.getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING)));
+            if (nearbyNick || ThreadLocalRandom.current().nextDouble() > chance) continue;
+            Location spawnAt = findHeadlessNickLocation(player);
+            if (spawnAt == null || spawnHeadlessNick(spawnAt, false) == null) continue;
+            lastHeadlessNickSpawnByWorld.put(world.getUID(), now);
+            for (Player nearby : world.getPlayers()) {
+                if (nearby.getLocation().distanceSquared(spawnAt) <= 64.0D * 64.0D)
+                    nearby.sendMessage(plugin.color("&4&lBEZHLAVÝ NICK &8» &7Ozve se dusot kopyt… bezhlavý jezdec tě spatřil!"));
+            }
+            break;
+        }
+    }
+
+    private void maintainHeadlessNickRiders() {
+        Set<UUID> updated = new HashSet<>();
+        for (Player observer : plugin.getServer().getOnlinePlayers()) {
+            for (Entity entity : observer.getNearbyEntities(72.0D, 36.0D, 72.0D)) {
+                if (!(entity instanceof LivingEntity nick) || !updated.add(nick.getUniqueId())) continue;
+                if (!"headless-nick".equals(nick.getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING))) continue;
+                Player target = findHeadlessNickTarget(nick, 56.0D);
+                if (target == null) continue;
+                if (nick instanceof Mob mob) { mob.setAware(true); mob.setTarget(target); }
+                if (nick.getVehicle() instanceof SkeletonHorse horse) {
+                    org.bukkit.util.Vector chase = target.getLocation().toVector().subtract(horse.getLocation().toVector());
+                    chase.setY(0.0D);
+                    if (chase.lengthSquared() > 9.0D) {
+                        org.bukkit.util.Vector velocity = chase.normalize().multiply(0.25D);
+                        velocity.setY(Math.max(-0.08D, Math.min(0.12D, horse.getVelocity().getY())));
+                        horse.setVelocity(velocity);
+                    } else horse.setVelocity(new org.bukkit.util.Vector(0.0D, horse.getVelocity().getY(), 0.0D));
+                }
+            }
+        }
+    }
+
+    private Player findHeadlessNickTarget(LivingEntity nick, double maxDistance) {
+        Player nearest = null;
+        double bestDistance = maxDistance * maxDistance;
+        for (Player player : nick.getWorld().getPlayers()) {
+            if (player.getGameMode() == org.bukkit.GameMode.CREATIVE || player.getGameMode() == org.bukkit.GameMode.SPECTATOR) continue;
+            double distance = player.getLocation().distanceSquared(nick.getLocation());
+            if (distance <= bestDistance) { nearest = player; bestDistance = distance; }
+        }
+        return nearest;
+    }
+
+    private Location findHeadlessNickLocation(Player player) {
+        World world = player.getWorld(); Location origin = player.getLocation();
+        for (int attempt = 0; attempt < 18; attempt++) {
+            double angle = ThreadLocalRandom.current().nextDouble(0.0D, Math.PI * 2.0D);
+            double distance = ThreadLocalRandom.current().nextDouble(14.0D, 29.0D);
+            int x = origin.getBlockX() + (int) Math.round(Math.cos(angle) * distance);
+            int z = origin.getBlockZ() + (int) Math.round(Math.sin(angle) * distance);
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
+            int y = world.getHighestBlockYAt(x, z) + 1;
+            if (y < world.getMinHeight() || y >= world.getMaxHeight() - 1) continue;
+            Location candidate = new Location(world, x + 0.5D, y, z + 0.5D);
+            if (!world.getWorldBorder().isInside(candidate)) continue;
+            Block feet = candidate.getBlock(), head = feet.getRelative(0, 1, 0), below = feet.getRelative(0, -1, 0);
+            if (!feet.isPassable() || !head.isPassable() || below.isPassable() || feet.isLiquid() || head.isLiquid() || below.isLiquid()) continue;
+            return candidate;
+        }
+        return null;
+    }
+
+    private LivingEntity spawnHeadlessNick(Location location, boolean test) {
+        if (location == null || location.getWorld() == null) return null;
+        World world = location.getWorld();
+        Entity mountEntity = world.spawnEntity(location, EntityType.SKELETON_HORSE);
+        if (!(mountEntity instanceof SkeletonHorse horse)) { mountEntity.remove(); return null; }
+        horse.setPersistent(true);
+        horse.getPersistentDataContainer().set(headlessNickHorseKey, PersistentDataType.BYTE, (byte) 1);
+        horse.setCustomName(plugin.color("&8&lKŮŇ BEZ DUŠE")); horse.setCustomNameVisible(false);
+        if (test) horse.getPersistentDataContainer().set(testMobKey, PersistentDataType.BYTE, (byte) 1);
+        LivingEntity nick = spawnMythicModelMob(location, "headless-nick");
+        if (nick == null) {
+            Entity entity = world.spawnEntity(location, EntityType.ZOMBIE);
+            if (!(entity instanceof LivingEntity fallback)) { entity.remove(); horse.remove(); return null; }
+            nick = fallback;
+        }
+        configureSpecialMob(nick, "headless-nick");
+        nick.setCustomName(plugin.color(test ? "&e[TEST] &4&lBEZHLAVÝ NICK" : "&4&lBEZHLAVÝ NICK"));
+        nick.setCustomNameVisible(true); nick.setPersistent(true);
+        if (nick instanceof Mob mob) { mob.setRemoveWhenFarAway(false); mob.setAware(true); }
+        if (nick.getEquipment() != null) {
+            nick.getEquipment().setItemInMainHand(new ItemStack(Material.NETHERITE_SWORD));
+            nick.getEquipment().setItemInMainHandDropChance(0.0F);
+        }
+        if (!horse.addPassenger(nick)) { nick.remove(); horse.remove(); return null; }
+        world.spawnParticle(Particle.SOUL_FIRE_FLAME, location.clone().add(0.0D, 1.0D, 0.0D), 36, 0.8D, 0.9D, 0.8D, 0.02D);
+        world.spawnParticle(Particle.ASH, location.clone().add(0.0D, 1.0D, 0.0D), 26, 0.7D, 0.9D, 0.7D, 0.01D);
+        world.playSound(location, "minecraft:entity.wither.spawn", 0.7F, 0.55F);
+        Player target = findHeadlessNickTarget(nick, 64.0D);
+        if (target != null && nick instanceof Mob mob) mob.setTarget(target);
+        return nick;
+    }
+
+    private void removeHeadlessNickHorse(LivingEntity nick) {
+        if (nick.getVehicle() instanceof SkeletonHorse horse && horse.getPersistentDataContainer().has(headlessNickHorseKey, PersistentDataType.BYTE)) horse.remove();
+        for (Entity entity : nick.getWorld().getNearbyEntities(nick.getLocation(), 6.0D, 6.0D, 6.0D)) {
+            if (entity instanceof SkeletonHorse && entity.getPersistentDataContainer().has(headlessNickHorseKey, PersistentDataType.BYTE)) entity.remove();
+        }
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -152,6 +293,10 @@ public final class HalloweenMobManager implements Listener {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
                 nightmareDread(attacker, target);
             }
+            case "headless-nick" -> {
+                if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
+                headlessNickStrike(attacker, target);
+            }
             default -> {
             }
         }
@@ -189,6 +334,23 @@ public final class HalloweenMobManager implements Listener {
         if (last > 0L && now - last < cooldownSeconds * 1000L) return false;
         attacker.getPersistentDataContainer().set(abilityCooldownKey, PersistentDataType.LONG, now);
         return true;
+    }
+
+    private void headlessNickStrike(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.headless-nick");
+        int slowTicks = Math.max(20, section == null ? 100 : section.getInt("charge-slow-ticks", 100));
+        int witherTicks = Math.max(20, section == null ? 60 : section.getInt("charge-wither-ticks", 60));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slowTicks, 1, true, true, false));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.WITHER, witherTicks, 0, true, true, false));
+        org.bukkit.util.Vector shove = target.getLocation().toVector().subtract(attacker.getLocation().toVector());
+        shove.setY(0.0D);
+        if (shove.lengthSquared() < 0.001D) shove.setX(1.0D);
+        shove.normalize().multiply(0.55D).setY(0.22D);
+        target.setVelocity(shove);
+        target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().clone().add(0.0D, 0.7D, 0.0D), 24, 0.55D, 0.6D, 0.55D, 0.025D);
+        target.getWorld().spawnParticle(Particle.CRIT, target.getLocation().clone().add(0.0D, 1.0D, 0.0D), 12, 0.3D, 0.45D, 0.3D, 0.1D);
+        target.getWorld().playSound(target.getLocation(), "minecraft:entity.wither.hurt", 0.8F, 0.55F);
+        target.sendMessage(plugin.color("&4Bezhlavý Nick tě srazil prokletým úderem!"));
     }
 
     private void soulSiphon(LivingEntity attacker, Player target) {
@@ -347,6 +509,8 @@ public final class HalloweenMobManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onDeath(EntityDeathEvent event) {
+        String deadMobId = event.getEntity().getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
+        if ("headless-nick".equals(deadMobId)) removeHeadlessNickHorse(event.getEntity());
         if (isTestMob(event.getEntity())) {
             event.getDrops().clear();
             event.setDroppedExp(0);
@@ -429,13 +593,19 @@ public final class HalloweenMobManager implements Listener {
         for (int index = 0; index < requested; index++) {
             Location spawnLocation = findSafeTestLocation(player, index);
             if (spawnLocation == null) continue;
-            LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
-            if (living == null) {
-                Entity entity = spawnLocation.getWorld().spawnEntity(spawnLocation, baseEntityType(mobId));
-                if (!(entity instanceof LivingEntity fallback)) { entity.remove(); continue; }
-                living = fallback;
+            LivingEntity living;
+            if ("headless-nick".equalsIgnoreCase(mobId)) {
+                living = spawnHeadlessNick(spawnLocation, true);
+                if (living == null) continue;
+            } else {
+                living = spawnMythicModelMob(spawnLocation, mobId);
+                if (living == null) {
+                    Entity entity = spawnLocation.getWorld().spawnEntity(spawnLocation, baseEntityType(mobId));
+                    if (!(entity instanceof LivingEntity fallback)) { entity.remove(); continue; }
+                    living = fallback;
+                }
+                configureSpecialMob(living, mobId);
             }
-            configureSpecialMob(living, mobId);
             living.getPersistentDataContainer().set(testMobKey, PersistentDataType.BYTE, (byte) 1);
             living.setCustomName(plugin.color("&e[TEST] &f" + plugin.getConfig().getString(
                     "special-mobs.types." + mobId + ".name", mobId)));
@@ -445,6 +615,7 @@ public final class HalloweenMobManager implements Listener {
             plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
                 if (testEntity.isValid() && !testEntity.isDead()
                         && testEntity.getPersistentDataContainer().has(testMobKey, PersistentDataType.BYTE)) {
+                    if ("headless-nick".equalsIgnoreCase(mobId)) removeHeadlessNickHorse(testEntity);
                     testEntity.remove();
                 }
             }, 20L * 300L);
@@ -483,29 +654,42 @@ public final class HalloweenMobManager implements Listener {
 
     /** Spawn a specific special type so every event can choose its own enemy mix. */
     public boolean spawnEventMob(Player player, String mobId) {
-        if (!plugin.isEventEnabled() || player == null
-                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
-        if (!isKnownSpecialMob(mobId)) return false;
+        if (!canSpawnEventMob(player, mobId)) return false;
+        Location spawnLocation = findSafeEventLocation(player);
+        return spawnLocation != null && spawnEventMobAtLocation(spawnLocation, mobId);
+    }
 
+    /** Spawn an event mob at a specific farmland location for Cursed Harvest. */
+    public boolean spawnEventMobAt(Player player, String mobId, Location requestedLocation) {
+        if (!canSpawnEventMob(player, mobId) || requestedLocation == null
+                || requestedLocation.getWorld() != player.getWorld()) return false;
+        World world = requestedLocation.getWorld();
+        if (!world.isChunkLoaded(requestedLocation.getBlockX() >> 4, requestedLocation.getBlockZ() >> 4)) return false;
+        Location spawnLocation = requestedLocation.clone();
+        Block feet = spawnLocation.getBlock(), head = feet.getRelative(0, 1, 0), below = feet.getRelative(0, -1, 0);
+        if (!world.getWorldBorder().isInside(spawnLocation) || !feet.isPassable() || !head.isPassable()
+                || below.isPassable() || feet.isLiquid() || head.isLiquid() || below.isLiquid()) return false;
+        return spawnEventMobAtLocation(spawnLocation, mobId);
+    }
+
+    private boolean canSpawnEventMob(Player player, String mobId) {
+        if (!plugin.isEventEnabled() || player == null || !player.isOnline()
+                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)
+                || !isKnownSpecialMob(mobId)) return false;
         World world = player.getWorld();
         if (!plugin.isEligibleGameplayWorld(world)) return false;
-        int maxEventMobs = Math.max(1, Math.min(80,
-                plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
-        if (countEventMobs(world) >= maxEventMobs) return false;
+        int max = Math.max(1, Math.min(80, plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
+        return countEventMobs(world) < max;
+    }
 
-        Location spawnLocation = findSafeEventLocation(player);
-        if (spawnLocation == null) return false;
-
+    private boolean spawnEventMobAtLocation(Location spawnLocation, String mobId) {
+        World world = spawnLocation.getWorld();
         LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
         if (living == null) {
             Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
-            if (!(entity instanceof LivingEntity spawned)) {
-                entity.remove();
-                return false;
-            }
+            if (!(entity instanceof LivingEntity spawned)) { entity.remove(); return false; }
             living = spawned;
         }
-
         configureSpecialMob(living, mobId);
         living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
         return true;
@@ -555,7 +739,7 @@ public final class HalloweenMobManager implements Listener {
     private boolean isKnownSpecialMob(String mobId) {
         return mobId != null && switch (mobId) {
             case "cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
-                    "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare" -> true;
+                    "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare", "headless-nick" -> true;
             default -> false;
         };
     }
@@ -569,6 +753,7 @@ public final class HalloweenMobManager implements Listener {
             case "pumpkin-wraith" -> EntityType.CREEPER;
             case "hex-witch" -> EntityType.WITCH;
             case "nightmare" -> EntityType.PHANTOM;
+            case "headless-nick" -> EntityType.ZOMBIE;
             default -> EntityType.ZOMBIE;
         };
     }
@@ -592,6 +777,7 @@ public final class HalloweenMobManager implements Listener {
             case "pumpkin-wraith" -> "halloween_pumpkin_wraith";
             case "hex-witch" -> "halloween_hex_witch";
             case "nightmare" -> "halloween_nightmare";
+            case "headless-nick" -> "halloween_headless_nick";
             default -> null;
         };
         if (customId == null) return null;
