@@ -20,6 +20,7 @@ MODELS = (
     ("halloween_void_reaper", "halloween_gravekeeper", 0.72, 1.30, 0.72, 0.78),
     ("halloween_frost_stalker", "halloween_gravekeeper", 0.52, 0.85, 1.18, 0.50),
     ("halloween_nightmare", "halloween_hex_witch", 0.94, 1.40, 0.78, 0.96),
+    ("halloween_headless_nick", "halloween_gravekeeper", 0.99, 1.15, 0.58, 0.00),
 )
 
 
@@ -85,6 +86,44 @@ def find_group(nodes: list, name: str) -> dict | None:
     return None
 
 
+def remove_named_group(model: dict, name: str) -> None:
+    """Remove a complete bone subtree and its elements/animation tracks."""
+    target = find_group(model.get("outliner", []), name)
+    if target is None:
+        raise RuntimeError(f"{model.get('name')} has no '{name}' group to remove")
+    target_uuid = target.get("uuid")
+    removed_group_uuids: set[str] = set()
+    removed_element_uuids: set[str] = set()
+
+    def collect(node: object) -> None:
+        if isinstance(node, dict):
+            node_uuid = node.get("uuid")
+            if isinstance(node_uuid, str): removed_group_uuids.add(node_uuid)
+            for child in node.get("children", []): collect(child)
+        elif isinstance(node, str):
+            removed_element_uuids.add(node)
+
+    collect(target)
+    def strip_children(nodes: list) -> list:
+        retained = []
+        for node in nodes:
+            if isinstance(node, dict):
+                if node.get("uuid") == target_uuid: continue
+                node["children"] = strip_children(node.get("children", []))
+                retained.append(node)
+            elif isinstance(node, str):
+                if node not in removed_element_uuids: retained.append(node)
+            else:
+                retained.append(node)
+        return retained
+
+    model["outliner"] = strip_children(model.get("outliner", []))
+    model["elements"] = [element for element in model.get("elements", [])
+                         if element.get("uuid") not in removed_element_uuids]
+    for animation in model.get("animations", []):
+        animators = animation.get("animators") or {}
+        for group_uuid in removed_group_uuids: animators.pop(group_uuid, None)
+
 def add_accessory_cube(model: dict, parent_name: str, name: str,
                        start: tuple[float, float, float], end: tuple[float, float, float],
                        uv: tuple[int, int, int, int]) -> None:
@@ -138,6 +177,15 @@ def add_distinctive_geometry(model: dict, mob_id: str) -> None:
             ("nightmare_crown_right", (2.5, 39.0, 0.0), (5.0, 45.0, 2.0), "head"),
         ):
             add_accessory_cube(model, parent, name, start, end, (96, 0, 8, 8))
+    elif mob_id == "halloween_headless_nick":
+        # Make the absent head real geometry removal, not an invisible/default face.
+        remove_named_group(model, "head")
+        add_accessory_cube(model, "body", "headless_ember_stump",
+                           (-2.5, 31.0, -2.5), (2.5, 36.0, 2.5), (96, 0, 8, 8))
+        add_accessory_cube(model, "body", "torn_riding_collar",
+                           (-4.5, 26.0, -2.5), (4.5, 30.0, 2.5), (104, 0, 8, 8))
+        add_accessory_cube(model, "body", "ragged_cape",
+                           (-6.0, 17.0, 2.0), (6.0, 30.0, 6.0), (112, 0, 8, 8))
 
 
 def create_model(new_id: str, template_id: str, hue_shift: float, saturation: float,

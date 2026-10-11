@@ -24,6 +24,7 @@ MOB_IDS = (
     "halloween_pumpkin_wraith",
     "halloween_hex_witch",
     "halloween_nightmare",
+    "halloween_headless_nick",
 )
 
 
