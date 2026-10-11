@@ -22,7 +22,7 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_2.png
 
 Included client/audio assets:
-- resourcepack/assets/minecraft/shaders/core/sky.fsh — seasonal orange/crimson sky tint
+- Optional client-only Iris shader pack in `client-packs/HalloweenCore-Iris-Crimson-Sky/` (packaged separately; not merged into ItemsAdder)
 - resourcepack/assets/minecraft/sounds.json — replaces vanilla music events with a silent OGG while the Halloween pack is active
 - resourcepack/assets/warriorland_halloween/sounds/halloween_silence.ogg — one-second silent replacement file
 - textures/armor/crimson_warden/layer_1.png and layer_2.png — ItemsAdder equipment source layers

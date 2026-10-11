@@ -88,8 +88,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("shader") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("on", "off", "reload").stream()
+        if (args.length == 2 && args[0].equalsIgnoreCase("shader")) {
+            return List.of("info").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
@@ -224,7 +224,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
+        sender.sendMessage(plugin.color("&6/halloween shader [info] &7- informace o volitelném klientském Iris shader packu"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
@@ -1112,55 +1112,19 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean shader(CommandSender sender, String[] args) {
-        if (!checkAdmin(sender)) return true;
-        if (args.length != 2) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween shader <on|off|reload>"));
+        if (args.length > 2 || (args.length == 2 && !args[1].equalsIgnoreCase("info"))) {
+            sender.sendMessage(plugin.color("&cShader oblohy už není součástí serverového ItemsAdder packu."));
+            sender.sendMessage(plugin.color("&7Použij &e/halloween shader info &7pro instalační postup."));
             return true;
         }
 
-        String action = args[1].toLowerCase(java.util.Locale.ROOT);
-        Path shaderPath = plugin.getDataFolder().getParentFile().toPath()
-                .resolve("ItemsAdder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh");
-
-        if (action.equals("reload")) {
-            sender.sendMessage(plugin.color("&6&lHALLOWEEN &8» &7Spouštím nové sestavení resource packu pro shader..."));
-            return rebuildItemsAdderPack(sender);
-        }
-        if (!action.equals("on") && !action.equals("off")) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween shader <on|off|reload>"));
-            return true;
-        }
-
-        if (!Files.isRegularFile(shaderPath)) {
-            sender.sendMessage(plugin.color("&cShader jsem nenašel na serveru: &7plugins/ItemsAdder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh"));
-            sender.sendMessage(plugin.color("&7Nahraj obsah ItemsAdderu a pak spusť /halloween shader reload."));
-            return true;
-        }
-
-        try {
-            String source = Files.readString(shaderPath, StandardCharsets.UTF_8);
-            java.util.regex.Pattern tintPattern = java.util.regex.Pattern.compile(
-                    "sky\\.rgb\\s*=\\s*mix\\(sky\\.rgb,\\s*max\\(sky\\.rgb\\s*\\*\\s*halloweenTint,\\s*vec3\\(0\\.0\\)\\),\\s*[0-9.]+\\s*\\);");
-            java.util.regex.Matcher matcher = tintPattern.matcher(source);
-            if (!matcher.find()) {
-                sender.sendMessage(plugin.color("&cV souboru sky.fsh jsem nenašel očekávaný Halloween tint."));
-                sender.sendMessage(plugin.color("&7Shader nebyl změněn. Obnov zdrojový Halloween shader a opakuj příkaz."));
-                return true;
-            }
-
-            String weight = action.equals("on") ? "0.55" : "0.0";
-            String replacement = "sky.rgb = mix(sky.rgb, max(sky.rgb * halloweenTint, vec3(0.0)), " + weight + ");";
-            String updated = matcher.replaceFirst(java.util.regex.Matcher.quoteReplacement(replacement));
-            Files.writeString(shaderPath, updated, StandardCharsets.UTF_8);
-            sender.sendMessage(plugin.color(action.equals("on")
-                    ? "&aHalloween shader je zapnutý."
-                    : "&eHalloween barevný nádech shaderu je vypnutý."));
-            return rebuildItemsAdderPack(sender);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not update Halloween sky shader: " + ex.getMessage());
-            sender.sendMessage(plugin.color("&cShader se nepodařilo změnit: &7" + ex.getMessage()));
-            return true;
-        }
+        sender.sendMessage(plugin.color("&4&lHALLOWEEN CRIMSON SKY"));
+        sender.sendMessage(plugin.color("&7Krvavá obloha je nyní volitelný shader pack na straně klienta."));
+        sender.sendMessage(plugin.color("&7Stáhni artefakt &eHalloweenCore-Iris-Crimson-Sky &7z nejnovějšího úspěšného GitHub Actions buildu."));
+        sender.sendMessage(plugin.color("&7Vlož ZIP do &e.minecraft/shaderpacks/ &7a aktivuj ho v nastavení Shader Packs přes Iris."));
+        sender.sendMessage(plugin.color("&7Bez Irisu zůstávají předměty, mobové a zvuky funkční díky běžnému serverovému resource packu."));
+        sender.sendMessage(plugin.color("&8ViaVersion ani ViaRewind klientský shader neinstalují ani nepřekládají."));
+        return true;
     }
 
     private boolean rebuildItemsAdderPack(CommandSender sender) {

@@ -1,8 +1,11 @@
-# Halloween sky — Minecraft Java 1.21.10
+# Halloween sky: optional client shader
 
-Shader path:
-`resourcepack/assets/minecraft/shaders/core/sky.fsh`
+The mandatory ItemsAdder content intentionally does not override Minecraft's internal `sky.fsh`. That old approach was version-sensitive and placed a client rendering change inside the pack every player receives.
 
-This is the vanilla core-shader entry point for the sky in Minecraft Java 1.21.10. The shader keeps the version-matched fog/dynamic-transform imports and the vanilla time-of-day color as its base, then applies a stronger orange/crimson tint. It does not change the world time, sun/moon schedule, or server-side gameplay.
+The optional, standalone Iris shader pack lives at:
 
-The shader is inside the same merged ItemsAdder resource pack that contains the Halloween items and sounds; it does not appear as a separate pack in Minecraft's list. This is a client-side resource-pack change. The shader has been checked against the 1.21.10 vanilla shader interface and the repository validator, but an actual Minecraft client/resource-pack test is still required before calling the visual result verified. ItemsAdder hosting must deliver the generated pack to players; the shader does not appear as a separate pack selection item. Shader-replacing client mods may override this file, and overriding core Minecraft shaders is more fragile than normal textures/sounds.
+`client-packs/HalloweenCore-Iris-Crimson-Sky/`
+
+It is packaged by CI as the `HalloweenCore-Iris-Crimson-Sky` artifact. It includes the `gbuffers_skybasic` and `gbuffers_skytextured` programs and a 128x128 pack icon. The sky pass follows the client-side world clock, adds a restrained crimson dusk/dawn grade, and the textured pass tints the vanilla moon at night. Shader intensities are configurable from the shader settings.
+
+Target and limitation: Minecraft Java Edition 1.21.10 with Iris. Static checks verify the pack layout, shader source markers and icon, but the rendered effect still needs client testing with the target graphics drivers. ViaVersion and ViaRewind do not deliver or convert the client's shader pack.

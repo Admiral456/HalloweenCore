@@ -306,29 +306,44 @@ def pumpkin_face(lit: bool) -> None:
 
 
 def candle() -> None:
-    """Draw the texture referenced by both lit and unlit vanilla candle models."""
-    pixels = [[PALETTE["."] for _ in range(W)] for _ in range(H)]
-    body = {
-        5: (84, 11, 28, 255),
-        6: (139, 18, 39, 255),
-        7: (181, 31, 49, 255),
-        8: (168, 24, 44, 255),
-        9: (118, 16, 34, 255),
-        10: (67, 10, 24, 255),
+    """Draw a blood-wax candle with drips, a glossy rim and fine melted highlights."""
+    clear = (0, 0, 0, 0)
+    pixels = [[clear for _ in range(W)] for _ in range(H)]
+    left_right = {
+        4: (6, 9), 5: (5, 10), 6: (5, 10), 7: (5, 10),
+        8: (4, 10), 9: (4, 10), 10: (5, 10), 11: (5, 10),
+        12: (5, 10), 13: (5, 10), 14: (5, 10), 15: (5, 10)
     }
-    for y in range(4, H):
-        for x, color in body.items():
-            pixels[y][x] = color
-    # Uneven wax rim and a few glossy wax pixels; flame is separate block-model geometry.
+    shades = [
+        (52, 10, 26, 255), (83, 12, 29, 255), (123, 16, 36, 255),
+        (164, 25, 45, 255), (194, 37, 53, 255), (224, 58, 67, 255),
+        (244, 91, 86, 255)
+    ]
+    for y, (left, right) in left_right.items():
+        for x in range(left, right + 1):
+            offset = 0 if x <= 5 else 1 if x == 6 else 3 if x in (7, 8) else 4 if x == 9 else 2
+            if y >= 12:
+                offset = max(0, offset - 1)
+            if (x * 3 + y * 5) % 17 == 0:
+                offset = min(6, offset + 1)
+            pixels[y][x] = shades[offset]
+    # Melted side drips catch the light without breaking the candle's silhouette.
+    pixels[7][4] = shades[4]
+    pixels[8][4] = shades[3]
+    pixels[9][4] = shades[2]
+    pixels[6][10] = shades[2]
+    pixels[7][10] = shades[3]
+    pixels[8][10] = shades[2]
+    # The uneven top rim and the dark wick read clearly at Minecraft's native pixel scale.
     for x, color in enumerate([
-        (92, 14, 30, 255), (160, 25, 45, 255), (218, 48, 63, 255),
-        (194, 36, 53, 255), (126, 18, 35, 255), (71, 11, 24, 255),
+        (89, 13, 29, 255), (145, 20, 39, 255), (218, 48, 63, 255),
+        (237, 71, 75, 255), (186, 30, 48, 255), (87, 12, 28, 255)
     ], 5):
         pixels[4][x] = color
-    pixels[3][7] = pixels[3][8] = (45, 22, 20, 255)
-    pixels[7][7] = (240, 79, 75, 255)
-    pixels[8][7] = (232, 65, 70, 255)
-    pixels[12][8] = (198, 35, 50, 255)
+    pixels[3][7] = (45, 22, 20, 255)
+    pixels[3][8] = (74, 23, 24, 255)
+    for x, y in ((7, 6), (8, 7), (6, 10), (9, 12), (8, 14)):
+        pixels[y][x] = (255, 121, 104, 255)
     save_pixels("red_candle.png", pixels)
 
 
@@ -629,9 +644,105 @@ def crimson_warden_weapon_icons() -> None:
     save_sized_pixels(ITEM_OUT, "crimson_warden_hoe.png", p)
 
 
+def crimson_sky_shaderpack_icon() -> None:
+    """Create a 128x128 pack icon: blood moon, ember haze, bats and a ruined skyline."""
+    size = 128
+    pixels = []
+    for y in range(size):
+        row = []
+        for x in range(size):
+            glow = max(0.0, 1.0 - math.hypot(x - 86, y - 45) / 86.0)
+            noise = ((x * 13 + y * 17 + x * y) % 11) / 100.0
+            row.append((
+                min(255, int(7 + 28 * glow + noise * 55)),
+                min(255, int(6 + 8 * glow + noise * 14)),
+                min(255, int(20 + 23 * glow + noise * 35)),
+                255
+            ))
+        pixels.append(row)
+
+    def put(x: int, y: int, color) -> None:
+        if 0 <= x < size and 0 <= y < size:
+            pixels[y][x] = color
+
+    def rect(x0: int, y0: int, x1: int, y1: int, color) -> None:
+        for yy in range(y0, y1 + 1):
+            for xx in range(x0, x1 + 1):
+                put(xx, yy, color)
+
+    # Faint crimson haze behind the moon.
+    for y in range(18, 81):
+        for x in range(25, 120):
+            radius = math.hypot((x - 86) * 0.88, (y - 45) * 1.05)
+            if 22 < radius < 30:
+                put(x, y, (47, 10, 28, 255) if radius > 26 else (80, 12, 31, 255))
+
+    # Blood moon disk with directional shading, craters and a bright rim.
+    for y in range(15, 76):
+        for x in range(55, 117):
+            dx, dy = x - 86, y - 45
+            radius = math.hypot(dx, dy)
+            if radius > 29:
+                continue
+            grain = (x * 7 + y * 11 + x * y) % 17
+            if radius > 27.6:
+                color = (255, 133, 105, 255)
+            elif dx < -9:
+                color = (99, 12, 31, 255) if grain < 7 else (141, 19, 39, 255)
+            elif dx > 12:
+                color = (178, 25, 42, 255) if grain < 8 else (218, 43, 49, 255)
+            else:
+                color = (200, 28, 44, 255) if grain < 9 else (232, 56, 56, 255)
+            put(x, y, color)
+
+    # Crater bands break the disc into painterly, pixel-shaded regions.
+    for x, y, w, h, color in (
+        (68, 28, 8, 4, (120, 18, 37, 255)), (89, 24, 7, 5, (160, 20, 40, 255)),
+        (75, 43, 10, 5, (151, 18, 37, 255)), (95, 50, 8, 6, (129, 17, 35, 255)),
+        (66, 56, 6, 5, (176, 25, 42, 255)), (86, 62, 9, 3, (139, 19, 36, 255))
+    ):
+        rect(x, y, x + w, y + h, color)
+    for x, y in ((68, 32), (69, 33), (70, 31), (98, 53), (100, 54), (78, 48), (83, 65)):
+        put(x, y, (255, 102, 86, 255))
+
+    # Stars are intentionally sparse; they keep the icon legible at menu size.
+    for x, y in ((18, 18), (35, 34), (27, 58), (47, 15), (112, 13), (17, 79), (42, 69), (108, 79)):
+        for dx, dy in ((0, 0), (1, 0), (0, 1)):
+            put(x + dx, y + dy, (255, 174, 151, 255))
+
+    # Bats crossing the moon; every silhouette stays hard-edged at pixel scale.
+    bat = (17, 7, 21, 255)
+    for bx, by, scale in ((32, 51, 1), (102, 36, 1), (46, 28, 1)):
+        for dx in range(9):
+            for dy in range(4):
+                if (dx <= 2 and dy <= 1) or (dx >= 6 and dy <= 1) or (2 <= dx <= 6 and dy >= 2 and (dx + dy) % 2 == 0):
+                    put(bx + dx, by + dy, bat)
+        put(bx + 4, by + 4, bat)
+
+    # Black silhouette of a ruined castle and crooked graveyard wall.
+    rect(0, 105, 127, 127, (9, 7, 18, 255))
+    rect(7, 96, 22, 126, (13, 8, 20, 255))
+    rect(4, 91, 10, 97, (13, 8, 20, 255))
+    rect(19, 88, 25, 97, (13, 8, 20, 255))
+    rect(28, 101, 53, 126, (11, 7, 18, 255))
+    rect(33, 94, 38, 101, (11, 7, 18, 255))
+    rect(47, 92, 51, 101, (11, 7, 18, 255))
+    rect(58, 110, 83, 126, (8, 6, 16, 255))
+    rect(64, 103, 69, 110, (8, 6, 16, 255))
+    rect(78, 105, 86, 111, (8, 6, 16, 255))
+    rect(91, 97, 119, 126, (11, 7, 18, 255))
+    rect(96, 90, 103, 97, (11, 7, 18, 255))
+    rect(112, 87, 117, 97, (11, 7, 18, 255))
+    # A few burning windows and grave lights anchor the skyline.
+    for x, y in ((14, 108), (35, 110), (45, 116), (100, 108), (111, 112), (72, 116)):
+        put(x, y, (174, 33, 44, 255))
+    save_sized_pixels(SHADERPACK_DIR, "pack.png", pixels)
+
+
 def main() -> None:
     pumpkin_side()
     pumpkin_top()
+    crimson_sky_shaderpack_icon()
     pumpkin_face(lit=False)
     pumpkin_face(lit=True)
     candle()

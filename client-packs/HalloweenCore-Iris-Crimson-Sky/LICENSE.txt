@@ -1,0 +1,6 @@
+HalloweenCore Iris Crimson Sky
+Copyright (c) 2026 contributors to Admiral456/HalloweenCore.
+
+These shader sources were authored for the HalloweenCore project.
+Permission is granted to copy, modify and redistribute these files as part of the HalloweenCore project, provided this copyright notice is retained.
+No warranty is provided. Compatibility depends on the Minecraft client, shader loader and graphics driver.

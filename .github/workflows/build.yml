@@ -28,6 +28,8 @@ jobs:
         run: python3 scripts/generate_halloween_block_textures.py
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
+      - name: Validate optional client shader pack
+        run: python3 scripts/validate_client_packs.py
       - name: Validate Vampire King model
         run: python3 scripts/validate_vampire_model.py
       - name: Install Blockbench texture generator dependency
@@ -48,6 +50,19 @@ jobs:
         with:
           name: WarriorLand-Halloween-ItemsAdder
           path: target/WarriorLand-Halloween-ItemsAdder.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Package optional Iris shader pack
+        run: |
+          mkdir -p target
+          cd client-packs/HalloweenCore-Iris-Crimson-Sky
+          zip -qr ../../target/HalloweenCore-Iris-Crimson-Sky.zip .
+          unzip -t ../../target/HalloweenCore-Iris-Crimson-Sky.zip
+      - name: Upload optional Iris shader pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Iris-Crimson-Sky
+          path: target/HalloweenCore-Iris-Crimson-Sky.zip
           if-no-files-found: error
           retention-days: 14
       - name: Package special mob models

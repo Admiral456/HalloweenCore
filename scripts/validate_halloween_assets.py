@@ -11,7 +11,7 @@ import zlib
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
 TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
-SHADER = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
+SHADER = ROOT / "client-packs" / "HalloweenCore-Iris-Crimson-Sky" / "shaders" / "gbuffers_skybasic.fsh"
 CONFIG = CONTENT / "configs" / "items.yml"
 SOUNDS_CONFIG = CONTENT / "configs" / "sounds.yml"
 SOUNDS_DIR = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "sounds"
@@ -288,16 +288,14 @@ if shield_component.get("components", {}).get("minecraft:max_damage") != 1600:
 print("PASS Crimson Warden armor modifiers and displayed totals: 6/12/9/6; durability and component JSON verified")
 
 if not SHADER.is_file():
-    fail("Missing Halloween sky shader: " + str(SHADER.relative_to(ROOT)))
+    fail("Missing optional Iris crimson-sky shader: " + str(SHADER.relative_to(ROOT)))
 shader_text = SHADER.read_text(encoding="utf-8")
-for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "#moj_import <minecraft:dynamictransforms.glsl>",
-                "halloweenTint", "fragColor = sky;"):
+for marker in ("#version 120", "uniform int worldTime;", "SKY_CRIMSON_INTENSITY", "gl_FragData[0]"):
     if marker not in shader_text:
-        fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
-if not re.search(r"(?m)^\s*const vec3 halloweenTint = vec3\(1\.10, 0\.76, 0\.62\);$", shader_text):
-    fail("Sky shader must use the validated restrained Halloween tint (not a harsh full-screen orange cast)")
-if not re.search(r"sky\.rgb\s*=\s*mix\(sky\.rgb,\s*max\(sky\.rgb\s*\*\s*halloweenTint,\s*vec3\(0\.0\)\),\s*0\.24\s*\);", shader_text):
-    fail("Sky shader tint blend is missing or differs from the validated low-intensity grade")
+        fail(f"Optional Iris sky shader is missing required marker: {marker}")
+legacy_shader = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
+if legacy_shader.exists():
+    fail("The version-specific vanilla sky shader must stay out of the mandatory ItemsAdder resource pack")
 
 # Explicit vanilla texture overrides give physical Halloween decoration its
 # seasonal appearance while keeping the server-side blocks present with or
