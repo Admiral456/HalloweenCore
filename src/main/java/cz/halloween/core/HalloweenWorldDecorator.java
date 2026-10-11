@@ -272,12 +272,12 @@ public final class HalloweenWorldDecorator implements Listener {
         int soilPatches = bounded("haunted-soil-patches-per-chunk", 3, 0, 8);
         int createdPatches = 0;
         for (int i = 0; i < attempts && createdPatches < soilPatches; i++) {
-            Block seed = randomSurface(chunk, random);
-            Material original = seed.getType();
-            Block seedAbove = seed.getRelative(0, 1, 0);
+            Block patchCenter = randomSurface(chunk, random);
+            Material original = patchCenter.getType();
+            Block seedAbove = patchCenter.getRelative(0, 1, 0);
             if ((original != Material.GRASS_BLOCK && original != Material.DIRT)
-                    || !seedAbove.getType().isAir() || seed.getState() instanceof TileState
-                    || seedAbove.getState() instanceof TileState || !naturalNeighborhood(seed)) continue;
+                    || !seedAbove.getType().isAir() || patchCenter.getState() instanceof TileState
+                    || seedAbove.getState() instanceof TileState || !naturalNeighborhood(patchCenter)) continue;
 
             Material cursedSoil = switch (random.nextInt(4)) {
                 case 0 -> Material.SOUL_SOIL;
@@ -290,8 +290,8 @@ public final class HalloweenWorldDecorator implements Listener {
             for (int attempt = 0; attempt < desiredBlocks * 8 && changedBlocks < desiredBlocks; attempt++) {
                 int dx = changedBlocks == 0 ? 0 : random.nextInt(3) - 1;
                 int dz = changedBlocks == 0 ? 0 : random.nextInt(3) - 1;
-                int x = seed.getX() + dx;
-                int z = seed.getZ() + dz;
+                int x = patchCenter.getX() + dx;
+                int z = patchCenter.getZ() + dz;
                 if ((x >> 4) != chunk.getX() || (z >> 4) != chunk.getZ()) continue;
                 int highest = chunk.getWorld().getHighestBlockYAt(x, z);
                 Block ground = null;
