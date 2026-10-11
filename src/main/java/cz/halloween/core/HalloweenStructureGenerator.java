@@ -308,7 +308,7 @@ public final class HalloweenStructureGenerator implements Listener {
             put(world, cx, floorY, cz + z, (Math.abs(z) % 2 == 0) ? Material.COARSE_DIRT : Material.GRAVEL);
         }
         for (int x = -4; x <= 4; x++) {
-            put(world, cx + x, floorY, cz + 1, (Math.abs(x) % 2 == 0) ? Material.GRAVEL : Material.COARSE_DIRT);
+            put(world, cx + x, floorY, cz, (Math.abs(x) % 2 == 0) ? Material.GRAVEL : Material.COARSE_DIRT);
         }
         // The shrine is deliberately on the open square, never beneath a cottage roof.
         put(world, cx, floorY, cz, Material.COARSE_DIRT);
