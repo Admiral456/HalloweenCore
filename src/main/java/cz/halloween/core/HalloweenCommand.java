@@ -31,7 +31,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "giveitem", "spawn", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "buildvillage", "buildgraveyard",
+                    "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview",
+                    "give", "giveitem", "spawn", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -86,6 +88,13 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return List.of("random", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion",
                     "pumpkin-apocalypse", "graveyard-rising").stream()
                     .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && (args[0].equalsIgnoreCase("buildvillage")
+                || args[0].equalsIgnoreCase("buildgraveyard"))
+                && sender.hasPermission("hallowencore.admin")) {
+            return List.of("confirm").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("shader")) {
@@ -200,6 +209,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
         if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
+        if (args[0].equalsIgnoreCase("buildvillage")) return buildManualStructure(sender, args, HalloweenStructureGenerator.HAUNTED_VILLAGE);
+        if (args[0].equalsIgnoreCase("buildgraveyard")) return buildManualStructure(sender, args, HalloweenStructureGenerator.HAUNTED_GRAVEYARD);
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
         if (args[0].equalsIgnoreCase("buildvampirearena")) return buildVampireArena(sender, args);
         if (args[0].equalsIgnoreCase("setsecret")) return setSecret(sender, args);
@@ -692,6 +703,101 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         plugin.getSecretDiscoveryManager().showSecrets(player);
+        return true;
+    }
+
+    private boolean buildManualStructure(CommandSender sender, String[] args, String structureType) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz musíš použít ve hře na vybraném místě."));
+            return true;
+        }
+        String commandName = structureType.equals(HalloweenStructureGenerator.HAUNTED_VILLAGE)
+                ? "buildvillage" : "buildgraveyard";
+        if (args.length > 2 || (args.length == 2 && !args[1].equalsIgnoreCase("confirm"))) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween " + commandName + " [confirm]"));
+            return true;
+        }
+
+        HalloweenStructureGenerator generator = plugin.getStructureGenerator();
+        if (generator == null) {
+            sender.sendMessage(plugin.color("&cGenerátor Halloween staveb není dostupný."));
+            return true;
+        }
+
+        String pendingPath = "random-structures.manual-build.pending." + player.getUniqueId();
+        if (args.length == 1) {
+            HalloweenStructureGenerator.ManualBuildPreview preview =
+                    generator.previewManualBuild(player.getLocation(), structureType);
+            if (!preview.safe()) {
+                sender.sendMessage(plugin.color("&cNáhled stavby odmítnut: &7" + preview.problem()));
+                sender.sendMessage(plugin.color("&7Nic nebylo změněno. Vyber čistou, téměř rovnou plochu v Overworldu."));
+                return true;
+            }
+            plugin.getConfig().set(pendingPath + ".configured", true);
+            plugin.getConfig().set(pendingPath + ".type", preview.type());
+            plugin.getConfig().set(pendingPath + ".world", preview.worldName());
+            plugin.getConfig().set(pendingPath + ".x", preview.centerX());
+            plugin.getConfig().set(pendingPath + ".z", preview.centerZ());
+            plugin.saveConfig();
+
+            String displayName = preview.type().equals(HalloweenStructureGenerator.HAUNTED_VILLAGE)
+                    ? "PROKLETÁ VESNICE" : "PROKLETÝ HŘBITOV";
+            sender.sendMessage(plugin.color("&4&lNÁHLED STAVBY: " + displayName));
+            sender.sendMessage(plugin.color("&7Svět: &e" + preview.worldName()));
+            sender.sendMessage(plugin.color("&7Střed půdorysu: &e" + preview.centerX() + " " + (preview.baseY() + 1)
+                    + " " + preview.centerZ()));
+            sender.sendMessage(plugin.color("&7Půdorys: &e15 × 15 bloků &8• &7Dotčené načtené chunky: &e" + preview.chunksTouched()));
+            sender.sendMessage(plugin.color("&aKontrola terénu prošla. Budovy, blokové entity a existující Halloween struktury jsou chráněné."));
+            sender.sendMessage(plugin.color("&ePro skutečné postavení potvrď: &6/halloween " + commandName + " confirm"));
+            sender.sendMessage(plugin.color("&cNevyhlubuje díry; může pouze zarovnat malé výškové rozdíly a odstranit vhodnou vegetaci."));
+            return true;
+        }
+
+        if (!plugin.getConfig().getBoolean(pendingPath + ".configured", false)) {
+            sender.sendMessage(plugin.color("&cNemáš uložený náhled pro tuto stavbu. Nejdřív spusť /halloween " + commandName + "."));
+            return true;
+        }
+        String pendingType = plugin.getConfig().getString(pendingPath + ".type", "");
+        if (!structureType.equals(pendingType)) {
+            sender.sendMessage(plugin.color("&cUložený náhled patří jiné stavbě. Spusť nejdřív /halloween " + commandName + "."));
+            return true;
+        }
+        String worldName = plugin.getConfig().getString(pendingPath + ".world", "");
+        org.bukkit.World world = worldName == null || worldName.isBlank() ? null : Bukkit.getWorld(worldName);
+        if (world == null) {
+            sender.sendMessage(plugin.color("&cSvět náhledu není načtený. Zopakuj náhled v požadovaném světě."));
+            return true;
+        }
+        int centerX = plugin.getConfig().getInt(pendingPath + ".x");
+        int centerZ = plugin.getConfig().getInt(pendingPath + ".z");
+        org.bukkit.Location target = new org.bukkit.Location(world, centerX + 0.5D, world.getMinHeight() + 1.0D, centerZ + 0.5D);
+        HalloweenStructureGenerator.ManualBuildPreview finalCheck =
+                generator.previewManualBuild(target, structureType);
+        if (!finalCheck.safe()) {
+            sender.sendMessage(plugin.color("&cStavba přerušena při závěrečné kontrole: &7" + finalCheck.problem()));
+            sender.sendMessage(plugin.color("&7Nic nebylo nově postaveno. Udělej nový náhled na čistém místě."));
+            plugin.getConfig().set(pendingPath, null);
+            plugin.saveConfig();
+            return true;
+        }
+        try {
+            generator.buildManual(target, structureType);
+        } catch (RuntimeException ex) {
+            plugin.getLogger().warning("Manual Halloween structure build failed: " + ex.getClass().getSimpleName()
+                    + ": " + ex.getMessage());
+            sender.sendMessage(plugin.color("&cStavba se nepodařila: &7" + ex.getMessage()));
+            return true;
+        }
+
+        plugin.getConfig().set(pendingPath, null);
+        plugin.saveConfig();
+        String displayName = structureType.equals(HalloweenStructureGenerator.HAUNTED_VILLAGE)
+                ? "prokletou vesnici" : "prokletý hřbitov";
+        sender.sendMessage(plugin.color("&aHotovo! Postavil jsem " + displayName + " na uloženém místě."));
+        sender.sendMessage(plugin.color("&7Svět: &e" + world.getName() + " &8• &7Střed: &e"
+                + finalCheck.centerX() + " " + (finalCheck.baseY() + 1) + " " + finalCheck.centerZ()));
+        sender.sendMessage(plugin.color("&7Stavba je zapsaná do dat chunků, aby se náhodné generování později nepřekrývalo."));
         return true;
     }
 

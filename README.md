@@ -52,10 +52,13 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
-- /halloween setvillage (admin)
+- /halloween setvillage (admin, nastaví místo Haunted Village)
+- `/halloween buildvillage [confirm]` — bezpečný náhled a potvrzená stavba prokleté vesnice.
+- `/halloween buildgraveyard [confirm]` — bezpečný náhled a potvrzená stavba prokletého hřbitova.
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
 - /halloween setvampirearena (admin)
+- Stavby `/halloween buildvillage` a `/halloween buildgraveyard` používají náhled a `confirm`. Odmítnou neprůchodný terén, nenačtené chunky, okolí world spawnu a rezervovanou boss arénu; nevyhlubují díry ani nepřepisují budovy a blokové entity.
 - `/halloween buildvampirearena [here|selected|confirm]` — `here` vybere blok pod správcem, `selected` použije střed uložený přes `/halloween setvampirearena`, `confirm` postaví arénu kolem posledního náhledu.
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>

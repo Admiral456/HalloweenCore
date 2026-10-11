@@ -24,3 +24,13 @@ The confirmed centre is also saved as the Vampire King arena/spawn point.
 World decorations are independent of the temporary event on/off toggle. New chunks can receive random pumpkins, cobwebs, dead plants, 3D mushrooms and graves. The procedural generator separately has a low chance to place a small haunted village or graveyard on flat, clear natural terrain; it never excavates holes and excludes the arena footprint and spawn safety radius.
 
 The arena can be previewed/built without progress. Building it does not enable the normal finale. `/halloween boss test` bypasses the progress/finale/model-ready gates for an admin test only; it requires the configured arena and a working MythicMobs `vampire-king` definition and gives no rewards or finale completion. `bosses.vampire.model.ready` remains `false` until ModelEngine import and client resource-pack testing pass.
+
+
+## Manually place a village or graveyard
+
+Administrators can create either structure from their current position with a two-step preview/confirm command:
+
+- `/halloween buildvillage` then `/halloween buildvillage confirm`
+- `/halloween buildgraveyard` then `/halloween buildgraveyard confirm`
+
+The preview checks the 15×15-block footprint before changing anything. It refuses Nether/End, unloaded footprint chunks, proximity to world spawn, the reserved boss arena, existing generated Halloween structures, buildings, solid obstructions, and tile entities. It can remove replaceable vegetation and fill modest height differences; it never digs a hole. Pending previews are stored per administrator, rechecked at confirmation, and touched chunks are marked to prevent later random generation from overlapping the manual build.

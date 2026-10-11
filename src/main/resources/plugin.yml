@@ -8,7 +8,7 @@ softdepend: [ItemsAdder, MythicMobs, ModelEngine, BattlePass, WorldGuard, Placeh
 commands:
   halloween:
     description: Halloween event statistics and administration.
-    usage: /halloween [stats|progress|curse [set <úroveň>|reset [hráč]]|event|challenge|quests [reset <hráč>]|rewards|claim|top|reload|debug|shader|setvillage|setvampirearena|buildvampirearena [here|selected|confirm]|setsecret|secrets|boss|bosseffects|modelpreview|give|giveitem|spawn|on|off]
+    usage: /halloween [stats|progress|curse [set <úroveň>|reset [hráč]]|event|challenge|quests [reset <hráč>]|rewards|claim|top|reload|debug|shader|setvillage|buildvillage [confirm]|buildgraveyard [confirm]|setvampirearena|buildvampirearena [here|selected|confirm]|setsecret|secrets|boss|bosseffects|modelpreview|give|giveitem|spawn|on|off]
     aliases: [hallow]
     permission: halloweencore.use
 permissions:

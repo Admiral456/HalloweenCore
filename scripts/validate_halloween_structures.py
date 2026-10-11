@@ -79,3 +79,33 @@ if "int portalZ = cz - 31;" not in arena or "cz - 26 + dz" not in arena:
 if "centerY + CLEARANCE_HEIGHT >= world.getMaxHeight()" not in arena:
     fail("Arena inspection must enforce world-height safety for the enlarged tower crowns")
 print("PASS ultimate Vampire King arena: eight hollow towers, curtain buttresses, four monumental gates, throne portal, sarcophagi, concentric runes and central boss clearance verified")
+
+# Manual admin commands must share the same safety checks as random placement.
+manual_required = {
+    "manual build preview API": "public ManualBuildPreview previewManualBuild(",
+    "manual build API": "public ManualBuildPreview buildManual(",
+    "admin-selected location footprint checks": "int centerX = target.getBlockX();",
+    "loaded chunk guard": "if (!world.isChunkLoaded(chunkX, chunkZ))",
+    "existing generated structure protection": "if (existing != null)",
+    "boss arena exclusion": "if (isReservedForArena(chunk))",
+    "world spawn exclusion": "if (isNearWorldSpawn(chunk))",
+    "structure marker saved in all footprint chunks": "data.set(checkedKey, PersistentDataType.BYTE, (byte) 1);",
+    "manual structure type normalization": 'case "graveyard", "grave", "haunted-graveyard", "haunted_graveyard"',
+}
+for label, marker in manual_required.items():
+    if marker not in source:
+        fail(f"Manual structure builder is missing required safety/API feature: {label} ({marker})")
+
+COMMAND_SOURCE = ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenCommand.java"
+if not COMMAND_SOURCE.is_file():
+    fail("HalloweenCommand.java is missing")
+command = COMMAND_SOURCE.read_text(encoding="utf-8")
+for label, marker in {
+    "manual village command": 'args[0].equalsIgnoreCase("buildvillage")',
+    "manual graveyard command": 'args[0].equalsIgnoreCase("buildgraveyard")',
+    "two-step confirmation": 'args[1].equalsIgnoreCase("confirm")',
+    "per-admin pending preview": "random-structures.manual-build.pending.",
+}.items():
+    if marker not in command:
+        fail(f"Admin structure command is missing: {label} ({marker})")
+print("PASS manual build commands: village/graveyard previews, per-admin confirmation, loaded-chunk guard, spawn/arena exclusions and duplicate-structure protection verified")

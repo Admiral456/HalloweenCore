@@ -94,6 +94,129 @@ public final class HalloweenStructureGenerator implements Listener {
     private boolean isEnabled() {
         return plugin.getConfig().getBoolean("random-structures.enabled", true);
     }
+    /**
+     * Read-only preflight for manually placing a village/graveyard at an admin-selected
+     * location. All touched chunks must already be loaded, must not already contain a
+     * generated structure, and the full footprint must be clear natural terrain.
+     */
+    public ManualBuildPreview previewManualBuild(Location target, String requestedType) {
+        String type = normalizeStructureType(requestedType);
+        if (type == null) {
+            return ManualBuildPreview.failure("Typ stavby musí být village nebo graveyard.");
+        }
+        if (target == null || target.getWorld() == null) {
+            return ManualBuildPreview.failure("Není vybraný platný svět a místo.");
+        }
+        World world = target.getWorld();
+        if (world.getEnvironment() != World.Environment.NORMAL) {
+            return ManualBuildPreview.failure("Vesnice a hřbitovy lze ručně stavět pouze v Overworldu.");
+        }
+
+        int centerX = target.getBlockX();
+        int centerZ = target.getBlockZ();
+        int radius = 7;
+        int minChunkX = (centerX - radius) >> 4;
+        int maxChunkX = (centerX + radius) >> 4;
+        int minChunkZ = (centerZ - radius) >> 4;
+        int maxChunkZ = (centerZ + radius) >> 4;
+        int chunksTouched = 0;
+
+        // The manual builder never force-loads chunks: refuse early if this footprint
+        // extends beyond loaded terrain, so the build cannot be left half-generated.
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                if (!world.isChunkLoaded(chunkX, chunkZ)) {
+                    return ManualBuildPreview.failure("Okraj stavby zasahuje do nenačteného chunku "
+                            + chunkX + "," + chunkZ + ". Přibliž se k načtenému terénu a zopakuj náhled.");
+                }
+                chunksTouched++;
+                Chunk chunk = world.getChunkAt(chunkX, chunkZ);
+                var data = chunk.getPersistentDataContainer();
+                String existing = data.get(structureKey, PersistentDataType.STRING);
+                if (existing == null) existing = data.get(legacyStructureKey, PersistentDataType.STRING);
+                if (existing != null) {
+                    return ManualBuildPreview.failure("V půdorysu už je evidovaná Halloween struktura (" + existing
+                            + ") v chunku " + chunkX + "," + chunkZ + ".");
+                }
+                if (isNearWorldSpawn(chunk)) {
+                    return ManualBuildPreview.failure("Stavba je příliš blízko world spawnu. Vyber bezpečnější místo.");
+                }
+                if (isReservedForArena(chunk)) {
+                    return ManualBuildPreview.failure("Půdorys zasahuje do rezervovaného prostoru boss arény.");
+                }
+            }
+        }
+
+        Terrain terrain = inspectTerrain(world, centerX, centerZ, radius);
+        if (terrain == null) {
+            return ManualBuildPreview.failure("Terén není vhodný: potřebuji přírodní, téměř rovnou volnou plochu "
+                    + "bez budov, pevných překážek, truhel a dalších blokových entit. Nic nebylo změněno.");
+        }
+        return new ManualBuildPreview(true, "", type, world.getName(), centerX, centerZ,
+                terrain.baseY(), chunksTouched);
+    }
+
+    /**
+     * Builds one structure after the same safety checks used by the command preview.
+     * The site is re-inspected immediately before the first block is changed.
+     */
+    public ManualBuildPreview buildManual(Location target, String requestedType) {
+        ManualBuildPreview preview = previewManualBuild(target, requestedType);
+        if (!preview.safe()) throw new IllegalStateException(preview.problem());
+
+        World world = target.getWorld();
+        int centerX = preview.centerX();
+        int centerZ = preview.centerZ();
+        int baseY = preview.baseY();
+        int radius = 7;
+        preparePlatform(world, centerX, baseY, centerZ, radius);
+        Random random = new Random(world.getSeed()
+                ^ ((long) centerX * 341873128712L)
+                ^ ((long) centerZ * 132897987541L)
+                ^ System.nanoTime());
+        if (HAUNTED_VILLAGE.equals(preview.type())) {
+            buildHauntedVillage(world, centerX, baseY, centerZ, random);
+        } else {
+            buildGraveyard(world, centerX, baseY, centerZ, random);
+        }
+
+        int minChunkX = (centerX - radius) >> 4;
+        int maxChunkX = (centerX + radius) >> 4;
+        int minChunkZ = (centerZ - radius) >> 4;
+        int maxChunkZ = (centerZ + radius) >> 4;
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                Chunk chunk = world.getChunkAt(chunkX, chunkZ);
+                var data = chunk.getPersistentDataContainer();
+                data.set(checkedKey, PersistentDataType.BYTE, (byte) 1);
+                data.set(structureKey, PersistentDataType.STRING, preview.type());
+                data.set(legacyStructureKey, PersistentDataType.STRING, preview.type());
+                data.set(centerXKey, PersistentDataType.INTEGER, centerX);
+                data.set(centerYKey, PersistentDataType.INTEGER, baseY + 1);
+                data.set(centerZKey, PersistentDataType.INTEGER, centerZ);
+            }
+        }
+        plugin.getLogger().info("Admin placed " + preview.type() + " at " + world.getName() + " "
+                + centerX + " " + (baseY + 1) + " " + centerZ);
+        return preview;
+    }
+
+    public record ManualBuildPreview(boolean safe, String problem, String type, String worldName,
+                                     int centerX, int centerZ, int baseY, int chunksTouched) {
+        private static ManualBuildPreview failure(String problem) {
+            return new ManualBuildPreview(false, problem, "", "", 0, 0, 0, 0);
+        }
+    }
+
+    private String normalizeStructureType(String type) {
+        if (type == null) return null;
+        return switch (type.toLowerCase(Locale.ROOT)) {
+            case "village", "haunted-village", "haunted_village" -> HAUNTED_VILLAGE;
+            case "graveyard", "grave", "haunted-graveyard", "haunted_graveyard" -> HAUNTED_GRAVEYARD;
+            default -> null;
+        };
+    }
+
 
     private void enqueue(Chunk chunk) {
         if (chunk == null || chunk.getPersistentDataContainer().has(checkedKey, PersistentDataType.BYTE)) return;
