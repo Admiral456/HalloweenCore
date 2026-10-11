@@ -262,14 +262,14 @@ public final class HalloweenMobManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSpecialMobAttack(EntityDamageByEntityEvent event) {
-        if (!plugin.isEventEnabled() || !(event.getEntity() instanceof Player target)) return;
+        if (!(event.getEntity() instanceof Player target)) return;
         if (!plugin.isEligibleGameplayPlayer(target) || !plugin.isEligibleGameplayWorld(target.getWorld())) return;
 
         LivingEntity attacker = resolveLivingAttacker(event.getDamager());
         if (attacker == null) return;
 
         String mobId = attacker.getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
-        if (mobId == null) return;
+        if (mobId == null || (!plugin.isEventEnabled() && !isTestMob(attacker))) return;
 
         switch (mobId) {
             case "cursed-zombie" -> {
@@ -486,9 +486,8 @@ public final class HalloweenMobManager implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onHexWitchPotionSplash(PotionSplashEvent event) {
         if (!(event.getPotion().getShooter() instanceof LivingEntity attacker)) return;
-        if (!plugin.isEventEnabled()) return;
         String mobId = attacker.getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
-        if (!"hex-witch".equals(mobId)) return;
+        if (!"hex-witch".equals(mobId) || (!plugin.isEventEnabled() && !isTestMob(attacker))) return;
 
         List<Player> targets = new ArrayList<>();
         for (LivingEntity entity : event.getAffectedEntities()) {
