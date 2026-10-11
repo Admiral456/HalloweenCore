@@ -41,7 +41,6 @@ public final class HalloweenRewardManager {
 
         ItemStack balance = plugin.getItemManager().getItemsAdderItem("warriorland_halloween:halloween_fragment", 1);
         if (balance == null) balance = namedItem(Material.AMETHYST_SHARD, "&6&lTvoje fragmenty");
-                "&6&lTvoje fragmenty");
         ItemMeta balanceMeta = balance.getItemMeta();
         if (balanceMeta != null) {
             balanceMeta.setDisplayName(plugin.color("&6&lTvoje fragmenty"));
