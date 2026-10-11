@@ -153,7 +153,7 @@ for item_id, texture in (("grave_marker", "item/grave_marker"),
     if f"texture: {texture}" not in match.group(1) or "material: PAPER" not in match.group(1):
         fail(f"{item_id} must use its generated ItemsAdder pixel-art texture")
 
-for layer in ("layer_1.png", "layer_2.png"):
+for layer in ("layer_1.png", "layer_2.png", "emissive_1.png", "emissive_2.png"):
     path = ARMOR_TEXTURES / layer
     if not path.is_file():
         fail("Missing Crimson Warden armor layer: " + str(path.relative_to(ROOT)))
@@ -168,13 +168,19 @@ for layer in ("layer_1.png", "layer_2.png"):
         fail(f"Source {layer} must be 64x32, got {source_width}x{source_height}")
     if source.read_bytes() != path.read_bytes():
         fail(f"Source and resource-pack copies of {layer} differ; keep both paths in sync")
+for emissive in ("emissive_1.png", "emissive_2.png"):
+    # The generator verifies a minimum glow pixel count after rendering the alpha mask.
+    if not (ARMOR_SOURCE_TEXTURES / emissive).is_file():
+        fail(f"Missing legacy emissive texture {emissive}")
 
 # Verify that ItemsAdder's equipment modifiers match the advertised armor totals.
 ARMOR_BALANCE = {
-    "crimson_warden_helmet": ("NETHERITE_HELMET", 6, 900, "head"),
-    "crimson_warden_chestplate": ("NETHERITE_CHESTPLATE", 12, 1300, "chest"),
-    "crimson_warden_leggings": ("NETHERITE_LEGGINGS", 9, 1150, "legs"),
-    "crimson_warden_boots": ("NETHERITE_BOOTS", 6, 950, "feet"),
+    # Leather is only the gameplay base material. Both modern equipment assets and the
+    # legacy ItemsAdder renderer replace the worn appearance with the custom Crimson Warden atlas.
+    "crimson_warden_helmet": ("LEATHER_HELMET", 6, 900, "head"),
+    "crimson_warden_chestplate": ("LEATHER_CHESTPLATE", 12, 1300, "chest"),
+    "crimson_warden_leggings": ("LEATHER_LEGGINGS", 9, 1150, "legs"),
+    "crimson_warden_boots": ("LEATHER_BOOTS", 6, 950, "feet"),
 }
 items_yaml = CONFIG.read_text(encoding="utf-8")
 
@@ -223,6 +229,21 @@ if referenced_textures != expected_item_texture_refs:
     )
 print(f"PASS ItemsAdder texture links: {len(referenced_textures)} definitions map to existing, valid 32x32 PNGs")
 
+legacy_renderer = re.search(r"(?ms)^legacy_armor_renderings:\s*\n(.*?)(?=^items:\s*$)", items_yaml)
+if not legacy_renderer:
+    fail("Missing legacy_armor_renderings fallback for ViaVersion clients")
+legacy_renderer_text = legacy_renderer.group(1)
+for marker in (
+    "crimson_warden_legacy:",
+    "layer_1: armor/crimson_warden/layer_1",
+    "layer_2: armor/crimson_warden/layer_2",
+    "emissive_1: armor/crimson_warden/emissive_1",
+    "emissive_2: armor/crimson_warden/emissive_2",
+    "use_color: false",
+):
+    if marker not in legacy_renderer_text:
+        fail(f"Legacy armor renderer missing custom/emissive mapping: {marker}")
+
 for item_id, (material, equipped_armor, durability, slot) in ARMOR_BALANCE.items():
     match = re.search(rf"(?ms)^  {re.escape(item_id)}:\n(.*?)(?=^  [A-Za-z0-9_-]+:\s*$|\Z)", items_yaml)
     if not match:
@@ -235,7 +256,9 @@ for item_id, (material, equipped_armor, durability, slot) in ARMOR_BALANCE.items
     if re.search(r'(?m)^\s+- "&c\+\d+ Armor"\s*$', section):
         fail(f"{item_id} must not duplicate armor stats in lore")
     if "id: warriorland_halloween:crimson_warden" not in section:
-        fail(f"{item_id} is missing its Crimson Warden armor-layer binding")
+        fail(f"{item_id} is missing its modern Crimson Warden equipment binding")
+    if "legacy_armor_rendering_id: crimson_warden_legacy" not in section:
+        fail(f"{item_id} is missing its multi-version legacy armor rendering fallback")
     durability_match = re.search(r"(?m)^      max_durability: (\d+)\s*$", section)
     if not durability_match or int(durability_match.group(1)) != durability:
         fail(f"{item_id} must have durability {durability}")
@@ -538,9 +561,9 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
     if "blocked_enchants:" in definition and "blocked_enchants:\n      - ALL" in definition:
         fail(f"Custom gear '{item_id}' must remain enchantable")
 
-expected_armor_stats = {
+"expected_armor_stats = {
     # Exact Armor points are verified against minecraft:attribute_modifiers above;
-    # ItemsAdder YAML must only hold the matching durability/equipment/JSON references.
+    # ItemsAdder YAML must hold the matching durability/component and both renderer references.
     "crimson_warden_helmet": ("max_durability: 900",),
     "crimson_warden_chestplate": ("max_durability: 1300",),
     "crimson_warden_leggings": ("max_durability: 1150",),
@@ -557,6 +580,7 @@ for item_id, required_stats in expected_armor_stats.items():
             fail(f"{item_id} is missing expected full-set armour/durability stat: {stat}")
     if ("equipment:" not in definition
             or "id: warriorland_halloween:crimson_warden" not in definition
+            or "legacy_armor_rendering_id: crimson_warden_legacy" not in definition
             or "components_nbt_file:" not in definition):
         fail(f"{item_id} must use the Crimson Warden layer and exact-value component JSON")
 
@@ -633,18 +657,19 @@ for shop_id in shop_ids:
 
 # ItemsAdder equipment layers are source assets at contents/<namespace>/textures/armor,
 # while item icons and vanilla overrides are emitted from the resourcepack/assets tree.
-for layer in ("layer_1.png", "layer_2.png"):
+for layer in ("layer_1.png", "layer_2.png", "emissive_1.png", "emissive_2.png"):
     path = ARMOR_SOURCE_TEXTURES / layer
     if not path.is_file():
         fail("Missing ItemsAdder source armor layer: " + str(path.relative_to(ROOT)))
-    width, height = png_size(path)
+    width, height = strict_png_size(path)
     if (width, height) != (64, 32):
         fail(f"ItemsAdder source {layer} must be 64x32, got {width}x{height}")
 
 root_textures = CONTENT / "textures"
 if root_textures.exists():
+    expected_armor_source_files = ("layer_1.png", "layer_2.png", "emissive_1.png", "emissive_2.png")
     unexpected = [p for p in root_textures.rglob("*") if p.is_file()
-                  and not (p.parent == ARMOR_SOURCE_TEXTURES and p.name in ("layer_1.png", "layer_2.png"))]
+                  and not (p.parent == ARMOR_SOURCE_TEXTURES and p.name in expected_armor_source_files)]
     if unexpected:
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
@@ -694,6 +719,49 @@ if "getCurseLevelOverride" not in curse_service:
     fail("Curse progression must honor the manual level override")
 if "migrateCrimsonWardenLoreV5" not in core_source:
     fail("Existing configs must migrate away from the duplicated Crimson Warden +Armor lore")
+if "migrateCrimsonWardenCustomArmorV1" not in core_source:
+    fail("Existing configs must migrate to the custom leather-base armor and full-set defaults")
+
+PASSIVE_SOURCE = ROOT / "src" / "main" / "java" / "cz" / "halloween" / "core" / "HalloweenPassiveEffectManager.java"
+if not PASSIVE_SOURCE.is_file():
+    fail("HalloweenPassiveEffectManager.java is missing")
+passive = PASSIVE_SOURCE.read_text(encoding="utf-8")
+for marker in (
+    "hasFullCrimsonWardenSet",
+    "PotionEffectType.RESISTANCE",
+    "PotionEffectType.FIRE_RESISTANCE",
+    "Particle.SOUL_FIRE_FLAME",
+    'rewards.passive-effects.crimson-warden-set-bonus',
+):
+    if marker not in passive:
+        fail(f"Crimson Warden set bonus is missing: {marker}")
+for shop_id, material in (
+    ("crimson-warden-helmet", "LEATHER_HELMET"),
+    ("crimson-warden-chestplate", "LEATHER_CHESTPLATE"),
+    ("crimson-warden-leggings", "LEATHER_LEGGINGS"),
+    ("crimson-warden-boots", "LEATHER_BOOTS"),
+):
+    head = f"    {shop_id}:"
+    start = shop_config.find(head)
+    if start < 0:
+        fail(f"Shop reward {shop_id} is missing")
+    tail = shop_config[start + len(head):]
+    next_item = re.search(r"(?m)^    [A-Za-z0-9_-]+:\s*$", tail)
+    end = len(tail) if next_item is None else next_item.start()
+    section = tail[:end]
+    if f"material: {material}" not in section:
+        fail(f"Existing shop fallback for {shop_id} must migrate to {material}")
+
+ARMOR_GENERATOR = ROOT / "scripts" / "generate_crimson_warden_armor.py"
+if not ARMOR_GENERATOR.is_file():
+    fail("Custom Crimson Warden armor texture generator is missing")
+armor_generator = ARMOR_GENERATOR.read_text(encoding="utf-8")
+for marker in ("emissive_1.png", "emissive_2.png", "(64, 32)", "gold_light"):
+    if marker not in armor_generator:
+        fail(f"Armor atlas generator is missing custom detail/emission support: {marker}")
+WORKFLOW = (ROOT / ".github" / "workflows" / "build.yml").read_text(encoding="utf-8")
+if "python3 scripts/generate_crimson_warden_armor.py" not in WORKFLOW:
+    fail("CI must generate custom armor and emissive atlases before packaging")
 if "migrateHalloween3dDecorationsV1" not in core_source:
     fail("Existing configs must get the low-density 3D grave/mushroom decoration migration")
 
@@ -704,12 +772,12 @@ for marker in structure_core_markers:
         fail(f"HalloweenCore is missing random-structure lifecycle wiring: {marker}")
 print("PASS random structures: deterministic chunk generation, discovery metadata, no pits, and independent lifecycle")
 print("Halloween asset validation passed.")
-print("16 item textures: 32x32 PNG including two custom gravestones; 2 Crimson Warden armor layers: 64x32 PNG")
+print("16 item textures: 32x32 PNG including two custom gravestones; 2 Crimson Warden armor layers and 2 emissive atlases: 64x32 PNG")
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
 print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16, including 3D mushroom cap textures")
-print("Crimson Warden armor: real equipment modifiers, no duplicate +Armor lore, equip texture bindings and durability verified")
+print("Crimson Warden armor: leather gameplay bases with custom modern/legacy wear renderers, emissive sigils, exact armor modifiers and durability verified")
 print("Crimson Warden weapon icons: generated high-contrast pixel-art icons for sword, pickaxe, axe, shovel and hoe")
 print("PASS optional Iris sky shader source: separate client pack source validated")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")

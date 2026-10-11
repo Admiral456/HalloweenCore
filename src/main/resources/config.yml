@@ -78,6 +78,11 @@ rewards:
   passive-effects:
     enabled: true
     hunter-mask-night-vision-seconds: 5
+    crimson-warden-set-bonus:
+      enabled: true
+      resistance-seconds: 3
+      fire-resistance-seconds: 3
+      aura-particles: true
 
   shop:
     hunter-mask:
@@ -124,7 +129,7 @@ rewards:
       cost: 9000
       min-curse: 3
       itemsadder-id: "warriorland_halloween:crimson_warden_helmet"
-      material: NETHERITE_HELMET
+      material: LEATHER_HELMET
       amount: 1
       name: "&4&lHelma Krvavého strážce"
       lore: []
@@ -133,7 +138,7 @@ rewards:
       cost: 18000
       min-curse: 5
       itemsadder-id: "warriorland_halloween:crimson_warden_chestplate"
-      material: NETHERITE_CHESTPLATE
+      material: LEATHER_CHESTPLATE
       amount: 1
       name: "&4&lKyrys Krvavého strážce"
       lore: []
@@ -142,7 +147,7 @@ rewards:
       cost: 14500
       min-curse: 4
       itemsadder-id: "warriorland_halloween:crimson_warden_leggings"
-      material: NETHERITE_LEGGINGS
+      material: LEATHER_LEGGINGS
       amount: 1
       name: "&4&lNohavice Krvavého strážce"
       lore: []
@@ -151,7 +156,7 @@ rewards:
       cost: 10000
       min-curse: 3
       itemsadder-id: "warriorland_halloween:crimson_warden_boots"
-      material: NETHERITE_BOOTS
+      material: LEATHER_BOOTS
       amount: 1
       name: "&4&lBoty Krvavého strážce"
       lore: []

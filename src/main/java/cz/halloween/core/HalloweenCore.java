@@ -55,6 +55,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateCrimsonWardenLoreV4();
         migrateCrimsonWardenLoreV5();
+        migrateCrimsonWardenCustomArmorV1();
         migrateHalloween3dDecorationsV1();
         migrateHalloweenDecorationReliabilityV2();
         migrateGraveyardChanceTripledV1();
@@ -173,6 +174,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateCrimsonWardenLoreV4();
         migrateCrimsonWardenLoreV5();
+        migrateCrimsonWardenCustomArmorV1();
         migrateHalloween3dDecorationsV1();
         migrateHalloweenDecorationReliabilityV2();
         migrateGraveyardChanceTripledV1();
@@ -566,6 +568,44 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         } catch (IOException ex) {
             getLogger().warning("Crimson Warden armor lore v5 migration failed: " + ex.getClass().getSimpleName());
         }
+    }
+
+    /**
+     * Migrate existing server configs to the custom Crimson Warden armor base material.
+     * ItemsAdder supplies the actual modern/legacy wear textures; LEATHER_* is only the
+     * compatible base material and avoids presenting the custom set as Netherite gear.
+     * Unrelated shop prices, curse gates, and other server settings are preserved.
+     */
+    private void migrateCrimsonWardenCustomArmorV1() {
+        if (getConfig().getBoolean("migrations.crimson-warden-custom-armor-v1", false)) return;
+
+        for (String[] piece : new String[][]{
+                {"crimson-warden-helmet", "LEATHER_HELMET"},
+                {"crimson-warden-chestplate", "LEATHER_CHESTPLATE"},
+                {"crimson-warden-leggings", "LEATHER_LEGGINGS"},
+                {"crimson-warden-boots", "LEATHER_BOOTS"}
+        }) {
+            String path = "rewards.shop." + piece[0];
+            if (getConfig().isConfigurationSection(path)) {
+                getConfig().set(path + ".material", piece[1]);
+            }
+        }
+        if (!getConfig().contains("rewards.passive-effects.crimson-warden-set-bonus.enabled")) {
+            getConfig().set("rewards.passive-effects.crimson-warden-set-bonus.enabled", true);
+        }
+        if (!getConfig().contains("rewards.passive-effects.crimson-warden-set-bonus.resistance-seconds")) {
+            getConfig().set("rewards.passive-effects.crimson-warden-set-bonus.resistance-seconds", 3);
+        }
+        if (!getConfig().contains("rewards.passive-effects.crimson-warden-set-bonus.fire-resistance-seconds")) {
+            getConfig().set("rewards.passive-effects.crimson-warden-set-bonus.fire-resistance-seconds", 3);
+        }
+        if (!getConfig().contains("rewards.passive-effects.crimson-warden-set-bonus.aura-particles")) {
+            getConfig().set("rewards.passive-effects.crimson-warden-set-bonus.aura-particles", true);
+        }
+
+        getConfig().set("migrations.crimson-warden-custom-armor-v1", true);
+        saveConfig();
+        getLogger().info("Crimson Warden custom armor migrated to leather bases with modern/legacy custom renderers and full-set effects.");
     }
 
     /**

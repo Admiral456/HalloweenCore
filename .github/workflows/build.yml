@@ -24,8 +24,12 @@ jobs:
           fi
       - name: Generate Halloween audio
         run: python3 scripts/generate_halloween_audio.py
+      - name: Install Pillow for armor and model textures
+        run: python3 -m pip install --user Pillow
       - name: Generate Halloween block textures
         run: python3 scripts/generate_halloween_block_textures.py
+      - name: Generate Crimson Warden custom armor
+        run: python3 scripts/generate_crimson_warden_armor.py
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
       - name: Validate optional client shader pack
@@ -34,8 +38,6 @@ jobs:
         run: python3 scripts/validate_halloween_structures.py
       - name: Validate Vampire King model
         run: python3 scripts/validate_vampire_model.py
-      - name: Install Blockbench texture generator dependency
-        run: python3 -m pip install --user Pillow
       - name: Generate additional Halloween mob models
         run: python3 scripts/generate_additional_halloween_mobs.py
       - name: Validate custom Halloween mob models

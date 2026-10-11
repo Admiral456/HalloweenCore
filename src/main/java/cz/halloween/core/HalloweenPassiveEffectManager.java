@@ -2,6 +2,7 @@ package cz.halloween.core;
 
 import org.bukkit.Bukkit;
 import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.attribute.AttributeModifier;
@@ -46,11 +47,14 @@ public final class HalloweenPassiveEffectManager implements Listener {
     private void tick() {
         boolean passiveEnabled = plugin.isEventEnabled()
                 && plugin.getConfig().getBoolean("rewards.passive-effects.enabled", true);
+        boolean passiveEffectsAllowed = plugin.getConfig().getBoolean("rewards.passive-effects.enabled", true);
+        boolean setBonusEnabled = passiveEffectsAllowed
+                && plugin.getConfig().getBoolean("rewards.passive-effects.crimson-warden-set-bonus.enabled", true);
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            boolean gameplayEligible = passiveEnabled
-                    && plugin.isEligibleGameplayPlayer(player)
+            boolean playerEligible = plugin.isEligibleGameplayPlayer(player)
                     && plugin.isEligibleGameplayWorld(player.getWorld());
+            boolean gameplayEligible = passiveEnabled && playerEligible;
 
             // The talisman works while held in either hand. Always reconcile the
             // modifier, even when Halloween is switched off, so it cannot get stuck.
@@ -59,20 +63,57 @@ public final class HalloweenPassiveEffectManager implements Listener {
                     || isReward(player.getInventory().getItemInOffHand(), "cursed-talisman"));
             updateTalismanHealth(player, talismanActive);
 
-            if (!gameplayEligible) continue;
-            ItemStack helmet = player.getInventory().getHelmet();
-            if (!isReward(helmet, "hunter-mask")) continue;
+            if (gameplayEligible) {
+                ItemStack helmet = player.getInventory().getHelmet();
+                if (isReward(helmet, "hunter-mask")) {
+                    int duration = Math.max(2, plugin.getConfig().getInt("rewards.passive-effects.hunter-mask-night-vision-seconds", 5));
+                    player.addPotionEffect(new PotionEffect(
+                            PotionEffectType.NIGHT_VISION,
+                            duration * 20,
+                            0,
+                            true,
+                            false,
+                            true
+                    ));
+                }
+            }
 
-            int duration = Math.max(2, plugin.getConfig().getInt("rewards.passive-effects.hunter-mask-night-vision-seconds", 5));
-            player.addPotionEffect(new PotionEffect(
-                    PotionEffectType.NIGHT_VISION,
-                    duration * 20,
-                    0,
-                    true,
-                    false,
-                    true
-            ));
+            // The custom armor set remains useful even while random Halloween events
+            // are toggled off. Its brief effects are refreshed every second and expire
+            // shortly after a piece is removed, without overwriting stronger potion buffs.
+            if (setBonusEnabled && playerEligible && hasFullCrimsonWardenSet(player)) {
+                int resistanceTicks = configuredDuration("resistance-seconds");
+                int fireResistanceTicks = configuredDuration("fire-resistance-seconds");
+                player.addPotionEffect(new PotionEffect(
+                        PotionEffectType.RESISTANCE, resistanceTicks, 0, true, false, false
+                ), false);
+                player.addPotionEffect(new PotionEffect(
+                        PotionEffectType.FIRE_RESISTANCE, fireResistanceTicks, 0, true, false, false
+                ), false);
+
+                if (plugin.getConfig().getBoolean("rewards.passive-effects.crimson-warden-set-bonus.aura-particles", true)) {
+                    player.getWorld().spawnParticle(
+                            Particle.SOUL_FIRE_FLAME,
+                            player.getLocation().add(0.0D, 0.85D, 0.0D),
+                            3, 0.28D, 0.55D, 0.28D, 0.002D
+                    );
+                }
+            }
         }
+    }
+
+    private int configuredDuration(String path) {
+        int seconds = plugin.getConfig().getInt(
+                "rewards.passive-effects.crimson-warden-set-bonus." + path, 3
+        );
+        return Math.max(40, Math.min(200, seconds * 20));
+    }
+
+    private boolean hasFullCrimsonWardenSet(Player player) {
+        return isReward(player.getInventory().getHelmet(), "crimson-warden-helmet")
+                && isReward(player.getInventory().getChestplate(), "crimson-warden-chestplate")
+                && isReward(player.getInventory().getLeggings(), "crimson-warden-leggings")
+                && isReward(player.getInventory().getBoots(), "crimson-warden-boots");
     }
 
     private void updateTalismanHealth(Player player, boolean active) {
