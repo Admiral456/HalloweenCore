@@ -9,6 +9,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.type.Stairs;
+import org.bukkit.block.data.type.Candle;
 import org.bukkit.block.BlockFace;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -48,7 +49,7 @@ public final class HalloweenStructureGenerator implements Listener {
 
     public HalloweenStructureGenerator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.checkedKey = new NamespacedKey(plugin, "halloween_structure_checked_v3");
+        this.checkedKey = new NamespacedKey(plugin, "halloween_structure_checked_v4");
         this.structureKey = new NamespacedKey(plugin, "halloween_structure_type");
         this.legacyStructureKey = new NamespacedKey(plugin, "halloween_generated_structure_v1");
         this.centerXKey = new NamespacedKey(plugin, "halloween_structure_center_x");
@@ -157,12 +158,15 @@ public final class HalloweenStructureGenerator implements Listener {
 
         int centerX = (chunk.getX() << 4) + 8;
         int centerZ = (chunk.getZ() << 4) + 8;
-        Terrain terrain = findFlatPlatformY(world, centerX, centerZ, 5);
+        // Keep each build within its origin chunk (16x16 blocks) to avoid forced
+        // neighbour chunk loads and cross-chunk half-built structures.
+        int footprintRadius = 7;
+        Terrain terrain = findFlatPlatformY(world, centerX, centerZ, footprintRadius);
         if (terrain == null) return;
 
         // Fill only low natural spots and clear replaceable plants/leaves. This routine
         // never excavates downwards or creates a cave/pit.
-        preparePlatform(world, centerX, terrain.baseY(), centerZ, 5);
+        preparePlatform(world, centerX, terrain.baseY(), centerZ, footprintRadius);
         if (HAUNTED_VILLAGE.equals(type)) {
             buildHauntedVillage(world, centerX, terrain.baseY(), centerZ, random);
         } else {
@@ -225,7 +229,7 @@ public final class HalloweenStructureGenerator implements Listener {
             for (int z = centerZ - radius; z <= centerZ + radius; z++) {
                 Block ground = findNaturalGround(world, x, z);
                 if (ground == null) continue;
-                for (int y = ground.getY() + 1; y <= baseY + 6; y++) {
+                for (int y = ground.getY() + 1; y <= baseY + 10; y++) {
                     Block block = world.getBlockAt(x, y, z);
                     if (isReplaceableVegetation(block.getType())) block.setType(Material.AIR, false);
                 }
@@ -245,7 +249,7 @@ public final class HalloweenStructureGenerator implements Listener {
                 if (maxY - minY > 5) return null;
             }
         }
-        if (maxY <= world.getMinHeight() || maxY + 8 >= world.getMaxHeight()) return null;
+        if (maxY <= world.getMinHeight() || maxY + 12 >= world.getMaxHeight()) return null;
 
         // Every block over the entire footprint must be air or natural replaceable vegetation.
         // Houses/graves never overwrite a tree, building, chest or existing structure.
@@ -253,7 +257,7 @@ public final class HalloweenStructureGenerator implements Listener {
             for (int dz = -radius; dz <= radius; dz++) {
                 Block ground = findNaturalGround(world, centerX + dx, centerZ + dz);
                 if (ground == null) return null;
-                for (int y = ground.getY() + 1; y <= maxY + 6; y++) {
+                for (int y = ground.getY() + 1; y <= maxY + 10; y++) {
                     Block block = world.getBlockAt(centerX + dx, y, centerZ + dz);
                     if (block.getState() instanceof TileState) return null;
                     if (!block.getType().isAir() && !isReplaceableVegetation(block.getType())) return null;
@@ -297,61 +301,105 @@ public final class HalloweenStructureGenerator implements Listener {
     }
 
     private void buildHauntedVillage(World world, int cx, int baseY, int cz, Random random) {
-        house(world, cx - 3, baseY + 1, cz - 3, true, random);
-        house(world, cx + 3, baseY + 1, cz - 3, false, random);
-        house(world, cx - 3, baseY + 1, cz + 3, true, random);
-        house(world, cx + 3, baseY + 1, cz + 3, false, random);
-
         int floorY = baseY + 1;
-        // A crooked crossroad ties four ruined cottages to the central ritual shrine.
-        for (int z = -4; z <= 4; z++) {
-            put(world, cx, floorY, cz + z, (Math.abs(z) % 2 == 0) ? Material.COARSE_DIRT : Material.GRAVEL);
+
+        // Three individually dressed cottages and one gothic ritual chapel fill the four
+        // corners without touching each other. All footprints stay inside this chunk.
+        house(world, cx - 4, floorY, cz - 4, true, random);
+        house(world, cx + 4, floorY, cz - 4, false, random);
+        house(world, cx - 4, floorY, cz + 4, true, random);
+        buildRitualChapel(world, cx + 4, floorY, cz + 4, random);
+
+        // Four-arm road and a short branch that leads from the square to the chapel entrance.
+        for (int offset = -7; offset <= 7; offset++) {
+            Material northSouth = Math.abs(offset) % 3 == 0 ? Material.GRAVEL : Material.COARSE_DIRT;
+            Material eastWest = Math.abs(offset) % 3 == 0 ? Material.COARSE_DIRT : Material.GRAVEL;
+            put(world, cx, floorY, cz + offset, northSouth);
+            put(world, cx + offset, floorY, cz, eastWest);
         }
-        for (int x = -4; x <= 4; x++) {
-            put(world, cx + x, floorY, cz, (Math.abs(x) % 2 == 0) ? Material.GRAVEL : Material.COARSE_DIRT);
+        for (int x = cx; x <= cx + 2; x++) {
+            put(world, x, floorY, cz + 4, x % 2 == 0 ? Material.GRAVEL : Material.COARSE_DIRT);
         }
-        // The shrine is deliberately on the open square, never beneath a cottage roof.
+
+        // Layered ritual altar with four candles and worn stones at its corners.
         put(world, cx, floorY, cz, Material.COARSE_DIRT);
         put(world, cx, floorY + 1, cz, Material.CRYING_OBSIDIAN);
         put(world, cx, floorY + 2, cz, Material.CHISELED_POLISHED_BLACKSTONE);
         put(world, cx, floorY + 3, cz, Material.SOUL_LANTERN);
-        put(world, cx - 1, floorY, cz, Material.JACK_O_LANTERN);
-        put(world, cx + 1, floorY, cz, Material.CARVED_PUMPKIN);
+        putLitCandle(world, cx - 1, floorY + 1, cz - 1);
+        putLitCandle(world, cx + 1, floorY + 1, cz - 1);
+        putLitCandle(world, cx - 1, floorY + 1, cz + 1);
+        putLitCandle(world, cx + 1, floorY + 1, cz + 1);
+        put(world, cx - 2, floorY, cz, Material.MOSSY_COBBLESTONE);
+        put(world, cx + 2, floorY, cz, Material.MOSSY_COBBLESTONE);
+        put(world, cx, floorY, cz - 2, Material.MOSSY_COBBLESTONE);
+        put(world, cx, floorY, cz + 2, Material.MOSSY_COBBLESTONE);
 
-        // Two crooked soul-lantern posts illuminate the entrance path.
-        for (int side : new int[]{-1, 1}) {
-            int x = cx + side * 4;
-            put(world, x, floorY, cz, Material.SPRUCE_FENCE);
-            put(world, x, floorY + 1, cz, Material.SOUL_LANTERN);
+        // A broken spruce-fence perimeter has four wide entrances aligned to the roads.
+        for (int offset = -7; offset <= 7; offset++) {
+            if (Math.abs(offset) > 1) {
+                put(world, cx + offset, floorY, cz - 7, Material.SPRUCE_FENCE);
+                put(world, cx + offset, floorY, cz + 7, Material.SPRUCE_FENCE);
+                put(world, cx - 7, floorY, cz + offset, Material.SPRUCE_FENCE);
+                put(world, cx + 7, floorY, cz + offset, Material.SPRUCE_FENCE);
+            }
         }
-        put(world, cx + 5, floorY, cz + 2, Material.SPRUCE_FENCE);
-        put(world, cx + 5, floorY + 1, cz + 2, Material.COBWEB);
-        put(world, cx - 5, floorY, cz - 1, Material.SPRUCE_FENCE);
-        put(world, cx - 5, floorY + 1, cz - 1, Material.COBWEB);
-        put(world, cx - 4, floorY, cz + 2, Material.WITHER_ROSE);
-        put(world, cx + 4, floorY, cz - 2, Material.BROWN_MUSHROOM);
+        for (int[] gate : new int[][]{{-2,-7},{2,-7},{-2,7},{2,7},{-7,-2},{-7,2},{7,-2},{7,2}}) {
+            int gx = cx + gate[0];
+            int gz = cz + gate[1];
+            put(world, gx, floorY, gz, Material.COBBLED_DEEPSLATE);
+            put(world, gx, floorY + 1, gz, Material.POLISHED_BLACKSTONE_BRICKS);
+            put(world, gx, floorY + 2, gz, Material.POLISHED_BLACKSTONE_BRICKS);
+            put(world, gx, floorY + 3, gz, Material.SOUL_LANTERN);
+        }
+
+        // Optional accents are confined to the open plaza, never to house walls or roofs.
+        for (int side : new int[]{-1, 1}) {
+            if (random.nextBoolean()) put(world, cx + side, floorY + 4, cz, Material.COBWEB);
+            if (random.nextBoolean()) put(world, cx, floorY + 4, cz + side, Material.COBWEB);
+            if (random.nextInt(3) == 0) {
+                put(world, cx + side, floorY, cz + side * 2,
+                        random.nextBoolean() ? Material.BROWN_MUSHROOM : Material.RED_MUSHROOM);
+            }
+        }
     }
 
     private void house(World world, int cx, int floorY, int cz, boolean eastDoor, Random random) {
-        // A 5x5 ruined timber cottage: raised floor, exposed corner logs, dark walls and stair roof.
+        // Each cottage uses a different timber/roof palette and a chance of a broken roof edge.
+        Material wallMaterial = switch (random.nextInt(3)) {
+            case 0 -> Material.SPRUCE_PLANKS;
+            case 1 -> Material.DARK_OAK_PLANKS;
+            default -> Material.MUD_BRICKS;
+        };
+        Material roofStairs = random.nextBoolean() ? Material.DARK_OAK_STAIRS : Material.SPRUCE_STAIRS;
+        Material roofPlanks = random.nextBoolean() ? Material.DARK_OAK_PLANKS : Material.SPRUCE_PLANKS;
+        Material windowMaterial = random.nextBoolean() ? Material.BLACK_STAINED_GLASS_PANE : Material.RED_STAINED_GLASS_PANE;
+        Material cornerLog = wallMaterial == Material.SPRUCE_PLANKS ? Material.SPRUCE_LOG : Material.DARK_OAK_LOG;
+
+        // 5x5 cottage: stone footing, exposed log frame, stained-glass windows and raised floor.
         for (int dx = -2; dx <= 2; dx++) {
             for (int dz = -2; dz <= 2; dz++) {
                 boolean edge = Math.abs(dx) == 2 || Math.abs(dz) == 2;
-                put(world, cx + dx, floorY, cz + dz, edge ? Material.COBBLED_DEEPSLATE : Material.SPRUCE_PLANKS);
+                put(world, cx + dx, floorY, cz + dz,
+                        edge ? Material.COBBLED_DEEPSLATE : wallMaterial);
                 for (int dy = 1; dy <= 3; dy++) {
                     if (edge) {
                         boolean corner = Math.abs(dx) == 2 && Math.abs(dz) == 2;
-                        boolean doorway = eastDoor ? dx == 2 && dz == 0 && dy <= 2 : dz == 2 && dx == 0 && dy <= 2;
-                        boolean window = !corner && dy == 2 && ((dx == -2 && dz == 0) || (dx == 2 && dz == 0));
+                        boolean doorway = eastDoor ? dx == 2 && dz == 0 && dy <= 2
+                                : dz == 2 && dx == 0 && dy <= 2;
+                        boolean window = !corner && dy == 2
+                                && ((dx == -2 && dz == 0) || (dx == 2 && dz == 0));
                         if (doorway) continue;
                         put(world, cx + dx, floorY + dy, cz + dz,
-                                corner ? Material.SPRUCE_LOG : window ? Material.BLACK_STAINED_GLASS_PANE : Material.DARK_OAK_PLANKS);
+                                corner ? cornerLog : window ? windowMaterial : wallMaterial);
                     } else {
                         put(world, cx + dx, floorY + dy, cz + dz, Material.AIR);
                     }
                 }
             }
         }
+
+        // The stair roof gets a clear ridge; a few roofs deliberately look damaged.
         int roofY = floorY + 4;
         for (int dx = -2; dx <= 2; dx++) {
             for (int dz = -2; dz <= 2; dz++) {
@@ -360,64 +408,221 @@ public final class HalloweenStructureGenerator implements Listener {
                 if (edgeX || edgeZ) {
                     BlockFace face = edgeZ ? (dz < 0 ? BlockFace.NORTH : BlockFace.SOUTH)
                             : (dx < 0 ? BlockFace.WEST : BlockFace.EAST);
-                    BlockData data = Material.DARK_OAK_STAIRS.createBlockData();
+                    BlockData data = roofStairs.createBlockData();
                     if (data instanceof Stairs stairs) stairs.setFacing(face);
                     world.getBlockAt(cx + dx, roofY, cz + dz).setBlockData(data, false);
                 } else {
-                    put(world, cx + dx, roofY, cz + dz, Material.DARK_OAK_PLANKS);
+                    put(world, cx + dx, roofY, cz + dz, roofPlanks);
                 }
             }
         }
-        // Small props differ by cottage, so each house feels abandoned rather than stamped.
+        if (random.nextInt(4) == 0) {
+            put(world, cx + (random.nextBoolean() ? -1 : 1), roofY, cz + 2, Material.AIR);
+        }
+
+        // Interior props, chimney and one or two hanging webs make the houses less repetitive.
         put(world, cx, floorY + 1, cz, Material.SOUL_TORCH);
         if (random.nextBoolean()) put(world, cx + 1, floorY + 1, cz + 1, Material.CAULDRON);
         if (random.nextBoolean()) put(world, cx - 1, floorY + 3, cz + 1, Material.COBWEB);
-        // A broken chimney and an occasional roof web add skyline detail.
         put(world, cx + 1, roofY + 1, cz + 1, Material.COBBLED_DEEPSLATE_WALL);
         put(world, cx + 1, roofY + 2, cz + 1, Material.SOUL_LANTERN);
         if (random.nextBoolean()) put(world, cx - 2, roofY + 1, cz + 2, Material.COBWEB);
+
+        // A single exterior step and lantern posts make each entrance readable at night.
+        if (eastDoor) {
+            placeStairs(world, cx + 3, floorY, cz, Material.COBBLED_DEEPSLATE_STAIRS, BlockFace.EAST);
+            for (int side : new int[]{-1, 1}) {
+                put(world, cx + 3, floorY + 1, cz + side, Material.SPRUCE_FENCE);
+                put(world, cx + 3, floorY + 2, cz + side, Material.SOUL_LANTERN);
+            }
+        } else {
+            placeStairs(world, cx, floorY, cz + 3, Material.COBBLED_DEEPSLATE_STAIRS, BlockFace.SOUTH);
+            for (int side : new int[]{-1, 1}) {
+                put(world, cx + side, floorY + 1, cz + 3, Material.SPRUCE_FENCE);
+                put(world, cx + side, floorY + 2, cz + 3, Material.SOUL_LANTERN);
+            }
+        }
+    }
+
+    private void buildRitualChapel(World world, int cx, int floorY, int cz, Random random) {
+        // Compact gothic chapel: west-facing entrance, crimson windows, gabled roof and spire.
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                boolean edge = Math.abs(dx) == 2 || Math.abs(dz) == 2;
+                put(world, cx + dx, floorY, cz + dz,
+                        edge ? Material.POLISHED_BLACKSTONE_BRICKS : Material.DARK_OAK_PLANKS);
+                for (int dy = 1; dy <= 3; dy++) {
+                    if (dx == -2 && dz == 0 && dy <= 2) continue;
+                    if (!edge) {
+                        put(world, cx + dx, floorY + dy, cz + dz, Material.AIR);
+                        continue;
+                    }
+                    boolean corner = Math.abs(dx) == 2 && Math.abs(dz) == 2;
+                    boolean window = dy == 2 && ((Math.abs(dx) == 2 && dz == 0)
+                            || (Math.abs(dz) == 2 && dx == 0));
+                    Material wall = corner ? Material.POLISHED_BLACKSTONE_BRICKS
+                            : window ? Material.RED_STAINED_GLASS_PANE : Material.DARK_OAK_PLANKS;
+                    put(world, cx + dx, floorY + dy, cz + dz, wall);
+                }
+            }
+        }
+
+        // Four steep roof lines meet at a raised dark ridge.
+        for (int z = -2; z <= 2; z++) {
+            placeStairs(world, cx - 2, floorY + 4, cz + z, Material.DARK_OAK_STAIRS, BlockFace.WEST);
+            placeStairs(world, cx - 1, floorY + 5, cz + z, Material.DARK_OAK_STAIRS, BlockFace.WEST);
+            put(world, cx, floorY + 6, cz + z, Material.DARK_OAK_PLANKS);
+            placeStairs(world, cx + 1, floorY + 5, cz + z, Material.DARK_OAK_STAIRS, BlockFace.EAST);
+            placeStairs(world, cx + 2, floorY + 4, cz + z, Material.DARK_OAK_STAIRS, BlockFace.EAST);
+        }
+        for (int z : new int[]{-2, 2}) {
+            put(world, cx - 1, floorY + 4, cz + z, Material.DARK_OAK_PLANKS);
+            put(world, cx + 1, floorY + 4, cz + z, Material.DARK_OAK_PLANKS);
+            put(world, cx, floorY + 4, cz + z, Material.RED_STAINED_GLASS_PANE);
+            put(world, cx, floorY + 5, cz + z, Material.POLISHED_BLACKSTONE_BRICKS);
+        }
+
+        // External buttresses, candlelit altar and a bell under the ridge.
+        for (int side : new int[]{-1, 1}) {
+            put(world, cx - 3, floorY + 1, cz + side, Material.COBBLED_DEEPSLATE_WALL);
+            put(world, cx - 3, floorY + 2, cz + side, Material.SOUL_LANTERN);
+        }
+        put(world, cx, floorY + 3, cz, Material.BELL);
+        put(world, cx, floorY + 1, cz - 1, Material.CRYING_OBSIDIAN);
+        put(world, cx, floorY + 2, cz - 1, Material.CHISELED_POLISHED_BLACKSTONE);
+        putLitCandle(world, cx - 1, floorY + 1, cz - 1);
+        putLitCandle(world, cx + 1, floorY + 1, cz - 1);
+        put(world, cx, floorY + 7, cz - 1, Material.POLISHED_BLACKSTONE_BRICKS);
+        put(world, cx, floorY + 8, cz - 1, Material.CHAIN);
+        put(world, cx, floorY + 9, cz - 1, Material.SOUL_LANTERN);
+        if (random.nextBoolean()) put(world, cx + 1, floorY + 1, cz + 1, Material.CAULDRON);
     }
 
     private void buildGraveyard(World world, int cx, int baseY, int cz, Random random) {
         int floorY = baseY + 1;
-        // Low stone boundary with an open gate; no digging, cave or hole is generated.
-        for (int offset = -5; offset <= 5; offset++) {
-            if (offset != 0) {
-                put(world, cx + offset, floorY, cz - 5, Material.MOSSY_COBBLESTONE_WALL);
-                put(world, cx + offset, floorY, cz + 5, Material.MOSSY_COBBLESTONE_WALL);
-                put(world, cx - 5, floorY, cz + offset, Material.MOSSY_COBBLESTONE_WALL);
-                put(world, cx + 5, floorY, cz + offset, Material.MOSSY_COBBLESTONE_WALL);
-            }
+
+        // Heavy, uneven cemetery wall with one clear three-block entrance in the south.
+        for (int offset = -6; offset <= 6; offset++) {
+            put(world, cx + offset, floorY, cz - 6, Material.MOSSY_COBBLESTONE_WALL);
+            if (Math.abs(offset) > 1) put(world, cx + offset, floorY, cz + 6, Material.MOSSY_COBBLESTONE_WALL);
+            put(world, cx - 6, floorY, cz + offset, Material.MOSSY_COBBLESTONE_WALL);
+            put(world, cx + 6, floorY, cz + offset, Material.MOSSY_COBBLESTONE_WALL);
         }
-        for (int[] corner : new int[][]{{-5,-5},{5,-5},{-5,5},{5,5}}) {
-            for (int dy = 0; dy <= 2; dy++) put(world, cx + corner[0], floorY + dy, cz + corner[1], Material.POLISHED_BLACKSTONE_BRICKS);
+        for (int[] corner : new int[][]{{-6,-6},{6,-6},{-6,6},{6,6}}) {
+            for (int dy = 0; dy <= 2; dy++) {
+                put(world, cx + corner[0], floorY + dy, cz + corner[1], Material.POLISHED_BLACKSTONE_BRICKS);
+            }
             put(world, cx + corner[0], floorY + 3, cz + corner[1], Material.SOUL_LANTERN);
         }
-        for (int[] grave : new int[][]{{-2,-2},{2,-2},{-2,2},{2,2}}) {
+
+        // Entrance arch with two stone pillars and a lintel above the walking gap.
+        for (int side : new int[]{-1, 1}) {
+            put(world, cx + side * 2, floorY, cz + 6, Material.COBBLED_DEEPSLATE);
+            put(world, cx + side * 2, floorY + 1, cz + 6, Material.POLISHED_BLACKSTONE_BRICKS);
+            put(world, cx + side * 2, floorY + 2, cz + 6, Material.POLISHED_BLACKSTONE_BRICKS);
+            put(world, cx + side * 2, floorY + 3, cz + 6, Material.CHISELED_POLISHED_BLACKSTONE);
+        }
+        for (int x = -1; x <= 1; x++) {
+            put(world, cx + x, floorY + 3, cz + 6, Material.POLISHED_BLACKSTONE_BRICKS);
+        }
+
+        // Walk-in above-ground mausoleum with a dark gabled roof at the back of the plot.
+        buildMausoleum(world, cx, floorY, cz - 3);
+
+        // Five raised grave markers are arranged around the altar and curved path.
+        for (int[] grave : new int[][]{{-3,0},{3,0},{-3,3},{0,3},{3,3}}) {
             graveMarker(world, cx + grave[0], floorY, cz + grave[1], random.nextBoolean());
         }
-        // A worn plus-shaped path guides visitors to the altar and separates grave plots.
-        for (int offset = -4; offset <= 4; offset++) {
-            if (offset == 0) continue;
-            put(world, cx, floorY, cz + offset, (Math.abs(offset) % 2 == 0) ? Material.GRAVEL : Material.COARSE_DIRT);
-            put(world, cx + offset, floorY, cz, (Math.abs(offset) % 2 == 0) ? Material.COARSE_DIRT : Material.GRAVEL);
+
+        // The entrance path bends around the centre grave instead of cutting through it.
+        for (int z = 5; z >= 4; z--) {
+            put(world, cx, floorY, cz + z, z % 2 == 0 ? Material.GRAVEL : Material.COARSE_DIRT);
         }
-        put(world, cx, floorY, cz, Material.COARSE_DIRT);
+        for (int z = 4; z >= 1; z--) {
+            put(world, cx + 1, floorY, cz + z, z % 2 == 0 ? Material.COARSE_DIRT : Material.GRAVEL);
+        }
+        put(world, cx, floorY, cz + 1, Material.GRAVEL);
+        for (int offset = -2; offset <= 2; offset++) {
+            put(world, cx + offset, floorY, cz, Math.abs(offset) % 2 == 0
+                    ? Material.COARSE_DIRT : Material.GRAVEL);
+        }
+        put(world, cx, floorY, cz, Material.COBBLED_DEEPSLATE);
         put(world, cx, floorY + 1, cz, Material.CRYING_OBSIDIAN);
         put(world, cx, floorY + 2, cz, Material.CHISELED_POLISHED_BLACKSTONE);
         put(world, cx, floorY + 3, cz, Material.SOUL_LANTERN);
-        // Four ritual candles, cobwebs and dead vegetation enrich the otherwise bare plots.
-        put(world, cx - 1, floorY + 1, cz, Material.RED_CANDLE);
-        put(world, cx + 1, floorY + 1, cz, Material.RED_CANDLE);
-        put(world, cx, floorY + 1, cz - 1, Material.RED_CANDLE);
-        put(world, cx, floorY + 1, cz + 1, Material.RED_CANDLE);
-        put(world, cx - 4, floorY + 2, cz - 4, Material.COBWEB);
-        put(world, cx + 4, floorY + 2, cz + 4, Material.COBWEB);
+
+        // Crimson candles and wither roses border the path without filling the walking lane.
+        for (int x : new int[]{-2, 2}) {
+            putLitCandle(world, cx + x, floorY + 1, cz + 1);
+            putLitCandle(world, cx + x, floorY + 1, cz + 2);
+        }
+        buildDeadTree(world, cx - 5, floorY, cz - 2, true);
+        buildDeadTree(world, cx + 5, floorY, cz - 2, false);
         put(world, cx - 4, floorY, cz + 2, Material.WITHER_ROSE);
-        put(world, cx + 4, floorY, cz - 2, Material.WITHER_ROSE);
-        // Distinct wither roses identify the place as a graveyard; no hole is dug.
-        put(world, cx - 3, floorY, cz + 3, Material.WITHER_ROSE);
-        put(world, cx + 3, floorY, cz + 3, Material.WITHER_ROSE);
+        put(world, cx + 4, floorY, cz + 2, Material.WITHER_ROSE);
+        put(world, cx - 4, floorY + 2, cz - 5, Material.COBWEB);
+        put(world, cx + 4, floorY + 2, cz - 5, Material.COBWEB);
+        if (random.nextBoolean()) put(world, cx - 4, floorY + 1, cz + 4, Material.BROWN_MUSHROOM);
+        if (random.nextBoolean()) put(world, cx + 4, floorY + 1, cz + 4, Material.RED_MUSHROOM);
+    }
+
+    private void buildMausoleum(World world, int cx, int floorY, int cz) {
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                boolean edge = Math.abs(dx) == 2 || Math.abs(dz) == 2;
+                put(world, cx + dx, floorY, cz + dz,
+                        edge ? Material.POLISHED_BLACKSTONE_BRICKS : Material.DEEPSLATE_TILES);
+                for (int dy = 1; dy <= 3; dy++) {
+                    if (dz == 2 && dx == 0 && dy <= 2) continue;
+                    if (!edge) {
+                        put(world, cx + dx, floorY + dy, cz + dz, Material.AIR);
+                        continue;
+                    }
+                    boolean corner = Math.abs(dx) == 2 && Math.abs(dz) == 2;
+                    boolean window = dy == 2 && dx == 0 && dz == -2;
+                    Material wall = corner ? Material.POLISHED_BLACKSTONE_BRICKS
+                            : window ? Material.RED_STAINED_GLASS_PANE : Material.DEEPSLATE_BRICKS;
+                    put(world, cx + dx, floorY + dy, cz + dz, wall);
+                }
+            }
+        }
+
+        // Massive stone roof with a raised ridge and a clear entrance lintel.
+        for (int z = -2; z <= 2; z++) {
+            placeStairs(world, cx - 2, floorY + 4, cz + z, Material.POLISHED_BLACKSTONE_BRICK_STAIRS, BlockFace.WEST);
+            placeStairs(world, cx - 1, floorY + 5, cz + z, Material.POLISHED_BLACKSTONE_BRICK_STAIRS, BlockFace.WEST);
+            put(world, cx, floorY + 6, cz + z, Material.POLISHED_BLACKSTONE_BRICKS);
+            placeStairs(world, cx + 1, floorY + 5, cz + z, Material.POLISHED_BLACKSTONE_BRICK_STAIRS, BlockFace.EAST);
+            placeStairs(world, cx + 2, floorY + 4, cz + z, Material.POLISHED_BLACKSTONE_BRICK_STAIRS, BlockFace.EAST);
+        }
+        for (int side : new int[]{-1, 1}) {
+            put(world, cx + side, floorY + 3, cz + 2, Material.CHISELED_POLISHED_BLACKSTONE);
+            put(world, cx + side, floorY + 1, cz + 2, Material.POLISHED_BLACKSTONE_BRICKS);
+        }
+        put(world, cx, floorY + 3, cz + 2, Material.CHISELED_POLISHED_BLACKSTONE);
+        put(world, cx, floorY + 1, cz - 1, Material.CRYING_OBSIDIAN);
+        put(world, cx, floorY + 2, cz - 1, Material.SOUL_LANTERN);
+        putLitCandle(world, cx - 1, floorY + 1, cz - 1);
+        putLitCandle(world, cx + 1, floorY + 1, cz - 1);
+    }
+
+    private void buildDeadTree(World world, int x, int floorY, int z, boolean leanWest) {
+        Material log = Material.STRIPPED_DARK_OAK_LOG;
+        for (int dy = 0; dy <= 3; dy++) put(world, x, floorY + dy, z, log);
+        int side = leanWest ? -1 : 1;
+        put(world, x + side, floorY + 2, z, log);
+        put(world, x + side * 2, floorY + 3, z, log);
+        put(world, x - side, floorY + 3, z - 1, log);
+        put(world, x + side, floorY + 4, z - 1, Material.COBWEB);
+        put(world, x - side, floorY + 2, z - 2, Material.COBWEB);
+        put(world, x + side * 2, floorY + 3, z + 1, Material.COBWEB);
+        put(world, x, floorY + 4, z, Material.SOUL_LANTERN);
+    }
+
+    private void placeStairs(World world, int x, int y, int z, Material material, BlockFace facing) {
+        BlockData data = material.createBlockData();
+        if (data instanceof Stairs stairs) stairs.setFacing(facing);
+        world.getBlockAt(x, y, z).setBlockData(data, false);
     }
 
     private void graveMarker(World world, int x, int floorY, int z, boolean cracked) {
@@ -449,6 +654,12 @@ public final class HalloweenStructureGenerator implements Listener {
 
     private void put(World world, int x, int y, int z, Material material) {
         world.getBlockAt(x, y, z).setType(material, false);
+    }
+
+    private void putLitCandle(World world, int x, int y, int z) {
+        BlockData data = Material.RED_CANDLE.createBlockData();
+        if (data instanceof Candle candle) candle.setLit(true);
+        world.getBlockAt(x, y, z).setBlockData(data, false);
     }
 
     public boolean isGeneratedVillageNear(Location location, double radius) {
