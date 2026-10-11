@@ -258,9 +258,10 @@ public final class VampireArenaBuilder {
             }
         }
 
-        // Eight inner rune obelisks make the center feel like a summoning ritual.
+        // Seven rune obelisks frame the ritual circle; the eighth northern point is the royal sanctum.
+        // The north-south centre lane remains open so the boss approach is deliberately symmetrical.
         Point[] obelisks = {
-                new Point(8, -24), new Point(18, -18), new Point(26, 0), new Point(18, 18),
+                new Point(18, -18), new Point(26, 0), new Point(18, 18),
                 new Point(0, 26), new Point(-18, 18), new Point(-26, 0), new Point(-18, -18)
         };
         for (Point point : obelisks) {
@@ -313,7 +314,7 @@ public final class VampireArenaBuilder {
         int portalZ = cz - 31;
         int changed = 0;
 
-        // Raised 17x9 platform with bloodstone inlays and dark obsidian edge blocks.
+        // 17x9 sanctuary forecourt with bloodstone inlays and dark obsidian edge blocks.
         for (int dx = -8; dx <= 8; dx++) {
             for (int dz = -4; dz <= 4; dz++) {
                 Material base = (Math.abs(dx) == 8 || Math.abs(dz) == 4)
@@ -386,6 +387,12 @@ public final class VampireArenaBuilder {
         changed += set(world.getBlockAt(cx, floorY + 3, cz - 25), Material.CRYING_OBSIDIAN);
         changed += set(world.getBlockAt(cx - 1, floorY + 2, cz - 25), Material.POLISHED_BLACKSTONE_BRICKS);
         changed += set(world.getBlockAt(cx + 1, floorY + 2, cz - 25), Material.POLISHED_BLACKSTONE_BRICKS);
+
+        // Five broad blackstone steps lead up from the open central floor to the king's dais.
+        for (int dx = -2; dx <= 2; dx++) {
+            changed += placeStairs(world, cx + dx, centerY, cz - 23,
+                    Material.POLISHED_BLACKSTONE_BRICK_STAIRS, BlockFace.NORTH);
+        }
 
         // Hanging iron tracery and lanterns deepen the portal recess.
         for (int side : new int[]{-1, 1}) {
