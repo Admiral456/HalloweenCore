@@ -585,6 +585,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 + "² &7chunků, hřbitovy &e1/"
                 + Math.max(3, plugin.getConfig().getInt("world-structures.graveyard-region-chunks", 6))
                 + "² &7chunků (před kontrolou terénu)."));
+        sender.sendMessage(plugin.color("&7Ochrana spawnu: &e"
+                + Math.max(0, Math.min(1024, plugin.getConfig().getInt("world-structures.spawn-exclusion-radius", 64)))
+                + " bloků od světového spawnu."));
         sender.sendMessage(plugin.color("&7Příkaz scan znovu zkontroluje pouze právě načtené chunky."));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
         return true;
