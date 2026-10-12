@@ -241,16 +241,17 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
-        sender.sendMessage(plugin.color("&6/halloween event [start|stop] &7- stav a testovací spuštění eventu (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween event [list|status [id]|start [id]|stop] &7- event diagnostika (admin)"));
         sender.sendMessage(plugin.color("&6/halloween rewards &7- limitované odměny 2026"));
         sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní Halloween lov"));
         sender.sendMessage(plugin.color("&6/halloween quests &7- příběhová řada Halloween questů"));
-        sender.sendMessage(plugin.color("&6/halloween quests reset <hráč> &7- restart příběhu hráče (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween quests status|debug <hráč> &7- diagnostika příběhu (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween quests reset <hráč> confirm &7- potvrzený reset příběhu (admin)"));
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
+        sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- nápověda ke klientskému Iris shaderu"));
         sender.sendMessage(plugin.color("&6/halloween structures <status|scan|spawn> &7- diagnostika a bezpečný ruční spawn struktur (admin)"));
         sender.sendMessage(plugin.color("&7Ruční spawn: &e/halloween structures spawn <haunted-village|cursed-graveyard> [hráč]"));
         sender.sendMessage(plugin.color("&6/halloween goblin <status|arena|dry-run|confirm|cancel|start|spawn|stop> &7- samostatný Král skřítků (admin)"));
@@ -461,32 +462,46 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
     private boolean quests(CommandSender sender, String[] args) {
         if (args.length >= 2) {
-            if (!args[1].equalsIgnoreCase("reset")) {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween quests [reset <online hráč>]"));
+            String action = args[1].toLowerCase(java.util.Locale.ROOT);
+            if (action.equals("reset")) {
+                if (!checkAdmin(sender)) return true;
+                if (args.length != 4 || !args[3].equalsIgnoreCase("confirm")) {
+                    sender.sendMessage(plugin.color("&ePozor: reset smaže aktivní i dokončené kapitoly tohoto hráče."));
+                    sender.sendMessage(plugin.color("&7Fragmenty a ostatní statistiky zůstanou zachované."));
+                    sender.sendMessage(plugin.color("&cPotvrď příkazem: &f/halloween quests reset <online hráč> confirm"));
+                    return true;
+                }
+                Player target = Bukkit.getPlayerExact(args[2]);
+                if (target == null) {
+                    sender.sendMessage(plugin.color("&cHráč není online. Vyber online hráče."));
+                    return true;
+                }
+                plugin.getDataManager().resetStoryQuests(target.getUniqueId());
+                plugin.getQuestManager().show(target);
+                plugin.getDataManager().save();
+                sender.sendMessage(plugin.color("&aPříběhové questy hráče &f" + target.getName()
+                        + " &abyly resetovány na první kapitolu."));
+                if (sender != target) {
+                    target.sendMessage(plugin.color("&6HALLOWEEN &8» &eTvůj příběhový postup byl restartován správcem. Začínáš znovu od první kapitoly."));
+                }
                 return true;
             }
-            if (!checkAdmin(sender)) return true;
-            if (args.length != 3) {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween quests reset <online hráč>"));
+            if (action.equals("status") || action.equals("debug")) {
+                if (!checkAdmin(sender)) return true;
+                if (args.length != 3) {
+                    sender.sendMessage(plugin.color("&cPoužití: /halloween quests " + action + " <online hráč>"));
+                    return true;
+                }
+                Player target = Bukkit.getPlayerExact(args[2]);
+                if (target == null) {
+                    sender.sendMessage(plugin.color("&cHráč není online. Vyber online hráče."));
+                    return true;
+                }
+                sender.sendMessage(plugin.color("&6&lHALLOWEEN QUEST DEBUG"));
+                sender.sendMessage(plugin.color("&7" + plugin.getQuestManager().getDebugSummary(target)));
                 return true;
             }
-
-            Player target = Bukkit.getPlayerExact(args[2]);
-            if (target == null) {
-                sender.sendMessage(plugin.color("&cHráč není online. Vyber online hráče."));
-                return true;
-            }
-
-            plugin.getDataManager().resetStoryQuests(target.getUniqueId());
-            plugin.getQuestManager().show(target);
-            plugin.getDataManager().save();
-
-            sender.sendMessage(plugin.color("&aPříběhové questy hráče &f" + target.getName()
-                    + " &abyly resetovány na první kapitolu."));
-            sender.sendMessage(plugin.color("&7Resetuje se jen postup questů. Získané fragmenty a ostatní statistiky zůstávají."));
-            if (sender != target) {
-                target.sendMessage(plugin.color("&6HALLOWEEN &8» &eTvůj příběhový postup byl restartován správcem. Začínáš znovu od první kapitoly."));
-            }
+            sender.sendMessage(plugin.color("&cPoužití: /halloween quests [status|debug <online hráč>|reset <online hráč> confirm]"));
             return true;
         }
 

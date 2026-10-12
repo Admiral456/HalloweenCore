@@ -1054,6 +1054,9 @@ public final class HalloweenVampireEncounterManager implements Listener {
 
             qualifiedParticipants.add(uuid);
             Player player = Bukkit.getPlayer(uuid);
+            if (player != null && plugin.getQuestManager() != null) {
+                plugin.getQuestManager().recordAction(player, "boss:vampire-king");
+            }
             if (participationReward > 0L) {
                 plugin.getService().addFragments(uuid, participationReward, "boss-participation");
             }
