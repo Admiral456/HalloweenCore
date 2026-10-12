@@ -1,6 +1,6 @@
 # Special Halloween mob — ability and manual test matrix
 
-Status legend: **IMPLEMENTED** means the current feature branch contains the corresponding code/config/model references. **BUILD PENDING** means the current branch revision still needs CI confirmation. **NOT TESTED** means no live Paper/Purpur + MythicMobs/ModelEngine staging server/client was available; it is not a successful in-game test.
+Status legend: **IMPLEMENTED** means the current feature branch contains the corresponding code/config/model references. **BUILD PASS** means the latest CI revision passed automated validation. **NOT TESTED** means no live Paper/Purpur + MythicMobs/ModelEngine staging server/client was available; it is not a successful in-game test.
 
 ## Shared behavior
 
@@ -28,8 +28,8 @@ Status legend: **IMPLEMENTED** means the current feature branch contains the cor
 
 | Check | Expected result | Status |
 |---|---|---|
-| Compile plugin against declared Paper 1.21.10 API | No compile errors | BUILD PENDING after latest code changes |
-| Asset validator for all eight model IDs, embedded textures and animations | All model references resolve structurally | Previous baseline PASS; rerun required after latest branch changes |
+| Compile plugin against declared Paper 1.21.10 API | No compile errors | PASS — GitHub Actions run #1140 (run ID 38220557974) |
+| Asset validator for all eight model IDs, embedded textures and animations | All model references resolve structurally | PASS — GitHub Actions run #1140 validates the eight generated model definitions |
 | Spawn each ID with `/halloween mob spawn <id> [player]` | Correct special type/name, safe nearby spawn, model if integrations are installed | NOT TESTED in a live server |
 | Trigger primary and secondary attack for each mob at least twice | Variants visibly differ; cooldown respected | NOT TESTED in a live server |
 | Escape each marked area before/after impact | No area damage if outside radius; hit if inside | NOT TESTED in a live server |
@@ -40,4 +40,4 @@ Status legend: **IMPLEMENTED** means the current feature branch contains the cor
 
 ## Stage 1 gate
 
-**Status: IN PROGRESS / BLOCKED for release sign-off.** Secondary attack branches, configurable tuning, complete event-pool mapping, no-reward admin test spawns, and a manual test matrix are now represented in code/docs. Do not mark Stage 1 fully complete until CI passes at the new branch head and the runtime checks above are performed on a staging server.
+**Automated build gate: PASS** — [GitHub Actions run #1140](https://github.com/Admiral456/HalloweenCore/actions/runs/38220557974) compiled the plugin, generated/validated model assets, built the client companion, and packaged the artifacts. **Stage 1 release gate: NOT YET PASSED** because real server/client combat tests remain unperformed. The secondary attack branches, configurable tuning, complete event-pool mapping, no-reward admin test spawns, and test matrix are in source. Do not report runtime or visual checks as passing until the test matrix is run on a staging server.
