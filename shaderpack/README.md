@@ -1,6 +1,6 @@
 # HalloweenCore Iris Shader Pack
 
-Standalone OptiFine-style shader pack intended for Minecraft Java 1.21.10 + Iris + Sodium. It does not override Minecraft's assets/minecraft/shaders/core files because Iris documents that resource packs which override core shaders are unsupported.
+Standalone OptiFine-style shader pack intended for Minecraft Java 1.21.10 + Iris + Sodium. Its `shaders/shaders.properties` and program files are placed according to the Iris shader-pack format. It does not override Minecraft's `assets/minecraft/shaders/core` files because Iris does not support resource-pack core-shader overrides.
 
 ## What it changes
 
