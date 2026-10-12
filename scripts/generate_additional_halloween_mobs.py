@@ -218,7 +218,8 @@ def add_animation_clip(model: dict, name: str, length: float,
         "saved": True,
         "animators": {},
     })
-    for bone_name, (channel, frames) in tracks.items():
+    for track_name, (channel, frames) in tracks.items():
+        bone_name = track_name[:-9] if track_name.endswith(("_position", "_rotation")) else track_name
         bone = find_group(model.get("outliner", []), bone_name)
         if bone is None:
             raise RuntimeError(f"{model.get('name')} has no '{bone_name}' bone for {name}")
@@ -232,13 +233,14 @@ def add_animation_clip(model: dict, name: str, length: float,
             keyframe["interpolation"] = "catmullrom"
             keyframe["data_points"] = [{"x": float(vector[0]), "y": float(vector[1]), "z": float(vector[2])}]
             keyframes.append(keyframe)
-        clip["animators"][bone["uuid"]] = {
+        animator = clip["animators"].setdefault(bone["uuid"], {
             "name": bone_name,
             "type": "bone",
             "rotation_global": False,
             "quaternion_interpolation": False,
-            "keyframes": keyframes,
-        }
+            "keyframes": [],
+        })
+        animator["keyframes"].extend(keyframes)
     model.setdefault("animations", []).append(clip)
 
 
@@ -257,7 +259,7 @@ def enrich_animation_set(model: dict) -> None:
     # Use a separate key for the position channel while still targeting the same body bone.
     add_animation_clip(model, "death", 0.82, {
         "body": ("rotation", [(0.0, (0, 0, 0)), (0.3, (28, 0, 0)), (0.82, (72, 0, 0))]),
-        "body_lower": ("position", [(0.0, (0, 0, 0)), (0.3, (0, -2, 0)), (0.82, (0, -7, 0))]),
+        "body_position": ("position", [(0.0, (0, 0, 0)), (0.3, (0, -2, 0)), (0.82, (0, -7, 0))]),
     })
     mob_id = model.get("model_identifier", model.get("name", ""))
     if mob_id == "halloween_goblin_king":
