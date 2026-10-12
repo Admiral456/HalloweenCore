@@ -38,6 +38,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenBossManager bossManager;
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
+    private HalloweenRelicAbilityEngine relicAbilityEngine;
     private HalloweenVillageDiscoveryManager villageDiscoveryManager;
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
@@ -60,6 +61,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAdditionalMobAndQuestDefaults();
         migrateWorldStructuresAndCombatDefaults();
         migrateNewEncounterDefaults();
+        migrateRelicShopDefaults();
+        migrateRelicAbilityDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -75,6 +78,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         bossManager = new HalloweenBossManager(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
+        relicAbilityEngine = new HalloweenRelicAbilityEngine(this);
         villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
@@ -119,6 +123,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         worldDecorator.start();
         worldStructureGenerator.start();
         passiveEffectManager.start();
+        relicAbilityEngine.start();
         headlessNickManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -146,6 +151,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (worldDecorator != null) worldDecorator.stop();
         if (worldStructureGenerator != null) worldStructureGenerator.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
+        if (relicAbilityEngine != null) relicAbilityEngine.stop();
         if (dataManager != null) dataManager.save();
     }
 
@@ -181,6 +187,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
         migrateWorldStructuresAndCombatDefaults();
+        migrateRelicShopDefaults();
+        migrateRelicAbilityDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -568,6 +576,51 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
+    private void migrateRelicShopDefaults() {
+        if (getConfig().getBoolean("migrations.portable-relic-shop-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) return;
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String id : List.of("batwing-elytra", "nocturne-sovereign-cowl")) {
+                ConfigurationSection source = defaults.getConfigurationSection("rewards.shop." + id);
+                if (source == null) continue;
+                for (String key : source.getKeys(true)) {
+                    if (source.isConfigurationSection(key)) continue;
+                    String path = "rewards.shop." + id + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, source.get(key));
+                }
+            }
+            getConfig().set("migrations.portable-relic-shop-v1", true);
+            saveConfig();
+            getLogger().info("Portable relic shop entries added without replacing existing prices or world settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Portable relic shop migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateRelicAbilityDefaults() {
+        if (getConfig().getBoolean("migrations.portable-relic-abilities-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) return;
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection section = defaults.getConfigurationSection("relics");
+            if (section != null) {
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = "relics." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, defaults.get(path));
+                }
+            }
+            getConfig().set("migrations.portable-relic-abilities-v1", true);
+            saveConfig();
+            getLogger().info("Portable relic ability defaults added without overwriting existing configuration.");
+        } catch (IOException ex) {
+            getLogger().warning("Portable relic ability migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
     private void logConfigValidationIssues() {
         var errors = HalloweenConfigValidator.validate(this);
         Set<String> currentErrors = new HashSet<>(errors);
@@ -615,6 +668,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenItemManager getItemManager() {
         return itemManager;
+    }
+
+    public HalloweenRelicAbilityEngine getRelicAbilityEngine() {
+        return relicAbilityEngine;
     }
 
     public HalloweenDataManager getDataManager() {

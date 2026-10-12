@@ -235,6 +235,12 @@ public final class HalloweenMobManager implements Listener {
      * A readable ground warning followed by a bounded strike. The player can escape;
      * the task never loads a chunk or damages a target who moved to another world.
      */
+    private void applyCurseEffect(Player target, PotionEffect effect) {
+        HalloweenRelicAbilityEngine engine = plugin.getRelicAbilityEngine();
+        if (engine != null) engine.applyCurseEffect(target, effect);
+        else target.addPotionEffect(effect);
+    }
+
     private void telegraphedGroundStrike(LivingEntity attacker, Player target, String label, String message,
                                          Particle warningParticle, long delayTicks, double radius,
                                          double damage, int slownessTicks, int slownessAmplifier) {
@@ -266,7 +272,7 @@ public final class HalloweenMobManager implements Listener {
 
             if (strikeDamage > 0.0D) target.damage(strikeDamage, attacker);
             if (slownessTicks > 0) {
-                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
+                applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS,
                         Math.min(100, slownessTicks), Math.max(0, Math.min(1, slownessAmplifier)),
                         true, true, false));
             }
@@ -297,7 +303,7 @@ public final class HalloweenMobManager implements Listener {
         int poisonTicks = Math.max(20, Math.min(80,
                 section == null ? 40 : section.getInt("blood-drain-poison-ticks", 40)));
         attacker.setHealth(Math.min(attacker.getMaxHealth(), attacker.getHealth() + heal));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, poisonTicks, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.POISON, poisonTicks, 0, true, true, false));
         Location impact = target.getLocation().clone().add(0.0D, 1.0D, 0.0D);
         target.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, impact, 14, 0.35D, 0.45D, 0.35D, 0.08D);
         target.getWorld().spawnParticle(Particle.CRIMSON_SPORE, attacker.getLocation().clone().add(0, 0.7D, 0),
@@ -316,7 +322,7 @@ public final class HalloweenMobManager implements Listener {
         push.setY(0.0D);
         if (push.lengthSquared() < 0.001D) push = attacker.getLocation().getDirection().multiply(-1.0D).setY(0.0D);
         if (push.lengthSquared() > 0.001D) target.setVelocity(push.normalize().multiply(strength).setY(0.28D));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, weaknessTicks, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, weaknessTicks, 0, true, true, false));
         Location impact = target.getLocation().clone().add(0.0D, 0.9D, 0.0D);
         target.getWorld().spawnParticle(Particle.ASH, impact, 34, 0.5D, 0.6D, 0.5D, 0.035D);
         target.getWorld().playSound(impact, "minecraft:entity.phantom.flap", 0.9f, 0.55f);
@@ -327,8 +333,8 @@ public final class HalloweenMobManager implements Listener {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.cursed-zombie");
         int blindnessTicks = Math.max(10, section == null ? 35 : section.getInt("soul-siphon-blindness-ticks", 35));
         int weaknessTicks = Math.max(20, section == null ? 80 : section.getInt("soul-siphon-weakness-ticks", 80));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, blindnessTicks, 0, true, false, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, weaknessTicks, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.DARKNESS, blindnessTicks, 0, true, false, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, weaknessTicks, 0, true, true, false));
         Location impact = target.getLocation().clone().add(0, 1, 0);
         target.getWorld().spawnParticle(Particle.SOUL, impact, 22, 0.45D, 0.6D, 0.45D, 0.04D);
         target.playSound(target.getLocation(), "minecraft:entity.zombie.ambient", 0.7f, 0.45f);
@@ -344,7 +350,7 @@ public final class HalloweenMobManager implements Listener {
                 section == null ? 3.0D : section.getDouble("grave-mark-damage", 3.0D));
         Location markedLocation = target.getLocation().clone();
 
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 25, 0, true, false, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, 25, 0, true, false, false));
         target.getWorld().spawnParticle(Particle.SOUL, markedLocation.clone().add(0, 0.1D, 0),
                 16, 0.55D, 0.08D, 0.55D, 0.01D);
         target.getWorld().spawnParticle(Particle.REVERSE_PORTAL, markedLocation.clone().add(0, 0.15D, 0),
@@ -361,7 +367,7 @@ public final class HalloweenMobManager implements Listener {
             target.getWorld().playSound(markedLocation, "minecraft:block.soul_sand.break", 0.9f, 0.7f);
             if (target.getLocation().distanceSquared(markedLocation) <= markRadius * markRadius) {
                 target.damage(markDamage, attacker);
-                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 55, 1, true, true, false));
+                applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, 55, 1, true, true, false));
             }
         }, delayTicks);
     }
@@ -369,8 +375,8 @@ public final class HalloweenMobManager implements Listener {
     private void reaperGloom(LivingEntity attacker, Player target) {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.void-reaper");
         int duration = Math.max(20, section == null ? 70 : section.getInt("gloom-ticks", 70));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, duration, 0, true, true, false));
         Location impact = target.getLocation().clone().add(0, 1.0D, 0);
         target.getWorld().spawnParticle(Particle.REVERSE_PORTAL, impact, 28, 0.45D, 0.55D, 0.45D, 0.035D);
         target.getWorld().playSound(impact, "minecraft:entity.warden.heartbeat", 0.9f, 0.55f);
@@ -380,8 +386,8 @@ public final class HalloweenMobManager implements Listener {
     private void frostbite(LivingEntity attacker, Player target) {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.frost-stalker");
         int duration = Math.max(20, section == null ? 80 : section.getInt("frostbite-ticks", 80));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Math.max(20, duration / 2), 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, Math.max(20, duration / 2), 0, true, true, false));
         Location impact = target.getLocation().clone().add(0, 1.0D, 0);
         target.getWorld().spawnParticle(Particle.SNOWFLAKE, impact, 28, 0.5D, 0.55D, 0.5D, 0.015D);
         target.getWorld().playSound(impact, "minecraft:block.glass.break", 0.7f, 0.6f);
@@ -391,8 +397,8 @@ public final class HalloweenMobManager implements Listener {
     private void nightmareDread(LivingEntity attacker, Player target) {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.nightmare");
         int duration = Math.max(20, section == null ? 60 : section.getInt("night-terror-ticks", 60));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, duration, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.NAUSEA, duration, 0, true, true, false));
         Location impact = target.getLocation().clone().add(0, 1.0D, 0);
         target.getWorld().spawnParticle(Particle.ASH, impact, 35, 0.6D, 0.7D, 0.6D, 0.025D);
         target.getWorld().spawnParticle(Particle.PORTAL, impact, 20, 0.5D, 0.5D, 0.5D, 0.04D);
@@ -404,8 +410,8 @@ public final class HalloweenMobManager implements Listener {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.blood-spider");
         int poisonTicks = Math.max(20, section == null ? 80 : section.getInt("blood-web-poison-ticks", 80));
         int slownessTicks = Math.max(20, section == null ? 45 : section.getInt("blood-web-slowness-ticks", 45));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, poisonTicks, 0, true, true, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slownessTicks, 0, true, false, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.POISON, poisonTicks, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, slownessTicks, 0, true, false, false));
         Location impact = target.getLocation().clone().add(0, 1, 0);
         target.getWorld().spawnParticle(Particle.CRIT, impact, 18, 0.4D, 0.5D, 0.4D, 0.1D);
         target.playSound(target.getLocation(), "minecraft:entity.spider.hurt", 0.8f, 0.55f);
@@ -452,14 +458,14 @@ public final class HalloweenMobManager implements Listener {
                     target.setVelocity(push.normalize().multiply(emberKnockback).setY(0.22D));
                 }
                 if (emberSlownessTicks > 0) {
-                    target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, emberSlownessTicks, 0, true, true, false));
+                    applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, emberSlownessTicks, 0, true, true, false));
                 }
                 target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().clone().add(0, 0.8D, 0),
                         18, 0.35D, 0.45D, 0.35D, 0.025D);
                 target.sendMessage(plugin.color("&6Dýňový přízrak vypustil žhnoucí kruh — popel ustupuje žáru!"));
             } else {
-                target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, nauseaTicks, 0, true, true, false));
-                target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, true, false, false));
+                applyCurseEffect(target, new PotionEffect(PotionEffectType.NAUSEA, nauseaTicks, 0, true, true, false));
+                applyCurseEffect(target, new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, true, false, false));
                 target.sendMessage(plugin.color("&6Dýňový přízrak vybuchl v závoji popela."));
             }
         }
@@ -499,9 +505,9 @@ public final class HalloweenMobManager implements Listener {
                         18, 0.35D, 0.45D, 0.35D, 0.04D);
             } else {
                 switch (ThreadLocalRandom.current().nextInt(3)) {
-                    case 0 -> target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, false, false));
-                    case 1 -> target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
-                    default -> target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 1, true, true, false));
+                    case 0 -> applyCurseEffect(target, new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, false, false));
+                    case 1 -> applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
+                    default -> applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, duration, 1, true, true, false));
                 }
                 target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().clone().add(0, 1, 0),
                         22, 0.45D, 0.55D, 0.45D, 0.06D);

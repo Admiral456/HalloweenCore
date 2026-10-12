@@ -240,6 +240,29 @@ rewards:
         - "&cBlokování útoku může odrazit útočníka."
         - "&7Výdrž 1 800 • enchantovatelnost 25."
 
+    batwing-elytra:
+      cost: 120000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:batwing_elytra"
+      material: ELYTRA
+      amount: 1
+      name: "&5&lBatwing Elytra &8[Relikvie Halloween]"
+      lore:
+        - "&7Netopýří křídla s vlastním vzhledem."
+        - "&dMidnight Glide • Nightwing Surge • Bat Echo."
+        - "&7Výdrž 768 • běžné ohňostroje a Mending."
+    nocturne-sovereign-cowl:
+      cost: 180000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:nocturne_sovereign_cowl"
+      material: NETHERITE_HELMET
+      amount: 1
+      name: "&5&lNocturne Sovereign Cowl"
+      lore:
+        - "&8Obsidiánová kápě se spektrálníma očima."
+        - "&dNocturnal Perception • Curseguard • Veilstep."
+        - "&7Výdrž 900 • enchantovatelná."
+
 haunted-village:
   enabled: false
   world: ""
@@ -708,6 +731,36 @@ gear-effects:
     heal-health: 2.0
   shield:
     cooldown-ms: 4000
+
+# Shared bounded abilities for Batwing Elytra and Nocturne Sovereign Cowl.
+relics:
+  enabled: true
+  require-survival: true
+  allowed-worlds: []
+  world-mode: BLACKLIST
+  elytra:
+    midnight-glide-speed-multiplier: 1.02
+    max-glide-velocity: 2.2
+    surge-cooldown-seconds: 10
+    surge-velocity: 0.62
+    max-surge-velocity: 2.35
+    echo-cooldown-seconds: 20
+    echo-radius-blocks: 18.0
+    echo-duration-ticks: 50
+    echo-max-targets: 8
+  cowl:
+    nocturnal-perception-enabled: true
+    night-vision-seconds: 6
+    sense-pulse-interval-seconds: 4
+    sense-radius-blocks: 12.0
+    sense-max-targets: 3
+    sense-glow-ticks: 30
+    curseguard-enabled: true
+    curse-duration-multiplier: 0.65
+    reduce-curse-amplifier: true
+    veilstep-cooldown-seconds: 12
+    veilstep-velocity: 0.58
+    veilstep-speed-ticks: 30
 
 atmosphere:
   enabled: true

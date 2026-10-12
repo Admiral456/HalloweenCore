@@ -80,6 +80,14 @@ Jakmile je finále odemčené a vše připravené, HalloweenCore přirozeně spu
 
 Odměny jsou nastavené jako výzva: účast vyžaduje nejméně 120 sekund v dosahu i způsobení alespoň 2,5 % maximálního zdraví bosse. Top bonus získá pouze kvalifikovaný hráč s nejvyšším poškozením, nikoliv hráč, který jen stál v aréně.
 
+## Přenosné relikvie — Batwing Elytra a Nocturne Sovereign Cowl
+
+- Batwing Elytra má vlastní 64×32 texturu nošených křídel, poškozenou ikonu, výdrž 768 a zachované létání/ohňostroje/Mending; během letu F aktivuje Nightwing Surge a Shift+F Bat Echo.
+- Nocturne Sovereign Cowl používá vlastní 3D head-slot model a ikonu, vidění ve tmě, omezené pulzy na označené Halloween moby, Curseguard pro debuffy aplikované přes HalloweenCore a krátký Veilstep přes Shift+F.
+- Přenosný balíček `HalloweenCore-Portable-Relics.zip` používá nezávislý namespace `halloween_relics`; standalone modul `portable-relics/` sdílí stejný engine schopností.
+- Worn custom Elytra vyžaduje Minecraft 1.21.2+ a ItemsAdder 4.0.18+; cílový server projektu je Paper/Purpur 1.21.10 a Java 21. Po změně obsahu spusť `/iazip` a ověř doručení packu klientům.
+- CI může potvrdit sestavení a strukturu assetů, nikoliv skutečné vykreslení modelů nebo let ve hře. Live test je NOT TESTED, dokud neproběhne na testovacím serveru.
+
 ## PlaceholderAPI
 
 Pokud je na serveru nainstalovaný PlaceholderAPI, HalloweenCore registruje vlastní expansion bez dalšího JARu.
