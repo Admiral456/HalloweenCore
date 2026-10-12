@@ -486,16 +486,11 @@ for item_id in EXPECTED_3D_MODELS:
     next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", tail)
     end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
     definition = config[start:end]
-    if item_id == "crimson_warden_shield":
-        for required in ("normal: item/crimson_warden_shield",
-                         "blocking: item/crimson_warden_shield_blocking",
-                         "icon: item/crimson_warden_shield"):
-            if required not in definition:
-                fail(f"Shield graphic configuration is missing {required}")
-    else:
-        for required in (f"model: item/{item_id}", f"icon: item/{item_id}"):
-            if required not in definition:
-                fail(f"{item_id} graphic configuration is missing {required}")
+    for required in (f"model: item/{item_id}", f"icon: item/{item_id}"):
+        if required not in definition:
+            fail(f"{item_id} graphic configuration is missing {required}")
+    if item_id == "crimson_warden_shield" and not (MODELS / "crimson_warden_shield_blocking.json").is_file():
+        fail("Shield's conventional _blocking model suffix is missing")
 
 shop_ids = ("crimson-warden-sword", "crimson-warden-pickaxe", "crimson-warden-axe",
             "crimson-warden-shovel", "crimson-warden-hoe", "crimson-warden-shield")
