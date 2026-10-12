@@ -763,6 +763,7 @@ public final class HalloweenMobManager implements Listener {
             case "nightmare" -> "halloween_nightmare";
             case "goblin-king" -> "halloween_goblin_king";
             case "headless-nick" -> "halloween_headless_nick";
+            case "nick-steed" -> "halloween_nick_steed";
             default -> null;
         };
         if (customId == null) return null;

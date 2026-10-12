@@ -100,7 +100,8 @@ public final class HalloweenHeadlessNickManager implements Listener {
         World world = spawn.getWorld();
         if (world == null || !world.isChunkLoaded(spawn.getBlockX() >> 4, spawn.getBlockZ() >> 4)) return false;
 
-        Entity mountEntity = world.spawnEntity(spawn, EntityType.SKELETON_HORSE);
+        Entity mountEntity = plugin.getMobManager().spawnEncounterEntity(
+                spawn, "nick-steed", EntityType.SKELETON_HORSE);
         if (!(mountEntity instanceof SkeletonHorse horse)) {
             mountEntity.remove();
             return false;
