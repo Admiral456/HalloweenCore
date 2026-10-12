@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate three extra editable Blockbench/ModelEngine mobs from existing Halloween model bases."""
+"""Generate extra editable Blockbench/ModelEngine Halloween mobs from existing model bases."""
 from __future__ import annotations
 
 import base64
@@ -20,6 +20,8 @@ MODELS = (
     ("halloween_void_reaper", "halloween_gravekeeper", 0.72, 1.30, 0.72, 0.78),
     ("halloween_frost_stalker", "halloween_gravekeeper", 0.52, 0.85, 1.18, 0.50),
     ("halloween_nightmare", "halloween_hex_witch", 0.94, 1.40, 0.78, 0.96),
+    ("halloween_goblin_king", "halloween_gravekeeper", 0.27, 1.40, 0.88, 0.13),
+    ("halloween_headless_nick", "halloween_cursed_zombie", 0.94, 0.55, 0.62, 0.02),
 )
 
 
@@ -112,6 +114,32 @@ def add_accessory_cube(model: dict, parent_name: str, name: str,
     parent.setdefault("children", []).append(cube_id)
 
 
+def remove_head_geometry(model: dict) -> None:
+    """Remove all cube references under the head bone while retaining animation bones."""
+    head = find_group(model.get("outliner", []), "head")
+    if head is None:
+        raise RuntimeError(f"{model.get('name')} has no head bone to remove")
+
+    removed_ids: set[str] = set()
+
+    def strip_cubes(group: dict) -> None:
+        kept_children = []
+        for child in group.get("children", []):
+            if isinstance(child, str):
+                removed_ids.add(child)
+            elif isinstance(child, dict):
+                strip_cubes(child)
+                kept_children.append(child)
+        group["children"] = kept_children
+
+    strip_cubes(head)
+    before = len(model.get("elements", []))
+    model["elements"] = [element for element in model.get("elements", [])
+                         if element.get("uuid") not in removed_ids]
+    if before - len(model["elements"]) < 1:
+        raise RuntimeError(f"{model.get('name')} head bone contained no removable geometry")
+
+
 def add_distinctive_geometry(model: dict, mob_id: str) -> None:
     # Give each new model a silhouette detail as well as its individually recolored atlas.
     if mob_id == "halloween_void_reaper":
@@ -138,6 +166,28 @@ def add_distinctive_geometry(model: dict, mob_id: str) -> None:
             ("nightmare_crown_right", (2.5, 39.0, 0.0), (5.0, 45.0, 2.0), "head"),
         ):
             add_accessory_cube(model, parent, name, start, end, (96, 0, 8, 8))
+    elif mob_id == "halloween_goblin_king":
+        # A crown, heavy pauldron and exaggerated cleaver create a royal bruiser silhouette.
+        for name, start, end, parent in (
+            ("goblin_crown_band", (-5.5, 39.5, -2.0), (5.5, 42.5, 2.0), "head"),
+            ("goblin_crown_spike_left", (-4.5, 42.0, -1.5), (-2.5, 47.0, 1.5), "head"),
+            ("goblin_crown_spike_center", (-1.2, 42.0, -1.5), (1.2, 48.0, 1.5), "head"),
+            ("goblin_crown_spike_right", (2.5, 42.0, -1.5), (4.5, 47.0, 1.5), "head"),
+            ("goblin_heavy_pauldron", (-9.5, 31.0, -2.5), (-5.0, 36.0, 2.5), "body"),
+            ("goblin_cleaver_blade", (10.0, 25.0, -2.0), (17.0, 32.0, 1.5), "weapon"),
+            ("goblin_cleaver_tip", (14.0, 30.0, -1.5), (18.0, 36.0, 1.5), "weapon"),
+        ):
+            add_accessory_cube(model, parent, name, start, end, (96, 0, 8, 8))
+    elif mob_id == "halloween_headless_nick":
+        remove_head_geometry(model)
+        add_accessory_cube(model, "body", "nick_bloody_neck_stump",
+                           (-2.4, 37.5, -1.8), (2.4, 41.0, 2.2), (96, 0, 8, 8))
+        add_accessory_cube(model, "body", "nick_shoulder_collar",
+                           (-5.0, 35.0, -2.8), (5.0, 38.5, 2.8), (96, 8, 8, 8))
+        add_accessory_cube(model, "weapon", "nick_executioner_blade",
+                           (9.0, 26.0, -2.0), (16.0, 31.0, 1.5), (96, 16, 8, 8))
+        add_accessory_cube(model, "weapon", "nick_blade_tip",
+                           (13.0, 30.0, -1.5), (18.0, 35.0, 1.5), (104, 16, 8, 8))
 
 
 def create_model(new_id: str, template_id: str, hue_shift: float, saturation: float,
