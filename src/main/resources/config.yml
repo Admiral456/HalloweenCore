@@ -568,6 +568,7 @@ world-decorations:
   pumpkins-per-chunk: 5
   cobwebs-per-chunk: 2
   red-candles-per-chunk: 1
+  mushrooms-per-chunk: 2
   attempts-per-placement: 32
   chunks-per-tick: 2
 
