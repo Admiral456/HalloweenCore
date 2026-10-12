@@ -9,6 +9,10 @@ layout(location = 0) out vec4 fragColor;
 
 #define HALLOWEEN_BLOOD_MOON_DAY 123456784
 
+#ifndef BLOOD_MOON_STRENGTH
+#define BLOOD_MOON_STRENGTH 0.90
+#endif
+
 float bloodMoonTransition() {
     if (worldDay != HALLOWEEN_BLOOD_MOON_DAY) return 0.0;
     return smoothstep(18000.0, 18020.0, float(worldTime));
