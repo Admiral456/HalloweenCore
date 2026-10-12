@@ -194,6 +194,13 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                 return;
             }
 
+            String biomeConfigPath = candidate.type() == StructureType.HAUNTED_VILLAGE
+                    ? "world-structures.village-biomes" : "world-structures.graveyard-biomes";
+            if (!isAllowedBiome(world, centerX, terrain.maxY(), centerZ, biomeConfigPath)) {
+                candidatesSkipped++;
+                return;
+            }
+
             Random random = new Random(world.getSeed()
                     ^ ((long) candidate.chunkX() * 341873128712L)
                     ^ ((long) candidate.chunkZ() * 132897987541L)
@@ -314,6 +321,15 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         Material type = world.getBlockAt(x, y, z).getType();
         if (!isNaturalSurface(type)) return Integer.MIN_VALUE;
         return y;
+    }
+
+    private boolean isAllowedBiome(World world, int x, int y, int z, String configPath) {
+        // Empty list means all biomes that pass the terrain and safety checks;
+        // an explicit list acts as an allow-list using Bukkit's biome names.
+        java.util.List<String> allowed = plugin.getConfig().getStringList(configPath);
+        if (allowed.isEmpty()) return true;
+        String biome = world.getBiome(x, y, z).name();
+        return allowed.stream().anyMatch(entry -> entry != null && biome.equalsIgnoreCase(entry.trim()));
     }
 
     private boolean isNaturalSurface(Material material) {
@@ -476,12 +492,17 @@ public final class HalloweenWorldStructureGenerator implements Listener {
     }
 
     private void buildGraveyard(World world, int x, int y, int z, Random random) {
-        // Low uneven wall, open gate and a clear path to the mausoleum.
+        // Low uneven perimeter: each cemetery receives one of three weathered palettes.
+        Material perimeter = switch (random.nextInt(3)) {
+            case 0 -> Material.MOSSY_STONE_BRICK_WALL;
+            case 1 -> Material.COBBLED_DEEPSLATE_WALL;
+            default -> Material.POLISHED_BLACKSTONE_BRICK_WALL;
+        };
         for (int offset = -8; offset <= 8; offset++) {
-            place(world, x + offset, y + 1, z - 8, Material.MOSSY_STONE_BRICK_WALL);
-            if (Math.abs(offset) > 1) place(world, x + offset, y + 1, z + 8, Material.MOSSY_STONE_BRICK_WALL);
-            place(world, x - 8, y + 1, z + offset, Material.MOSSY_STONE_BRICK_WALL);
-            place(world, x + 8, y + 1, z + offset, Material.MOSSY_STONE_BRICK_WALL);
+            place(world, x + offset, y + 1, z - 8, perimeter);
+            if (Math.abs(offset) > 1) place(world, x + offset, y + 1, z + 8, perimeter);
+            place(world, x - 8, y + 1, z + offset, perimeter);
+            place(world, x + 8, y + 1, z + offset, perimeter);
         }
         place(world, x - 8, y + 2, z - 8, Material.COBBLED_DEEPSLATE_WALL);
         place(world, x + 8, y + 2, z - 8, Material.COBBLED_DEEPSLATE_WALL);
@@ -498,10 +519,22 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         buildPath(world, x, y, z, 0, -6, 0, 7, Material.CRACKED_DEEPSLATE_BRICKS);
         buildPath(world, x, y, z, 1, -1, 6, -1, Material.MOSSY_STONE_BRICKS);
 
-        int[][] graves = {
-                {-7, -2}, {-5, -2}, {5, -2}, {7, -2},
-                {-7, 2}, {-5, 2}, {5, 2}, {7, 2},
-                {-5, 5}, {-2, 5}, {2, 5}, {5, 5}
+        int[][] graves = switch (random.nextInt(3)) {
+            case 0 -> new int[][] {
+                    {-7, -2}, {-5, -2}, {5, -2}, {7, -2},
+                    {-7, 2}, {-5, 2}, {5, 2}, {7, 2},
+                    {-5, 5}, {-2, 5}, {2, 5}, {5, 5}
+            };
+            case 1 -> new int[][] {
+                    {-6, -5}, {-3, -5}, {0, -5}, {3, -5}, {6, -5},
+                    {-6, 0}, {-3, 0}, {3, 0}, {6, 0},
+                    {-5, 5}, {0, 5}, {5, 5}
+            };
+            default -> new int[][] {
+                    {-5, -6}, {-1, -6}, {3, -6}, {6, -3},
+                    {-6, -1}, {-3, 1}, {2, 1}, {6, 1},
+                    {-5, 5}, {-1, 6}, {3, 5}, {6, 6}
+            };
         };
         for (int index = 0; index < graves.length; index++) {
             int[] grave = graves[index];
