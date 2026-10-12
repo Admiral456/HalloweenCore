@@ -580,6 +580,7 @@ world-structures:
   graveyard-region-chunks: 6
   max-slope: 2
   max-retries: 120
+  spawn-exclusion-radius: 64
 
 # Passive bonuses and combat procs for items claimed through the Halloween reward shop.
 # Cooldowns limit spam; effects use particles/potions and never alter terrain.
