@@ -337,6 +337,16 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             String action = args[1].toLowerCase(java.util.Locale.ROOT);
+            if (action.equals("list")) {
+                sender.sendMessage(plugin.color("&6&lHALLOWEEN EVENTY &8» &7Registrované události:"));
+                for (String id : plugin.getEventManager().getKnownEventIds()) {
+                    String name = plugin.getConfig().getString("random-events.types." + id + ".name", id);
+                    String state = plugin.getEventManager().isActive(id) ? "&aACTIVE" : "&7WAITING";
+                    sender.sendMessage(plugin.color(" &8• &f" + id + " &8— &e" + name + " &8[ " + state + " &8]"));
+                }
+                sender.sendMessage(plugin.color("&7Poslední skutečný výsledek: &f" + plugin.getEventManager().getLastEffectSummary()));
+                return true;
+            }
             if (action.equals("start")) {
                 String requested = args.length >= 3 ? args[2] : "random";
                 if (!plugin.isEventEnabled()) {
@@ -344,7 +354,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 if (!plugin.getEventManager().startEventNow(requested)) {
-                    sender.sendMessage(plugin.color("&cEvent nelze spustit. Už jeden běží, nebo je ID neplatné. Použij /halloween event start random."));
+                    sender.sendMessage(plugin.color("&cEvent nelze spustit: &e" + plugin.getEventManager().getLastStartFailure()));
                     return true;
                 }
                 sender.sendMessage(plugin.color("&aTestovací okamžité spuštění eventu: &e" + requested));
@@ -359,7 +369,23 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             if (!action.equals("status")) {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween event [status|start [random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion|pumpkin-apocalypse|graveyard-rising]|stop]"));
+                sender.sendMessage(plugin.color("&cPoužití: /halloween event [list|status [event-id]|start [random|event-id]|stop]"));
+                return true;
+            }
+            if (args.length >= 3) {
+                String requested = args[2].toLowerCase(java.util.Locale.ROOT);
+                if (!plugin.getEventManager().getKnownEventIds().contains(requested)) {
+                    sender.sendMessage(plugin.color("&cNeznámé ID eventu: &e" + requested + "&c. Použij /halloween event list."));
+                    return true;
+                }
+                String name = plugin.getConfig().getString("random-events.types." + requested + ".name", requested);
+                sender.sendMessage(plugin.color("&6&lEVENT STATUS &8» &e" + name + " &8(" + requested + ")"));
+                sender.sendMessage(plugin.color("&7Stav: " + (plugin.getEventManager().isActive(requested) ? "&aACTIVE" : "&7WAITING")));
+                if (requested.equals(plugin.getEventManager().getLastEffectEventId())) {
+                    sender.sendMessage(plugin.color("&7Poslední vlna: &f" + plugin.getEventManager().getLastEffectSummary()));
+                } else {
+                    sender.sendMessage(plugin.color("&7Pro tento event zatím není zaznamenána poslední vlna."));
+                }
                 return true;
             }
         } else if (!checkUse(sender)) {
@@ -385,8 +411,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             } else {
                 sender.sendMessage(plugin.color("&7Další event přibližně za &e" + seconds + " s&7."));
             }
+            sender.sendMessage(plugin.color("&7Poslední výsledek vlny: &f" + manager.getLastEffectSummary()));
             if (sender.hasPermission("halloweencore.admin")) {
-                sender.sendMessage(plugin.color("&7Pro test: &e/halloween event start random"));
+                sender.sendMessage(plugin.color("&7Pro test: &e/halloween event list &8| &e/halloween event start blood-moon-invasion"));
             }
             return true;
         }
@@ -394,6 +421,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6&lHALLOWEEN UDÁLOST"));
         sender.sendMessage(plugin.color("&7Typ: &e" + eventName + " &8(" + active + ")"));
         sender.sendMessage(plugin.color("&7Zbývá: &e" + manager.getRemainingSeconds() + " s"));
+        sender.sendMessage(plugin.color("&7Poslední skutečný výsledek: &f" + manager.getLastEffectSummary()));
         return true;
     }
 

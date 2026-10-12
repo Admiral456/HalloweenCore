@@ -21,6 +21,12 @@ public final class HalloweenEventManager {
     private boolean started;
     private long lastSurgeAt;
     private boolean invasionCaptainSpawned;
+    private String lastStartFailure = "";
+    private String lastEffectEventId = "";
+    private String lastEffectSummary = "Dosud nebyla ověřena žádná aktivní vlna.";
+    private long lastEffectAt;
+    private int lastSurgeSpawned = -1;
+    private long lastFailureLogAt;
 
     public HalloweenEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -67,17 +73,51 @@ public final class HalloweenEventManager {
     }
 
     public boolean startEventNow(String requestedId) {
-        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)) return false;
-        if (activeEventId != null) return false;
-
+        lastStartFailure = "";
+        if (!plugin.isEventEnabled()) {
+            lastStartFailure = "HalloweenCore je vypnutý. Použij /halloween on.";
+            return false;
+        }
+        if (!plugin.getConfig().getBoolean("random-events.enabled", true)) {
+            lastStartFailure = "Automatické a ruční eventy jsou zakázány v random-events.enabled.";
+            return false;
+        }
+        if (activeEventId != null) {
+            lastStartFailure = "Již běží event " + activeEventId + ". Nejprve použij /halloween event stop.";
+            return false;
+        }
         String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
         if (eventId.isEmpty() || eventId.equals("random")) {
             String[] events = getKnownEventIds().toArray(String[]::new);
             eventId = events[ThreadLocalRandom.current().nextInt(events.length)];
         }
-        if (!getKnownEventIds().contains(eventId)) return false;
+        if (!getKnownEventIds().contains(eventId)) {
+            lastStartFailure = "Neznámé ID eventu: " + eventId + ". Použij /halloween event list.";
+            return false;
+        }
+        if (eligibleEventPlayers().isEmpty()) {
+            lastStartFailure = "Není online žádný způsobilý hráč v povoleném Halloween světě; event proto nemá komu spustit gameplay.";
+            return false;
+        }
         beginEvent(eventId);
+        if (!eventId.equals(activeEventId)) {
+            lastStartFailure = "Event nepřešel do stavu ACTIVE. Zkontroluj log serveru.";
+            return false;
+        }
         return true;
+    }
+
+    public String getLastStartFailure() { return lastStartFailure; }
+    public String getLastEffectEventId() { return lastEffectEventId; }
+    public String getLastEffectSummary() { return lastEffectSummary; }
+    public long getLastEffectAt() { return lastEffectAt; }
+    public int getLastSurgeSpawned() { return lastSurgeSpawned; }
+
+    private java.util.List<Player> eligibleEventPlayers() {
+        return Bukkit.getOnlinePlayers().stream()
+                .filter(plugin::isEligibleGameplayPlayer)
+                .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
+                .toList();
     }
 
     public boolean stopActiveEventNow() {
@@ -119,8 +159,12 @@ public final class HalloweenEventManager {
             runActiveEventEffects(now);
         }
 
-        if (activeEventId == null && now >= nextEventAt && !Bukkit.getOnlinePlayers().isEmpty()) {
-            startRandomEvent();
+        if (activeEventId == null && now >= nextEventAt) {
+            if (!eligibleEventPlayers().isEmpty()) {
+                startRandomEvent();
+            } else {
+                lastEffectSummary = "Čekám na online hráče v povoleném Halloween světě; event zatím nebyl spuštěn.";
+            }
         }
     }
 
@@ -202,16 +246,21 @@ public final class HalloweenEventManager {
         if (now - lastSurgeAt < surgeIntervalSeconds * 1000L) return;
         if (Bukkit.getOnlinePlayers().isEmpty()) return;
 
-        Player[] players = Bukkit.getOnlinePlayers().stream()
-                .filter(plugin::isEligibleGameplayPlayer)
-                .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
-                .toArray(Player[]::new);
-        if (players.length == 0) return;
+        Player[] players = eligibleEventPlayers().toArray(Player[]::new);
+        if (players.length == 0) {
+            lastEffectEventId = activeEventId;
+            lastEffectAt = now;
+            lastSurgeSpawned = 0;
+            lastEffectSummary = "Event je ACTIVE, ale není online hráč v povoleném Halloween světě.";
+            return;
+        }
         Player target = players[ThreadLocalRandom.current().nextInt(players.length)];
+        int spawnedThisSurge = 0;
 
         switch (activeEventId.toLowerCase(Locale.ROOT)) {
             case "soulstorm" -> {
                 int spawned = spawnWave(target, new String[]{"cursed-zombie", "gravekeeper", "blood-spider"}, 3);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.SOUL, target.getLocation().clone().add(0, 1.0D, 0),
                         38, 1.8D, 1.1D, 1.8D, 0.04D);
                 target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().clone().add(0, 0.5D, 0),
@@ -220,6 +269,7 @@ public final class HalloweenEventManager {
             }
             case "witching-hour" -> {
                 int spawned = spawnWave(target, new String[]{"hex-witch", "blood-spider", "cursed-zombie"}, 3);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().clone().add(0, 1.0D, 0),
                         32, 1.4D, 1.0D, 1.4D, 0.08D);
                 target.getWorld().spawnParticle(Particle.PORTAL, target.getLocation().clone().add(0, 0.7D, 0),
@@ -234,6 +284,7 @@ public final class HalloweenEventManager {
             case "cursed-harvest" -> {
                 int cropsGrown = empowerNearbyCrops(target, 8, 5);
                 int spawned = spawnWave(target, new String[]{"blood-spider", "pumpkin-wraith"}, 2);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.COMPOSTER, target.getLocation().clone().add(0, 1.0D, 0),
                         24, 1.5D, 0.8D, 1.5D, 0.04D);
                 target.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().clone().add(0, 1.0D, 0),
@@ -257,6 +308,7 @@ public final class HalloweenEventManager {
                 int spawned = spawnWave(target,
                         new String[]{"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"},
                         waveSize);
+                spawnedThisSurge += spawned;
                 target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
                         target.getLocation().clone().add(0, 1.0D, 0), 34, 1.5D, 1.0D, 1.5D, 0.035D);
                 target.getWorld().spawnParticle(Particle.ASH,
@@ -265,6 +317,7 @@ public final class HalloweenEventManager {
             }
             case "pumpkin-apocalypse" -> {
                 int spawned = spawnWave(target, new String[]{"pumpkin-wraith", "pumpkin-wraith", "cursed-zombie"}, 5);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.FLAME, target.getLocation().clone().add(0, 1.0D, 0),
                         48, 1.8D, 1.0D, 1.8D, 0.035D);
                 target.getWorld().spawnParticle(Particle.LAVA, target.getLocation().clone().add(0, 0.5D, 0),
@@ -275,6 +328,7 @@ public final class HalloweenEventManager {
             }
             case "graveyard-rising" -> {
                 int spawned = spawnWave(target, new String[]{"gravekeeper", "gravekeeper", "cursed-zombie", "blood-spider"}, 4);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.SOUL, target.getLocation().clone().add(0, 0.3D, 0),
                         44, 1.8D, 0.15D, 1.8D, 0.025D);
                 target.getWorld().spawnParticle(Particle.ASH, target.getLocation().clone().add(0, 1.0D, 0),
@@ -286,6 +340,21 @@ public final class HalloweenEventManager {
             }
         }
         lastSurgeAt = now;
+        lastEffectEventId = activeEventId;
+        lastEffectAt = now;
+        lastSurgeSpawned = spawnedThisSurge;
+        lastEffectSummary = "Event " + activeEventId + ": v cílovém světě " + target.getWorld().getName()
+                + " úspěšně spawnuto " + spawnedThisSurge + " event mobů v poslední vlně.";
+        if (spawnedThisSurge == 0) {
+            String cause = plugin.getMobManager() == null ? "HalloweenMobManager není dostupný."
+                    : plugin.getMobManager().getLastSpawnFailure();
+            if (cause == null || cause.isBlank()) cause = "Není znám důvod; ověř spawn location a mob konfiguraci.";
+            lastEffectSummary += " Poslední důvod selhání: " + cause;
+            if (now - lastFailureLogAt >= 60_000L) {
+                plugin.getLogger().warning(lastEffectSummary);
+                lastFailureLogAt = now;
+            }
+        }
     }
 
     private int spawnWave(Player target, String[] mobIds, int count) {
