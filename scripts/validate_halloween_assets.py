@@ -628,10 +628,16 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
 if "wings_texture: entity/equipment/wings/batwing_elytra" not in config:
     fail("Batwing Elytra must reference its custom worn-wing texture")
 def item_section(item_id: str) -> str:
-    match = re.search(r"(?ms)^  " + re.escape(item_id) + r":\\n(?P<block>.*?)(?=^  [A-Za-z0-9_]+:\\n|\\Z)", config)
-    if not match:
+    lines = config.splitlines()
+    start = next((index for index, line in enumerate(lines) if line == f"  {item_id}:"), -1)
+    if start < 0:
         fail(f"ItemsAdder item '{item_id}' could not be isolated for model/material validation")
-    return match.group("block")
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        if re.fullmatch(r"  [A-Za-z0-9_]+:", lines[index]):
+            end = index
+            break
+    return "\\n".join(lines[start + 1:end])
 
 
 shield_config = item_section("crimson_warden_shield")
