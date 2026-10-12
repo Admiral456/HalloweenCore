@@ -689,7 +689,9 @@ world-structures:
   enabled: true
   village-region-chunks: 10
   graveyard-region-chunks: 6
+  # Deprecated compatibility key; placement now uses max-terrain-relief.
   max-slope: 2
+  max-terrain-relief: 8
   max-retries: 120
   spawn-exclusion-radius: 64
   # Empty lists allow any naturally eligible biome; explicit names form an allow-list.

@@ -926,6 +926,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7Postavené vesnice v této relaci: &e" + generator.getVillagesBuilt()));
         sender.sendMessage(plugin.color("&7Postavené hřbitovy v této relaci: &e" + generator.getGraveyardsBuilt()));
         sender.sendMessage(plugin.color("&7Přeskočené kandidáty: &e" + generator.getCandidatesSkipped()));
+        sender.sendMessage(plugin.color("&7Poslední důvod přeskočení: &e"
+                + (generator.getLastSkipReason().isBlank() ? "žádný" : generator.getLastSkipReason())));
         sender.sendMessage(plugin.color("&7Hustota: vesnice &e1/"
                 + Math.max(4, plugin.getConfig().getInt("world-structures.village-region-chunks", 10))
                 + "² &7chunků, hřbitovy &e1/"

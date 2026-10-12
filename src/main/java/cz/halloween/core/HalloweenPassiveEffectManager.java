@@ -18,11 +18,14 @@ public final class HalloweenPassiveEffectManager implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey rewardKey;
     private final NamespacedKey talismanHealthKey;
+    private final NamespacedKey talismanHealCooldownKey;
+    private static final long TALISMAN_HEAL_COOLDOWN_MS = 60_000L;
 
     public HalloweenPassiveEffectManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.rewardKey = new NamespacedKey(plugin, "halloween_reward");
         this.talismanHealthKey = new NamespacedKey(plugin, "cursed_talisman_bonus_health");
+        this.talismanHealCooldownKey = new NamespacedKey(plugin, "cursed_talisman_heal_cooldown_until");
     }
 
     public void start() {
@@ -135,6 +138,18 @@ public final class HalloweenPassiveEffectManager implements Listener {
         if (active && bonusHealth > 0.0D && existing == null) {
             maxHealth.addModifier(new AttributeModifier(
                     talismanHealthKey, bonusHealth, AttributeModifier.Operation.ADD_NUMBER));
+
+            // Fill the newly granted hearts on a genuine activation. A persistent
+            // cooldown prevents rapid re-equipping from becoming unlimited healing.
+            long now = System.currentTimeMillis();
+            var playerData = player.getPersistentDataContainer();
+            long nextHealAt = playerData.getOrDefault(talismanHealCooldownKey, PersistentDataType.LONG, 0L);
+            if (now >= nextHealAt) {
+                double currentAfterBonus = Math.min(maxHealth.getValue(), player.getHealth() + bonusHealth);
+                player.setHealth(Math.max(1.0D, currentAfterBonus));
+                playerData.set(talismanHealCooldownKey, PersistentDataType.LONG,
+                        now + TALISMAN_HEAL_COOLDOWN_MS);
+            }
         }
     }
 
