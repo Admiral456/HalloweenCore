@@ -61,6 +61,7 @@ public final class HalloweenConfigValidator {
             int graveyardDensity = plugin.getConfig().getInt("world-structures.graveyard-region-chunks", 6);
             int structureSlope = plugin.getConfig().getInt("world-structures.max-slope", 2);
             int structureRetries = plugin.getConfig().getInt("world-structures.max-retries", 120);
+            int spawnBuffer = plugin.getConfig().getInt("world-structures.spawn-exclusion-radius", 64);
             if (villageDensity < 4 || villageDensity > 32) {
                 errors.add("world-structures.village-region-chunks must be between 4 and 32");
             }
@@ -72,6 +73,9 @@ public final class HalloweenConfigValidator {
             }
             if (structureRetries < 10 || structureRetries > 600) {
                 errors.add("world-structures.max-retries must be between 10 and 600");
+            }
+            if (spawnBuffer < 0 || spawnBuffer > 1024) {
+                errors.add("world-structures.spawn-exclusion-radius must be between 0 and 1024");
             }
         }
 
