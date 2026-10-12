@@ -29,7 +29,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = List.of(
-                    "stats", "progress", "curse", "event", "challenge", "quests",
+                    "stats", "progress", "curse", "event", "challenge", "quests", "structures",
                     "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
@@ -61,6 +61,11 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return List.of("random", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion",
                     "pumpkin-apocalypse", "graveyard-rising").stream()
                     .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("structures") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("status", "scan").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("shader") && sender.hasPermission("halloweencore.admin")) {
@@ -144,6 +149,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
+        if (args[0].equalsIgnoreCase("structures")) return structures(sender, args);
         if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
         if (args[0].equalsIgnoreCase("buildvampirearena")) return buildVampireArena(sender, args);
@@ -168,6 +174,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
+        sender.sendMessage(plugin.color("&6/halloween structures <status|scan> &7- diagnostika náhodných hřbitovů a vesnic (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
@@ -422,6 +429,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 plugin.getConfig().getString("special-mobs.relic-item-id", ""));
         boolean hauntedMap = plugin.getItemManager().isCustomItemAvailable(
                 plugin.getConfig().getString("special-mobs.map-item-id", ""));
+        boolean crimsonShield = plugin.getItemManager().isCustomItemAvailable(
+                "warriorland_halloween:crimson_warden_shield");
 
         long total = plugin.getService().getServerFragments();
         long goal = plugin.getService().getGlobalGoal();
@@ -447,6 +456,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7  halloween_token: " + status(halloweenToken)));
         sender.sendMessage(plugin.color("&7  cursed_candy: " + status(cursedCandy)));
         sender.sendMessage(plugin.color("&7  haunted_map: " + status(hauntedMap)));
+        sender.sendMessage(plugin.color("&7  crimson_warden_shield: " + status(crimsonShield)));
         sender.sendMessage(plugin.color("&7MythicMobs: " + status(mythicMobs)));
         sender.sendMessage(plugin.color("&7ModelEngine: " + status(modelEngine)));
         sender.sendMessage(plugin.color("&7BattlePass: " + status(battlePass)));
@@ -454,7 +464,12 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7PlaceholderAPI: " + status(papi)));
         boolean villageConfigured = plugin.getConfig().getBoolean("haunted-village.enabled", false)
                 && !plugin.getConfig().getString("haunted-village.world", "").isBlank();
-        sender.sendMessage(plugin.color("&7Haunted Village: " + (villageConfigured ? "&aKONFIGUROVÁNA" : "&eČEKÁ NA SOUŘADNICE")));
+        sender.sendMessage(plugin.color("&7Haunted Village marker: " + (villageConfigured ? "&aKONFIGUROVÁNA" : "&eČEKÁ NA SOUŘADNICE")));
+        var structures = plugin.getWorldStructureGenerator();
+        sender.sendMessage(plugin.color("&7Náhodné struktury: " + (structures != null && structures.isEnabled() ? "&aAKTIVNÍ" : "&cVYPNUTÉ")
+                + " &8• fronta " + (structures == null ? 0 : structures.getPendingCount())
+                + " • vesnice " + (structures == null ? 0 : structures.getVillagesBuilt())
+                + " • hřbitovy " + (structures == null ? 0 : structures.getGraveyardsBuilt())));
         var configErrors = HalloweenConfigValidator.validate(plugin);
         sender.sendMessage(plugin.color("&7Config preflight: " + (configErrors.isEmpty() ? "&aOK" : "&c" + configErrors.size() + " chyba/chyb")));
         if (!configErrors.isEmpty()) {
@@ -539,6 +554,41 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean structures(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        HalloweenWorldStructureGenerator generator = plugin.getWorldStructureGenerator();
+        if (generator == null) {
+            sender.sendMessage(plugin.color("&cGenerátor Halloween struktur není dostupný."));
+            return true;
+        }
+
+        String action = args.length >= 2 ? args[1].toLowerCase(java.util.Locale.ROOT) : "status";
+        if (args.length > 2 || (!action.equals("status") && !action.equals("scan"))) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween structures [status|scan]"));
+            return true;
+        }
+        if (action.equals("scan")) {
+            generator.scanLoadedChunks();
+            sender.sendMessage(plugin.color("&6HALLOWEEN &8» &aKontrola načtených chunků zařazena."));
+            sender.sendMessage(plugin.color("&7Generátor nenačítá vzdálené chunky; ověřuje jen již načtené části mapy."));
+        }
+
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        sender.sendMessage(plugin.color("&6&lHALLOWEEN – STRUKTURY SVĚTA"));
+        sender.sendMessage(plugin.color("&7Stav: " + (generator.isEnabled() ? "&aAKTIVNÍ" : "&cVYPNUTÝ")));
+        sender.sendMessage(plugin.color("&7Čekající kandidáti: &e" + generator.getPendingCount()));
+        sender.sendMessage(plugin.color("&7Postavené vesnice v této relaci: &e" + generator.getVillagesBuilt()));
+        sender.sendMessage(plugin.color("&7Postavené hřbitovy v této relaci: &e" + generator.getGraveyardsBuilt()));
+        sender.sendMessage(plugin.color("&7Přeskočené kandidáty: &e" + generator.getCandidatesSkipped()));
+        sender.sendMessage(plugin.color("&7Hustota: vesnice &e1/"
+                + Math.max(4, plugin.getConfig().getInt("world-structures.village-region-chunks", 10))
+                + "² &7chunků, hřbitovy &e1/"
+                + Math.max(3, plugin.getConfig().getInt("world-structures.graveyard-region-chunks", 6))
+                + "² &7chunků (před kontrolou terénu)."));
+        sender.sendMessage(plugin.color("&7Příkaz scan znovu zkontroluje pouze právě načtené chunky."));
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        return true;
+    }
     private boolean setVillage(CommandSender sender) {
         if (!checkAdmin(sender)) return true;
         if (!(sender instanceof Player player)) {
