@@ -429,7 +429,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         for (int dx : new int[]{-1, 1}) {
             place(world, x + dx, y + 2, z, Material.DARK_OAK_FENCE);
         }
-        place(world, x, y + 2, z, Material.CHAIN);
+        place(world, x, y + 2, z, Material.IRON_CHAIN);
         place(world, x, y + 3, z, Material.SOUL_LANTERN);
         supportDown(world, x, y, z, Material.COBBLED_DEEPSLATE);
     }
@@ -439,7 +439,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         place(world, x, y, z, Material.POLISHED_BLACKSTONE_BRICKS);
         place(world, x, y + 1, z, Material.DARK_OAK_FENCE);
         place(world, x, y + 2, z, Material.DARK_OAK_FENCE);
-        place(world, x, y + 3, z, Material.CHAIN);
+        place(world, x, y + 3, z, Material.IRON_CHAIN);
         place(world, x, y + 4, z, Material.SOUL_LANTERN);
         place(world, x + 1, y + 2, z, Material.COBWEB);
     }
