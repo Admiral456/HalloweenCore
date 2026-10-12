@@ -8,6 +8,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.TileState;
 import org.bukkit.block.data.Bisected;
+import org.bukkit.block.data.Openable;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.type.Door;
 import org.bukkit.event.EventHandler;
@@ -478,7 +479,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         // Low uneven wall, open gate and a clear path to the mausoleum.
         for (int offset = -8; offset <= 8; offset++) {
             place(world, x + offset, y + 1, z - 8, Material.MOSSY_STONE_BRICK_WALL);
-            place(world, x + offset, y + 1, z + 8, Material.MOSSY_STONE_BRICK_WALL);
+            if (offset != 0) place(world, x + offset, y + 1, z + 8, Material.MOSSY_STONE_BRICK_WALL);
             place(world, x - 8, y + 1, z + offset, Material.MOSSY_STONE_BRICK_WALL);
             place(world, x + 8, y + 1, z + offset, Material.MOSSY_STONE_BRICK_WALL);
         }
@@ -488,6 +489,12 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         place(world, x + 8, y + 2, z + 8, Material.COBBLED_DEEPSLATE_WALL);
         place(world, x - 1, y + 1, z + 8, Material.DARK_OAK_FENCE);
         place(world, x + 1, y + 1, z + 8, Material.DARK_OAK_FENCE);
+        placeFacing(world, x, y + 1, z + 8, Material.DARK_OAK_FENCE_GATE, BlockFace.SOUTH);
+        Block gateBlock = world.getBlockAt(x, y + 1, z + 8);
+        if (gateBlock.getBlockData() instanceof Openable openable) {
+            openable.setOpen(true);
+            gateBlock.setBlockData(openable, false);
+        }
         buildPath(world, x, y, z, 0, -6, 0, 7, Material.CRACKED_DEEPSLATE_BRICKS);
         buildPath(world, x, y, z, 1, -1, 6, -1, Material.MOSSY_STONE_BRICKS);
 
