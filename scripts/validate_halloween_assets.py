@@ -627,6 +627,33 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
 
 if "wings_texture: entity/equipment/wings/batwing_elytra" not in config:
     fail("Batwing Elytra must reference its custom worn-wing texture")
+def item_section(item_id: str) -> str:
+    match = re.search(r"(?ms)^  " + re.escape(item_id) + r":\\n(?P<block>.*?)(?=^  [A-Za-z0-9_]+:\\n|\\Z)", config)
+    if not match:
+        fail(f"ItemsAdder item '{item_id}' could not be isolated for model/material validation")
+    return match.group("block")
+
+
+shield_config = item_section("crimson_warden_shield")
+if not re.search(r"(?m)^    material: SHIELD[ \\t]*$", shield_config):
+    fail("Crimson Warden Shield must be a real SHIELD item, never an Elytra material")
+for expected in (
+        "normal: item/crimson_warden_shield",
+        "blocking: item/crimson_warden_shield_blocking",
+        "icon: item/crimson_warden_shield"):
+    if expected not in shield_config:
+        fail(f"Crimson Warden Shield is missing separate shield mapping: {expected}")
+if "batwing_elytra" in shield_config.lower():
+    fail("Crimson Warden Shield item configuration must not reference Batwing Elytra")
+elytra_config = item_section("batwing_elytra")
+if not re.search(r"(?m)^    material: ELYTRA[ \\t]*$", elytra_config):
+    fail("Batwing must be a real ELYTRA item, never a shield")
+if "texture: item/batwing_elytra" not in elytra_config:
+    fail("Batwing inventory texture is not mapped to the correct item texture")
+if "wings_texture: entity/equipment/wings/batwing_elytra" not in elytra_config:
+    fail("Batwing worn wings do not reference the correct dedicated Elytra texture")
+if "crimson_warden_shield" in elytra_config.lower():
+    fail("Batwing Elytra item configuration must not reference the Crimson Warden Shield")
 if "durability_damage_multiplier: 0.65" not in config:
     fail("Batwing Elytra should reduce durability wear while retaining normal gliding/fireworks")
 if "model_path: armor/nocturne_sovereign_cowl_3d" not in config or "icon: item/nocturne_sovereign_cowl" not in config:
