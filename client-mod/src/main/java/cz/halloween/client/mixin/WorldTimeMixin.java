@@ -10,10 +10,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(World.class)
 public abstract class WorldTimeMixin {
-    @Inject(method = "getTimeOfDay", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getTimeOfDay", at = @At("RETURN"), cancellable = true)
     private void halloweencore$exposeBloodMoonMarker(CallbackInfoReturnable<Long> callback) {
         if (!((Object) this instanceof ClientWorld)) return;
-        Long syntheticTime = BloodMoonState.getSyntheticTimeOfDay();
+        Long syntheticTime = BloodMoonState.getSyntheticTimeOfDay(callback.getReturnValue());
         if (syntheticTime != null) {
             callback.setReturnValue(syntheticTime);
         }
