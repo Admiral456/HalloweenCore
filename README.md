@@ -273,7 +273,7 @@ The first supported fortress version uses a 31-block radius and a 16-block build
 
 ## Headless Nick — stalking/ambush
 
-Install/reload the same MythicMobs/ModelEngine companion pack if custom rider visuals are desired. The implementation currently uses a vanilla Skeleton Horse mount; a custom horse model is not included yet. The encounter can be configured in `stalkers.headless-nick`.
+Install/reload the MythicMobs/ModelEngine companion pack and `mythicmobs/mobs/halloween-special-mobs.yml` for the genuine headless rider. If that model/integration cannot be loaded, Nick intentionally refuses to spawn rather than showing an ordinary headed skeleton. The mount is currently a vanilla Skeleton Horse; a custom horse model is not included yet. The encounter can be configured in `stalkers.headless-nick`.
 
 Admin commands: `/halloween nick status`, `/halloween nick test <player>` (allows testing outside night), `/halloween nick spawn <player>` (normal night/safety rules apply), `/halloween nick target <player>`, `/halloween nick attack`, `/halloween nick despawn`. Messages **“Vidím tě.”** and **“Sleduji tě.”** are target-only, not global chat. On production servers, verify safe zones, WorldGuard PVP behavior, mounted pathfinding and rider/horse cleanup in a staging world before enabling natural spawns.
 
