@@ -98,41 +98,34 @@ public final class HalloweenWorldStructureGenerator implements Listener {
     }
 
     public boolean isEnabled() {
-        return isEnabledByConfig() && plugin.isEventEnabled();
-    }
-
-    private boolean isEnabledByConfig() {
-        return plugin.getConfig().getBoolean("world-structures.enabled", true);
-    }
-
-    private boolean isEnabled() {
-        return isEnabledByConfig() && plugin.isEventEnabled();
+        return plugin.getConfig().getBoolean("world-structures.enabled", true) && plugin.isEventEnabled();
     }
 
     private void consider(Chunk chunk) {
         if (chunk == null || !isEnabled() || chunk.getWorld().getEnvironment() != World.Environment.NORMAL) return;
         if (chunk.getPersistentDataContainer().has(structureKey, PersistentDataType.STRING)) return;
 
-        if (isRegionalCandidate(chunk, StructureType.HAUNTED_VILLAGE, VILLAGE_REGION_CHUNKS)) {
+        int villageScale = Math.max(4, Math.min(32,
+                plugin.getConfig().getInt("world-structures.village-region-chunks", VILLAGE_REGION_CHUNKS)));
+        int graveyardScale = Math.max(3, Math.min(24,
+                plugin.getConfig().getInt("world-structures.graveyard-region-chunks", GRAVEYARD_REGION_CHUNKS)));
+        if (isRegionalCandidate(chunk, StructureType.HAUNTED_VILLAGE, villageScale)) {
             enqueue(chunk, StructureType.HAUNTED_VILLAGE, 0);
         }
-        if (isRegionalCandidate(chunk, StructureType.CURSED_GRAVEYARD, GRAVEYARD_REGION_CHUNKS)) {
+        if (isRegionalCandidate(chunk, StructureType.CURSED_GRAVEYARD, graveyardScale)) {
             enqueue(chunk, StructureType.CURSED_GRAVEYARD, 0);
         }
     }
 
     private boolean isRegionalCandidate(Chunk chunk, StructureType type, int regionSize) {
-        int regionX = Math.floorDiv(chunk.getX(), regionSize);
-        int regionZ = Math.floorDiv(chunk.getZ(), regionSize);
+        // Deterministic per-chunk probability lets another clear location nearby
+        // qualify if a first candidate sits in forest, water, a build or steep terrain.
         long salt = type == StructureType.HAUNTED_VILLAGE ? 0x4841554E544544L : 0x4752415645594152L;
         long seed = chunk.getWorld().getSeed()
-                ^ (regionX * 341873128712L)
-                ^ (regionZ * 132897987541L)
+                ^ ((long) chunk.getX() * 341873128712L)
+                ^ ((long) chunk.getZ() * 132897987541L)
                 ^ salt;
-        Random random = new Random(seed);
-        int targetX = regionX * regionSize + random.nextInt(regionSize);
-        int targetZ = regionZ * regionSize + random.nextInt(regionSize);
-        return chunk.getX() == targetX && chunk.getZ() == targetZ;
+        return new Random(seed).nextInt(regionSize * regionSize) == 0;
     }
 
     private void enqueue(Chunk chunk, StructureType type, int retries) {
@@ -166,7 +159,8 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         int centerZ = candidate.chunkZ() * 16 + 8;
 
         if (!footprintLoaded(world, centerX, centerZ, radius)) {
-            if (candidate.retries() < MAX_RETRIES) {
+            int retryLimit = Math.max(10, Math.min(600, plugin.getConfig().getInt("world-structures.max-retries", MAX_RETRIES)));
+            if (candidate.retries() < retryLimit) {
                 enqueueCandidate(candidate, candidate.retries() + 1);
             } else {
                 candidatesSkipped++;
@@ -280,7 +274,8 @@ public final class HalloweenWorldStructureGenerator implements Listener {
             }
         }
 
-        if (maxY - minY > MAX_SLOPE) return null;
+        int maxSlope = Math.max(0, Math.min(4, plugin.getConfig().getInt("world-structures.max-slope", MAX_SLOPE)));
+        if (maxY - minY > maxSlope) return null;
         int safeCeiling = maxY + structureHeight + 2;
         if (safeCeiling >= world.getMaxHeight() - 2) return null;
 
@@ -319,7 +314,8 @@ public final class HalloweenWorldStructureGenerator implements Listener {
             case SHORT_GRASS, TALL_GRASS, FERN, LARGE_FERN, DEAD_BUSH, DANDELION, POPPY,
                     BLUE_ORCHID, ALLIUM, AZURE_BLUET, RED_TULIP, ORANGE_TULIP, WHITE_TULIP,
                     PINK_TULIP, OXEYE_DAISY, CORNFLOWER, LILY_OF_THE_VALLEY, WITHER_ROSE,
-                    SNOW, VINE, GLOW_LICHEN -> true;
+                    SNOW, VINE, GLOW_LICHEN, PUMPKIN, CARVED_PUMPKIN, JACK_O_LANTERN,
+                    RED_CANDLE, COBWEB -> true;
             default -> false;
         };
     }
@@ -328,10 +324,10 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         // Main path crosses the clearing; small branches lead to the doors.
         buildPath(world, x, y, z, 0, -12, 0, 12, Material.DEEPSLATE_BRICKS);
         buildPath(world, x, y, z, -11, 0, 11, 0, Material.POLISHED_BLACKSTONE_BRICKS);
-        buildPath(world, x, y, z, -6, -3, -6, -3, Material.MOSSY_STONE_BRICKS);
-        buildPath(world, x, y, z, 6, -3, 6, -3, Material.MOSSY_STONE_BRICKS);
-        buildPath(world, x, y, z, -6, 9, -6, 9, Material.MOSSY_STONE_BRICKS);
-        buildPath(world, x, y, z, 6, 9, 6, 9, Material.MOSSY_STONE_BRICKS);
+        buildPath(world, x, y, z, -6, 0, -6, -3, Material.MOSSY_STONE_BRICKS);
+        buildPath(world, x, y, z, 6, 0, 6, -3, Material.MOSSY_STONE_BRICKS);
+        buildPath(world, x, y, z, -6, 0, -6, 9, Material.MOSSY_STONE_BRICKS);
+        buildPath(world, x, y, z, 6, 0, 6, 9, Material.MOSSY_STONE_BRICKS);
 
         Material[] wallPalette = {Material.SPRUCE_PLANKS, Material.DARK_OAK_PLANKS, Material.STRIPPED_DARK_OAK_WOOD};
         Material wall = wallPalette[random.nextInt(wallPalette.length)];
@@ -476,12 +472,12 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         place(world, x - 1, y, z + 8, Material.DARK_OAK_FENCE);
         place(world, x + 1, y, z + 8, Material.DARK_OAK_FENCE);
         buildPath(world, x, y, z, 0, -6, 0, 7, Material.CRACKED_DEEPSLATE_BRICKS);
-        buildPath(world, x, y, z, -6, -1, 6, -1, Material.MOSSY_STONE_BRICKS);
+        buildPath(world, x, y, z, 1, -1, 6, -1, Material.MOSSY_STONE_BRICKS);
 
         int[][] graves = {
-                {-5, -5}, {-2, -5}, {2, -5}, {5, -5},
-                {-5, -1}, {-2, 2}, {2, 2}, {5, 2},
-                {-5, 5}, {0, 5}, {5, 5}
+                {-7, -2}, {-5, -2}, {5, -2}, {7, -2},
+                {-7, 2}, {-5, 2}, {5, 2}, {7, 2},
+                {-5, 5}, {-2, 5}, {2, 5}, {5, 5}
         };
         for (int index = 0; index < graves.length; index++) {
             int[] grave = graves[index];
@@ -489,7 +485,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         }
 
         buildMausoleum(world, x, y, z - 6);
-        buildRitualCircle(world, x + 3, y, z + 1);
+        buildRitualCircle(world, x - 4, y, z);
         place(world, x - 7, y, z - 7, Material.JACK_O_LANTERN);
         place(world, x + 7, y, z - 7, Material.PUMPKIN);
         place(world, x - 7, y, z + 7, Material.PUMPKIN);
@@ -504,6 +500,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         Material[] stones = {Material.MOSSY_STONE_BRICKS, Material.CRACKED_STONE_BRICKS,
                 Material.POLISHED_BLACKSTONE_BRICKS, Material.COBBLED_DEEPSLATE};
         Material stone = stones[(variant + random.nextInt(stones.length)) % stones.length];
+        supportDown(world, x, y, z, stone);
         place(world, x, y, z, stone);
         place(world, x, y, z + 1, Material.STONE_BRICK_SLAB);
         place(world, x, y, z + 2, Material.MOSSY_STONE_BRICK_SLAB);
@@ -526,6 +523,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         Material wall = Material.DEEPSLATE_BRICKS;
         for (int dx = -3; dx <= 3; dx++) {
             for (int dz = -2; dz <= 2; dz++) {
+                supportDown(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE_BRICKS);
                 place(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE_BRICKS);
                 boolean edge = Math.abs(dx) == 3 || Math.abs(dz) == 2;
                 if (edge && !(dz == 2 && dx == 0)) {
