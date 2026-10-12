@@ -16,3 +16,6 @@ permissions:
     default: true
   halloweencore.admin:
     default: op
+  halloweencore.admin.worldguard-bypass:
+    description: Explicitly allow Goblin King arena generation to bypass WorldGuard build checks.
+    default: false
