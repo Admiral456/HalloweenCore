@@ -452,6 +452,11 @@ public final class HalloweenHeadlessNickManager implements Listener {
         }
     }
 
+    public boolean isManagedEntity(Entity entity) {
+        return entity != null && (entity.getPersistentDataContainer().has(nickKey, PersistentDataType.BYTE)
+                || entity.getPersistentDataContainer().has(horseKey, PersistentDataType.BYTE));
+    }
+
     private boolean isNight(World world) {
         long time = world.getTime() % 24_000L;
         long start = plugin.getConfig().getLong("stalkers.headless-nick.night-start-tick", 13_000L);
