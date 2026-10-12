@@ -20,28 +20,32 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_hoe.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_shield.png
 
-Generated 3D item models (JSON; created from the crisp pixel art during CI):
-- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_sword.json
-- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_pickaxe.json
-- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_axe.json
-- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_shovel.json
-- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_hoe.json
-- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_shield.json and crimson_warden_shield_blocking.json
-- resourcepack/assets/warriorland_halloween/models/item/cursed_talisman.json
+Generated 3D item models (JSON; created from the crisp pixel art during CI in ItemsAdder's content-model path):
+- models/item/crimson_warden_sword.json
+- models/item/crimson_warden_pickaxe.json
+- models/item/crimson_warden_axe.json
+- models/item/crimson_warden_shovel.json
+- models/item/crimson_warden_hoe.json
+- models/item/crimson_warden_shield.json and models/item/crimson_warden_shield_blocking.json
+- models/item/cursed_talisman.json
 - resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_1.png
 - resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_2.png
 
 Included client/audio assets:
-- resourcepack/assets/minecraft/shaders/core/sky.fsh — seasonal orange/crimson sky tint
+- resourcepack/assets/minecraft/textures/environment/moon_phases.png — sharp orange moon atlas (128x64; eight phases)
+- resourcepack/assets/minecraft/textures/colormap/grass.png, foliage.png, water.png — autumn biome tint maps (256x256 each)
+- resourcepack/assets/minecraft/blockstates and models/block — four pumpkin-face/jack-o-lantern variants that preserve vanilla block behavior
 - resourcepack/assets/minecraft/sounds.json — replaces vanilla music events with a silent OGG while the Halloween pack is active
 - resourcepack/assets/warriorland_halloween/sounds/halloween_silence.ogg — one-second silent replacement file
+- Separate shader archive: shaderpack/ (standalone Iris/Sodium shader, not a resource-pack core-shader override)
+- Separate optional client companion: client-mod/ (Fabric 1.21.10; syncs the real Blood Moon event to the shader)
 - textures/armor/crimson_warden/layer_1.png and layer_2.png — ItemsAdder equipment source layers
 - sounds/haunted_theme.ogg — Spooky Fester ambient loop (duration measured at build time) (mono OGG/Vorbis)
 - sounds/event_sting.ogg — original 5-second Halloween event cue (mono OGG/Vorbis)
 - configs/sounds.yml — ItemsAdder sound registration
 
 Ambient music is Spooky Fester by Eldritch Grim from OpenGameArt (CC0); it is downloaded and converted to OGG during CI. The short event cue is generated locally. Rebuild the ItemsAdder resource pack with /iazip after installing/updating these contents.
-The custom armor uses a shared Crimson Warden equipment texture set, built from 64x32 layer_1/layer_2 atlases. Place those equipment layers in `plugins/ItemsAdder/contents/warriorland_halloween/textures/armor/crimson_warden/`; item icons, modern JSON models, sounds.json, and the sky shader are emitted from `resourcepack/assets/`. It uses Netherite armor materials with configured armor values of 6/12/9/6 (33 armor points total for the full set versus 20 for full vanilla Netherite) and extended durability. The armor's geometry remains Minecraft's normal wearable armor mesh with its own texture overlay; the per-piece abilities and full-set ward are handled by HalloweenCore. The Crimson Warden sword, pickaxe, axe, shovel, and hoe now use their own UV-mapped voxel model generated from the crisp 32x32 item atlas, alongside a separate icon for inventories. The shield has normal/blocking-state models and the cursed talisman uses a 3D voxel necklace model while keeping the existing item ID for saved-item/effect compatibility.
+The custom armor uses a shared Crimson Warden equipment texture set, built from 64x32 layer_1/layer_2 atlases. Place those equipment layers in `plugins/ItemsAdder/contents/warriorland_halloween/textures/armor/crimson_warden/`; item icons live in `resourcepack/assets/`, and the gear JSON models are authored in the ItemsAdder content `models/item/` directory. The Iris shaderpack is separate and distributed as its own ZIP. The armor uses Netherite base materials with configured armor values of 6/12/9/6 (33 armor points total for the full set versus 20 for full vanilla Netherite) and extended durability. Its actual wearable geometry uses Minecraft's standard armor mesh plus its custom layer texture; the per-piece abilities and full-set ward are handled by HalloweenCore. The sword, pickaxe, axe, shovel, hoe, shield and cursed necklace each have custom UV-mapped voxel models generated from crisp pixel art; the necklace keeps the existing talisman ID for saved-item/effect compatibility.
 
 ItemsAdder combines all content namespaces into one generated server resource pack; `warriorland_halloween` is a namespace within the pack, not a second pack in the Minecraft resource-pack menu. After `/iazip`, check `/iainfo` for the hosted URL and request/status. For ItemsAdder 4.0.17+, `resource-pack.hosting.simple_self_host.enabled: true` with `server_address: auto` is often the simplest hosting choice. Set the installed language file's `resourcepack-popup-message` to a branded message such as `&6WarriorLand Halloween 2026` if you want players to recognize the pack prompt.
 
@@ -91,7 +95,7 @@ Netherite tools use mining speed 9 for their matching tool classes and have dura
 
 - `cursed-talisman`: **1,000,000 fragments**, +20 max health (one extra full row of hearts), +10% Halloween fragment multiplier while held in either hand.
 - All four armour pieces and the five Crimson Warden weapon/tool items have component JSON files under `configs/` which explicitly preserve enchantability. Tool component files also specify the mining rules.
-- Shop descriptions, configured attributes, durability values, the component JSON files and all 14 item textures are checked by `scripts/validate_halloween_assets.py`.
+- Shop descriptions, configured attributes, durability values, the component JSON files and all 15 item textures are checked by `scripts/validate_halloween_assets.py`.
 
 
 ## World structures and equipment effects
@@ -128,3 +132,11 @@ The ItemsAdder ZIP also includes seven **16×16 vanilla-block texture overrides*
 - `red_candle.png`, `red_candle_lit.png` — dark red candles and a warmer lit state.
 
 The HalloweenCore decorator places actual vanilla blocks into the world, so the blocks remain present even if a player declines the resource pack. The accepted pack changes their appearance instead of controlling whether they exist. These are vanilla namespace overrides and therefore affect **all** vanilla pumpkins, jack-o'-lanterns, cobwebs and red candles in resource-pack-enabled clients, not just the ones placed by HalloweenCore. They are checked by `scripts/validate_halloween_assets.py` in CI.
+
+## Iris Halloween shader and actual Blood Moon state
+
+- The standalone shader ZIP is generated from `shaderpack/`; `shaders/shaders.properties` is inside the `shaders/` directory per Iris/OptiFine conventions.
+- The Paper plugin sends `halloweencore:visual_state` (byte 1/0) only when the real `blood-moon-invasion` event starts/ends, and sends the current state to newly joined players.
+- The matching client companion is the optional Fabric mod in `client-mod/`. It changes only the client's rendered day marker; the server clock, game rules and mob behavior are not modified.
+- Without both the Iris shader ZIP and client companion the normal autumn/Halloween resource textures still work, but the client cannot switch the sky based on a server-side custom event. This is an explicit protocol limitation, not a permanent-red-sky fallback.
+- CI checks shader syntax, texture dimensions/PNG CRCs, model and blockstate JSON references, Maven compilation and the Fabric client mod build. Final shader/ItemsAdder rendering still requires a real 1.21.10 client test.
