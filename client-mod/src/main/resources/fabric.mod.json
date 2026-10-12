@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "id": "halloweencore",
-  "version": "\${version}",
+  "version": "${version}",
   "name": "HalloweenCore Client Companion",
   "description": "Receives real HalloweenCore event state and exposes a client-only time marker to Iris shaders for Blood Moon visuals.",
   "environment": "client",
