@@ -49,6 +49,8 @@ ADMIN TEST COMMANDS
 - /halloween goblin arena <world> <x> <y> <z> then /halloween goblin confirm — dedicated fortress preflight/build
 - /halloween goblin test — test encounter path; depending on configuration, arena state may be required
 - /halloween structures status — natural village/graveyard diagnostics
+- /halloween structures spawn haunted-village <player> — queue a safe manual Haunted Village attempt in the target player's loaded chunk
+- /halloween structures spawn cursed-graveyard <player> — queue a safe manual Cursed Graveyard attempt
 - /halloween reload — reload server configuration and request an ItemsAdder pack rebuild where ItemsAdder is enabled
 Exact command availability should be checked with /halloween help on the installed build. All build/arena/spawn testing must be performed in a backup test world first.
 

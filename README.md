@@ -80,6 +80,12 @@ Jakmile je finále odemčené a vše připravené, HalloweenCore přirozeně spu
 
 Odměny jsou nastavené jako výzva: účast vyžaduje nejméně 120 sekund v dosahu i způsobení alespoň 2,5 % maximálního zdraví bosse. Top bonus získá pouze kvalifikovaný hráč s nejvyšším poškozením, nikoliv hráč, který jen stál v aréně.
 
+## Bezpečné ruční generování struktur
+
+- Přirozená tvorba vesnic a hřbitovů zůstává v `HalloweenWorldStructureGenerator` navázaná na načítání chunků, s frontou, limity a kontrolami přirozeného terénu.
+- Administrátor může zařadit bezpečný pokus o ruční generování příkazem `/halloween structures spawn haunted-village [hráč]` nebo `/halloween structures spawn cursed-graveyard [hráč]`. Z konzole je nutné zadat online hráče.
+- Umístění se plánuje do středu vybraného hráčova chunku; příkaz negarantuje stavbu za každých okolností. Kontrola načtených chunků, terénu, svahu, výšky, biomu, spawn bufferu a existujících struktur probíhá před stavbou. Nevhodné místo je bezpečně přeskočeno.
+
 ## Přenosné relikvie — Batwing Elytra a Nocturne Sovereign Cowl
 
 - Batwing Elytra má vlastní 64×32 texturu nošených křídel, poškozenou ikonu, výdrž 768 a zachované létání/ohňostroje/Mending; během letu F aktivuje Nightwing Surge a Shift+F Bat Echo.
