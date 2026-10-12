@@ -19,6 +19,15 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_shovel.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_hoe.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_shield.png
+
+Generated 3D item models (JSON; created from the crisp pixel art during CI):
+- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_sword.json
+- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_pickaxe.json
+- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_axe.json
+- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_shovel.json
+- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_hoe.json
+- resourcepack/assets/warriorland_halloween/models/item/crimson_warden_shield.json and crimson_warden_shield_blocking.json
+- resourcepack/assets/warriorland_halloween/models/item/cursed_talisman.json
 - resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_1.png
 - resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_2.png
 
