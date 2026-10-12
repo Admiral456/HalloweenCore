@@ -228,6 +228,18 @@ rewards:
         - "&cTěžba 14 • útokový modifier 7 • rychlostní modifier 1,0."
         - "&7Výdrž 4 500 • plně enchantovatelná."
 
+    crimson-warden-shield:
+      cost: 28000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:crimson_warden_shield"
+      material: SHIELD
+      amount: 1
+      name: "&4&lŠtít Krvavého strážce"
+      lore:
+        - "&7Těžký štít s karmínovou pečetí."
+        - "&cBlokování útoku může odrazit útočníka."
+        - "&7Výdrž 1 800 • enchantovatelnost 25."
+
 haunted-village:
   enabled: false
   world: ""
@@ -558,6 +570,51 @@ world-decorations:
   red-candles-per-chunk: 1
   attempts-per-placement: 32
   chunks-per-tick: 2
+
+# Whole structures are placed only in the Overworld on flat, clear natural ground.
+# Candidate selection is deterministic per seed/chunk, and occupied chunks are marked in their PDC.
+world-structures:
+  enabled: true
+  village-region-chunks: 10
+  graveyard-region-chunks: 6
+  max-slope: 2
+  max-retries: 120
+
+# Passive bonuses and combat procs for items claimed through the Halloween reward shop.
+# Cooldowns limit spam; effects use particles/potions and never alter terrain.
+gear-effects:
+  enabled: true
+  armor:
+    helmet-night-vision-seconds: 4
+    chest-fire-resistance-seconds: 3
+    leggings-speed-seconds: 3
+    boots-jump-boost-seconds: 3
+    set-aura-interval-ticks: 40
+  set-bonus:
+    enabled: true
+    trigger-health-ratio: 0.35
+    cooldown-ms: 30000
+    absorption-ticks: 100
+    absorption-amplifier: 1
+  sword:
+    cooldown-ms: 5000
+    poison-ticks: 50
+    slowness-ticks: 30
+  axe:
+    cooldown-ms: 6000
+    weakness-ticks: 60
+  pickaxe:
+    cooldown-ms: 6000
+    slowness-ticks: 50
+  shovel:
+    cooldown-ms: 8000
+    splash-damage: 2.0
+    splash-radius: 2.5
+  hoe:
+    cooldown-ms: 5000
+    heal-health: 2.0
+  shield:
+    cooldown-ms: 4000
 
 atmosphere:
   enabled: true
