@@ -190,6 +190,153 @@ def add_distinctive_geometry(model: dict, mob_id: str) -> None:
                            (13.0, 30.0, -1.5), (18.0, 35.0, 1.5), (104, 16, 8, 8))
 
 
+def animation_template_keyframe(model: dict, channel: str) -> dict:
+    for animation in model.get("animations", []):
+        for track in (animation.get("animators") or {}).values():
+            for keyframe in track.get("keyframes", []):
+                if keyframe.get("channel") == channel:
+                    return copy.deepcopy(keyframe)
+    raise RuntimeError(f"{model.get('name')} has no template keyframe for channel {channel}")
+
+
+def add_animation_clip(model: dict, name: str, length: float,
+                       tracks: dict[str, tuple[str, list[tuple[float, tuple[float, float, float]]]]],
+                       loop: str = "once") -> None:
+    if any(animation.get("name") == name for animation in model.get("animations", [])):
+        return
+    template = next((animation for animation in model.get("animations", [])
+                     if animation.get("name") == "attack"), None)
+    if template is None:
+        raise RuntimeError(f"{model.get('name')} cannot generate {name}: missing attack template")
+    clip = copy.deepcopy(template)
+    clip.update({
+        "uuid": str(uuid.uuid4()),
+        "name": name,
+        "loop": loop,
+        "length": float(length),
+        "selected": False,
+        "saved": True,
+        "animators": {},
+    })
+    for bone_name, (channel, frames) in tracks.items():
+        bone = find_group(model.get("outliner", []), bone_name)
+        if bone is None:
+            raise RuntimeError(f"{model.get('name')} has no '{bone_name}' bone for {name}")
+        template_frame = animation_template_keyframe(model, channel)
+        keyframes = []
+        for time, vector in frames:
+            keyframe = copy.deepcopy(template_frame)
+            keyframe["uuid"] = str(uuid.uuid4())
+            keyframe["channel"] = channel
+            keyframe["time"] = float(time)
+            keyframe["interpolation"] = "catmullrom"
+            keyframe["data_points"] = [{"x": float(vector[0]), "y": float(vector[1]), "z": float(vector[2])}]
+            keyframes.append(keyframe)
+        clip["animators"][bone["uuid"]] = {
+            "name": bone_name,
+            "type": "bone",
+            "rotation_global": False,
+            "quaternion_interpolation": False,
+            "keyframes": keyframes,
+        }
+    model.setdefault("animations", []).append(clip)
+
+
+def enrich_animation_set(model: dict) -> None:
+    """Add authored damage/death and encounter-specific clips to all ten special models."""
+    common_tracks = {
+        "hit_reaction": {
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.08, (-12, 0, 6)), (0.22, (0, 0, 0))]),
+        },
+        "death": {
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.3, (28, 0, 0)), (0.8, (72, 0, 0))]),
+            "body_position": ("position", [(0.0, (0, 0, 0)), (0.3, (0, -2, 0)), (0.8, (0, -7, 0))]),
+        },
+    }
+    add_animation_clip(model, "hit_reaction", 0.24, common_tracks["hit_reaction"])
+    # Use a separate key for the position channel while still targeting the same body bone.
+    add_animation_clip(model, "death", 0.82, {
+        "body": ("rotation", [(0.0, (0, 0, 0)), (0.3, (28, 0, 0)), (0.82, (72, 0, 0))]),
+        "body_lower": ("position", [(0.0, (0, 0, 0)), (0.3, (0, -2, 0)), (0.82, (0, -7, 0))]),
+    })
+    mob_id = model.get("model_identifier", model.get("name", ""))
+    if mob_id == "halloween_goblin_king":
+        add_animation_clip(model, "heavy_attack", 0.95, {
+            "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.25, (-78, 0, 0)),
+                                       (0.48, (52, 0, 0)), (0.95, (0, 0, 0))]),
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.25, (0, 0, -8)),
+                                 (0.5, (0, 0, 10)), (0.95, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "phase_transition", 1.4, {
+            "body_position": ("position", [(0.0, (0, 0, 0)), (0.3, (0, 1.5, 0)),
+                                          (0.8, (0, -2, 0)), (1.4, (0, 0, 0))]),
+            "left_arm": ("rotation", [(0.0, (0, 0, 0)), (0.45, (-80, 0, -12)),
+                                     (0.9, (-105, 0, -8)), (1.4, (0, 0, 0))]),
+            "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.45, (-80, 0, 12)),
+                                      (0.9, (-105, 0, 8)), (1.4, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "victory", 1.15, {
+            "left_arm": ("rotation", [(0.0, (0, 0, 0)), (0.35, (-100, 0, -18)), (1.15, (-85, 0, -12))]),
+            "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.35, (-100, 0, 18)), (1.15, (-85, 0, 12))]),
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.5, (-8, 0, 0)), (1.15, (0, 0, 0))]),
+        })
+    elif mob_id == "halloween_headless_nick":
+        add_animation_clip(model, "charge", 0.7, {
+            "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.18, (35, 0, 12)),
+                                       (0.4, (-55, 0, -15)), (0.7, (0, 0, 0))]),
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.2, (-18, 0, 0)),
+                                 (0.45, (12, 0, 0)), (0.7, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "executioner_strike", 0.78, {
+            "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.24, (-95, 0, 12)),
+                                       (0.45, (52, 0, -8)), (0.78, (0, 0, 0))]),
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.28, (-8, 0, 0)),
+                                 (0.48, (22, 0, 0)), (0.78, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "retreat", 0.8, {
+            "left_leg": ("rotation", [(0.0, (0, 0, 0)), (0.2, (26, 0, 0)),
+                                     (0.4, (0, 0, 0)), (0.6, (-26, 0, 0)), (0.8, (0, 0, 0))]),
+            "right_leg": ("rotation", [(0.0, (0, 0, 0)), (0.2, (-26, 0, 0)),
+                                      (0.4, (0, 0, 0)), (0.6, (26, 0, 0)), (0.8, (0, 0, 0))]),
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.35, (0, 0, 8)), (0.8, (0, 0, 0))]),
+        })
+    else:
+        extra_clip = {
+            "halloween_cursed_zombie": ("frenzy", {
+                "left_arm": ("rotation", [(0.0, (0, 0, 0)), (0.15, (-55, 0, -10)), (0.35, (35, 0, 15)), (0.65, (0, 0, 0))]),
+            }),
+            "halloween_void_reaper": ("void_cast", {
+                "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.25, (-70, 0, 0)), (0.55, (25, 0, 0)), (0.9, (0, 0, 0))]),
+            }),
+            "halloween_gravekeeper": ("ground_slam", {
+                "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.25, (-85, 0, 10)), (0.5, (35, 0, 0)), (0.9, (0, 0, 0))]),
+                "body": ("rotation", [(0.0, (0, 0, 0)), (0.35, (18, 0, 0)), (0.55, (-15, 0, 0)), (0.9, (0, 0, 0))]),
+            }),
+            "halloween_frost_stalker": ("pounce", {
+                "body": ("rotation", [(0.0, (0, 0, 0)), (0.2, (-22, 0, 0)), (0.45, (18, 0, 0)), (0.8, (0, 0, 0))]),
+                "body_position": ("position", [(0.0, (0, 0, 0)), (0.2, (0, 2, 0)), (0.45, (0, -1, 0)), (0.8, (0, 0, 0))]),
+            }),
+            "halloween_blood_spider": ("blood_leap", {
+                "body": ("rotation", [(0.0, (0, 0, 0)), (0.15, (-25, 0, 0)), (0.35, (15, 0, 0)), (0.7, (0, 0, 0))]),
+            }),
+            "halloween_pumpkin_wraith": ("ember_burst", {
+                "body": ("rotation", [(0.0, (0, 0, 0)), (0.2, (0, -18, 0)), (0.4, (0, 18, 0)), (0.8, (0, 0, 0))]),
+            }),
+            "halloween_hex_witch": ("hex_cast", {
+                "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.25, (-70, 0, 10)), (0.55, (30, 0, -8)), (0.9, (0, 0, 0))]),
+                "body": ("rotation", [(0.0, (0, 0, 0)), (0.45, (0, 8, 0)), (0.9, (0, 0, 0))]),
+            }),
+            "halloween_nightmare": ("spectral_charge", {
+                "body": ("rotation", [(0.0, (0, 0, 0)), (0.2, (-28, 0, 0)), (0.45, (18, 0, 0)), (0.8, (0, 0, 0))]),
+                "body_position": ("position", [(0.0, (0, 0, 0)), (0.2, (0, 2, 0)), (0.45, (0, -1, 0)), (0.8, (0, 0, 0))]),
+            }),
+        }.get(mob_id, (None, None))
+        if extra_clip[0]:
+            add_animation_clip(model, extra_clip[0], 0.9, extra_clip[1])
+
+
+def create_model(new_id: str, template_id: str, hue_shift: float, saturation: float,
+                 brightness: float, accent_hue: float) -> None:
 def create_model(new_id: str, template_id: str, hue_shift: float, saturation: float,
                  brightness: float, accent_hue: float) -> None:
     source_model = MODEL_DIR / f"{template_id}.bbmodel"
@@ -224,6 +371,26 @@ def create_model(new_id: str, template_id: str, hue_shift: float, saturation: fl
 def main() -> None:
     for definition in MODELS:
         create_model(*definition)
+
+    # The repository stores five editable templates and generates the other five in CI.
+    # Enrich all ten source/generated models with unique UUIDs before validation/packaging.
+    required = {
+        "halloween_cursed_zombie", "halloween_void_reaper", "halloween_gravekeeper",
+        "halloween_frost_stalker", "halloween_blood_spider", "halloween_pumpkin_wraith",
+        "halloween_hex_witch", "halloween_nightmare", "halloween_goblin_king",
+        "halloween_headless_nick",
+    }
+    for mob_id in sorted(required):
+        model_path = MODEL_DIR / f"{mob_id}.bbmodel"
+        if not model_path.is_file():
+            raise RuntimeError(f"Required Halloween animation model missing: {model_path.name}")
+        model = json.loads(model_path.read_text(encoding="utf-8"))
+        before = len(model.get("animations", []))
+        enrich_animation_set(model)
+        if len(model.get("animations", [])) < before + 2:
+            raise RuntimeError(f"Could not enrich {mob_id} with custom damage/death animations")
+        model_path.write_text(json.dumps(model, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        print(f"Enriched {mob_id}: {len(model.get('animations', []))} animations including hit/death and encounter-specific clips")
 
 
 if __name__ == "__main__":
