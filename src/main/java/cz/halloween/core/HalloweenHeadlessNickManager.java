@@ -110,8 +110,10 @@ public final class HalloweenHeadlessNickManager implements Listener {
         horse.setCanPickupItems(false);
         horse.getPersistentDataContainer().set(horseKey, PersistentDataType.BYTE, (byte) 1);
 
-        LivingEntity rider = plugin.getMobManager().spawnEncounterEntity(
-                spawn.clone().add(0.0D, 1.0D, 0.0D), "headless-nick", EntityType.WITHER_SKELETON);
+        // A normal Wither Skeleton would visibly have a head; fail closed if the genuine
+        // headless ModelEngine definition cannot be loaded instead of pretending it is Nick.
+        LivingEntity rider = plugin.getMobManager().spawnCustomEncounterEntity(
+                spawn.clone().add(0.0D, 1.0D, 0.0D), "headless-nick");
         if (rider == null) {
             horse.remove();
             return false;
