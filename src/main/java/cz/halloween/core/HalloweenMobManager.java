@@ -718,6 +718,20 @@ public final class HalloweenMobManager implements Listener {
      * verified MythicMobs/ModelEngine spawn bridge as seasonal enemies but does not tag
      * the entity as a normal fragment-earning special mob.
      */
+    /**
+     * Strict model-only route for encounters whose silhouette is part of the mechanic
+     * (for example a genuinely headless rider). Unlike the normal event spawn path,
+     * it never substitutes a visually misleading vanilla entity.
+     */
+    public LivingEntity spawnCustomEncounterEntity(Location location, String mobId) {
+        if (location == null || location.getWorld() == null || mobId == null
+                || !plugin.getConfig().getBoolean("special-mobs.custom-models.enabled", true)) return null;
+        int cx = location.getBlockX() >> 4;
+        int cz = location.getBlockZ() >> 4;
+        if (!location.getWorld().isChunkLoaded(cx, cz)) return null;
+        return spawnMythicModelMob(location, mobId);
+    }
+
     public LivingEntity spawnEncounterEntity(Location location, String mobId, EntityType fallbackType) {
         if (location == null || location.getWorld() == null || fallbackType == null) return null;
         World world = location.getWorld();
