@@ -117,6 +117,7 @@ public final class HalloweenWorldDecorator implements Listener {
         int webs = legacyDecorated ? 0 : Math.max(0, Math.min(3,
                 plugin.getConfig().getInt("world-decorations.cobwebs-per-chunk", 2)));
         int candles = Math.max(0, Math.min(3, plugin.getConfig().getInt("world-decorations.red-candles-per-chunk", 1)));
+        int mushrooms = Math.max(0, Math.min(4, plugin.getConfig().getInt("world-decorations.mushrooms-per-chunk", 2)));
         int attempts = Math.max(8, Math.min(80, plugin.getConfig().getInt("world-decorations.attempts-per-placement", 32)));
         long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C4F574545L;
@@ -165,6 +166,22 @@ public final class HalloweenWorldDecorator implements Listener {
             if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
             air.setType(Material.RED_CANDLE, false);
             candleCount++;
+        }
+
+        // Mushrooms are only placed in naturally shaded spots so they survive
+        // Minecraft's normal mushroom light checks instead of becoming litter.
+        int mushroomCount = 0;
+        for (int i = 0; i < attempts && mushroomCount < mushrooms; i++) {
+            int x = (chunk.getX() << 4) + random.nextInt(16);
+            int z = (chunk.getZ() << 4) + random.nextInt(16);
+            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
+            if (!isNaturalGround(ground.getType()) || !naturalNeighborhood(ground)) continue;
+            if (ground.getState() instanceof TileState) continue;
+            Block air = ground.getRelative(0, 1, 0);
+            if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
+            if (air.getLightLevel() > 12) continue;
+            air.setType(random.nextBoolean() ? Material.RED_MUSHROOM : Material.BROWN_MUSHROOM, false);
+            mushroomCount++;
         }
     }
 
