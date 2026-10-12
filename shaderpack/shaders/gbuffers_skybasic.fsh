@@ -45,19 +45,19 @@ void main() {
     float elevation = dot(viewPos, worldUp);
     float horizon = 1.0 - smoothstep(-0.12, 0.56, elevation);
 
-    // Muted autumn daytime and deep violet-blue nights.
+    // Desaturated ash/blue night sky; crimson is reserved for the real Blood Moon event.
     float daylightWave = 0.5 + 0.5 * cos(6.2831853 * (sunAngle - 0.25));
     float day = smoothstep(0.02, 0.98, daylightWave);
-    vec3 dayZenith = vec3(0.22, 0.19, 0.30);
-    vec3 dayHorizon = vec3(0.69, 0.29, 0.12);
-    vec3 nightZenith = vec3(0.018, 0.014, 0.052);
-    vec3 nightHorizon = vec3(0.15, 0.045, 0.115);
+    vec3 dayZenith = vec3(0.28, 0.31, 0.35);
+    vec3 dayHorizon = vec3(0.59, 0.45, 0.29);
+    vec3 nightZenith = vec3(0.012, 0.018, 0.030);
+    vec3 nightHorizon = vec3(0.095, 0.060, 0.060);
 
     vec3 zenith = mix(nightZenith, dayZenith, day);
     vec3 horizonColor = mix(nightHorizon, dayHorizon, day);
     vec3 proceduralSky = mix(zenith, horizonColor, clamp(horizon, 0.0, 1.0));
-    proceduralSky = mix(proceduralSky, skyColor * vec3(0.72, 0.43, 0.66), 0.18);
-    proceduralSky = mix(proceduralSky, fogColor * vec3(0.82, 0.54, 0.70), horizon * 0.12);
+    proceduralSky = mix(proceduralSky, skyColor * vec3(0.72, 0.78, 0.84), 0.08);
+    proceduralSky = mix(proceduralSky, fogColor * vec3(0.78, 0.78, 0.75), horizon * 0.08);
 
     float blood = bloodMoonTransition();
     vec3 bloodZenith = vec3(0.055, 0.004, 0.018);
@@ -76,7 +76,7 @@ void main() {
     halo += exp(-angularDistance * 23.0) * nightVisibility * 0.028;
 #endif
 #endif
-    vec3 normalHalo = vec3(1.0, 0.29, 0.08) * halo;
+    vec3 normalHalo = vec3(0.72, 0.78, 0.84) * halo;
     vec3 bloodHalo = vec3(0.92, 0.012, 0.035) * halo * 3.0;
     vec3 result = mix(proceduralSky + normalHalo, bloodSky + bloodHalo, clamp(blood, 0.0, 1.0));
 

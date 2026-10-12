@@ -13,6 +13,7 @@ TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "text
 MODELS = CONTENT / "models" / "item"
 WEARABLE_HELMET_MODEL = CONTENT / "models" / "armor" / "crimson_warden_helmet_3d.json"
 WEARABLE_COWL_MODEL = CONTENT / "models" / "armor" / "nocturne_sovereign_cowl_3d.json"
+WEARABLE_COWL_TEXTURE = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item" / "nocturne_sovereign_cowl_worn.png"
 WINGS_TEXTURE = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "entity" / "equipment" / "wings" / "batwing_elytra.png"
 EXPECTED_3D_MODELS = {
     "cursed_talisman": ("item/generated", "item/cursed_talisman"),
@@ -247,11 +248,28 @@ except (OSError, json.JSONDecodeError) as exc:
     fail(f"Invalid wearable Cowl model JSON: {exc}")
 if wearable_cowl.get("parent") != "item/generated":
     fail("Wearable Cowl model must use item/generated parent")
-if wearable_cowl.get("textures", {}).get("layer0") != "warriorland_halloween:item/nocturne_sovereign_cowl":
-    fail("Wearable Cowl model references the wrong namespaced texture")
+if wearable_cowl.get("textures", {}).get("layer0") != "warriorland_halloween:item/nocturne_sovereign_cowl_worn":
+    fail("Wearable Cowl model must reference the separate 64x64 hood atlas, not the inventory icon")
+if not WEARABLE_COWL_TEXTURE.is_file():
+    fail("Missing 64x64 wearable Nocturne Cowl texture atlas")
+try:
+    cowl_texture_size = strict_png_size(WEARABLE_COWL_TEXTURE)
+except (OSError, ValueError) as exc:
+    fail(f"Invalid wearable Cowl texture atlas: {exc}")
+if cowl_texture_size != (64, 64):
+    fail(f"Wearable Cowl texture atlas must be 64x64, got {cowl_texture_size}")
 cowl_elements = wearable_cowl.get("elements")
-if not isinstance(cowl_elements, list) or len(cowl_elements) < 8 or len(cowl_elements) > 700:
-    fail("Wearable Cowl model must contain 8..700 voxel elements")
+if not isinstance(cowl_elements, list) or len(cowl_elements) < 15 or len(cowl_elements) > 80:
+    fail("Wearable Cowl model must be a shaped multi-piece hood with 15..80 cuboids")
+if cowl_elements:
+    min_x = min(float(element["from"][0]) for element in cowl_elements)
+    max_x = max(float(element["to"][0]) for element in cowl_elements)
+    min_y = min(float(element["from"][1]) for element in cowl_elements)
+    max_y = max(float(element["to"][1]) for element in cowl_elements)
+    min_z = min(float(element["from"][2]) for element in cowl_elements)
+    max_z = max(float(element["to"][2]) for element in cowl_elements)
+    if max_x - min_x < 10 or max_y - min_y < 8 or max_z - min_z < 10:
+        fail("Wearable Cowl geometry is too flat or too small to form a hood around the head")
 for index, element in enumerate(cowl_elements):
     frm, to, faces = element.get("from"), element.get("to"), element.get("faces")
     if not isinstance(frm, list) or not isinstance(to, list) or len(frm) != 3 or len(to) != 3:
@@ -276,6 +294,12 @@ except (OSError, json.JSONDecodeError) as exc:
     fail(f"Invalid Blockbench source JSON: {exc}")
 if source_model.get("meta", {}).get("model_format") != "free" or not source_model.get("elements"):
     fail("Nocturne Cowl Blockbench source must include editable voxel geometry")
+if source_model.get("resolution") != {"width": 64, "height": 64}:
+    fail("Nocturne Cowl Blockbench source must use the real 64x64 wearable atlas UV size")
+if len(source_model.get("elements", [])) != len(cowl_elements):
+    fail("Nocturne Cowl Blockbench source geometry must match the runtime model")
+if not any("nocturne_sovereign_cowl_worn.png" in str(texture.get("path", "")) for texture in source_model.get("textures", [])):
+    fail("Nocturne Cowl Blockbench source must reference its standalone worn atlas")
 
 shield_blocking_path = MODELS / "crimson_warden_shield_blocking.json"
 if not shield_blocking_path.is_file():

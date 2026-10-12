@@ -561,6 +561,259 @@ def save_voxel_model(item_id: str, parent: str, depth: tuple[float, float]) -> i
     return len(elements)
 
 
+
+
+def nocturne_sovereign_cowl_worn_atlas() -> Image.Image:
+    """Return the 64x64 face/side/back/top atlas for the genuinely 3D worn hood."""
+    image = Image.new("RGBA", (64, 64), INK)
+    d = ImageDraw.Draw(image)
+
+    # Each 16x16 tile maps to a 4x4 UV square in Minecraft model coordinates.
+    # The atlas deliberately uses charcoal cloth, restrained silver/bone trim,
+    # a shadowed face and small crimson/spectral accents instead of a purple wash.
+    tile_bases = (
+        (INK, SHADOW, INK, IRON_DARK),
+        (STEEL, INK, PURPLE_DARK, CRIMSON_DARK),
+        (IRON_DARK, SHADOW, GOLD_DARK, CRIMSON_DARK),
+        (INK, IRON_DARK, PURPLE_DARK, SHADOW),
+    )
+    for row in range(4):
+        for col in range(4):
+            x, y = col * 16, row * 16
+            d.rectangle((x, y, x + 15, y + 15), fill=tile_bases[row][col])
+
+    def line(col: int, row: int, points: list[tuple[int, int]], color: tuple[int, int, int, int], width: int = 1) -> None:
+        x0, y0 = col * 16, row * 16
+        d.line([(x0 + x, y0 + y) for x, y in points], fill=color, width=width)
+
+    def rect(col: int, row: int, coords: tuple[int, int, int, int], color: tuple[int, int, int, int], outline=None) -> None:
+        x0, y0 = col * 16, row * 16
+        x1, y1, x2, y2 = coords
+        d.rectangle((x0 + x1, y0 + y1, x0 + x2, y0 + y2), fill=color, outline=outline)
+
+    # Front shell: folded obsidian fabric with low-contrast edge stitching.
+    line(0, 0, [(1, 15), (3, 11), (4, 5), (7, 1)], IRON_DARK)
+    line(0, 0, [(5, 0), (6, 6), (9, 11), (8, 15)], SHADOW, 2)
+    line(0, 0, [(12, 1), (10, 6), (12, 10), (14, 14)], IRON_DARK)
+    line(0, 0, [(1, 14), (4, 13), (6, 14)], CRIMSON_DARK)
+    line(0, 0, [(10, 2), (12, 4), (13, 8)], STEEL)
+
+    # Side cloth: diagonal folds that remain visible on the head's silhouette.
+    line(1, 0, [(0, 2), (4, 5), (7, 11), (8, 15)], IRON_DARK, 2)
+    line(1, 0, [(7, 0), (9, 4), (11, 8), (15, 12)], SHADOW, 2)
+    line(1, 0, [(2, 13), (6, 12), (9, 14)], CRIMSON_DARK)
+    line(1, 0, [(12, 2), (11, 5), (13, 8)], STEEL)
+
+    # Rear drape and crown-top.
+    line(2, 0, [(2, 0), (3, 6), (2, 15)], IRON_DARK, 2)
+    line(2, 0, [(7, 1), (6, 7), (8, 15)], SHADOW, 2)
+    line(2, 0, [(12, 0), (10, 7), (13, 15)], IRON_DARK, 2)
+    line(2, 0, [(1, 14), (5, 13), (8, 15)], CRIMSON_DARK)
+    line(3, 0, [(0, 9), (4, 6), (7, 3), (10, 5), (15, 10)], INK, 2)
+    line(3, 0, [(2, 11), (6, 8), (8, 6), (12, 8), (14, 11)], STEEL)
+    line(3, 0, [(4, 12), (8, 10), (12, 12)], PURPLE_DARK)
+
+    # Bone/silver trim tile.
+    line(0, 1, [(1, 14), (3, 4), (6, 1)], IRON_DARK, 2)
+    line(0, 1, [(2, 12), (4, 4), (6, 2)], BONE)
+    line(0, 1, [(7, 2), (9, 7), (14, 12)], HIGHLIGHT)
+    line(0, 1, [(2, 14), (8, 14), (13, 12)], STEEL)
+    for x in (4, 8, 12):
+        d.point((x, 16 + 5), fill=GOLD_DARK)
+        d.point((x, 16 + 6), fill=GOLD_LIGHT)
+
+    # Face aperture: nearly black, deliberately without an opaque purple glow.
+    rect(1, 1, (0, 0, 15, 15), INK)
+    rect(1, 1, (2, 1, 13, 14), SHADOW)
+    line(1, 1, [(3, 3), (6, 2), (9, 3)], IRON_DARK)
+    line(1, 1, [(2, 12), (6, 13), (11, 12)], PURPLE_DARK)
+
+    # Jewel/rune, ragged hem, and supporting textures.
+    d.polygon([(2 * 16 + 8, 1 * 16 + 1), (2 * 16 + 13, 1 * 16 + 7),
+               (2 * 16 + 8, 1 * 16 + 14), (2 * 16 + 3, 1 * 16 + 7)],
+              fill=CRIMSON, outline=GOLD_LIGHT)
+    d.polygon([(2 * 16 + 8, 1 * 16 + 4), (2 * 16 + 10, 1 * 16 + 7),
+               (2 * 16 + 8, 1 * 16 + 11), (2 * 16 + 6, 1 * 16 + 7)],
+              fill=RUBY, outline=EMBER)
+    d.point((2 * 16 + 7, 1 * 16 + 6), fill=HIGHLIGHT)
+
+    line(3, 1, [(0, 2), (4, 5), (7, 11), (10, 8), (15, 14)], INK, 2)
+    line(3, 1, [(1, 5), (4, 8), (6, 13)], CRIMSON)
+    line(3, 1, [(10, 1), (9, 5), (12, 9), (13, 14)], PURPLE_DARK, 2)
+
+    line(0, 2, [(1, 2), (4, 5), (6, 2)], BONE)
+    line(0, 2, [(1, 11), (5, 8), (8, 10), (14, 6)], STEEL)
+    for x, y in ((3, 4), (7, 9), (12, 6), (11, 12)):
+        d.point((x, 32 + y), fill=GOLD_LIGHT)
+    line(1, 2, [(1, 0), (4, 5), (3, 11), (7, 15)], IRON_DARK, 2)
+    line(1, 2, [(9, 0), (8, 4), (11, 9), (14, 15)], SHADOW, 2)
+    line(2, 2, [(1, 13), (5, 5), (8, 13), (12, 3), (15, 12)], BONE)
+    line(2, 2, [(2, 14), (6, 6), (8, 14)], GOLD_DARK)
+    line(3, 2, [(1, 2), (5, 4), (7, 8), (11, 10), (14, 13)], CRIMSON)
+    line(3, 2, [(2, 11), (5, 8), (7, 9)], RUBY)
+    for x, y in ((4, 3), (7, 8), (11, 10), (13, 13)):
+        d.point((48 + x, 32 + y), fill=GOLD_LIGHT)
+
+    # Underside and seams. Keep every pixel opaque; each mapped tile has a clear role.
+    line(0, 3, [(0, 4), (5, 8), (7, 15)], SHADOW, 2)
+    line(0, 3, [(7, 0), (10, 5), (12, 10), (15, 12)], IRON_DARK, 2)
+    line(1, 3, [(1, 0), (4, 4), (3, 11), (8, 15)], BONE)
+    line(1, 3, [(8, 0), (10, 5), (13, 8), (15, 14)], STEEL)
+    line(2, 3, [(2, 1), (5, 4), (3, 8), (7, 11), (4, 14)], PURPLE)
+    line(2, 3, [(10, 1), (8, 6), (12, 10), (10, 14)], PURPLE_DARK, 2)
+    line(3, 3, [(0, 2), (5, 6), (8, 10), (13, 12)], IRON_DARK, 2)
+    line(3, 3, [(1, 13), (5, 11), (9, 14)], CRIMSON_DARK)
+    return image
+
+
+def nocturne_cowl_model_elements() -> list[dict]:
+    """Build a shaped hood shell with face aperture, drape, ornaments and a deep gem."""
+    # Each element is a true head-shaped cuboid, not an extrusion of every icon pixel.
+    geometry = [
+        ([2.0, 8.0, 5.0], [14.0, 16.0, 14.0], "cloth"),
+        ([3.0, 14.0, 3.0], [13.0, 16.0, 13.0], "cloth"),
+        ([1.5, 8.0, 3.0], [4.5, 15.0, 11.0], "cloth"),
+        ([11.5, 8.0, 3.0], [14.5, 15.0, 11.0], "cloth"),
+        ([3.0, 6.0, 10.0], [13.0, 12.0, 15.0], "cloth"),
+        ([4.0, 6.0, 12.0], [6.0, 9.0, 15.0], "hem"),
+        ([10.0, 6.0, 12.0], [12.0, 9.0, 15.0], "hem"),
+        ([4.0, 14.0, 2.0], [12.0, 16.0, 6.0], "trim"),
+        ([2.5, 9.0, 2.0], [5.5, 14.0, 7.0], "trim"),
+        ([10.5, 9.0, 2.0], [13.5, 14.0, 7.0], "trim"),
+        ([5.0, 7.0, 2.0], [11.0, 9.0, 7.0], "trim"),
+        ([5.5, 9.0, 2.8], [10.5, 13.2, 5.0], "face"),
+        ([2.0, 6.0, 4.0], [4.5, 9.0, 10.0], "hem"),
+        ([11.5, 6.0, 4.0], [14.0, 9.0, 10.0], "hem"),
+        ([4.0, 12.0, 1.8], [5.5, 13.5, 3.1], "runes"),
+        ([10.5, 12.0, 1.8], [12.0, 13.5, 3.1], "runes"),
+        ([6.0, 10.1, 1.7], [7.5, 11.4, 2.8], "eyes"),
+        ([8.5, 10.1, 1.7], [10.0, 11.4, 2.8], "eyes"),
+        ([6.9, 13.0, 1.7], [9.1, 15.0, 3.2], "gem"),
+        ([7.5, 13.6, 1.2], [8.5, 14.5, 2.0], "ruby"),
+        ([5.5, 14.0, 1.8], [6.7, 15.0, 2.8], "trim"),
+        ([9.3, 14.0, 1.8], [10.5, 15.0, 2.8], "trim"),
+        ([6.0, 9.3, 1.8], [10.0, 9.8, 2.9], "hem"),
+        ([4.0, 8.0, 8.0], [5.5, 10.0, 12.0], "hem"),
+        ([10.5, 8.0, 8.0], [12.0, 10.0, 12.0], "hem"),
+    ]
+    face_tiles = {
+        "cloth": {"north": (0, 0), "south": (2, 0), "east": (1, 0), "west": (1, 0), "up": (3, 0), "down": (3, 3)},
+        "trim": {"north": (0, 1), "south": (0, 2), "east": (0, 2), "west": (0, 2), "up": (2, 2), "down": (1, 3)},
+        "face": {"north": (1, 1), "south": (1, 1), "east": (1, 1), "west": (1, 1), "up": (1, 1), "down": (1, 1)},
+        "eyes": {"north": (1, 2), "south": (1, 1), "east": (1, 2), "west": (1, 2), "up": (1, 2), "down": (1, 2)},
+        "gem": {"north": (2, 1), "south": (2, 2), "east": (2, 2), "west": (2, 2), "up": (2, 2), "down": (2, 3)},
+        "ruby": {"north": (2, 1), "south": (2, 2), "east": (2, 2), "west": (2, 2), "up": (2, 2), "down": (2, 3)},
+        "runes": {"north": (3, 2), "south": (0, 2), "east": (2, 2), "west": (2, 2), "up": (0, 1), "down": (0, 2)},
+        "hem": {"north": (3, 1), "south": (0, 3), "east": (1, 3), "west": (1, 3), "up": (1, 3), "down": (1, 3)},
+    }
+    elements = []
+    for frm, to, role in geometry:
+        faces = {}
+        for face_name, (col, row) in face_tiles[role].items():
+            faces[face_name] = {
+                "uv": [col * 4, row * 4, (col + 1) * 4, (row + 1) * 4],
+                "texture": "#layer0",
+            }
+        elements.append({"from": frm, "to": to, "faces": faces})
+    return elements
+
+
+def save_worn_cowl_assets() -> int:
+    atlas = nocturne_sovereign_cowl_worn_atlas()
+    OUT.mkdir(parents=True, exist_ok=True)
+    SOURCE_ITEM_OUT.mkdir(parents=True, exist_ok=True)
+    atlas_path = OUT / "nocturne_sovereign_cowl_worn.png"
+    source_texture_path = SOURCE_ITEM_OUT / "nocturne_sovereign_cowl_worn.png"
+    atlas.save(atlas_path, format="PNG", optimize=True, compress_level=9)
+    atlas.save(source_texture_path, format="PNG", optimize=True, compress_level=9)
+    if atlas.size != (64, 64) or atlas.mode != "RGBA":
+        raise RuntimeError("The wearable Nocturne Cowl atlas must be 64x64 RGBA")
+
+    elements = nocturne_cowl_model_elements()
+    model = {
+        "credit": "HalloweenCore - shaped Nocturne Sovereign Cowl with separate face/side/back/top atlas",
+        "parent": "item/generated",
+        "textures": {
+            "layer0": "warriorland_halloween:item/nocturne_sovereign_cowl_worn",
+            "particle": "warriorland_halloween:item/nocturne_sovereign_cowl_worn",
+        },
+        "elements": elements,
+    }
+    ARMOR_MODEL_OUT.mkdir(parents=True, exist_ok=True)
+    model_path = ARMOR_MODEL_OUT / "nocturne_sovereign_cowl_3d.json"
+    model_path.write_text(json.dumps(model, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    check = json.loads(model_path.read_text(encoding="utf-8"))
+    if check.get("textures", {}).get("layer0") != "warriorland_halloween:item/nocturne_sovereign_cowl_worn":
+        raise RuntimeError("Wearable cowl points to the wrong texture atlas")
+
+    # Keep an editable Blockbench source with full 64x64 pixel-space UVs and
+    # the exact same geometry as the Minecraft JSON model.
+    source_elements, children = [], []
+    for index, part in enumerate(elements):
+        identifier = str(uuid.uuid4())
+        frm, to = part["from"], part["to"]
+        faces = {
+            name: {
+                "uv": [round(float(value) * 4.0, 3) for value in face["uv"]],
+                "texture": 0,
+            }
+            for name, face in part["faces"].items()
+        }
+        source_elements.append({
+            "name": f"cowl_piece_{index:02d}",
+            "uuid": identifier,
+            "from": frm,
+            "to": to,
+            "origin": [(float(frm[i]) + float(to[i])) / 2.0 for i in range(3)],
+            "rotation": [0, 0, 0],
+            "faces": faces,
+            "type": "cube",
+            "autouv": 0,
+            "color": 0,
+        })
+        children.append(identifier)
+
+    source_model = {
+        "meta": {"format_version": "4.10", "model_format": "free", "box_uv": False},
+        "name": "Nocturne Sovereign Cowl",
+        "model_identifier": "nocturne_sovereign_cowl",
+        "visible_box": [16, 16, 0],
+        "resolution": {"width": 64, "height": 64},
+        "elements": source_elements,
+        "outliner": [{
+            "name": "cowl_root", "origin": [8, 8, 8], "uuid": str(uuid.uuid4()),
+            "export": True, "isOpen": True, "locked": False, "visibility": True,
+            "autouv": 0, "children": children,
+        }],
+        "textures": [{
+            "path": "textures/nocturne_sovereign_cowl_worn.png",
+            "name": "nocturne_sovereign_cowl_worn.png",
+            "folder": "textures",
+            "namespace": "",
+            "id": 0,
+            "particle": True,
+            "render_mode": "normal",
+            "visible": True,
+            "mode": "bitmap",
+            "saved": True,
+            "uuid": str(uuid.uuid4()),
+            "source": "data:image/png;base64," + base64.b64encode(atlas_path.read_bytes()).decode("ascii"),
+            "width": 64,
+            "height": 64,
+            "uv_width": 64,
+            "uv_height": 64,
+        }],
+        "animations": [],
+    }
+    SOURCE_MODEL_OUT.mkdir(parents=True, exist_ok=True)
+    (SOURCE_MODEL_OUT / "nocturne_sovereign_cowl.bbmodel").write_text(
+        json.dumps(source_model, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Generated shaped 3D Nocturne Cowl: {len(elements)} pieces, 64x64 UV atlas")
+    return len(elements)
+
+
 def generate_voxel_models() -> None:
     """Create custom 3D in-hand geometry for combat gear and the necklace."""
     for item_id in (
@@ -659,21 +912,11 @@ def main() -> None:
         raise RuntimeError(f"Invalid Batwing Elytra wings atlas: {wings.size} {wings.mode}")
     print("Generated 64x32 Batwing Elytra equipment-wing atlas")
     generate_voxel_models()
-    with Image.open(OUT / "nocturne_sovereign_cowl.png") as cowl_image:
-        cowl_model = {
-            "credit": "HalloweenCore - Nocturne Sovereign Cowl wearable pixel-art voxel model",
-            "parent": "item/generated",
-            "textures": {"layer0": "warriorland_halloween:item/nocturne_sovereign_cowl",
-                         "particle": "warriorland_halloween:item/nocturne_sovereign_cowl"},
-            "elements": voxel_elements(cowl_image, (6.2, 9.8)),
-        }
-        model_json = json.dumps(cowl_model, ensure_ascii=False, separators=(",", ":")) + "\n"
-        MODEL_OUT.mkdir(parents=True, exist_ok=True)
-        (MODEL_OUT / "nocturne_sovereign_cowl.json").write_text(model_json, encoding="utf-8")
-        ARMOR_MODEL_OUT.mkdir(parents=True, exist_ok=True)
-        (ARMOR_MODEL_OUT / "nocturne_sovereign_cowl_3d.json").write_text(model_json, encoding="utf-8")
-        save_blockbench_source("nocturne_sovereign_cowl", cowl_image)
-    print("Generated wearable Nocturne Sovereign Cowl with " + str(len(cowl_model["elements"])) + " voxel elements")
+    # Keep the small inventory icon as its own item model; the worn head slot
+    # uses a separate spatial mesh and face/side/back/top texture atlas.
+    save_voxel_model("nocturne_sovereign_cowl", "item/generated", (7.1, 8.9))
+    worn_cowl_elements = save_worn_cowl_assets()
+    print("Generated wearable Nocturne Sovereign Cowl with " + str(worn_cowl_elements) + " shaped 3D elements")
 
 
 if __name__ == "__main__":

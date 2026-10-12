@@ -128,24 +128,26 @@ def moon_phase(phase: int) -> Image.Image:
             else:
                 lit_side = dx >= -8.0
             if lit_side:
+                # Neutral ash-silver moon phases stay readable in ordinary nights.
+                # The separate Iris shader applies crimson only while Blood Moon is active.
                 if radius > 10.2:
-                    color = ORANGE_DARK
+                    color = (87, 96, 111, 255)
                 elif (x + y) % 7 == 0:
-                    color = GOLD_LIGHT
+                    color = (229, 224, 207, 255)
                 elif (x * 3 + y * 5) % 11 < 2:
-                    color = GOLD
+                    color = (163, 173, 186, 255)
                 else:
-                    color = ORANGE
+                    color = (190, 194, 199, 255)
             else:
-                color = SHADOW if radius < 11.7 else INK
+                color = (49, 54, 65, 255) if radius < 11.7 else INK
             # Pixel-art craters with darker rims and one-pixel highlights.
             crater_specs = [(9, 9, 2), (21, 8, 2), (18, 19, 3), (8, 22, 1), (24, 18, 1)]
             for mx, my, cr in crater_specs:
                 dist = ((x - mx) ** 2 + (y - my) ** 2) ** 0.5
                 if dist <= cr and radius <= 12.8:
-                    color = ORANGE_DARK if lit_side else SHADOW
+                    color = (68, 74, 87, 255) if lit_side else (32, 35, 45, 255)
                 if cr < dist <= cr + 1 and lit_side:
-                    color = GOLD
+                    color = (143, 152, 164, 255)
             px[x, y] = color
     return im
 

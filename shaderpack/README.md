@@ -4,9 +4,9 @@ Standalone OptiFine-style shader pack intended for Minecraft Java 1.21.10 + Iris
 
 ## What it changes
 
-- Dark violet night sky with a muted burnt-orange horizon and an autumnal daytime palette.
-- Warm-tinted moon, a restrained directional halo, and dusk-toned clouds.
-- A separate crimson Blood Moon sky, moon tint, and cloud atmosphere.
+- Charcoal-blue night sky, a muted earth-toned autumn horizon, and desaturated daytime light.
+- Neutral ash-silver moon phases, a restrained cool halo, and greyed autumn clouds; no permanent oversized orange/pink moon.
+- A separate deep-crimson sky and moon tint only while the actual Blood Moon event is active and the client companion is installed.
 - Low, Medium, and High quality profiles.
 
 ## Real Blood Moon signaling
