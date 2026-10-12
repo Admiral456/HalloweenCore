@@ -214,11 +214,45 @@ def validate_model(mob_id: str) -> None:
         return None
 
     if mob_id == "halloween_goblin_king":
-        required_geometry = {"goblin_crown_band", "goblin_crown_spike_center",
-                             "goblin_heavy_pauldron", "goblin_cleaver_blade"}
+        required_geometry = {
+            "goblin_horn_left_base", "goblin_horn_left_tip",
+            "goblin_horn_right_base", "goblin_horn_right_tip",
+            "goblin_crown_band", "goblin_crown_spike_center", "goblin_crown_gem",
+            "goblin_heavy_pauldron", "goblin_royal_cuirass", "goblin_central_emblem",
+            "goblin_royal_cape_panel", "goblin_cape_clasp",
+            "goblin_wing_left_inner_membrane", "goblin_wing_right_inner_membrane",
+            "goblin_staff_shaft", "goblin_staff_orb_core", "goblin_staff_orb_highlight",
+        }
         element_names = {element.get("name") for element in elements}
         if not required_geometry.issubset(element_names):
-            fail(f"{model_path.name} is missing the Goblin King's distinct crown/armor/weapon geometry")
+            missing = sorted(required_geometry - element_names)
+            fail(f"{model_path.name} is missing the Goblin King's custom geometry: {', '.join(missing)}")
+        if not {"left_wing", "right_wing", "staff_orb"}.issubset(bone_names):
+            fail(f"{model_path.name} must contain independently animated left/right wing and orb bones")
+        required_clip_bones = {
+            "idle_breath": {"body"},
+            "head_turn": {"head"},
+            "wing_fold": {"left_wing", "right_wing"},
+            "wing_spread": {"left_wing", "right_wing"},
+            "wing_flap": {"left_wing", "right_wing"},
+            "staff_raise": {"right_arm", "weapon"},
+            "spell_cast": {"right_arm", "weapon", "staff_orb"},
+            "staff_strike": {"right_arm", "weapon"},
+            "wing_slam": {"left_wing", "right_wing"},
+            "phase_transition": {"left_wing", "right_wing", "staff_orb"},
+            "stagger": {"body", "head"},
+            "death": {"body", "left_wing", "right_wing"},
+            "staff_orb_pulse": {"staff_orb"},
+        }
+        for clip_name, required_bones in required_clip_bones.items():
+            clip = next((animation for animation in model.get("animations", [])
+                         if animation.get("name") == clip_name), None)
+            if clip is None:
+                fail(f"{model_path.name} is missing required Goblin King animation '{clip_name}'")
+            track_bones = {track.get("name") for track in (clip.get("animators") or {}).values()}
+            if not required_bones.issubset(track_bones):
+                fail(f"{model_path.name} animation '{clip_name}' is not wired to bones: "
+                     f"{', '.join(sorted(required_bones - track_bones))}")
     if mob_id == "halloween_headless_nick":
         head_group = find_named_group(model.get("outliner", []), "head")
         if head_group is None:
