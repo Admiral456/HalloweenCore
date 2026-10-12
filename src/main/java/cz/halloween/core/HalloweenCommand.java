@@ -38,12 +38,13 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
                 && sender.hasPermission("halloweencore.admin")) {
-            return List.of("reset").stream()
+            return List.of("status", "debug", "reset").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 3 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
-                && args[1].equalsIgnoreCase("reset") && sender.hasPermission("halloweencore.admin")) {
+                && (args[1].equalsIgnoreCase("reset") || args[1].equalsIgnoreCase("status")
+                || args[1].equalsIgnoreCase("debug")) && sender.hasPermission("halloweencore.admin")) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
                     .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
@@ -51,13 +52,14 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("event") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("status", "start", "stop", "soulstorm", "witching-hour",
+            return List.of("list", "status", "start", "stop", "soulstorm", "witching-hour",
                     "cursed-harvest", "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising", "random").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("event")
-                && args[1].equalsIgnoreCase("start") && sender.hasPermission("halloweencore.admin")) {
+                && (args[1].equalsIgnoreCase("start") || args[1].equalsIgnoreCase("status"))
+                && sender.hasPermission("halloweencore.admin")) {
             return List.of("random", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion",
                     "pumpkin-apocalypse", "graveyard-rising").stream()
                     .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
