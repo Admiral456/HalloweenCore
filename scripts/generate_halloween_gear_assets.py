@@ -310,6 +310,7 @@ def shield() -> Image.Image:
 
 
 MODEL_OUT = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "models" / "item"
+ARMOR_MODEL_OUT = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "models" / "armor"
 MODEL_TEXTURE_IDS = {
     "crimson_warden_sword": "item/crimson_warden_sword",
     "crimson_warden_pickaxe": "item/crimson_warden_pickaxe",
@@ -465,6 +466,30 @@ def generate_voxel_models() -> None:
     print(f"Generated blocking shield model: {len(blocking['elements'])} UV-mapped voxel elements")
 
     save_voxel_model("cursed_talisman", "item/generated", (7.25, 8.75))
+
+    # ItemsAdder 4.x permits an actual 3D head model only for the helmet slot.
+    # This separate asset is used by the worn helmet model; the equipment set ID
+    # must intentionally be omitted from that one item so its model_path is honored.
+    with Image.open(OUT / "crimson_warden_helmet.png") as image:
+        helmet = {
+            "credit": "HalloweenCore - Crimson Warden wearable 3D helmet",
+            "parent": "item/generated",
+            "textures": {
+                "layer0": "warriorland_halloween:item/crimson_warden_helmet",
+                "particle": "warriorland_halloween:item/crimson_warden_helmet",
+            },
+            "elements": voxel_elements(image, (6.2, 9.8)),
+        }
+    ARMOR_MODEL_OUT.mkdir(parents=True, exist_ok=True)
+    helmet_path = ARMOR_MODEL_OUT / "crimson_warden_helmet_3d.json"
+    helmet_path.write_text(
+        json.dumps(helmet, separators=(",", ":"), ensure_ascii=False) + "\\n",
+        encoding="utf-8",
+    )
+    parsed_helmet = json.loads(helmet_path.read_text(encoding="utf-8"))
+    if parsed_helmet.get("textures", {}).get("layer0") != helmet["textures"]["layer0"] or not parsed_helmet.get("elements"):
+        raise RuntimeError("Crimson Warden wearable helmet model failed its source checks")
+    print(f"Generated worn 3D helmet model: {helmet_path.relative_to(ROOT)} ({len(helmet['elements'])} voxel elements)")
 
 
 def main() -> None:
