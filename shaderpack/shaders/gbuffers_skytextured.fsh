@@ -22,12 +22,12 @@ void main() {
 
     bool nightTexture = worldTime > 12500 && worldTime < 23500;
     if (nightTexture) {
-        vec3 halloweenMoon = sampled.rgb * vec3(1.24, 0.73, 0.47);
-        vec3 bloodMoon = sampled.rgb * vec3(1.42, 0.15, 0.20);
+        vec3 halloweenMoon = sampled.rgb * vec3(0.88, 0.90, 0.94);
+        vec3 bloodMoon = sampled.rgb * vec3(1.30, 0.28, 0.32);
         sampled.rgb = mix(halloweenMoon, bloodMoon,
                 clamp(bloodMoonTransition() * BLOOD_MOON_STRENGTH, 0.0, 1.0));
     } else {
-        sampled.rgb *= vec3(1.08, 0.88, 0.68);
+        sampled.rgb *= vec3(1.02, 1.00, 0.94);
     }
     fragColor = sampled;
 }

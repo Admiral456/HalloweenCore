@@ -6,6 +6,7 @@ import re
 import struct
 import subprocess
 import sys
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
@@ -13,6 +14,7 @@ TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "text
 MODELS = CONTENT / "models" / "item"
 WEARABLE_HELMET_MODEL = CONTENT / "models" / "armor" / "crimson_warden_helmet_3d.json"
 WEARABLE_COWL_MODEL = CONTENT / "models" / "armor" / "nocturne_sovereign_cowl_3d.json"
+WEARABLE_COWL_TEXTURE = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item" / "nocturne_sovereign_cowl_worn.png"
 WINGS_TEXTURE = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "entity" / "equipment" / "wings" / "batwing_elytra.png"
 EXPECTED_3D_MODELS = {
     "cursed_talisman": ("item/generated", "item/cursed_talisman"),
@@ -101,13 +103,8 @@ EXPECTED_MUSIC_EVENTS = {
 
 
 def png_size(path: Path) -> tuple[int, int]:
-    """Return dimensions for legacy assets using the original basic PNG check."""
-    data = path.read_bytes()
-    if data[:8] != b"\x89PNG\r\n\x1a\n":
-        raise ValueError(f"{path} is not a PNG file")
-    if data[12:16] != b"IHDR":
-        raise ValueError(f"{path} has no PNG IHDR chunk")
-    return struct.unpack(">II", data[16:24])
+    """All PNG checks include actual pixel-data decoding, not just the IHDR."""
+    return strict_png_size(path)
 
 
 def strict_png_size(path: Path) -> tuple[int, int]:
@@ -141,6 +138,15 @@ def strict_png_size(path: Path) -> tuple[int, int]:
         offset = end + 4
     if not saw_iend or width is None or height is None or offset != len(data):
         raise ValueError(f"{path} has missing or trailing PNG data")
+    # Valid headers and chunk CRCs are not enough: a broken zlib/IDAT payload
+    # can still pass those checks and renders as missing-texture magenta in game.
+    try:
+        with Image.open(path) as image:
+            image.verify()
+        with Image.open(path) as image:
+            image.load()
+    except Exception as exc:
+        raise ValueError(f"{path} has undecodable PNG pixel data: {exc}") from exc
     return width, height
 
 def fail(message: str) -> None:
@@ -158,6 +164,26 @@ for name in sorted(EXPECTED):
     source_texture = CONTENT / "textures" / "item" / name
     if not source_texture.is_file() or png_size(source_texture) != (32, 32):
         fail(f"ItemsAdder source texture is missing or invalid: {source_texture.relative_to(ROOT)}")
+
+# Validate the worn custom helmet registry, not just the generated model file.
+try:
+    items_config_text = CONFIG.read_text(encoding="utf-8")
+except OSError as exc:
+    fail(f"Cannot read ItemsAdder item registry: {exc}")
+cowl_match = re.search(r"(?ms)^  nocturne_sovereign_cowl:\n(?P<block>.*?)(?=^  [A-Za-z0-9_]+:\n|\\Z)", items_config_text)
+if not cowl_match:
+    fail("Nocturne Sovereign Cowl is missing from ItemsAdder configs/items.yml")
+cowl_config = cowl_match.group("block")
+if not re.search(r"(?m)^    resource:\n      generate: false\n      model_path: armor/nocturne_sovereign_cowl_3d\n      material: PAPER[ \\t]*$", cowl_config):
+    fail("Nocturne Cowl must use resource.generate=false and model_path=armor/nocturne_sovereign_cowl_3d")
+if re.search(r"(?m)^      id:[ \\t]*[^\\n]+", cowl_config):
+    fail("Nocturne Cowl must not set equipment.id; it overrides the custom 3D helmet model_path")
+if not re.search(r"(?m)^      icon: item/nocturne_sovereign_cowl[ \\t]*$", cowl_config):
+    fail("Nocturne Cowl must keep its distinct 2D inventory icon in resource.icon")
+if not re.search(r"(?m)^    behaviours:\n      hat: true[ \\t]*$", cowl_config):
+    fail("Nocturne Cowl must use ItemsAdder's supported 3D hat behavior")
+if not re.search(r"(?m)^    attribute_modifiers:\n      head:\n        armor: 6[ \\t]*$", cowl_config):
+    fail("Nocturne Cowl must apply +6 armor in the head slot when rendered as a PAPER hat")
 
 if not WINGS_TEXTURE.is_file():
     fail("Missing Batwing Elytra worn-wings texture")
@@ -247,11 +273,35 @@ except (OSError, json.JSONDecodeError) as exc:
     fail(f"Invalid wearable Cowl model JSON: {exc}")
 if wearable_cowl.get("parent") != "item/generated":
     fail("Wearable Cowl model must use item/generated parent")
-if wearable_cowl.get("textures", {}).get("layer0") != "warriorland_halloween:item/nocturne_sovereign_cowl":
-    fail("Wearable Cowl model references the wrong namespaced texture")
+if wearable_cowl.get("textures", {}).get("layer0") != "warriorland_halloween:item/nocturne_sovereign_cowl_worn":
+    fail("Wearable Cowl model must reference the separate 64x64 hood atlas, not the inventory icon")
+if not WEARABLE_COWL_TEXTURE.is_file():
+    fail("Missing 64x64 wearable Nocturne Cowl texture atlas")
+try:
+    cowl_texture_size = strict_png_size(WEARABLE_COWL_TEXTURE)
+except (OSError, ValueError) as exc:
+    fail(f"Invalid wearable Cowl texture atlas: {exc}")
+if cowl_texture_size != (64, 64):
+    fail(f"Wearable Cowl texture atlas must be 64x64, got {cowl_texture_size}")
 cowl_elements = wearable_cowl.get("elements")
-if not isinstance(cowl_elements, list) or len(cowl_elements) < 8 or len(cowl_elements) > 700:
-    fail("Wearable Cowl model must contain 8..700 voxel elements")
+if not isinstance(cowl_elements, list) or len(cowl_elements) < 15 or len(cowl_elements) > 80:
+    fail("Wearable Cowl model must be a shaped multi-piece hood with 15..80 cuboids")
+for index, element in enumerate(cowl_elements):
+    for face_name, face in element.get("faces", {}).items():
+        uv = face.get("uv", [])
+        if len(uv) != 4 or any(not isinstance(value, (int, float)) or value < 0 or value > 64 for value in uv):
+            fail(f"Wearable Cowl element {index} face {face_name} has invalid 64x64 atlas UVs")
+        if abs((uv[2] - uv[0]) - 16) > 0.01 or abs((uv[3] - uv[1]) - 16) > 0.01:
+            fail(f"Wearable Cowl element {index} face {face_name} must map a full 16x16 atlas tile")
+if cowl_elements:
+    min_x = min(float(element["from"][0]) for element in cowl_elements)
+    max_x = max(float(element["to"][0]) for element in cowl_elements)
+    min_y = min(float(element["from"][1]) for element in cowl_elements)
+    max_y = max(float(element["to"][1]) for element in cowl_elements)
+    min_z = min(float(element["from"][2]) for element in cowl_elements)
+    max_z = max(float(element["to"][2]) for element in cowl_elements)
+    if max_x - min_x < 10 or max_y - min_y < 8 or max_z - min_z < 10:
+        fail("Wearable Cowl geometry is too flat or too small to form a hood around the head")
 for index, element in enumerate(cowl_elements):
     frm, to, faces = element.get("from"), element.get("to"), element.get("faces")
     if not isinstance(frm, list) or not isinstance(to, list) or len(frm) != 3 or len(to) != 3:
@@ -262,8 +312,8 @@ for index, element in enumerate(cowl_elements):
         fail(f"Wearable Cowl element {index} needs all six faces")
     for face_name, face in faces.items():
         uv = face.get("uv") if isinstance(face, dict) else None
-        if not isinstance(uv, list) or len(uv) != 4 or any(float(v) < 0 or float(v) > 16 for v in uv):
-            fail(f"Wearable Cowl element {index} face {face_name} has invalid UVs")
+        if not isinstance(uv, list) or len(uv) != 4 or any(float(v) < 0 or float(v) > 64 for v in uv):
+            fail(f"Wearable Cowl element {index} face {face_name} has invalid 64x64 atlas UVs")
         if face.get("texture") != "#layer0":
             fail(f"Wearable Cowl element {index} face {face_name} must use #layer0")
 
@@ -276,6 +326,12 @@ except (OSError, json.JSONDecodeError) as exc:
     fail(f"Invalid Blockbench source JSON: {exc}")
 if source_model.get("meta", {}).get("model_format") != "free" or not source_model.get("elements"):
     fail("Nocturne Cowl Blockbench source must include editable voxel geometry")
+if source_model.get("resolution") != {"width": 64, "height": 64}:
+    fail("Nocturne Cowl Blockbench source must use the real 64x64 wearable atlas UV size")
+if len(source_model.get("elements", [])) != len(cowl_elements):
+    fail("Nocturne Cowl Blockbench source geometry must match the runtime model")
+if not any("nocturne_sovereign_cowl_worn.png" in str(texture.get("path", "")) for texture in source_model.get("textures", [])):
+    fail("Nocturne Cowl Blockbench source must reference its standalone worn atlas")
 
 shield_blocking_path = MODELS / "crimson_warden_shield_blocking.json"
 if not shield_blocking_path.is_file():
@@ -290,12 +346,19 @@ if shield_blocking.get("textures", {}).get("layer0") != "warriorland_halloween:i
     fail("Blocking shield model has an invalid namespaced texture reference")
 
 for layer in ("layer_1.png", "layer_2.png"):
-    path = ARMOR_TEXTURES / layer
-    if not path.is_file():
-        fail("Missing Crimson Warden armor layer: " + str(path.relative_to(ROOT)))
-    width, height = png_size(path)
-    if (width, height) != (64, 32):
-        fail(f"{layer} must be 64x32, got {width}x{height}")
+    packed_path = ARMOR_TEXTURES / layer
+    source_path = ARMOR_SOURCE_TEXTURES / layer
+    for path in (packed_path, source_path):
+        if not path.is_file():
+            fail("Missing Crimson Warden armor layer: " + str(path.relative_to(ROOT)))
+        try:
+            width, height = strict_png_size(path)
+        except (OSError, ValueError) as exc:
+            fail(f"Corrupt Crimson Warden armor PNG {path.relative_to(ROOT)}: {exc}")
+        if (width, height) != (64, 32):
+            fail(f"{layer} must be 64x32, got {width}x{height}")
+    if packed_path.read_bytes() != source_path.read_bytes():
+        fail(f"Source and resource-pack copies of {layer} do not match")
 
 # Validate the standalone Iris shader pack. Never override assets/minecraft/shaders/core,
 # because Iris does not support resource-pack core shader replacements.
@@ -564,10 +627,43 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
 
 if "wings_texture: entity/equipment/wings/batwing_elytra" not in config:
     fail("Batwing Elytra must reference its custom worn-wing texture")
+def item_section(item_id: str) -> str:
+    lines = config.splitlines()
+    start = next((index for index, line in enumerate(lines) if line == f"  {item_id}:"), -1)
+    if start < 0:
+        fail(f"ItemsAdder item '{item_id}' could not be isolated for model/material validation")
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        if re.fullmatch(r"  [A-Za-z0-9_]+:", lines[index]):
+            end = index
+            break
+    return "\\n".join(lines[start + 1:end])
+
+
+shield_config = item_section("crimson_warden_shield")
+if not re.search(r"(?m)^    material: SHIELD[ \\t]*$", shield_config):
+    fail("Crimson Warden Shield must be a real SHIELD item, never an Elytra material")
+for expected in (
+        "normal: item/crimson_warden_shield",
+        "blocking: item/crimson_warden_shield_blocking",
+        "icon: item/crimson_warden_shield"):
+    if expected not in shield_config:
+        fail(f"Crimson Warden Shield is missing separate shield mapping: {expected}")
+if "batwing_elytra" in shield_config.lower():
+    fail("Crimson Warden Shield item configuration must not reference Batwing Elytra")
+elytra_config = item_section("batwing_elytra")
+if not re.search(r"(?m)^    material: ELYTRA[ \\t]*$", elytra_config):
+    fail("Batwing must be a real ELYTRA item, never a shield")
+if "texture: item/batwing_elytra" not in elytra_config:
+    fail("Batwing inventory texture is not mapped to the correct item texture")
+if "wings_texture: entity/equipment/wings/batwing_elytra" not in elytra_config:
+    fail("Batwing worn wings do not reference the correct dedicated Elytra texture")
+if "crimson_warden_shield" in elytra_config.lower():
+    fail("Batwing Elytra item configuration must not reference the Crimson Warden Shield")
 if "durability_damage_multiplier: 0.65" not in config:
     fail("Batwing Elytra should reduce durability wear while retaining normal gliding/fireworks")
-if "model: armor/nocturne_sovereign_cowl_3d" not in config or "icon: item/nocturne_sovereign_cowl" not in config:
-    fail("Nocturne Cowl must define separate worn model and inventory icon")
+if "model_path: armor/nocturne_sovereign_cowl_3d" not in config or "icon: item/nocturne_sovereign_cowl" not in config:
+    fail("Nocturne Cowl must define separate worn 3D model_path and inventory icon")
 
 shop_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
 if "      cost: 1000000" not in shop_config or "      bonus-health: 20.0" not in shop_config:
@@ -752,6 +848,7 @@ for layer in ("layer_1.png", "layer_2.png"):
 root_textures = CONTENT / "textures"
 if root_textures.exists():
     allowed_source_items = {root_textures / "item" / name for name in EXPECTED}
+    allowed_source_items.add(root_textures / "item" / "nocturne_sovereign_cowl_worn.png")
     allowed_source_wings = {
         root_textures / "entity" / "equipment" / "wings" / "batwing_elytra.png"
     }

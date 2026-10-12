@@ -53,7 +53,13 @@ public final class HalloweenQuestManager implements Listener {
                     "special:frost-stalker", 2, 650),
             new Quest("nightmare", "Poslední noční můra",
                     "Přežij noc a poraz Noční můru.",
-                    "special:nightmare", 1, 900)
+                    "special:nightmare", 1, 900),
+            new Quest("blood-moon-oath", "Přísaha krvavého měsíce",
+                    "Zapoj se do skutečné vlny invaze Krvavého měsíce a získej znamení pro otevření finále.",
+                    "event:blood-moon-invasion", 1, 1200),
+            new Quest("vampire-king-finale", "Pád Krále upírů",
+                    "Finále je odemčeno. Poraz skutečného Krále upírů v připravené aréně.",
+                    "boss:vampire-king", 1, 5000)
     );
 
     public HalloweenQuestManager(HalloweenCore plugin) {
@@ -129,6 +135,31 @@ public final class HalloweenQuestManager implements Listener {
         return quests.size();
     }
 
+    public String getDebugSummary(Player player) {
+        if (player == null) return "Hráč nebyl nalezen.";
+        UUID id = player.getUniqueId();
+        Quest active = ensureActiveQuest(player);
+        int completed = plugin.getDataManager().getCompletedStoryQuests(id).size();
+        if (active == null) {
+            return "Dokončeno " + completed + "/" + quests.size() + " kapitol; příběh je kompletní.";
+        }
+        int progress = plugin.getDataManager().getStoryQuestProgress(id);
+        StringBuilder summary = new StringBuilder()
+                .append("Hráč=").append(player.getName())
+                .append(", quest=").append(active.id())
+                .append(", progress=").append(Math.min(progress, active.target())).append("/").append(active.target())
+                .append(", completed=").append(completed).append("/").append(quests.size())
+                .append(", finaleUnlocked=").append(plugin.getDataManager().isFinaleUnlocked())
+                .append(", vampireDefeated=").append(plugin.getDataManager().isVampireDefeated());
+        if (active.id().equals("vampire-king-finale")) {
+            summary.append(", vampireReady=").append(plugin.getBossManager().isVampireReady());
+            if (!plugin.getBossManager().isVampireReady()) {
+                summary.append(" (zkontroluj progress serveru, bosses.vampire.enabled, arénu, MythicMobs/ModelEngine a model.ready)");
+            }
+        }
+        return summary.toString();
+    }
+
     private Quest ensureActiveQuest(Player player) {
         UUID id = player.getUniqueId();
         String activeId = plugin.getDataManager().getStoryQuest(id);
@@ -163,6 +194,9 @@ public final class HalloweenQuestManager implements Listener {
 
         if (!plugin.getDataManager().completeStoryQuest(playerId, quest.id())) return;
         plugin.getDataManager().setStoryQuest(playerId, "");
+        if (quest.id().equals("blood-moon-oath")) {
+            plugin.getDataManager().unlockFinale();
+        }
         plugin.getService().addFragments(playerId, quest.reward(), "story-quest");
         plugin.getDataManager().save();
 
@@ -175,6 +209,9 @@ public final class HalloweenQuestManager implements Listener {
         player.getWorld().spawnParticle(Particle.SOUL, player.getLocation().add(0, 1.0, 0),
                 24, 0.45, 0.6, 0.45, 0.02);
 
+        if (quest.id().equals("blood-moon-oath")) {
+            player.sendMessage(plugin.color("&4&lFINÁLE ODEMČENO &8» &7Král upírů čeká na dosažení serverového cíle a připravenou arénu/model."));
+        }
         Quest next = ensureActiveQuest(player);
         if (next != null) {
             player.sendMessage(plugin.color("&7Další úkol odemčen: &e" + next.title()

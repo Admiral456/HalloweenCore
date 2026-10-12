@@ -47,6 +47,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
     private long villagesBuilt;
     private long graveyardsBuilt;
     private long candidatesSkipped;
+    private String lastSkipReason = "Zatím nebyl přeskočen žádný kandidát.";
 
     public HalloweenWorldStructureGenerator(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -128,6 +129,15 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         return candidatesSkipped;
     }
 
+    public String getLastSkipReason() {
+        return lastSkipReason;
+    }
+
+    private void skipCandidate(String reason) {
+        candidatesSkipped++;
+        lastSkipReason = reason;
+    }
+
     public boolean isEnabled() {
         return plugin.getConfig().getBoolean("world-structures.enabled", true) && plugin.isEventEnabled();
     }
@@ -207,19 +217,20 @@ public final class HalloweenWorldStructureGenerator implements Listener {
             if (candidate.retries() < retryLimit) {
                 enqueueCandidate(candidate, candidate.retries() + 1);
             } else {
-                candidatesSkipped++;
+                skipCandidate("Celý půdorys struktury nebyl načten ani po " + retryLimit + " pokusech.");
             }
             return;
         }
 
         try {
             if (touchesExistingStructure(world, centerX, centerZ, radius)) {
-                candidatesSkipped++;
+                skipCandidate("Půdorys koliduje s jinou Halloween strukturou.");
                 return;
             }
 
             Terrain terrain = inspectTerrain(world, centerX, centerZ, radius, candidate.type().height);
             if (terrain == null) {
+                // inspectTerrain records the terrain, relief, or clearance reason.
                 candidatesSkipped++;
                 return;
             }
@@ -227,7 +238,8 @@ public final class HalloweenWorldStructureGenerator implements Listener {
             String biomeConfigPath = candidate.type() == StructureType.HAUNTED_VILLAGE
                     ? "world-structures.village-biomes" : "world-structures.graveyard-biomes";
             if (!isAllowedBiome(world, centerX, terrain.maxY(), centerZ, biomeConfigPath)) {
-                candidatesSkipped++;
+                skipCandidate("Biome " + world.getBiome(centerX, terrain.maxY(), centerZ).name()
+                        + " není povolen konfigurací " + biomeConfigPath + ".");
                 return;
             }
 
@@ -253,7 +265,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                 plugin.getLogger().warning("Halloween structure generation stopped safely after "
                         + warningKey + ". Further errors of this type are suppressed.");
             }
-            candidatesSkipped++;
+            skipCandidate("Výjimka při stavbě struktury: " + warningKey + ".");
         }
     }
 
@@ -318,17 +330,30 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                 int x = centerX + dx;
                 int z = centerZ + dz;
                 int surfaceY = findNaturalSurface(world, x, z);
-                if (surfaceY == Integer.MIN_VALUE) return null;
+                if (surfaceY == Integer.MIN_VALUE) {
+                    lastSkipReason = "Půdorys obsahuje nenaturní povrch nebo vodu na " + x + ", " + z + ".";
+                    return null;
+                }
                 heights[dx + radius][dz + radius] = surfaceY;
                 minY = Math.min(minY, surfaceY);
                 maxY = Math.max(maxY, surfaceY);
             }
         }
 
-        int maxSlope = Math.max(0, Math.min(4, plugin.getConfig().getInt("world-structures.max-slope", MAX_SLOPE)));
-        if (maxY - minY > maxSlope) return null;
+        // The old strict slope cap caused normal hills to reject nearly every candidate.
+        // Support shallow relief but do not write over builds or tile entities.
+        int maxRelief = Math.max(4, Math.min(12,
+                plugin.getConfig().getInt("world-structures.max-terrain-relief", 8)));
+        if (maxY - minY > maxRelief) {
+            lastSkipReason = "Terén má výškový rozdíl " + (maxY - minY)
+                    + " bloků, ale max-terrain-relief je " + maxRelief + ".";
+            return null;
+        }
         int safeCeiling = maxY + structureHeight + 2;
-        if (safeCeiling >= world.getMaxHeight() - 2) return null;
+        if (safeCeiling >= world.getMaxHeight() - 2) {
+            lastSkipReason = "Struktura by překročila bezpečnou výšku světa.";
+            return null;
+        }
 
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
@@ -336,11 +361,22 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                 int z = centerZ + dz;
                 int surfaceY = heights[dx + radius][dz + radius];
                 for (int y = surfaceY + 1; y <= safeCeiling; y++) {
-                    Material material = world.getBlockAt(x, y, z).getType();
-                    if (!material.isAir() && !isGroundCover(material)) return null;
+                    Block check = world.getBlockAt(x, y, z);
+                    Material material = check.getType();
+                    if (!material.isAir() && !isGroundCover(material)) {
+                        lastSkipReason = "Ve volném prostoru struktury je překážka " + material.name()
+                                + " na " + x + ", " + y + ", " + z + ".";
+                        return null;
+                    }
+                    if (check.getState() instanceof TileState) {
+                        lastSkipReason = "V půdorysu je blok s inventářem/TileState na "
+                                + x + ", " + y + ", " + z + ".";
+                        return null;
+                    }
                 }
             }
         }
+        lastSkipReason = "";
         return new Terrain(minY, maxY);
     }
 

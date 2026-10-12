@@ -37,6 +37,8 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey eventMobKey;
     private final NamespacedKey abilityCooldownKey;
     private final NamespacedKey testMobKey;
+    private String lastSpawnFailure = "Zatím nebyl proveden spawn test.";
+    private String lastSpawnedMobId = "";
     private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
     public HalloweenMobManager(HalloweenCore plugin) {
@@ -596,33 +598,59 @@ public final class HalloweenMobManager implements Listener {
 
     /** Spawn a specific special type so every event can choose its own enemy mix. */
     public boolean spawnEventMob(Player player, String mobId) {
-        if (!plugin.isEventEnabled() || player == null
-                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
-        if (!isKnownSpecialMob(mobId)) return false;
-
+        if (!plugin.isEventEnabled()) {
+            lastSpawnFailure = "HalloweenCore je vypnutý.";
+            return false;
+        }
+        if (player == null || !player.isOnline()) {
+            lastSpawnFailure = "Cílový hráč není online.";
+            return false;
+        }
+        if (!plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) {
+            lastSpawnFailure = "random-events.event-mobs-enabled=false.";
+            return false;
+        }
+        if (!isKnownSpecialMob(mobId)) {
+            lastSpawnFailure = "Neznámé ID speciálního moba: " + mobId;
+            return false;
+        }
         World world = player.getWorld();
-        if (!plugin.isEligibleGameplayWorld(world)) return false;
+        if (!plugin.isEligibleGameplayWorld(world)) {
+            lastSpawnFailure = "Svět " + world.getName() + " není povolen pro Halloween gameplay.";
+            return false;
+        }
         int maxEventMobs = Math.max(1, Math.min(80,
                 plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
-        if (countEventMobs(world) >= maxEventMobs) return false;
-
+        if (countEventMobs(world) >= maxEventMobs) {
+            lastSpawnFailure = "Dosažen limit event mobů (" + maxEventMobs + ") ve světě " + world.getName() + ".";
+            return false;
+        }
         Location spawnLocation = findSafeEventLocation(player);
-        if (spawnLocation == null) return false;
-
+        if (spawnLocation == null) {
+            lastSpawnFailure = "V okruhu 12–28 bloků nebylo nalezeno bezpečné místo pro spawn.";
+            return false;
+        }
         LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
         if (living == null) {
             Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
             if (!(entity instanceof LivingEntity spawned)) {
                 entity.remove();
+                lastSpawnFailure = "Záložní entita pro " + mobId + " není živý mob.";
                 return false;
             }
             living = spawned;
+            lastSpawnedMobId = mobId + " (vanilla fallback; MythicMobs/ModelEngine model nebyl vytvořen)";
+        } else {
+            lastSpawnedMobId = mobId + " (MythicMobs/ModelEngine)";
         }
-
         configureSpecialMob(living, mobId);
         living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
+        lastSpawnFailure = "";
         return true;
     }
+
+    public String getLastSpawnFailure() { return lastSpawnFailure; }
+    public String getLastSpawnedMobId() { return lastSpawnedMobId; }
 
     /**
      * Admin-only spawn path used by controlled gameplay tests. It observes the ordinary

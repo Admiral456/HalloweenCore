@@ -21,9 +21,9 @@ items:
     name: "&5&lProkletý náhrdelník &8[2026]"
     lore:
       - "&7Náhrdelník prokletý prastarou duší."
-      - "&d+1 celý řádek srdcí (+20 HP)"
-      - "&7Aktivní při držení v ruce nebo offhandu."
-      - "&7Lze enchantovat, pokud máš vhodný enchant."
+      - "&d+20 maximálního zdraví (= +10 srdcí)."
+      - "&7Zdraví se doplní při aktivaci, nejvýše 1× za minutu."
+      - "&7Aktivní při držení v hlavní nebo vedlejší ruce."
     material: NETHER_STAR
     graphics:
       model: item/cursed_talisman
@@ -259,16 +259,19 @@ items:
     lore:
       - "&8Obsidianová kápě se spektrálníma očima."
       - "&dNocturnal Perception • Curseguard • Veilstep."
-      - "&7Výdrž 900 • enchantovatelná jako netherit."
-    material: NETHERITE_HELMET
-    graphics:
-      model: armor/nocturne_sovereign_cowl_3d
+      - "&7Zbroj +6 • výdrž 900 • vlastní 3D model."
+    resource:
+      generate: false
+      model_path: armor/nocturne_sovereign_cowl_3d
+      material: PAPER
       icon: item/nocturne_sovereign_cowl
     durability:
       max_durability: 900
-    equipment:
-      slot_attribute_modifiers:
-        armor: 3
+    behaviours:
+      hat: true
+    attribute_modifiers:
+      head:
+        armor: 6
 
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"
