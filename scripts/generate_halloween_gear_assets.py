@@ -9,11 +9,19 @@ modify the 64x32 armor-layer atlas supplied with the current release.
 from __future__ import annotations
 
 from pathlib import Path
+from io import BytesIO
+import base64
 import json
+import uuid
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
-OUT = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
+CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
+OUT = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
+SOURCE_ITEM_OUT = CONTENT / "textures" / "item"
+WINGS_OUT = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "entity" / "equipment" / "wings"
+SOURCE_WINGS_OUT = CONTENT / "textures" / "entity" / "equipment" / "wings"
+SOURCE_MODEL_OUT = CONTENT / "models" / "source"
 SIZE = 32
 
 # Deliberately small, high-contrast material palette for a sharp pixel-art look.
@@ -54,6 +62,8 @@ def save(name: str, image: Image.Image) -> None:
     if image.size != (SIZE, SIZE):
         raise ValueError(f"{name}: expected {SIZE}x{SIZE}, got {image.size}")
     image.save(OUT / name, format="PNG", optimize=True, compress_level=9)
+    SOURCE_ITEM_OUT.mkdir(parents=True, exist_ok=True)
+    image.save(SOURCE_ITEM_OUT / name, format="PNG", optimize=True, compress_level=9)
 
 
 def add_edge_glints(draw: ImageDraw.ImageDraw, coords: list[tuple[int, int]]) -> None:
@@ -309,6 +319,125 @@ def shield() -> Image.Image:
 
 
 
+def batwing_elytra() -> Image.Image:
+    image, d = canvas()
+    left = [(16, 8), (12, 5), (8, 4), (5, 7), (2, 7), (4, 12), (1, 15),
+            (5, 18), (3, 22), (8, 23), (10, 27), (14, 24), (16, 28)]
+    membrane = [(15, 10), (11, 8), (8, 7), (6, 10), (4, 10), (6, 14), (3, 16),
+                (7, 18), (5, 21), (9, 21), (11, 24), (14, 22), (15, 25)]
+    d.polygon(left, fill=INK, outline=PURPLE)
+    d.polygon(membrane, fill=PURPLE_DARK, outline=CRIMSON)
+    d.polygon([(31-x, y) for x, y in left], fill=INK, outline=PURPLE)
+    d.polygon([(31-x, y) for x, y in membrane], fill=PURPLE_DARK, outline=CRIMSON)
+    d.line([(16,8),(12,11),(8,13),(6,17),(10,19),(12,23),(14,24)], fill=BONE)
+    d.line([(15,10),(12,14),(8,15)], fill=RUBY)
+    d.line([(15,15),(11,17),(9,20)], fill=CRIMSON)
+    d.line([(15,20),(13,22),(12,24)], fill=GOLD)
+    d.line([(16,8),(20,11),(24,13),(26,17),(22,19),(20,23),(18,24)], fill=BONE)
+    d.line([(16,11),(20,14),(24,15)], fill=RUBY)
+    d.line([(16,15),(20,17),(22,20)], fill=CRIMSON)
+    d.line([(16,20),(18,22),(20,24)], fill=GOLD)
+    d.polygon([(14,8),(18,8),(20,12),(18,17),(16,20),(14,17),(12,12)], fill=SHADOW, outline=GOLD_DARK)
+    d.rectangle((15,10,17,15), fill=CRIMSON)
+    px(d, 16, 12, GOLD_LIGHT)
+    return image
+
+
+def batwing_elytra_broken() -> Image.Image:
+    image = batwing_elytra()
+    d = ImageDraw.Draw(image)
+    d.polygon([(4,19),(8,18),(10,22),(7,25),(4,23)], fill=INK)
+    d.polygon([(22,18),(26,17),(28,21),(25,24)], fill=INK)
+    d.line([(7,18),(10,20),(8,23)], fill=GOLD_DARK)
+    d.line([(23,19),(25,21)], fill=GOLD_DARK)
+    return image
+
+
+def nocturne_sovereign_cowl() -> Image.Image:
+    image, d = canvas()
+    d.polygon([(2,12),(1,4),(8,7),(12,2),(16,7),(21,3),(24,8),(31,5),(29,15),
+               (27,24),(23,28),(18,27),(16,31),(13,27),(8,28),(4,22)],
+              fill=INK, outline=IRON_DARK)
+    d.polygon([(4,12),(4,7),(9,10),(12,5),(16,10),(21,6),(24,11),(28,8),(27,15),
+               (24,23),(20,25),(17,24),(15,28),(12,24),(8,25),(6,21)],
+              fill=SHADOW, outline=PURPLE_DARK)
+    d.polygon([(8,14),(12,12),(16,15),(20,12),(24,14),(22,21),(18,24),(14,24),(10,21)],
+              fill=INK, outline=IRON_DARK)
+    d.polygon([(10,16),(14,15),(15,18),(12,19)], fill=CYAN)
+    d.polygon([(18,15),(22,16),(20,19),(17,18)], fill=CYAN)
+    px(d,12,17,HIGHLIGHT); px(d,20,17,HIGHLIGHT)
+    d.line([(6,14),(7,20),(10,23)], fill=CRIMSON)
+    d.line([(26,14),(25,20),(22,23)], fill=PURPLE)
+    d.polygon([(10,23),(12,25),(11,29),(8,27)], fill=PURPLE_DARK, outline=PURPLE)
+    d.polygon([(22,23),(24,26),(21,30),(20,26)], fill=CRIMSON_DARK, outline=CRIMSON)
+    d.line([(11,11),(13,10),(16,12),(19,10),(21,11)], fill=BONE)
+    d.rectangle((14,21,18,25), fill=GOLD_DARK, outline=GOLD_LIGHT)
+    d.rectangle((15,22,17,24), fill=PURPLE)
+    px(d,15,22,HIGHLIGHT); px(d,16,24,INK)
+    return image
+
+
+def batwing_wings_texture() -> Image.Image:
+    image = Image.new("RGBA", (64, 32), CLEAR)
+    d = ImageDraw.Draw(image)
+    left = [(31,3),(26,2),(22,5),(18,4),(13,7),(8,7),(5,11),(2,11),(4,15),
+            (1,18),(6,21),(4,25),(9,25),(13,29),(18,27),(23,30),(27,27),(31,23)]
+    inner = [(30,6),(25,5),(22,8),(18,7),(14,10),(10,10),(7,13),(5,14),(8,17),
+             (5,19),(9,21),(8,23),(13,23),(17,26),(22,26),(25,25),(29,22)]
+    d.polygon(left, fill=INK, outline=GOLD_DARK)
+    d.polygon(inner, fill=PURPLE_DARK, outline=CRIMSON)
+    d.polygon([(63-x,y) for x,y in left], fill=INK, outline=GOLD_DARK)
+    d.polygon([(63-x,y) for x,y in inner], fill=PURPLE_DARK, outline=CRIMSON)
+    for x in (31,32):
+        d.line([(x,4),(x,22)], fill=BONE)
+        d.line([(x,6),(x-5,13),(x-10,17),(x-16,20),(x-23,21)], fill=STEEL)
+        d.line([(x,9),(x-4,16),(x-9,22),(x-14,25)], fill=GOLD_DARK)
+    for points in ([(26,9),(22,12),(17,14),(12,17),(8,19)],
+                   [(23,18),(20,20),(17,22),(14,24)],
+                   [(37,9),(41,12),(46,14),(51,17),(55,19)],
+                   [(40,18),(43,20),(46,22),(49,24)]):
+        d.line(points, fill=RUBY)
+    d.rectangle((29,14,34,19), fill=INK)
+    d.polygon([(31,13),(34,16),(32,20),(29,16)], fill=PURPLE)
+    px(d,32,16,CYAN)
+    return image
+
+
+def save_blockbench_source(item_id: str, image: Image.Image) -> None:
+    buffer = BytesIO()
+    image.save(buffer, format="PNG", optimize=True)
+    runtime_elements = voxel_elements(image, (6.2, 9.8))
+    elements, children = [], []
+    for index, part in enumerate(runtime_elements):
+        identifier = str(uuid.uuid4())
+        frm, to = part["from"], part["to"]
+        faces = {name: {"uv": [round(float(v)*2.0, 3) for v in face["uv"]], "texture": 0}
+                 for name, face in part["faces"].items()}
+        elements.append({
+            "name": f"{item_id}_voxel_{index:03d}", "uuid": identifier,
+            "from": frm, "to": to, "origin": [(frm[i]+to[i])/2 for i in range(3)],
+            "rotation": [0,0,0], "faces": faces, "type": "cube", "autouv": 0, "color": 0,
+        })
+        children.append(identifier)
+    source_model = {
+        "meta": {"format_version": "4.10", "model_format": "free", "box_uv": False},
+        "name": item_id, "model_identifier": item_id, "visible_box": [16,16,0],
+        "resolution": {"width": SIZE, "height": SIZE}, "elements": elements,
+        "outliner": [{"name":"root","origin":[0,0,0],"uuid":str(uuid.uuid4()),"export":True,
+                      "isOpen":True,"locked":False,"visibility":True,"autouv":0,"children":children}],
+        "textures": [{"path":f"textures/{item_id}.png","name":f"{item_id}.png","folder":"textures",
+                      "namespace":"","id":0,"particle":True,"render_mode":"normal","visible":True,
+                      "mode":"bitmap","saved":True,"uuid":str(uuid.uuid4()),
+                      "source":"data:image/png;base64,"+base64.b64encode(buffer.getvalue()).decode("ascii"),
+                      "width":SIZE,"height":SIZE,"uv_width":SIZE,"uv_height":SIZE}],
+        "animations": [],
+    }
+    SOURCE_MODEL_OUT.mkdir(parents=True, exist_ok=True)
+    (SOURCE_MODEL_OUT / f"{item_id}.bbmodel").write_text(
+        json.dumps(source_model, ensure_ascii=False, separators=(",", ":"))+"\n", encoding="utf-8"
+    )
+
+
 MODEL_OUT = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "models" / "item"
 ARMOR_MODEL_OUT = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "models" / "armor"
 MODEL_TEXTURE_IDS = {
@@ -510,6 +639,9 @@ def main() -> None:
         "crimson_warden_shovel.png": shovel(),
         "crimson_warden_hoe.png": hoe(),
         "crimson_warden_shield.png": shield(),
+        "batwing_elytra.png": batwing_elytra(),
+        "batwing_elytra_broken.png": batwing_elytra_broken(),
+        "nocturne_sovereign_cowl.png": nocturne_sovereign_cowl(),
     }
     for name, image in art.items():
         save(name, image)
@@ -518,7 +650,30 @@ def main() -> None:
                 raise RuntimeError(f"Invalid icon generated: {name}")
         print(f"Generated {name}: 32x32 RGBA ({(OUT / name).stat().st_size} bytes)")
     print(f"Validated {len(art)} crisp Halloween item icons in {OUT.relative_to(ROOT)}")
+    WINGS_OUT.mkdir(parents=True, exist_ok=True)
+    SOURCE_WINGS_OUT.mkdir(parents=True, exist_ok=True)
+    wings = batwing_wings_texture()
+    wings.save(WINGS_OUT / "batwing_elytra.png", format="PNG", optimize=True, compress_level=9)
+    wings.save(SOURCE_WINGS_OUT / "batwing_elytra.png", format="PNG", optimize=True, compress_level=9)
+    if wings.size != (64, 32) or wings.mode != "RGBA":
+        raise RuntimeError(f"Invalid Batwing Elytra wings atlas: {wings.size} {wings.mode}")
+    print("Generated 64x32 Batwing Elytra equipment-wing atlas")
     generate_voxel_models()
+    with Image.open(OUT / "nocturne_sovereign_cowl.png") as cowl_image:
+        cowl_model = {
+            "credit": "HalloweenCore - Nocturne Sovereign Cowl wearable pixel-art voxel model",
+            "parent": "item/generated",
+            "textures": {"layer0": "warriorland_halloween:item/nocturne_sovereign_cowl",
+                         "particle": "warriorland_halloween:item/nocturne_sovereign_cowl"},
+            "elements": voxel_elements(cowl_image, (6.2, 9.8)),
+        }
+        model_json = json.dumps(cowl_model, ensure_ascii=False, separators=(",", ":")) + "\\n"
+        MODEL_OUT.mkdir(parents=True, exist_ok=True)
+        (MODEL_OUT / "nocturne_sovereign_cowl.json").write_text(model_json, encoding="utf-8")
+        ARMOR_MODEL_OUT.mkdir(parents=True, exist_ok=True)
+        (ARMOR_MODEL_OUT / "nocturne_sovereign_cowl_3d.json").write_text(model_json, encoding="utf-8")
+        save_blockbench_source("nocturne_sovereign_cowl", cowl_image)
+    print("Generated wearable Nocturne Sovereign Cowl with " + str(len(cowl_model["elements"])) + " voxel elements")
 
 
 if __name__ == "__main__":
