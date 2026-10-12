@@ -246,6 +246,32 @@ Zdrojové Blockbench modely a externí atlasy pro speciální moby jsou v `mythi
 
 Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj blueprinty přes ModelEngine, spusť `/meg reload models` a `/mm reload`. Do stávajícího seznamu `merge_other_plugins_resourcepacks_folders` v konfiguraci ItemsAdderu přidej cestu `ModelEngine/resource pack`, aby se modelové textury dostaly do stejného klientského packu. Poté spusť `/iazip`, ověř `/iainfo`, přijmi pack na klientovi a znovu se připoj.
 
+## Halloween graphics: Iris shader and real Blood Moon sync
+
+The graphics update consists of three separate pieces because the server-side Bukkit plugin cannot set shader uniforms in remote Minecraft clients:
+
+- **ItemsAdder resource pack** — seasonal pumpkin faces, jack-o'-lanterns, autumnal grass/foliage/water colormaps, a warm eight-phase moon atlas, red/brown haunted mushroom textures, all item icons/models and the existing Halloween audio definitions.
+- **Iris shader pack** — a dedicated shader ZIP under `shaderpack/`, with dark violet nights, burnt-orange horizon/daylight, tinted clouds, a directional moon halo, and a deep-crimson Blood Moon visual. Quality profiles are Low, Medium and High. The shader pack does not overwrite `assets/minecraft/shaders/core`, because Iris does not support resource-pack core-shader replacements.
+- **Fabric client companion** — the optional 1.21.10 client mod receives `halloweencore:visual_state` from the server. It exposes a client-only world-time marker during the actual `blood-moon-invasion` event, so the shader uses crimson mode only during that event and smoothly returns after it ends. It does not change the server clock or gameplay.
+
+### Installation
+
+1. Build/download `HalloweenCore-jar` and install it on the Paper/Purpur 1.21.10 server like the normal plugin.
+2. Extract `WarriorLand-Halloween-ItemsAdder.zip` from the GitHub Actions artifacts into `plugins/ItemsAdder/contents/warriorland_halloween/`. Restart or reload ItemsAdder as appropriate, run `/iazip`, verify `/iainfo`, and make sure players accept the updated resource pack.
+3. On each client that should see the shader, use Minecraft Java 1.21.10 with Fabric Loader, Fabric API, Iris and Sodium. Put `HalloweenCore-Client-1.21.10.jar` into that client's `mods/` folder.
+4. Put `WarriorLand-Halloween-Iris-Shader.zip` into `.minecraft/shaderpacks/` and select it in Video Settings → Shader Packs. The ZIP contains the `shaders/` directory at its root.
+5. Test the real event with `/halloween event start blood-moon-invasion`, then `/halloween event stop`. Check both the red-sky transition and the restoration to normal Halloween colors.
+
+Clients without the Fabric companion still get the ItemsAdder environment textures and the normal shader mood if they manually select the Iris pack, but their shader cannot know when a server-only Blood Moon starts. For those clients the red-event sky is intentionally not simulated permanently.
+
+### World-generation settings
+
+`world-structures.village-region-chunks` and `world-structures.graveyard-region-chunks` control candidate density; `max-slope`, `max-retries` and `spawn-exclusion-radius` constrain placement. Empty `village-biomes` and `graveyard-biomes` lists allow any biome that passes terrain checks; non-empty lists are Bukkit biome-name allow-lists. The generator only edits suitable loaded Overworld terrain, skips occupied/marked footprints, and leaves the vanilla block behavior intact. Structure generation in existing worlds is incremental as chunks naturally load; the plugin cannot retroactively inject vanilla structure-start data into an already-generated chunk.
+
+### Verification boundary
+
+GitHub Actions compiles the shader source with `glslangValidator`, validates PNG dimensions/CRC and model/blockstate JSON, compiles the Paper plugin, and builds the Fabric client mod. This is not a substitute for testing the visuals with the exact Minecraft/Iris/GPU combination; the final sky appearance, ItemsAdder item renders and combat behavior must still be checked on a real staging server/client.
+
 ## Diagnostika hudby a klientského packu
 
 Resource pack nahrazuje 31 standardních událostí **hudby na pozadí** Minecraftu tichým OGG a plugin navíc jednou za sekundu zastavuje kategorii `MUSIC`. To není možné ověřit pouze kompilací: klient musí stáhnout a přijmout nejnovější pack. Hudební disky/jukebox a běžné zvukové efekty se tímto seznamem nepotlačují.
