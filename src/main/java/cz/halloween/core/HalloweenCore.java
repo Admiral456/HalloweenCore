@@ -678,10 +678,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
      * Applies an effect caused by HalloweenCore mobs/bosses. The Cowl may reduce
      * only these routed effects; unrelated vanilla and third-party effects are untouched.
      */
-    public void applyHalloweenDebuff(Player target, org.bukkit.potion.PotionEffect effect) {
+    public void applyHalloweenDebuff(org.bukkit.entity.LivingEntity target, org.bukkit.potion.PotionEffect effect) {
         if (target == null || effect == null) return;
-        if (relicAbilityEngine != null) relicAbilityEngine.applyCurseEffect(target, effect);
-        else target.addPotionEffect(effect);
+        if (target instanceof Player player && relicAbilityEngine != null) {
+            relicAbilityEngine.applyCurseEffect(player, effect);
+        } else {
+            target.addPotionEffect(effect);
+        }
     }
 
     public HalloweenDataManager getDataManager() {
