@@ -16,6 +16,7 @@ import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
 import org.bukkit.entity.SkeletonHorse;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
@@ -304,7 +305,7 @@ public final class HalloweenHeadlessNickManager implements Listener {
                 plugin.getConfig().getDouble("stalkers.headless-nick.charge-hit-radius", 3.0D)));
         world.spawnParticle(Particle.SOUL_FIRE_FLAME, mark.clone().add(0.0D, 0.2D, 0.0D),
                 40, 0.7D, 0.15D, 0.7D, 0.03D);
-        world.playSound(mark, Sound.ENTITY_SKELETON_HORSE_GALLOP, 1.0F, 0.7F);
+        world.playSound(mark, "minecraft:entity.skeleton_horse.gallop", 1.0F, 0.7F);
         target.sendTitle(ChatColor.DARK_RED + "KOPYTA!", ChatColor.GRAY + "Spectral Charge — uskoč stran.", 5, 18, 7);
         if (forced) target.sendMessage(ChatColor.GRAY + "Admin test: testuje se útok Spectral Charge.");
         long delay = Math.max(10L, Math.min(35L,
