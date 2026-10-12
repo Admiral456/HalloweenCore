@@ -27,7 +27,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
 - Maska nočního lovce dává při nošení +5 % k zisku fragmentů; stojí 4 000 fragmentů a vyžaduje prokletí 3
-- Prokletý náhrdelník (zachované interní ID `cursed_talisman`) stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +20 maximálního zdraví (jeden řádek srdcí navíc) a zachovává +10 % k zisku fragmentů
+- Prokletý náhrdelník (zachované interní ID `cursed_talisman`) stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidává +20 bodů maximálního zdraví (= +10 srdcí v běžném Minecraftu) a zachovává +10 % k zisku fragmentů.
 - limitovaný token Halloween 2026 stojí 30 000 fragmentů a vyžaduje prokletí 5
 - po dosažení globálního cíle se natrvalo odemkne serverové finále
 - hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
@@ -39,11 +39,17 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween progress
 - /halloween curse
 - /halloween event
-- /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin, testovací okamžité spuštění)
+- /halloween event list (admin, seznam registrace a aktivace)
+- /halloween event status [id] (admin, výsledek poslední vlny a případný důvod selhání)
+- /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion|pumpkin-apocalypse|graveyard-rising> (admin, testovací spuštění)
+- /halloween event stop (admin)
+- Jednotlivé eventy lze vypnout přes `random-events.types.<event-id>.enabled: false`
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
 - /halloween shader <on|off|reload> (admin, zobrazí správný postup; server nemůže vynutit ani vzdáleně přenačíst klientský Iris shader)
-- /halloween quests — příběhová kampaň o devíti kapitolách, uložený postup a automatické odměny
+- /halloween quests — devět původních kapitol plus dvě závěrečné kapitoly: Přísaha krvavého měsíce a Pád Krále upírů.
+- /halloween quests status|debug <hráč> (admin, aktuální kapitola, postup a blokující podmínky finále)
+- /halloween quests reset <hráč> confirm (admin, reset vyžaduje explicitní potvrzení)
 - /halloween challenge
 - /halloween rewards
 - /halloween claim <id>
@@ -89,7 +95,7 @@ Odměny jsou nastavené jako výzva: účast vyžaduje nejméně 120 sekund v do
 ## Přenosné relikvie — Batwing Elytra a Nocturne Sovereign Cowl
 
 - Batwing Elytra má vlastní 64×32 texturu nošených křídel, poškozenou ikonu, výdrž 768 a zachované létání/ohňostroje/Mending; během letu F aktivuje Nightwing Surge a Shift+F Bat Echo.
-- Nocturne Sovereign Cowl používá vlastní 3D head-slot model a ikonu, vidění ve tmě, omezené pulzy na označené Halloween moby, Curseguard pro debuffy aplikované přes HalloweenCore a krátký Veilstep přes Shift+F.
+- Nocturne Sovereign Cowl používá vlastní model registrovaný přes `resource.model_path` a oddělený 64×64 atlas pro nošený vzhled. Prostorová geometrie nahrazuje dřívější ploché vysunutí ikony; skutečný render a pasivní efekty jsou stále **NOT TESTED** na klientovi.
 - Přenosný balíček `HalloweenCore-Portable-Relics.zip` používá nezávislý namespace `halloween_relics`; standalone modul `portable-relics/` sdílí stejný engine schopností.
 - Worn custom Elytra vyžaduje Minecraft 1.21.2+ a ItemsAdder 4.0.18+; cílový server projektu je Paper/Purpur 1.21.10 a Java 21. Po změně obsahu spusť `/iazip` a ověř doručení packu klientům.
 - CI může potvrdit sestavení a strukturu assetů, nikoliv skutečné vykreslení modelů nebo let ve hře. Live test je NOT TESTED, dokud neproběhne na testovacím serveru.
@@ -154,7 +160,7 @@ Náhodné eventy se spouštějí přibližně 15–24 minut od sebe a trvají 6 
 | **Dýňová apokalypsa** | Husté vlny dýňových přízraků, plameny, popel a lávové částice; 2,5× odměna za lov. |
 | **Hřbitov vstává** | Hrobníci, prokleté zombie a pavouci se objevují ve vlnách z duševní mlhy; 2,25× odměna za lov. |
 
-Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/halloween event`, `/halloween event start <id>` a `/halloween event stop` umožňují správcům ověřit jednotlivé eventy. Dostupné ID jsou `soulstorm`, `witching-hour`, `cursed-harvest`, `blood-moon-invasion`, `pumpkin-apocalypse` a `graveyard-rising`.
+`/halloween event list`, `/halloween event status <id>`, `/halloween event start <id>` a `/halloween event stop` poskytují administrátorům registraci a diagnostiku poslední spawn vlny. Dostupné ID jsou `soulstorm`, `witching-hour`, `cursed-harvest`, `blood-moon-invasion`, `pumpkin-apocalypse` a `graveyard-rising`. Countdown nebo oznámení není důkaz funkčnosti; test musí ověřit skutečné efekty, trvání, cleanup a návrat statistik.
 
 Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
 
@@ -164,7 +170,7 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 
 Nový `HalloweenWorldStructureGenerator` se při zapnutém Halloween systému dívá na načtené chunky v Overworldu. Na vhodných travnatých a přírodních plochách může postavit variantované domky, kapli, studnu, lucerny a dýňový záhon nebo hřbitov s náhrobky, obvodovou zdí, skutečně otevřenou bránou, mauzoleem, rituálním kruhem a svíčkami. Podlahy a cesty se pokládají na úroveň terénu, ne jako vyvýšená plošina. Generátor vyžaduje načtenou celou plochu, přírodní terén s malým sklonem a volný prostor nad terénem. Vynechá lesy, existující stavby, strmé plochy i kruh 64 bloků kolem světového spawnu; nikdy kvůli hledání nevynucuje načtení vzdálených chunků. Náhodnost je opakovatelná podle seedu a souřadnic a použitá plocha se označuje v PDC, takže reload ani restart stavbu znovu nepostaví.
 
-- `world-structures.village-region-chunks` a `graveyard-region-chunks` určují četnost kandidátů; `max-slope` a `max-retries` nastavují bezpečnostní limity.
+- `world-structures.village-region-chunks` a `graveyard-region-chunks` určují četnost kandidátů; `max-terrain-relief` umožňuje přirozený výškový rozdíl 8 bloků a `max-retries` odkládá pokusy, dokud nejsou chunky načtené. Starý `max-slope` zůstává kvůli kompatibilitě, ale již není limitem. Generátor hlásí důvod posledního přeskočeného kandidáta.
 - `/halloween structures status` ukáže stav generátoru, frontu, počet postavených vesnic/hřbitovů v aktuální relaci a počet přeskočených kandidátů.
 - `/halloween structures scan` znovu zkontroluje právě načtené chunky. Není to teleport ani příkaz pro generování kolem hráče; nové oblasti se kontrolují při přirozeném načítání chunků.
 
@@ -315,7 +321,7 @@ Clients without the Fabric companion still get the ItemsAdder environment textur
 
 ### Verification boundary
 
-GitHub Actions compiles the shader source with `glslangValidator`, validates PNG dimensions/CRC and model/blockstate JSON, compiles the Paper plugin, and builds the Fabric client mod. This is not a substitute for testing the visuals with the exact Minecraft/Iris/GPU combination; the final sky appearance, ItemsAdder item renders and combat behavior must still be checked on a real staging server/client.
+GitHub Actions compiles the shader source with `glslangValidator`, decodes PNG pixel data and validates dimensions/CRC and model/blockstate JSON, compiles the Paper plugin, and builds the Fabric client mod. This is not a substitute for testing the visuals with the exact Minecraft/Iris/GPU combination; the final sky appearance, ItemsAdder item renders and combat behavior must still be checked on a real staging server/client.
 
 ## Diagnostika hudby a klientského packu
 
