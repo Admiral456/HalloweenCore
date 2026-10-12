@@ -56,11 +56,12 @@ items:
     material: NETHERITE_HELMET
     components_nbt_file: "crimson_warden_helmet.json"
     graphics:
-      texture: item/crimson_warden_helmet
+      model: armor/crimson_warden_helmet_3d
+      icon: item/crimson_warden_helmet
     durability:
       max_durability: 900
+    # Custom 3D worn helmet: no equipment.id here, or ItemsAdder selects the layer-texture helmet instead.
     equipment:
-      id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
         armor: 3
 
