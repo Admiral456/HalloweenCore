@@ -42,6 +42,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
+    private HalloweenWorldStructureGenerator worldStructureGenerator;
+    private HalloweenCombatEffectManager combatEffectManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -53,6 +55,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateWorldStructuresAndCombatDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -72,6 +75,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
+        worldStructureGenerator = new HalloweenWorldStructureGenerator(this);
+        combatEffectManager = new HalloweenCombatEffectManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -88,6 +93,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
+        getServer().getPluginManager().registerEvents(worldStructureGenerator, this);
+        getServer().getPluginManager().registerEvents(combatEffectManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
@@ -102,6 +109,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
         worldDecorator.start();
+        worldStructureGenerator.start();
         passiveEffectManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -124,6 +132,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (worldStructureGenerator != null) worldStructureGenerator.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -157,6 +166,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateWorldStructuresAndCombatDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -177,13 +187,20 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 worldDecorator.scanLoadedChunks();
             }
         }
+        if (worldStructureGenerator != null) {
+            worldStructureGenerator.stop();
+            if (eventEnabled && getConfig().getBoolean("world-structures.enabled", true)) {
+                worldStructureGenerator.start();
+            }
+        }
 
         logConfigValidationIssues();
         if (bossManager != null) bossManager.validateConfiguration();
         getLogger().info("HalloweenCore runtime state reloaded. enabled=" + eventEnabled
                 + ", random-events=" + getConfig().getBoolean("random-events.enabled", true)
                 + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", true)
-                + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", true));
+                + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", true)
+                + ", world-structures=" + getConfig().getBoolean("world-structures.enabled", true));
     }
 
     public void setEventEnabled(boolean enabled) {
@@ -207,6 +224,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (atmosphere != null) atmosphere.refreshPlayback();
         if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
+        if (worldStructureGenerator != null) {
+            if (enabled) worldStructureGenerator.start();
+            else worldStructureGenerator.stop();
+        }
 
         if (changed) {
             Bukkit.broadcastMessage(color(enabled
@@ -476,6 +497,33 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
+    private void migrateWorldStructuresAndCombatDefaults() {
+        if (getConfig().getBoolean("migrations.world-structures-combat-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; world structure/combat defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String sectionPath : List.of("world-structures", "gear-effects")) {
+                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
+                if (section == null) continue;
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, defaults.get(path));
+                }
+            }
+            getConfig().set("migrations.world-structures-combat-v1", true);
+            saveConfig();
+            getLogger().info("Haunted structure generation and Crimson Warden combat settings were added without overwriting server configuration.");
+        } catch (IOException ex) {
+            getLogger().warning("World structure/combat migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
     private void logConfigValidationIssues() {
         var errors = HalloweenConfigValidator.validate(this);
         Set<String> currentErrors = new HashSet<>(errors);
@@ -539,6 +587,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenSecretDiscoveryManager getSecretDiscoveryManager() {
         return secretDiscoveryManager;
+    }
+
+    public HalloweenWorldStructureGenerator getWorldStructureGenerator() {
+        return worldStructureGenerator;
     }
 
     public void notifyFragmentGain(UUID playerId, long amount) {
