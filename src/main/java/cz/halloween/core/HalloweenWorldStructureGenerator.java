@@ -109,10 +109,12 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                 plugin.getConfig().getInt("world-structures.village-region-chunks", VILLAGE_REGION_CHUNKS)));
         int graveyardScale = Math.max(3, Math.min(24,
                 plugin.getConfig().getInt("world-structures.graveyard-region-chunks", GRAVEYARD_REGION_CHUNKS)));
-        if (isRegionalCandidate(chunk, StructureType.HAUNTED_VILLAGE, villageScale)) {
+        if (isRegionalCandidate(chunk, StructureType.HAUNTED_VILLAGE, villageScale)
+                && !insideSpawnBuffer(chunk, StructureType.HAUNTED_VILLAGE)) {
             enqueue(chunk, StructureType.HAUNTED_VILLAGE, 0);
         }
-        if (isRegionalCandidate(chunk, StructureType.CURSED_GRAVEYARD, graveyardScale)) {
+        if (isRegionalCandidate(chunk, StructureType.CURSED_GRAVEYARD, graveyardScale)
+                && !insideSpawnBuffer(chunk, StructureType.CURSED_GRAVEYARD)) {
             enqueue(chunk, StructureType.CURSED_GRAVEYARD, 0);
         }
     }
@@ -126,6 +128,17 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                 ^ ((long) chunk.getZ() * 132897987541L)
                 ^ salt;
         return new Random(seed).nextInt(regionSize * regionSize) == 0;
+    }
+
+    private boolean insideSpawnBuffer(Chunk chunk, StructureType type) {
+        int configured = Math.max(0, Math.min(1024,
+                plugin.getConfig().getInt("world-structures.spawn-exclusion-radius", 64)));
+        if (configured == 0) return false;
+        var spawn = chunk.getWorld().getSpawnLocation();
+        double dx = (chunk.getX() * 16 + 8) - spawn.getX();
+        double dz = (chunk.getZ() * 16 + 8) - spawn.getZ();
+        double protectedRadius = configured + type.radius;
+        return dx * dx + dz * dz < protectedRadius * protectedRadius;
     }
 
     private void enqueue(Chunk chunk, StructureType type, int retries) {
@@ -321,13 +334,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
     }
 
     private void buildVillage(World world, int x, int y, int z, Random random) {
-        // Main path crosses the clearing; small branches lead to the doors.
-        buildPath(world, x, y, z, 0, -12, 0, 12, Material.DEEPSLATE_BRICKS);
-        buildPath(world, x, y, z, -11, 0, 11, 0, Material.POLISHED_BLACKSTONE_BRICKS);
-        buildPath(world, x, y, z, -6, 0, -6, -3, Material.MOSSY_STONE_BRICKS);
-        buildPath(world, x, y, z, 6, 0, 6, -3, Material.MOSSY_STONE_BRICKS);
-        buildPath(world, x, y, z, -6, 0, -6, 9, Material.MOSSY_STONE_BRICKS);
-        buildPath(world, x, y, z, 6, 0, 6, 9, Material.MOSSY_STONE_BRICKS);
+        // Buildings and props go down first; paths are filled last to avoid cutting through interiors.
 
         Material[] wallPalette = {Material.SPRUCE_PLANKS, Material.DARK_OAK_PLANKS, Material.STRIPPED_DARK_OAK_WOOD};
         Material[] roofPalette = {Material.DARK_OAK_STAIRS, Material.SPRUCE_STAIRS, Material.POLISHED_BLACKSTONE_BRICK_STAIRS};
@@ -354,6 +361,14 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         place(world, x + 10, y + 1, z - 10, Material.JACK_O_LANTERN);
         place(world, x - 4, y + 1, z + 1, Material.WITHER_ROSE);
         place(world, x + 4, y + 1, z - 1, Material.WITHER_ROSE);
+
+        // Main path crosses the clearing; small branches lead to the house doors.
+        buildPath(world, x, y, z, 0, -12, 0, 12, Material.DEEPSLATE_BRICKS);
+        buildPath(world, x, y, z, -11, 0, 11, 0, Material.POLISHED_BLACKSTONE_BRICKS);
+        buildPath(world, x, y, z, -6, 0, -6, -3, Material.MOSSY_STONE_BRICKS);
+        buildPath(world, x, y, z, 6, 0, 6, -3, Material.MOSSY_STONE_BRICKS);
+        buildPath(world, x, y, z, -6, 0, -6, 9, Material.MOSSY_STONE_BRICKS);
+        buildPath(world, x, y, z, 6, 0, 6, 9, Material.MOSSY_STONE_BRICKS);
     }
 
     private void buildHouse(World world, int cx, int baseY, int cz, Material wall, Material stair, boolean chapel) {
@@ -486,7 +501,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
             buildGrave(world, x + grave[0], y, z + grave[1], index % 4, random);
         }
 
-        buildMausoleum(world, x, y, z - 6);
+        buildMausoleum(world, x, y, z - 5);
         buildRitualCircle(world, x - 2, y, z);
         place(world, x - 7, y + 1, z - 7, Material.JACK_O_LANTERN);
         place(world, x + 7, y + 1, z - 7, Material.PUMPKIN);
