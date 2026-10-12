@@ -54,6 +54,7 @@ public final class HalloweenHeadlessNickManager implements Listener {
     private long nextMessageAt;
     private long lastNaturalSpawnAt;
     private long lastSafeRegionWarningAt;
+    private long noTargetSince;
     private String lastState = "neaktivní";
     private boolean stopping;
     private boolean testEncounter;
@@ -469,13 +470,14 @@ public final class HalloweenHeadlessNickManager implements Listener {
 
     private void retreatOrDespawn(SkeletonHorse horse, LivingEntity rider) {
         long timeout = Math.max(30L, plugin.getConfig().getLong("stalkers.headless-nick.no-target-timeout-seconds", 180L));
-        if (lastState.equals("bez cíle")) {
-            if (System.currentTimeMillis() - lastNaturalSpawnAt > timeout * 1000L) endEncounter(true);
-            return;
+        long now = System.currentTimeMillis();
+        if (!lastState.equals("bez cíle")) {
+            lastState = "bez cíle";
+            noTargetSince = now;
         }
-        lastState = "bez cíle";
         if (horse instanceof Mob horseMob) horseMob.getPathfinder().moveTo(horse.getWorld().getSpawnLocation(), 1.0D);
-        if (plugin.getConfig().getBoolean("stalkers.headless-nick.despawn-without-target", true)) {
+        if (plugin.getConfig().getBoolean("stalkers.headless-nick.despawn-without-target", true)
+                || now - noTargetSince >= timeout * 1000L) {
             endEncounter(true);
         }
     }
