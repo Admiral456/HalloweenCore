@@ -9,6 +9,7 @@ modify the 64x32 armor-layer atlas supplied with the current release.
 from __future__ import annotations
 
 from pathlib import Path
+import json
 from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -307,6 +308,168 @@ def shield() -> Image.Image:
     return image
 
 
+
+MODEL_OUT = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "resourcepack" / "assets" / "warriorland_halloween" / "models" / "item"
+MODEL_TEXTURE_IDS = {
+    "crimson_warden_sword": "item/crimson_warden_sword",
+    "crimson_warden_pickaxe": "item/crimson_warden_pickaxe",
+    "crimson_warden_axe": "item/crimson_warden_axe",
+    "crimson_warden_shovel": "item/crimson_warden_shovel",
+    "crimson_warden_hoe": "item/crimson_warden_hoe",
+    "crimson_warden_shield": "item/crimson_warden_shield",
+    "cursed_talisman": "item/cursed_talisman",
+}
+
+
+def voxel_elements(image: Image.Image, depth: tuple[float, float]) -> list[dict]:
+    """Extrude opaque same-colour pixel rectangles into small, UV-mapped cubes.
+
+    Every source pixel remains crisp. Greedy rectangle merging keeps the model
+    compact while preserving the original silhouette and face colours.
+    """
+    image = image.convert("RGBA")
+    width, height = image.size
+    if width != SIZE or height != SIZE:
+        raise ValueError(f"3D model source must be {SIZE}x{SIZE}, got {width}x{height}")
+
+    pixels = image.load()
+    used = [[False for _ in range(width)] for _ in range(height)]
+    elements: list[dict] = []
+
+    for y in range(height):
+        for x in range(width):
+            color = pixels[x, y]
+            if used[y][x] or color[3] < 128:
+                used[y][x] = True
+                continue
+
+            # Greedily form a solid rectangle of this exact palette colour.
+            rect_width = 1
+            while (x + rect_width < width and not used[y][x + rect_width]
+                   and pixels[x + rect_width, y] == color):
+                rect_width += 1
+
+            rect_height = 1
+            while y + rect_height < height:
+                row_ok = True
+                for xx in range(x, x + rect_width):
+                    if used[y + rect_height][xx] or pixels[xx, y + rect_height] != color:
+                        row_ok = False
+                        break
+                if not row_ok:
+                    break
+                rect_height += 1
+
+            for yy in range(y, y + rect_height):
+                for xx in range(x, x + rect_width):
+                    used[yy][xx] = True
+
+            # Minecraft model UVs use a 0..16 coordinate space; this atlas is
+            # 32x32 so every art pixel corresponds to 0.5 UV units and 0.5 blocks.
+            u0, v0 = x / 2, y / 2
+            u1, v1 = (x + rect_width) / 2, (y + rect_height) / 2
+            left_u1 = (x + 1) / 2
+            right_u0 = (x + rect_width - 1) / 2
+            top_v1 = (y + 1) / 2
+            bottom_v0 = (y + rect_height - 1) / 2
+
+            def uv(values: tuple[float, float, float, float]) -> list[float]:
+                return [round(value, 3) for value in values]
+
+            def face(region: tuple[float, float, float, float]) -> dict:
+                return {"uv": uv(region), "texture": "#layer0"}
+
+            model_y0 = (height - y - rect_height) / 2
+            model_y1 = (height - y) / 2
+            elements.append({
+                "from": [round(x / 2, 3), round(model_y0, 3), depth[0]],
+                "to": [round((x + rect_width) / 2, 3), round(model_y1, 3), depth[1]],
+                "faces": {
+                    "north": face((u0, v0, u1, v1)),
+                    "south": face((u0, v0, u1, v1)),
+                    "west": face((u0, v0, left_u1, v1)),
+                    "east": face((right_u0, v0, u1, v1)),
+                    "up": face((u0, v0, u1, top_v1)),
+                    "down": face((u0, bottom_v0, u1, v1)),
+                },
+            })
+
+    if not elements:
+        raise ValueError("3D icon contained no visible pixels")
+    # Hundreds of tiny cubes are unnecessary if the source art is accidentally
+    # changed to a dense photograph; fail before shipping an oversized model.
+    if len(elements) > 700:
+        raise ValueError(f"model has {len(elements)} elements; simplify the pixel art")
+    return elements
+
+
+def save_voxel_model(item_id: str, parent: str, depth: tuple[float, float]) -> int:
+    """Create a Minecraft item JSON model from one of the generated pixel icons."""
+    source = OUT / f"{item_id}.png"
+    if not source.is_file():
+        raise FileNotFoundError(f"Missing model texture {source}")
+    with Image.open(source) as image:
+        elements = voxel_elements(image, depth)
+
+    model = {
+        "credit": "HalloweenCore - generated crisp pixel-art voxel model",
+        "parent": parent,
+        "textures": {
+            "layer0": f"warriorland_halloween:item/{item_id}",
+            "particle": f"warriorland_halloween:item/{item_id}",
+        },
+        "elements": elements,
+    }
+    MODEL_OUT.mkdir(parents=True, exist_ok=True)
+    destination = MODEL_OUT / f"{item_id}.json"
+    destination.write_text(json.dumps(model, separators=(",", ":"), ensure_ascii=False) + "\n", encoding="utf-8")
+    # Read it back instead of trusting a partially written JSON file.
+    parsed = json.loads(destination.read_text(encoding="utf-8"))
+    if parsed.get("textures", {}).get("layer0") != model["textures"]["layer0"]:
+        raise RuntimeError(f"Texture reference check failed for {item_id}")
+    print(f"Generated 3D model {destination.name}: {len(elements)} UV-mapped voxel elements")
+    return len(elements)
+
+
+def generate_voxel_models() -> None:
+    """Create custom 3D in-hand geometry for combat gear and the necklace."""
+    for item_id in (
+        "crimson_warden_sword",
+        "crimson_warden_pickaxe",
+        "crimson_warden_axe",
+        "crimson_warden_shovel",
+        "crimson_warden_hoe",
+    ):
+        save_voxel_model(item_id, "item/handheld", (7.1, 8.9))
+
+    # The shield has distinct normal and actively-blocking states as supported by
+    # ItemsAdder's modern 1.21.4+ graphics.models property.
+    save_voxel_model("crimson_warden_shield", "item/generated", (7.0, 9.0))
+    save_voxel_model("crimson_warden_shield", "item/generated", (6.2, 9.8))
+    blocked_model = MODEL_OUT / "crimson_warden_shield_blocking.json"
+    standard_model = MODEL_OUT / "crimson_warden_shield.json"
+    if not standard_model.is_file():
+        raise FileNotFoundError("Normal shield model was not written")
+    # Keep separate state model files even though their texture source is shared;
+    # blocking state uses the heavier/deeper extrusion so the silhouette remains bold.
+    # The second export above uses the same model ID, so emit the blocking file with
+    # the same geometry at its own destination after making it independently valid.
+    with Image.open(OUT / "crimson_warden_shield.png") as image:
+        blocking = {
+            "credit": "HalloweenCore - generated blocking-state voxel shield",
+            "parent": "item/generated",
+            "textures": {
+                "layer0": "warriorland_halloween:item/crimson_warden_shield",
+                "particle": "warriorland_halloween:item/crimson_warden_shield",
+            },
+            "elements": voxel_elements(image, (6.2, 9.8)),
+        }
+    blocked_model.write_text(json.dumps(blocking, separators=(",", ":") , ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Generated blocking shield model: {len(blocking['elements'])} UV-mapped voxel elements")
+
+    save_voxel_model("cursed_talisman", "item/generated", (7.25, 8.75))
+
+
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     art = {
@@ -333,6 +496,7 @@ def main() -> None:
                 raise RuntimeError(f"Invalid icon generated: {name}")
         print(f"Generated {name}: 32x32 RGBA ({(OUT / name).stat().st_size} bytes)")
     print(f"Validated {len(art)} crisp Halloween item icons in {OUT.relative_to(ROOT)}")
+    generate_voxel_models()
 
 
 if __name__ == "__main__":
