@@ -209,9 +209,9 @@ for layer in ("layer_1.png", "layer_2.png"):
 
 # Validate the standalone Iris shader pack. Never override assets/minecraft/shaders/core,
 # because Iris does not support resource-pack core shader replacements.
-if not (SHADERPACK / "shaders.properties").is_file():
+if not (SHADERPACK / "shaders" / "shaders.properties").is_file():
     fail("Missing standalone Iris shaderpack/shaders.properties")
-properties = (SHADERPACK / "shaders.properties").read_text(encoding="utf-8")
+properties = (SHADERPACK / "shaders" / "shaders.properties").read_text(encoding="utf-8")
 for marker in ("profile.LOW", "profile.MEDIUM", "profile.HIGH", "HALLOWEEN_QUALITY", "BLOOD_MOON_STRENGTH"):
     if marker not in properties:
         fail(f"Shader pack properties are missing {marker}")
