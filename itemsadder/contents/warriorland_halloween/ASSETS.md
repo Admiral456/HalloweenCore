@@ -87,6 +87,7 @@ Netherite tools use mining speed 9 for their matching tool classes and have dura
 
 ## World structures and equipment effects
 
+- `HalloweenWorldDecorator` adds randomized pumpkins, cobwebs, red candles, and shaded red/brown mushrooms to eligible terrain. Existing blocks and block entities are not overwritten.
 - `HalloweenWorldStructureGenerator` checks natural, nearly level terrain in loaded Overworld chunks and builds varied haunted villages or graveyards only when the full footprint is loaded and clear. It does not force-load chunks; a per-chunk persistent marker prevents overlapping/repeated placement after reloads. Density and slope are configured under `world-structures` in `config.yml`.
 - `/halloween structures status` reports whether generation is active and the current session's generation counts; `/halloween structures scan` re-checks only chunks already loaded.
 - Shop-tagged Crimson Warden armor has a subtle crimson soul aura as a full set, night vision on the helmet, fire resistance on the chestplate, speed on leggings and jump boost on boots. The full-set emergency ward grants short absorption with a cooldown when a hit would drop the wearer below the configured health threshold.
