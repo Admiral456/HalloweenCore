@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
 TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
 MODELS = CONTENT / "models" / "item"
+WEARABLE_HELMET_MODEL = CONTENT / "models" / "armor" / "crimson_warden_helmet_3d.json"
 EXPECTED_3D_MODELS = {
     "cursed_talisman": ("item/generated", "item/cursed_talisman"),
     "crimson_warden_sword": ("item/handheld", "item/crimson_warden_sword"),
@@ -188,6 +189,38 @@ for item_id, (expected_parent, expected_texture) in EXPECTED_3D_MODELS.items():
                 fail(f"{item_id} element {index} face {face_name} UV is outside the 0..16 texture space")
             if face.get("texture") != "#layer0":
                 fail(f"{item_id} element {index} face {face_name} must use #layer0")
+
+# The worn Crimson Warden helmet uses the ItemsAdder-supported custom 3D helmet path.
+# The other armor pieces intentionally use the custom layer_1/layer_2 texture equipment.
+if not WEARABLE_HELMET_MODEL.is_file():
+    fail("Missing wearable 3D Crimson Warden helmet model")
+try:
+    wearable_helmet = json.loads(WEARABLE_HELMET_MODEL.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Invalid wearable helmet model JSON: {exc}")
+if wearable_helmet.get("parent") != "item/generated":
+    fail("Wearable helmet model must use item/generated parent")
+if wearable_helmet.get("textures", {}).get("layer0") != "warriorland_halloween:item/crimson_warden_helmet":
+    fail("Wearable helmet model references the wrong namespaced texture")
+helmet_elements = wearable_helmet.get("elements")
+if not isinstance(helmet_elements, list) or len(helmet_elements) < 8 or len(helmet_elements) > 700:
+    fail("Wearable helmet model must contain 8..700 voxel elements")
+for index, element in enumerate(helmet_elements):
+    if not isinstance(element, dict):
+        fail(f"Wearable helmet element {index} is invalid")
+    frm, to, faces = element.get("from"), element.get("to"), element.get("faces")
+    if not isinstance(frm, list) or not isinstance(to, list) or len(frm) != 3 or len(to) != 3:
+        fail(f"Wearable helmet element {index} has invalid bounds")
+    if any(float(a) < 0 or float(b) > 16 or float(a) >= float(b) for a, b in zip(frm, to)):
+        fail(f"Wearable helmet element {index} has out-of-range cuboid bounds")
+    if not isinstance(faces, dict) or set(faces) != {"north", "south", "east", "west", "up", "down"}:
+        fail(f"Wearable helmet element {index} needs all six faces")
+    for face_name, face in faces.items():
+        uv = face.get("uv") if isinstance(face, dict) else None
+        if not isinstance(uv, list) or len(uv) != 4 or any(float(v) < 0 or float(v) > 16 for v in uv):
+            fail(f"Wearable helmet element {index} face {face_name} has invalid UVs")
+        if face.get("texture") != "#layer0":
+            fail(f"Wearable helmet element {index} face {face_name} must use #layer0")
 
 shield_blocking_path = MODELS / "crimson_warden_shield_blocking.json"
 if not shield_blocking_path.is_file():
@@ -491,22 +524,55 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
         fail(f"Custom gear '{item_id}' must remain enchantable")
 
 expected_armor_stats = {
-    "crimson_warden_helmet": ("max_durability: 900", "armor: 3"),
-    "crimson_warden_chestplate": ("max_durability: 1300", "armor: 4"),
-    "crimson_warden_leggings": ("max_durability: 1150", "armor: 3"),
-    "crimson_warden_boots": ("max_durability: 950", "armor: 3"),
+    "crimson_warden_helmet": ("NETHERITE_HELMET", 3.0, 6.0, 900),
+    "crimson_warden_chestplate": ("NETHERITE_CHESTPLATE", 4.0, 12.0, 1300),
+    "crimson_warden_leggings": ("NETHERITE_LEGGINGS", 3.0, 9.0, 1150),
+    "crimson_warden_boots": ("NETHERITE_BOOTS", 3.0, 6.0, 950),
 }
-for item_id, required_stats in expected_armor_stats.items():
+for item_id, (material, extra_armor, displayed_total, durability) in expected_armor_stats.items():
+    start = config.find(f"  {item_id}:")
+    if start < 0:
+        fail(f"{item_id} missing from ItemsAdder config")
+    section_tail = config[start + len(f"  {item_id}:"):]
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", section_tail)
+    end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
+    definition = config[start:end]
+    if not re.search(rf"(?m)^    material: {re.escape(material)}\s*$", definition):
+        fail(f"{item_id} must use base material {material}")
+    if not re.search(rf"(?m)^      max_durability: {durability}\s*$", definition):
+        fail(f"{item_id} durability must be {durability}")
+    if not re.search(rf"(?m)^        armor: {extra_armor:g}\s*$", definition):
+        fail(f"{item_id} added armor modifier must be {extra_armor:g}")
+    # Netherite base armor is 3 / 8 / 6 / 3; ItemsAdder's armor slot modifier adds to it.
+    base_armor = {"NETHERITE_HELMET": 3.0, "NETHERITE_CHESTPLATE": 8.0,
+                  "NETHERITE_LEGGINGS": 6.0, "NETHERITE_BOOTS": 3.0}[material]
+    effective_total = base_armor + extra_armor
+    if effective_total != displayed_total:
+        fail(f"{item_id} effective armor {effective_total:g} does not match intended {displayed_total:g}")
+    if not re.search(rf"Brnění {displayed_total:g}(?:\s|\()", definition):
+        fail(f"{item_id} lore must disclose the effective armor total {displayed_total:g}")
+    if "equipment:" not in definition or "slot_attribute_modifiers:" not in definition:
+        fail(f"{item_id} must define its armor slot attribute modifier")
+
+helmet_definition_start = config.find("  crimson_warden_helmet:")
+helmet_tail = config[helmet_definition_start + len("  crimson_warden_helmet:"):]
+helmet_next = re.search(r"(?m)^  [a-z0-9_]+:\s*$", helmet_tail)
+helmet_end = helmet_definition_start + len("  crimson_warden_helmet:") + helmet_next.start() if helmet_next else len(config)
+helmet_definition = config[helmet_definition_start:helmet_end]
+if "model: armor/crimson_warden_helmet_3d" not in helmet_definition:
+    fail("Crimson Warden helmet must equip its generated 3D worn model")
+if "icon: item/crimson_warden_helmet" not in helmet_definition:
+    fail("Crimson Warden helmet must keep a separate inventory icon")
+if "id: warriorland_halloween:crimson_warden" in helmet_definition:
+    fail("3D worn helmet must omit equipment.id so ItemsAdder honors its helmet model path")
+for item_id in ("crimson_warden_chestplate", "crimson_warden_leggings", "crimson_warden_boots"):
     start = config.find(f"  {item_id}:")
     section_tail = config[start + len(f"  {item_id}:"):]
     next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", section_tail)
     end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
     definition = config[start:end]
-    for stat in required_stats:
-        if stat not in definition:
-            fail(f"{item_id} is missing expected full-set armour/durability stat: {stat}")
-    if "equipment:" not in definition or "slot_attribute_modifiers:" not in definition:
-        fail(f"{item_id} must use its Crimson Warden equipment layer and required armor modifier")
+    if "id: warriorland_halloween:crimson_warden" not in definition:
+        fail(f"{item_id} must use the Crimson Warden worn armor layer equipment")
 
 expected_gear_stats = {
     "crimson_warden_sword": ("attackDamage: 15.0", "attackSpeed: 0.8", "max_durability: 5000"),
@@ -623,7 +689,8 @@ if root_textures.exists():
 print("Halloween asset validation passed.")
 print("15 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
 print(f"3D equipment: {len(EXPECTED_3D_MODELS)} voxel models + separate shield blocking model; bounds/UVs/textures verified")
-print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces, 5 weapons/tools, and shield enchantability verified")
+print("Crimson Warden gear: attack stats/durability and effective additive armor totals verified")
+print("Worn armor: custom 3D helmet model verified; chestplate, leggings and boots use custom armor layers")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
 print(f"Seasonal vanilla block textures: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
