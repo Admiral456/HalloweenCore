@@ -257,7 +257,7 @@ The graphics update consists of three separate pieces because the server-side Bu
 ### Installation
 
 1. Build/download `HalloweenCore-jar` and install it on the Paper/Purpur 1.21.10 server like the normal plugin.
-2. Extract `WarriorLand-Halloween-ItemsAdder.zip` from the GitHub Actions artifacts into `plugins/ItemsAdder/contents/warriorland_halloween/`. Restart or reload ItemsAdder as appropriate, run `/iazip`, verify `/iainfo`, and make sure players accept the updated resource pack.
+2. Extract `WarriorLand-Halloween-ItemsAdder.zip` from the GitHub Actions artifacts into `plugins/ItemsAdder/contents/` so the archive creates `plugins/ItemsAdder/contents/warriorland_halloween/`. Restart or reload ItemsAdder as appropriate, run `/iazip`, verify `/iainfo`, and make sure players accept the updated resource pack.
 3. On each client that should see the shader, use Minecraft Java 1.21.10 with Fabric Loader, Fabric API, Iris and Sodium. Put `HalloweenCore-Client-1.21.10.jar` into that client's `mods/` folder.
 4. Put `WarriorLand-Halloween-Iris-Shader.zip` into `.minecraft/shaderpacks/` and select it in Video Settings → Shader Packs. The ZIP contains the `shaders/` directory at its root.
 5. Test the real event with `/halloween event start blood-moon-invasion`, then `/halloween event stop`. Check both the red-sky transition and the restoration to normal Halloween colors.
