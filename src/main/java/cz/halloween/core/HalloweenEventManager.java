@@ -176,7 +176,7 @@ public final class HalloweenEventManager {
             runActiveEventEffects(now);
         }
 
-        if (activeEventId == null && now >= nextEventAt) {
+        if (activeEventId == null && nextEventAt > 0L && now >= nextEventAt) {
             if (!eligibleEventPlayers().isEmpty()) {
                 startRandomEvent();
             } else {
@@ -367,6 +367,9 @@ public final class HalloweenEventManager {
         lastSurgeSpawned = spawnedThisSurge;
         lastEffectSummary = "Event " + activeEventId + ": v cílovém světě " + target.getWorld().getName()
                 + " úspěšně spawnuto " + spawnedThisSurge + " event mobů v poslední vlně.";
+        if (spawnedThisSurge > 0 && plugin.getMobManager() != null) {
+            lastEffectSummary += " Poslední mob: " + plugin.getMobManager().getLastSpawnedMobId() + ".";
+        }
         if (spawnedThisSurge > 0 && activeEventId.equals("blood-moon-invasion")
                 && plugin.getQuestManager() != null) {
             plugin.getQuestManager().recordAction(target, "event:blood-moon-invasion");

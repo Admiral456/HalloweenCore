@@ -342,7 +342,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(plugin.color("&6&lHALLOWEEN EVENTY &8» &7Registrované události:"));
                 for (String id : plugin.getEventManager().getKnownEventIds()) {
                     String name = plugin.getConfig().getString("random-events.types." + id + ".name", id);
-                    String state = plugin.getEventManager().isActive(id) ? "&aACTIVE" : "&7WAITING";
+                    String state = !plugin.getEventManager().isEventIndividuallyEnabled(id) ? "&cDISABLED"
+                            : plugin.getEventManager().isActive(id) ? "&aACTIVE" : "&7WAITING";
                     sender.sendMessage(plugin.color(" &8• &f" + id + " &8— &e" + name + " &8[ " + state + " &8]"));
                 }
                 sender.sendMessage(plugin.color("&7Poslední skutečný výsledek: &f" + plugin.getEventManager().getLastEffectSummary()));
@@ -381,7 +382,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 }
                 String name = plugin.getConfig().getString("random-events.types." + requested + ".name", requested);
                 sender.sendMessage(plugin.color("&6&lEVENT STATUS &8» &e" + name + " &8(" + requested + ")"));
-                sender.sendMessage(plugin.color("&7Stav: " + (plugin.getEventManager().isActive(requested) ? "&aACTIVE" : "&7WAITING")));
+                String state = !plugin.getEventManager().isEventIndividuallyEnabled(requested) ? "&cDISABLED"
+                        : plugin.getEventManager().isActive(requested) ? "&aACTIVE" : "&7WAITING";
+                sender.sendMessage(plugin.color("&7Stav: " + state));
                 if (requested.equals(plugin.getEventManager().getLastEffectEventId())) {
                     sender.sendMessage(plugin.color("&7Poslední vlna: &f" + plugin.getEventManager().getLastEffectSummary()));
                 } else {
