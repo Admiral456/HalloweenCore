@@ -257,7 +257,35 @@ The graphics update consists of three separate pieces because the server-side Bu
 - **Iris shader pack** — a dedicated shader ZIP under `shaderpack/`, with dark violet nights, burnt-orange horizon/daylight, tinted clouds, a directional moon halo, and a deep-crimson Blood Moon visual. Quality profiles are Low, Medium and High. The shader pack does not overwrite `assets/minecraft/shaders/core`, because Iris does not support resource-pack core-shader replacements.
 - **Fabric client companion** — the optional 1.21.10 client mod receives `halloweencore:visual_state` from the server. It exposes a client-only world-time marker during the actual `blood-moon-invasion` event, so the shader uses crimson mode only during that event and smoothly returns after it ends. It does not change the server clock or gameplay.
 
-### Installation
+#
+## Goblin King — separate boss and fortress
+
+The Goblin King is an independent encounter; it does not replace or rename the Vampire King. Install the updated plugin JAR, ItemsAdder content and `HalloweenCore-Special-Mobs-ModelEngine.zip`. For the custom boss/rider visual, install the matching MythicMobs definition file from `mythicmobs/mobs/halloween-special-mobs.yml` into `plugins/MythicMobs/Mobs/`, then run `/mm reload`. If either MythicMobs or ModelEngine is unavailable, the core uses its documented vanilla fallback.
+
+**Arena safety workflow (admin):**
+1. Make a backup of the target world before any build.
+2. `/halloween goblin dry-run <world> <x> <y> <z>` prints the planned bounds and checks that the full build volume is air, all intersecting chunks are already loaded, height bounds are valid, and WorldGuard allows building when installed. It performs no edits.
+3. `/halloween goblin arena <world> <x> <y> <z>` repeats preflight and stores a pending plan; it does not build yet.
+4. Review the printed bounds, then run `/halloween goblin confirm`. Use `/halloween goblin cancel` to abort. Existing non-air blocks are never intentionally overwritten. If the build fails mid-operation, the manager rolls all touched blocks back to air.
+5. `/halloween goblin status` checks state. `/halloween goblin test` spawns the test encounter without boss fragment rewards. `/halloween goblin start` starts the reward-enabled encounter only after the configured global progress threshold; `stop` ends it.
+
+The first supported fortress version uses a 31-block radius and a 16-block build height; choose a completely clear area substantially larger than that footprint. Arena construction and boss combat need real staging-world tests before production release.
+
+## Headless Nick — stalking/ambush
+
+Install/reload the same MythicMobs/ModelEngine companion pack if custom rider visuals are desired. The implementation currently uses a vanilla Skeleton Horse mount; a custom horse model is not included yet. The encounter can be configured in `stalkers.headless-nick`.
+
+Admin commands: `/halloween nick status`, `/halloween nick test <player>` (allows testing outside night), `/halloween nick spawn <player>` (normal night/safety rules apply), `/halloween nick target <player>`, `/halloween nick attack`, `/halloween nick despawn`. Messages **“Vidím tě.”** and **“Sleduji tě.”** are target-only, not global chat. On production servers, verify safe zones, WorldGuard PVP behavior, mounted pathfinding and rider/horse cleanup in a staging world before enabling natural spawns.
+
+## Staged delivery verification status
+
+- **Stage 0 — PASS:** repository/version/baseline audit written in `docs/MASTER_PROMPT_STAGED_AUDIT_2026-10-12.md`.
+- **Stage 1 — automated PASS, in-game NOT TESTED:** eight mob IDs, secondary attacks, admin test spawning/cleanup and per-mob test matrix are in source. See `docs/SPECIAL_MOB_ABILITY_MATRIX.md` and [CI run #1140](https://github.com/Admiral456/HalloweenCore/actions/runs/38220557974).
+- **Stage 2 — in progress:** effective additive armor totals are validated in code; a generated 3D worn helmet model is being added. In-game worn appearance and ItemsAdder import are still NOT TESTED.
+- **Stages 3–4 — in progress:** independent Goblin King boss/fortress and Headless Nick manager/models/commands are being implemented. New branch-head build and live server combat tests are still required.
+- **No live Paper/Purpur server or Minecraft client was available to this workflow.** A passing compilation or structural asset validator is not represented as proof of in-game visuals/AI.
+
+## Installation
 
 1. Build/download `HalloweenCore-jar` and install it on the Paper/Purpur 1.21.10 server like the normal plugin.
 2. Extract `WarriorLand-Halloween-ItemsAdder.zip` from the GitHub Actions artifacts into `plugins/ItemsAdder/contents/` so the archive creates `plugins/ItemsAdder/contents/warriorland_halloween/`. Restart or reload ItemsAdder as appropriate, run `/iazip`, verify `/iainfo`, and make sure players accept the updated resource pack.
