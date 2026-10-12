@@ -1000,7 +1000,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         VampireArenaBuilder builder = new VampireArenaBuilder();
-        VampireArenaBuilder.Inspection inspection = builder.inspect(center);
+        VampireArenaBuilder.Inspection inspection = builder.inspect(center, player);
         if (!inspection.clear()) {
             sender.sendMessage(plugin.color("&cArénu nelze bezpečně postavit: " + inspection.problem()));
             if (inspection.obstructions() > 0) {
@@ -1016,13 +1016,20 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(plugin.color("&7Svět: &e" + world.getName()));
             sender.sendMessage(plugin.color("&7Střed: &e" + center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ()));
             sender.sendMessage(plugin.color("&7Průměr arény: &e97 bloků &8• &78 věží, 4 monumentální brány, 8 vnitřních obelisků, obvodová zeď a runový kruh"));
-            sender.sendMessage(plugin.color("&7Kontrola prošla: nad podlahou je 20 bloků volného prostoru. Vrchní vrstva terénu v kruhu bude nahrazena podlahou."));
+            sender.sendMessage(plugin.color("&7Předkontrola prošla: přírodní terén lze bezpečně seříznout do 8 bloků a zasypat do 12 bloků."));
+            sender.sendMessage(plugin.color("&7Stavby, bloky s inventářem a oblasti zamítnuté WorldGuardem se nepřepisují."));
             sender.sendMessage(plugin.color("&ePokud je místo správné, potvrď stavbu: &6/halloween buildvampirearena confirm"));
             sender.sendMessage(plugin.color("&cPotvrzení změní povrch v kruhu o poloměru 48 bloků a přestaví arénu až do 15 bloků výšky. Předem zazálohuj svět!"));
             return true;
         }
 
-        int changed = builder.build(center);
+        int changed;
+        try {
+            changed = builder.build(center, player);
+        } catch (IllegalStateException exception) {
+            sender.sendMessage(plugin.color("&cStavba byla bezpečně zastavena: &e" + exception.getMessage()));
+            return true;
+        }
         plugin.getConfig().set("bosses.vampire.arena.generated", true);
         plugin.saveConfig();
         sender.sendMessage(plugin.color("&aGotovo! Upíří aréna byla postavena."));
