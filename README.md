@@ -27,7 +27,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
 - Maska nočního lovce dává při nošení +5 % k zisku fragmentů; stojí 4 000 fragmentů a vyžaduje prokletí 3
-- Prokletý talisman stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +20 maximálního zdraví (jeden řádek srdcí navíc) a zachovává +10 % k zisku fragmentů
+- Prokletý náhrdelník (zachované interní ID `cursed_talisman`) stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +20 maximálního zdraví (jeden řádek srdcí navíc) a zachovává +10 % k zisku fragmentů
 - limitovaný token Halloween 2026 stojí 30 000 fragmentů a vyžaduje prokletí 5
 - po dosažení globálního cíle se natrvalo odemkne serverové finále
 - hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
@@ -50,6 +50,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
+- /halloween structures status|scan (admin, diagnostika náhodných struktur ve světě)
 - /halloween setvillage (admin)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
@@ -142,6 +143,20 @@ Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. 
 
 Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
 
+### Náhodné Haunted Village a prokleté hřbitovy
+
+Nový `HalloweenWorldStructureGenerator` se při zapnutém Halloween systému dívá na načtené chunky v Overworldu. Na vhodných travnatých a přírodních plochách může postavit jednu z několika variant prokleté vesnice (domky, kaple, studna, lucerny, cesty a dýňový záhon) nebo hřbitov (náhrobky, obvodová zeď, mauzoleum, rituální kruh a červené svíčky). K dokončení stavby vyžaduje načtenou celou plochu, přírodní terén s malým sklonem a volný prostor nad terénem. Vynechá lesy, existující stavby a strmé plochy; nikdy kvůli hledání nevynucuje načtení vzdálených chunků. Náhodnost je opakovatelná podle seedu a souřadnic a použitá plocha se označuje v PDC, takže reload ani restart stavbu znovu nepostaví.
+
+- `world-structures.village-region-chunks` a `graveyard-region-chunks` určují četnost kandidátů; `max-slope` a `max-retries` nastavují bezpečnostní limity.
+- `/halloween structures status` ukáže stav generátoru, frontu, počet postavených vesnic/hřbitovů v aktuální relaci a počet přeskočených kandidátů.
+- `/halloween structures scan` znovu zkontroluje právě načtené chunky. Není to teleport ani příkaz pro generování kolem hráče; nové oblasti se kontrolují při přirozeném načítání chunků.
+
+### Vlastní efekty zbroje, zbraní a štítu
+
+Efekty spouštějí předměty získané přes Halloween obchod, protože ten jim při vydání přidává interní identifikátor odměny. Helma Krvavého strážce dává průběžné noční vidění, kyrys krátkou ohnivzdornost, nohavice rychlost a boty výskok; plný set vytváří decentní červeno-duševní auru a při kritickém zásahu může s cooldownem spustit krátkou ochrannou absorpci. Meč vyvolává krvavou ránu, sekera oslabí obranu, krumpáč zpomalí cíl, lopatka vytvoří malou rázovou vlnu bez ničení bloků a motyka může v boji obnovit zdraví. Štít Krvavého strážce může při úspěšném blokování odtlačit útočníka. Cooldowny a hodnoty jsou v konfiguraci `gear-effects`.
+
+Asset pipeline generuje 15 samostatných ostrých 32×32 RGBA ikon pro vybavení a relikvie; vlastní 64×32 armor atlas se zachovává, aby se nepoškodilo nasazení zbroje. Nový štít má samostatnou texturu, ItemsAdder definici a komponenty výdrže 1 800 / enchantovatelnosti 25. Po instalaci změn je nutné sestavit a doručit nový ItemsAdder resource pack (`/iazip`, pak ověřit `/iainfo`). Tyto nové efekty zatím nejsou vydávány za ověřené v živém klientu — to musí potvrdit herní test na Paper/Purpur 1.21.10.
+
 - `/halloween boss test` vyvolá testovacího Krále upírů bez globálního progressu, odemčení finále a model-ready gate. Vyžaduje uložený střed arény a funkční MythicMobs mob `vampire-king`; testovací zabití nedává odměny ani neoznačí finále za splněné.
 
 ## Návod: aréna, obchod a resource pack
@@ -174,7 +189,8 @@ Vlastní PNG jsou v `itemsadder/contents/warriorland_halloween/resourcepack/asse
 V repozitáři je připravený namespace `warriorland_halloween`:
 
 - `itemsadder/contents/warriorland_halloween/configs/items.yml`
-- `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/*.png` — vlastní textury
+- `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/*.png` — 15 vlastních 32×32 pixel-art ikon včetně štítu a náhrdelníku
+- `scripts/generate_halloween_gear_assets.py` — deterministický generátor ostrých ikon
 - `itemsadder/contents/warriorland_halloween/ASSETS.md` — seznam assetů
 
 Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack přes `/iazip`.
