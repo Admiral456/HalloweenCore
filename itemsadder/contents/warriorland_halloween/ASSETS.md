@@ -18,6 +18,7 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_axe.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_shovel.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_hoe.png
+- resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_shield.png
 - resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_1.png
 - resourcepack/assets/warriorland_halloween/textures/armor/crimson_warden/layer_2.png
 
@@ -42,7 +43,7 @@ The Java plugin uses these custom ItemsAdder IDs:
 - warriorland_halloween:cursed_candy
 - warriorland_halloween:haunted_map
 - warriorland_halloween:crimson_warden_helmet / chestplate / leggings / boots
-- warriorland_halloween:crimson_warden_sword / pickaxe / axe / shovel / hoe
+- warriorland_halloween:crimson_warden_sword / pickaxe / axe / shovel / hoe / shield
 
 Sound IDs used by the plugin:
 - `warriorland_halloween:haunted_theme` — background loop, played at the generated track duration
@@ -82,6 +83,16 @@ Netherite tools use mining speed 9 for their matching tool classes and have dura
 - `cursed-talisman`: **1,000,000 fragments**, +20 max health (one extra full row of hearts), +10% Halloween fragment multiplier while held in either hand.
 - All four armour pieces and the five Crimson Warden weapon/tool items have component JSON files under `configs/` which explicitly preserve enchantability. Tool component files also specify the mining rules.
 - Shop descriptions, configured attributes, durability values, the component JSON files and all 14 item textures are checked by `scripts/validate_halloween_assets.py`.
+
+
+## World structures and equipment effects
+
+- `HalloweenWorldStructureGenerator` checks natural, nearly level terrain in loaded Overworld chunks and builds varied haunted villages or graveyards only when the full footprint is loaded and clear. It does not force-load chunks; a per-chunk persistent marker prevents overlapping/repeated placement after reloads. Density and slope are configured under `world-structures` in `config.yml`.
+- `/halloween structures status` reports whether generation is active and the current session's generation counts; `/halloween structures scan` re-checks only chunks already loaded.
+- Shop-tagged Crimson Warden armor has a subtle crimson soul aura as a full set, night vision on the helmet, fire resistance on the chestplate, speed on leggings and jump boost on boots. The full-set emergency ward grants short absorption with a cooldown when a hit would drop the wearer below the configured health threshold.
+- Shop-tagged weapons have separate low-frequency combat procs: Blood Rend (sword), defense break (axe), grave piercer (pickaxe), nearby shockwave (shovel) and soul harvest healing (hoe). The custom shield can knock back an attacker when actively blocking. Cooldowns, radii, duration and values are configured under `gear-effects`.
+- The cursed talisman retains its existing item/reward ID for save compatibility but its displayed identity is now **Prokletý náhrdelník**. Its +20 maximum health and +10% Halloween fragments effects remain.
+- These Java-side effects need the custom item to carry HalloweenCore's reward marker, which is applied when claimed from the Halloween shop. Visual asset checks and Java compilation run in CI; actual rendering, client delivery and combat behaviour still need a live 1.21.10 test server.
 
 ## Vampire model assets
 
