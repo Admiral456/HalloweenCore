@@ -788,6 +788,7 @@ for layer in ("layer_1.png", "layer_2.png"):
 root_textures = CONTENT / "textures"
 if root_textures.exists():
     allowed_source_items = {root_textures / "item" / name for name in EXPECTED}
+    allowed_source_items.add(root_textures / "item" / "nocturne_sovereign_cowl_worn.png")
     allowed_source_wings = {
         root_textures / "entity" / "equipment" / "wings" / "batwing_elytra.png"
     }
