@@ -494,14 +494,13 @@ public final class HalloweenWorldStructureGenerator implements Listener {
 
     private void buildScarecrow(World world, int x, int y, int z) {
         placeFoundation(world, x, y, z, Material.HAY_BLOCK);
-        place(world, x, y + 1, z, Material.HAY_BLOCK);
+        place(world, x, y + 1, z, Material.STRIPPED_DARK_OAK_LOG);
         place(world, x, y + 2, z, Material.CARVED_PUMPKIN);
-        placeFacing(world, x, y + 1, z, Material.STRIPPED_DARK_OAK_LOG, BlockFace.SOUTH);
         place(world, x - 1, y + 1, z, Material.DARK_OAK_FENCE);
         place(world, x + 1, y + 1, z, Material.DARK_OAK_FENCE);
-        place(world, x - 2, y + 1, z, Material.COBWEB);
-        place(world, x + 2, y + 1, z, Material.COBWEB);
-        place(world, x, y, z + 1, Material.WITHER_ROSE);
+        place(world, x - 2, y + 2, z, Material.COBWEB);
+        place(world, x + 2, y + 2, z, Material.COBWEB);
+        place(world, x, y + 1, z + 1, Material.WITHER_ROSE);
     }
 
     private void buildGraveyard(World world, int x, int y, int z, Random random) {
