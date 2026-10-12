@@ -47,6 +47,7 @@ EXPECTED = {
     "crimson_warden_axe.png",
     "crimson_warden_shovel.png",
     "crimson_warden_hoe.png",
+    "crimson_warden_shield.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
 VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
@@ -309,7 +310,7 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
                 "crimson_warden_helmet", "crimson_warden_chestplate",
                 "crimson_warden_leggings", "crimson_warden_boots",
                 "crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
-                "crimson_warden_shovel", "crimson_warden_hoe"):
+                "crimson_warden_shovel", "crimson_warden_hoe", "crimson_warden_shield"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
 
@@ -378,6 +379,7 @@ gear_components = {
     "crimson_warden_axe": ("crimson_warden_axe.json", "#minecraft:mineable/axe", 5000),
     "crimson_warden_shovel": ("crimson_warden_shovel.json", "#minecraft:mineable/shovel", 4500),
     "crimson_warden_hoe": ("crimson_warden_hoe.json", "#minecraft:mineable/hoe", 4500),
+    "crimson_warden_shield": ("crimson_warden_shield.json", None, 1800),
 }
 for item_id, (component_file, mining_tag, expected_max_damage) in gear_components.items():
     start = config.find(f"  {item_id}:")
@@ -414,7 +416,7 @@ for item_id, (component_file, mining_tag, expected_max_damage) in gear_component
             fail(f"{item_id} must have mining speed >= 14 and correct drops for {mining_tag}")
 
 shop_ids = ("crimson-warden-sword", "crimson-warden-pickaxe", "crimson-warden-axe",
-            "crimson-warden-shovel", "crimson-warden-hoe")
+            "crimson-warden-shovel", "crimson-warden-hoe", "crimson-warden-shield")
 for shop_id in shop_ids:
     if f"    {shop_id}:" not in shop_config:
         fail(f"Shop reward '{shop_id}' missing from config.yml")
@@ -437,8 +439,8 @@ if root_textures.exists():
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
 print("Halloween asset validation passed.")
-print("14 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
-print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
+print("15 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
+print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces, 5 weapons/tools, and shield enchantability verified")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
 print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
