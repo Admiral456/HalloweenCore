@@ -257,6 +257,51 @@ for name in sorted(EXPECTED_SEASONAL_BLOCK_TEXTURES):
     if (width, height) != (16, 16):
         fail(f"Seasonal vanilla block texture {name} must be 16x16, got {width}x{height}")
 
+# Validate model/state references for the authored pumpkin variants. These retain
+# vanilla block collision/behavior while choosing a different crisp face by rotation.
+expected_block_models = {}
+for index, style in enumerate(("classic", "bat", "grin", "skull")):
+    expected_block_models[f"pumpkin_halloween_{index}"] = f"pumpkin_face_{style}"
+    expected_block_models[f"carved_pumpkin_halloween_{index}"] = f"pumpkin_face_{style}"
+    expected_block_models[f"jack_o_lantern_halloween_{index}"] = f"jack_o_lantern_{style}"
+
+for model_name, face_texture in expected_block_models.items():
+    model_path = BLOCK_MODELS / f"{model_name}.json"
+    if not model_path.is_file():
+        fail("Missing seasonal block model: " + str(model_path.relative_to(ROOT)))
+    try:
+        model = json.loads(model_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"Invalid seasonal block model {model_name}: {exc}")
+    if model.get("parent") != "minecraft:block/cube":
+        fail(f"{model_name} must extend minecraft:block/cube")
+    textures = model.get("textures", {})
+    if textures.get("north") != f"minecraft:block/{face_texture}":
+        fail(f"{model_name} references the wrong authored face texture")
+    for key in ("south", "west", "east"):
+        if textures.get(key) != "minecraft:block/pumpkin_side":
+            fail(f"{model_name} is missing compatible pumpkin side texture for {key}")
+    if textures.get("up") != "minecraft:block/pumpkin_top" or textures.get("down") != "minecraft:block/pumpkin_top":
+        fail(f"{model_name} must reference valid pumpkin top/bottom textures")
+
+for state_name in ("pumpkin", "carved_pumpkin", "jack_o_lantern"):
+    state_path = BLOCKSTATES / f"{state_name}.json"
+    if not state_path.is_file():
+        fail(f"Missing seasonal blockstate: {state_path.relative_to(ROOT)}")
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"Invalid blockstate JSON {state_name}: {exc}")
+    variants = state.get("variants", {})
+    expected_facing = {"facing=north", "facing=east", "facing=south", "facing=west"}
+    if set(variants) != expected_facing:
+        fail(f"{state_name} blockstate must define all four facing directions")
+    for variant in variants.values():
+        model_id = variant.get("model", "")
+        model_name = model_id.split(":")[-1].removeprefix("block/")
+        if model_name not in expected_block_models:
+            fail(f"{state_name} references unknown model {model_id}")
+
 theme_duration = 0.0
 audio_specs = [(THEME, None), (EVENT_STING, 5.0)]
 audio_specs.extend((path, None) for path in PLAYLIST_TRACKS.values())
