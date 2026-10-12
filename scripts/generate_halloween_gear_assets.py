@@ -483,7 +483,7 @@ def generate_voxel_models() -> None:
     ARMOR_MODEL_OUT.mkdir(parents=True, exist_ok=True)
     helmet_path = ARMOR_MODEL_OUT / "crimson_warden_helmet_3d.json"
     helmet_path.write_text(
-        json.dumps(helmet, separators=(",", ":"), ensure_ascii=False) + "\\n",
+        json.dumps(helmet, separators=(",", ":"), ensure_ascii=False) + "\n",
         encoding="utf-8",
     )
     parsed_helmet = json.loads(helmet_path.read_text(encoding="utf-8"))
