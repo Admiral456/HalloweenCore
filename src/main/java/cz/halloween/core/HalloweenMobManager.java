@@ -236,9 +236,7 @@ public final class HalloweenMobManager implements Listener {
      * the task never loads a chunk or damages a target who moved to another world.
      */
     private void applyCurseEffect(Player target, PotionEffect effect) {
-        HalloweenRelicAbilityEngine engine = plugin.getRelicAbilityEngine();
-        if (engine != null) engine.applyCurseEffect(target, effect);
-        else target.addPotionEffect(effect);
+        plugin.applyHalloweenDebuff(target, effect);
     }
 
     private void telegraphedGroundStrike(LivingEntity attacker, Player target, String label, String message,

@@ -339,7 +339,7 @@ public final class HalloweenHeadlessNickManager implements Listener {
             if (!validStrike(rider, horse, target, world, mark)) return;
             if (target.getLocation().distanceSquared(mark) <= 2.4D * 2.4D) {
                 target.damage(plugin.getConfig().getDouble("stalkers.headless-nick.executioner-damage", 9.0D), rider);
-                target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                plugin.applyHalloweenDebuff(target, new org.bukkit.potion.PotionEffect(
                         org.bukkit.potion.PotionEffectType.WEAKNESS, 40, 0, true, true, false));
             }
         }, 14L);
@@ -355,7 +355,7 @@ public final class HalloweenHeadlessNickManager implements Listener {
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!validStrike(rider, horse, target, world, mark)) return;
             if (target.getLocation().distanceSquared(mark) <= 10.0D * 10.0D) {
-                target.addPotionEffect(new org.bukkit.potion.PotionEffect(
+                plugin.applyHalloweenDebuff(target, new org.bukkit.potion.PotionEffect(
                         org.bukkit.potion.PotionEffectType.SLOWNESS, 40, 1, true, true, false));
                 Vector toward = horse.getLocation().toVector().subtract(target.getLocation().toVector());
                 toward.setY(0);

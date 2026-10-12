@@ -99,9 +99,9 @@ public final class HalloweenCombatEffectManager implements Listener {
         ItemStack weapon = attacker.getInventory().getItemInMainHand();
         if (isReward(weapon, "crimson-warden-sword") && ready(attacker.getUniqueId(), "blood-rend",
                 cooldown("gear-effects.sword.cooldown-ms", 5_000L))) {
-            target.addPotionEffect(new PotionEffect(PotionEffectType.POISON,
+            plugin.applyHalloweenDebuff(target, new PotionEffect(PotionEffectType.POISON,
                     durationTicks("gear-effects.sword.poison-ticks", 50), 0, true, true, true));
-            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
+            plugin.applyHalloweenDebuff(target, new PotionEffect(PotionEffectType.SLOWNESS,
                     durationTicks("gear-effects.sword.slowness-ticks", 30), 0, true, true, true));
             target.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR,
                     target.getLocation().add(0, 0.85D, 0), 12, 0.35D, 0.4D, 0.35D, 0.05D);
@@ -111,7 +111,7 @@ public final class HalloweenCombatEffectManager implements Listener {
             attacker.sendActionBar(plugin.color("&4✦ &cKrvavá rána"));
         } else if (isReward(weapon, "crimson-warden-axe") && ready(attacker.getUniqueId(), "warden-break",
                 cooldown("gear-effects.axe.cooldown-ms", 6_000L))) {
-            target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS,
+            plugin.applyHalloweenDebuff(target, new PotionEffect(PotionEffectType.WEAKNESS,
                     durationTicks("gear-effects.axe.weakness-ticks", 60), 0, true, true, true));
             target.getWorld().spawnParticle(Particle.CRIT,
                     target.getLocation().add(0, 1.0D, 0), 18, 0.4D, 0.55D, 0.4D, 0.15D);
@@ -120,7 +120,7 @@ public final class HalloweenCombatEffectManager implements Listener {
             attacker.sendActionBar(plugin.color("&4✦ &6Rozlomení obrany"));
         } else if (isReward(weapon, "crimson-warden-pickaxe") && ready(attacker.getUniqueId(), "grave-piercer",
                 cooldown("gear-effects.pickaxe.cooldown-ms", 6_000L))) {
-            target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
+            plugin.applyHalloweenDebuff(target, new PotionEffect(PotionEffectType.SLOWNESS,
                     durationTicks("gear-effects.pickaxe.slowness-ticks", 50), 1, true, true, true));
             target.getWorld().spawnParticle(Particle.END_ROD,
                     target.getLocation().add(0, 0.9D, 0), 10, 0.3D, 0.4D, 0.3D, 0.015D);
