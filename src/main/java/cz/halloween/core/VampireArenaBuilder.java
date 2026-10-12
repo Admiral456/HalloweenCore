@@ -1,9 +1,17 @@
 package cz.halloween.core;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.TileState;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * Builds a large gothic raid arena (97-block diameter) after a separate,
