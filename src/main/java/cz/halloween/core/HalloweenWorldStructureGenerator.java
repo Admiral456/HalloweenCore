@@ -330,12 +330,14 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         buildPath(world, x, y, z, 6, 0, 6, 9, Material.MOSSY_STONE_BRICKS);
 
         Material[] wallPalette = {Material.SPRUCE_PLANKS, Material.DARK_OAK_PLANKS, Material.STRIPPED_DARK_OAK_WOOD};
-        Material wall = wallPalette[random.nextInt(wallPalette.length)];
-        Material roof = random.nextBoolean() ? Material.DARK_OAK_STAIRS : Material.SPRUCE_STAIRS;
+        Material[] roofPalette = {Material.DARK_OAK_STAIRS, Material.SPRUCE_STAIRS, Material.POLISHED_BLACKSTONE_BRICK_STAIRS};
 
-        buildHouse(world, x - 6, y, z - 6, wall, roof, false);
-        buildHouse(world, x + 6, y, z - 6, wall, roof, false);
-        buildHouse(world, x - 6, y, z + 6, wall, roof, false);
+        buildHouse(world, x - 6, y, z - 6,
+                wallPalette[random.nextInt(wallPalette.length)], roofPalette[random.nextInt(roofPalette.length)], false);
+        buildHouse(world, x + 6, y, z - 6,
+                wallPalette[random.nextInt(wallPalette.length)], roofPalette[random.nextInt(roofPalette.length)], false);
+        buildHouse(world, x - 6, y, z + 6,
+                wallPalette[random.nextInt(wallPalette.length)], roofPalette[random.nextInt(roofPalette.length)], false);
         buildHouse(world, x + 6, y, z + 6, Material.DEEPSLATE_BRICKS, Material.POLISHED_BLACKSTONE_BRICK_STAIRS, true);
 
         buildWell(world, x - 1, y, z + 1);
@@ -346,10 +348,10 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         buildPumpkinPatch(world, x + 2, y, z - 10, random);
 
         // Moss, graveside flowers and fallen branches break up repeated block lines.
-        place(world, x - 10, y, z - 10, Material.MOSS_BLOCK);
-        place(world, x + 10, y, z + 10, Material.MOSS_BLOCK);
-        place(world, x - 10, y, z + 10, Material.PUMPKIN);
-        place(world, x + 10, y, z - 10, Material.JACK_O_LANTERN);
+        placeFoundation(world, x - 10, y, z - 10, Material.MOSS_BLOCK);
+        placeFoundation(world, x + 10, y, z + 10, Material.MOSS_BLOCK);
+        place(world, x - 10, y + 1, z + 10, Material.PUMPKIN);
+        place(world, x + 10, y + 1, z - 10, Material.JACK_O_LANTERN);
         place(world, x - 4, y + 1, z + 1, Material.WITHER_ROSE);
         place(world, x + 4, y + 1, z - 1, Material.WITHER_ROSE);
     }
@@ -448,9 +450,9 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         for (int dx = -2; dx <= 2; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
                 if (Math.abs(dx) == 2 || Math.abs(dz) == 1) {
-                    place(world, x + dx, y, z + dz, Material.SPRUCE_FENCE);
+                    place(world, x + dx, y + 1, z + dz, Material.SPRUCE_FENCE);
                 } else {
-                    place(world, x + dx, y, z + dz, Material.FARMLAND);
+                    placeFoundation(world, x + dx, y, z + dz, Material.FARMLAND);
                     place(world, x + dx, y + 1, z + dz, random.nextBoolean() ? Material.PUMPKIN : Material.CARVED_PUMPKIN);
                 }
             }
@@ -460,17 +462,17 @@ public final class HalloweenWorldStructureGenerator implements Listener {
     private void buildGraveyard(World world, int x, int y, int z, Random random) {
         // Low uneven wall, open gate and a clear path to the mausoleum.
         for (int offset = -8; offset <= 8; offset++) {
-            place(world, x + offset, y, z - 8, Material.MOSSY_STONE_BRICK_WALL);
-            place(world, x + offset, y, z + 8, Material.MOSSY_STONE_BRICK_WALL);
-            place(world, x - 8, y, z + offset, Material.MOSSY_STONE_BRICK_WALL);
-            place(world, x + 8, y, z + offset, Material.MOSSY_STONE_BRICK_WALL);
+            place(world, x + offset, y + 1, z - 8, Material.MOSSY_STONE_BRICK_WALL);
+            place(world, x + offset, y + 1, z + 8, Material.MOSSY_STONE_BRICK_WALL);
+            place(world, x - 8, y + 1, z + offset, Material.MOSSY_STONE_BRICK_WALL);
+            place(world, x + 8, y + 1, z + offset, Material.MOSSY_STONE_BRICK_WALL);
         }
-        place(world, x - 8, y + 1, z - 8, Material.COBBLED_DEEPSLATE_WALL);
-        place(world, x + 8, y + 1, z - 8, Material.COBBLED_DEEPSLATE_WALL);
-        place(world, x - 8, y + 1, z + 8, Material.COBBLED_DEEPSLATE_WALL);
-        place(world, x + 8, y + 1, z + 8, Material.COBBLED_DEEPSLATE_WALL);
-        place(world, x - 1, y, z + 8, Material.DARK_OAK_FENCE);
-        place(world, x + 1, y, z + 8, Material.DARK_OAK_FENCE);
+        place(world, x - 8, y + 2, z - 8, Material.COBBLED_DEEPSLATE_WALL);
+        place(world, x + 8, y + 2, z - 8, Material.COBBLED_DEEPSLATE_WALL);
+        place(world, x - 8, y + 2, z + 8, Material.COBBLED_DEEPSLATE_WALL);
+        place(world, x + 8, y + 2, z + 8, Material.COBBLED_DEEPSLATE_WALL);
+        place(world, x - 1, y + 1, z + 8, Material.DARK_OAK_FENCE);
+        place(world, x + 1, y + 1, z + 8, Material.DARK_OAK_FENCE);
         buildPath(world, x, y, z, 0, -6, 0, 7, Material.CRACKED_DEEPSLATE_BRICKS);
         buildPath(world, x, y, z, 1, -1, 6, -1, Material.MOSSY_STONE_BRICKS);
 
@@ -486,10 +488,10 @@ public final class HalloweenWorldStructureGenerator implements Listener {
 
         buildMausoleum(world, x, y, z - 6);
         buildRitualCircle(world, x - 2, y, z);
-        place(world, x - 7, y, z - 7, Material.JACK_O_LANTERN);
-        place(world, x + 7, y, z - 7, Material.PUMPKIN);
-        place(world, x - 7, y, z + 7, Material.PUMPKIN);
-        place(world, x + 7, y, z + 7, Material.JACK_O_LANTERN);
+        place(world, x - 7, y + 1, z - 7, Material.JACK_O_LANTERN);
+        place(world, x + 7, y + 1, z - 7, Material.PUMPKIN);
+        place(world, x - 7, y + 1, z + 7, Material.PUMPKIN);
+        place(world, x + 7, y + 1, z + 7, Material.JACK_O_LANTERN);
         place(world, x - 6, y + 1, z, Material.COBWEB);
         place(world, x + 6, y + 1, z - 1, Material.COBWEB);
         place(world, x - 2, y + 1, z + 6, Material.WITHER_ROSE);
@@ -501,11 +503,11 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                 Material.POLISHED_BLACKSTONE_BRICKS, Material.COBBLED_DEEPSLATE};
         Material stone = stones[(variant + random.nextInt(stones.length)) % stones.length];
         supportDown(world, x, y, z, stone);
-        place(world, x, y, z, stone);
+        placeFoundation(world, x, y, z, stone);
         supportDown(world, x, y, z + 1, Material.COBBLED_DEEPSLATE);
         supportDown(world, x, y, z + 2, Material.COBBLED_DEEPSLATE);
-        place(world, x, y, z + 1, Material.STONE_BRICK_SLAB);
-        place(world, x, y, z + 2, Material.MOSSY_STONE_BRICK_SLAB);
+        placeFoundation(world, x, y, z + 1, Material.STONE_BRICK_SLAB);
+        placeFoundation(world, x, y, z + 2, Material.MOSSY_STONE_BRICK_SLAB);
         place(world, x, y + 1, z, stone);
         if (variant == 0 || variant == 3) {
             place(world, x, y + 2, z, Material.STONE_BRICK_WALL);
