@@ -10,6 +10,16 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
 TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
+MODELS = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "models" / "item"
+EXPECTED_3D_MODELS = {
+    "cursed_talisman": ("item/generated", "item/cursed_talisman"),
+    "crimson_warden_sword": ("item/handheld", "item/crimson_warden_sword"),
+    "crimson_warden_pickaxe": ("item/handheld", "item/crimson_warden_pickaxe"),
+    "crimson_warden_axe": ("item/handheld", "item/crimson_warden_axe"),
+    "crimson_warden_shovel": ("item/handheld", "item/crimson_warden_shovel"),
+    "crimson_warden_hoe": ("item/handheld", "item/crimson_warden_hoe"),
+    "crimson_warden_shield": ("item/generated", "item/crimson_warden_shield"),
+}
 SHADER = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
 CONFIG = CONTENT / "configs" / "items.yml"
 SOUNDS_CONFIG = CONTENT / "configs" / "sounds.yml"
@@ -126,6 +136,57 @@ for name in sorted(EXPECTED):
     width, height = png_size(TEXTURES / name)
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
+
+# Validate every generated custom 3D model, its namespace-aware texture reference,
+# UVs and cuboid bounds. This catches missing or broken model references before /iazip.
+for item_id, (expected_parent, expected_texture) in EXPECTED_3D_MODELS.items():
+    model_path = MODELS / f"{item_id}.json"
+    if not model_path.is_file():
+        fail(f"Missing custom 3D model: {model_path.relative_to(ROOT)}")
+    try:
+        model = json.loads(model_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"Invalid JSON in model {item_id}: {exc}")
+    if model.get("parent") != expected_parent:
+        fail(f"{item_id} model must use parent {expected_parent}")
+    textures = model.get("textures", {})
+    if textures.get("layer0") != f"warriorland_halloween:{expected_texture}":
+        fail(f"{item_id} must use namespaced layer0 texture {expected_texture}")
+    if not isinstance(model.get("elements"), list) or not model["elements"]:
+        fail(f"{item_id} model needs non-empty voxel geometry")
+    if len(model["elements"]) > 700:
+        fail(f"{item_id} model exceeds the 700-element safety cap")
+    for index, element in enumerate(model["elements"]):
+        try:
+            frm, to, faces = element["from"], element["to"], element["faces"]
+        except (KeyError, TypeError):
+            fail(f"{item_id} element {index} is missing from/to/faces")
+        if len(frm) != 3 or len(to) != 3:
+            fail(f"{item_id} element {index} must have three-axis bounds")
+        if any(float(a) < 0 or float(b) > 16 or float(a) >= float(b) for a, b in zip(frm, to)):
+            fail(f"{item_id} element {index} has invalid Minecraft model bounds")
+        if not isinstance(faces, dict) or set(faces) != {"north", "south", "east", "west", "up", "down"}:
+            fail(f"{item_id} element {index} must define all six faces")
+        for face_name, face in faces.items():
+            uv = face.get("uv") if isinstance(face, dict) else None
+            if not isinstance(uv, list) or len(uv) != 4:
+                fail(f"{item_id} element {index} face {face_name} needs four UV coordinates")
+            if any(float(value) < 0 or float(value) > 16 for value in uv):
+                fail(f"{item_id} element {index} face {face_name} UV is outside the 0..16 texture space")
+            if face.get("texture") != "#layer0":
+                fail(f"{item_id} element {index} face {face_name} must use #layer0")
+
+shield_blocking_path = MODELS / "crimson_warden_shield_blocking.json"
+if not shield_blocking_path.is_file():
+    fail("Missing custom shield blocking-state model")
+try:
+    shield_blocking = json.loads(shield_blocking_path.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Invalid blocking shield model JSON: {exc}")
+if shield_blocking.get("parent") != "item/generated" or not shield_blocking.get("elements"):
+    fail("Blocking shield model must have item/generated parent and voxel geometry")
+if shield_blocking.get("textures", {}).get("layer0") != "warriorland_halloween:item/crimson_warden_shield":
+    fail("Blocking shield model has an invalid namespaced texture reference")
 
 for layer in ("layer_1.png", "layer_2.png"):
     path = ARMOR_TEXTURES / layer
@@ -415,6 +476,27 @@ for item_id, (component_file, mining_tag, expected_max_damage) in gear_component
         ):
             fail(f"{item_id} must have mining speed >= 14 and correct drops for {mining_tag}")
 
+# Ensure ItemsAdder is actually wired to use the models generated above while
+# preserving a separate crisp texture icon in inventories.
+for item_id in EXPECTED_3D_MODELS:
+    start = config.find(f"  {item_id}:")
+    if start < 0:
+        fail(f"Custom model item '{item_id}' is missing from ItemsAdder config")
+    tail = config[start + len(f"  {item_id}:"):]
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", tail)
+    end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
+    definition = config[start:end]
+    if item_id == "crimson_warden_shield":
+        for required in ("normal: item/crimson_warden_shield",
+                         "blocking: item/crimson_warden_shield_blocking",
+                         "icon: item/crimson_warden_shield"):
+            if required not in definition:
+                fail(f"Shield graphic configuration is missing {required}")
+    else:
+        for required in (f"model: item/{item_id}", f"icon: item/{item_id}"):
+            if required not in definition:
+                fail(f"{item_id} graphic configuration is missing {required}")
+
 shop_ids = ("crimson-warden-sword", "crimson-warden-pickaxe", "crimson-warden-axe",
             "crimson-warden-shovel", "crimson-warden-hoe", "crimson-warden-shield")
 for shop_id in shop_ids:
@@ -440,6 +522,7 @@ if root_textures.exists():
 
 print("Halloween asset validation passed.")
 print("15 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
+print(f"3D equipment: {len(EXPECTED_3D_MODELS)} voxel models + separate shield blocking model; bounds/UVs/textures verified")
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces, 5 weapons/tools, and shield enchantability verified")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
