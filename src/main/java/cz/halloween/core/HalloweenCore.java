@@ -119,6 +119,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         worldDecorator.start();
         worldStructureGenerator.start();
         passiveEffectManager.start();
+        headlessNickManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
@@ -152,6 +153,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         if (!eventEnabled) return;
         if (vampireEncounterManager != null && vampireEncounterManager.isTrackedVampireBoss(event.getEntity())) return;
+        if (goblinKingManager != null && goblinKingManager.isManagedCombatEntity(event.getEntity())) return;
+        if (headlessNickManager != null && headlessNickManager.isManagedEntity(event.getEntity())) return;
 
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
