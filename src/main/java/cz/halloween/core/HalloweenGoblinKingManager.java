@@ -429,6 +429,9 @@ public final class HalloweenGoblinKingManager implements Listener {
     public boolean spawnEncounter(boolean testOnly) {
         if (isBossActive() || !plugin.getConfig().getBoolean("bosses.goblin.enabled", true)
                 || !isArenaConfigured() || !isArenaGenerated()) return false;
+        double requiredProgress = Math.max(0.0D, Math.min(100.0D,
+                plugin.getConfig().getDouble("bosses.goblin.unlock-global-progress-percent", 50.0D)));
+        if (!testOnly && plugin.getService().getGlobalProgressPercent() < requiredProgress) return false;
         Location center = configuredCenter();
         if (center == null || center.getWorld() == null) return false;
         if (!center.getWorld().isChunkLoaded(center.getBlockX() >> 4, center.getBlockZ() >> 4)) return false;
@@ -729,6 +732,11 @@ public final class HalloweenGoblinKingManager implements Listener {
         } else if (entity.getPersistentDataContainer().has(minionKey, PersistentDataType.BYTE)) {
             minionIds.remove(entity.getUniqueId());
         }
+    }
+
+    public boolean isManagedCombatEntity(Entity entity) {
+        return entity != null && (entity.getPersistentDataContainer().has(bossKey, PersistentDataType.BYTE)
+                || entity.getPersistentDataContainer().has(minionKey, PersistentDataType.BYTE));
     }
 
     private boolean isGoblinBoss(Entity entity) {
