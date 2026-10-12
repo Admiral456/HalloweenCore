@@ -12,6 +12,8 @@ CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
 TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
 MODELS = CONTENT / "models" / "item"
 WEARABLE_HELMET_MODEL = CONTENT / "models" / "armor" / "crimson_warden_helmet_3d.json"
+WEARABLE_COWL_MODEL = CONTENT / "models" / "armor" / "nocturne_sovereign_cowl_3d.json"
+WINGS_TEXTURE = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "entity" / "equipment" / "wings" / "batwing_elytra.png"
 EXPECTED_3D_MODELS = {
     "cursed_talisman": ("item/generated", "item/cursed_talisman"),
     "crimson_warden_sword": ("item/handheld", "item/crimson_warden_sword"),
@@ -20,6 +22,7 @@ EXPECTED_3D_MODELS = {
     "crimson_warden_shovel": ("item/handheld", "item/crimson_warden_shovel"),
     "crimson_warden_hoe": ("item/handheld", "item/crimson_warden_hoe"),
     "crimson_warden_shield": ("item/generated", "item/crimson_warden_shield"),
+    "nocturne_sovereign_cowl": ("item/generated", "item/nocturne_sovereign_cowl"),
 }
 SHADERPACK = ROOT / "shaderpack"
 SHADER_PROGRAMS = (
@@ -69,6 +72,9 @@ EXPECTED = {
     "crimson_warden_shovel.png",
     "crimson_warden_hoe.png",
     "crimson_warden_shield.png",
+    "batwing_elytra.png",
+    "batwing_elytra_broken.png",
+    "nocturne_sovereign_cowl.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
 VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
@@ -150,6 +156,17 @@ for name in sorted(EXPECTED):
     width, height = png_size(TEXTURES / name)
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
+    source_texture = CONTENT / "textures" / "item" / name
+    if not source_texture.is_file() or png_size(source_texture) != (32, 32):
+        fail(f"ItemsAdder source texture is missing or invalid: {source_texture.relative_to(ROOT)}")
+
+if not WINGS_TEXTURE.is_file():
+    fail("Missing Batwing Elytra worn-wings texture")
+if strict_png_size(WINGS_TEXTURE) != (64, 32):
+    fail("Batwing Elytra wings texture must be a valid 64x32 PNG")
+source_wings = CONTENT / "textures" / "entity" / "equipment" / "wings" / "batwing_elytra.png"
+if not source_wings.is_file() or strict_png_size(source_wings) != (64, 32):
+    fail("ItemsAdder source Batwing texture must be a valid 64x32 PNG")
 
 # Validate every generated custom 3D model, its namespace-aware texture reference,
 # UVs and cuboid bounds. This catches missing or broken model references before /iazip.
@@ -221,6 +238,45 @@ for index, element in enumerate(helmet_elements):
             fail(f"Wearable helmet element {index} face {face_name} has invalid UVs")
         if face.get("texture") != "#layer0":
             fail(f"Wearable helmet element {index} face {face_name} must use #layer0")
+
+# The Nocturne Sovereign Cowl must also use a distinct model when equipped.
+if not WEARABLE_COWL_MODEL.is_file():
+    fail("Missing wearable 3D Nocturne Sovereign Cowl model")
+try:
+    wearable_cowl = json.loads(WEARABLE_COWL_MODEL.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Invalid wearable Cowl model JSON: {exc}")
+if wearable_cowl.get("parent") != "item/generated":
+    fail("Wearable Cowl model must use item/generated parent")
+if wearable_cowl.get("textures", {}).get("layer0") != "warriorland_halloween:item/nocturne_sovereign_cowl":
+    fail("Wearable Cowl model references the wrong namespaced texture")
+cowl_elements = wearable_cowl.get("elements")
+if not isinstance(cowl_elements, list) or len(cowl_elements) < 8 or len(cowl_elements) > 700:
+    fail("Wearable Cowl model must contain 8..700 voxel elements")
+for index, element in enumerate(cowl_elements):
+    frm, to, faces = element.get("from"), element.get("to"), element.get("faces")
+    if not isinstance(frm, list) or not isinstance(to, list) or len(frm) != 3 or len(to) != 3:
+        fail(f"Wearable Cowl element {index} has invalid bounds")
+    if any(float(a) < 0 or float(b) > 16 or float(a) >= float(b) for a, b in zip(frm, to)):
+        fail(f"Wearable Cowl element {index} has invalid bounds")
+    if not isinstance(faces, dict) or set(faces) != {"north", "south", "east", "west", "up", "down"}:
+        fail(f"Wearable Cowl element {index} needs all six faces")
+    for face_name, face in faces.items():
+        uv = face.get("uv") if isinstance(face, dict) else None
+        if not isinstance(uv, list) or len(uv) != 4 or any(float(v) < 0 or float(v) > 16 for v in uv):
+            fail(f"Wearable Cowl element {index} face {face_name} has invalid UVs")
+        if face.get("texture") != "#layer0":
+            fail(f"Wearable Cowl element {index} face {face_name} must use #layer0")
+
+source_bbmodel = CONTENT / "models" / "source" / "nocturne_sovereign_cowl.bbmodel"
+if not source_bbmodel.is_file():
+    fail("Missing editable Blockbench source for the Nocturne Sovereign Cowl")
+try:
+    source_model = json.loads(source_bbmodel.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Invalid Blockbench source JSON: {exc}")
+if source_model.get("meta", {}).get("model_format") != "free" or not source_model.get("elements"):
+    fail("Nocturne Cowl Blockbench source must include editable voxel geometry")
 
 shield_blocking_path = MODELS / "crimson_warden_shield_blocking.json"
 if not shield_blocking_path.is_file():
@@ -502,13 +558,28 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
                 "crimson_warden_helmet", "crimson_warden_chestplate",
                 "crimson_warden_leggings", "crimson_warden_boots",
                 "crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
-                "crimson_warden_shovel", "crimson_warden_hoe", "crimson_warden_shield"):
+                "crimson_warden_shovel", "crimson_warden_hoe", "crimson_warden_shield",
+                "batwing_elytra", "nocturne_sovereign_cowl"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
+
+if "wings_texture: entity/equipment/wings/batwing_elytra" not in config:
+    fail("Batwing Elytra must reference its custom worn-wing texture")
+if "durability_damage_multiplier: 0.65" not in config:
+    fail("Batwing Elytra should reduce durability wear while retaining normal gliding/fireworks")
+if "model: armor/nocturne_sovereign_cowl_3d" not in config or "icon: item/nocturne_sovereign_cowl" not in config:
+    fail("Nocturne Cowl must define separate worn model and inventory icon")
 
 shop_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
 if "      cost: 1000000" not in shop_config or "      bonus-health: 20.0" not in shop_config:
     fail("Cursed talisman must cost 1,000,000 fragments and grant +20 max health")
+for required in ("surge-cooldown-seconds", "echo-radius-blocks", "curse-duration-multiplier", "veilstep-cooldown-seconds"):
+    if required not in shop_config:
+        fail(f"Runtime config is missing relic setting {required}")
+engine_source = (ROOT / "src" / "shared" / "java" / "cz" / "halloween" / "core" / "HalloweenRelicAbilityEngine.java").read_text(encoding="utf-8")
+for marker in ("activateSurge", "activateEcho", "activateVeilstep", "applyCurseEffect", "PlayerSwapHandItemsEvent", "PlayerQuitEvent"):
+    if marker not in engine_source:
+        fail(f"Relic ability engine is missing {marker}")
 for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
                 "crimson_warden_shovel", "crimson_warden_hoe"):
     start = config.find(f"  {item_id}:")

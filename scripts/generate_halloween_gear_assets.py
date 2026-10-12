@@ -667,7 +667,7 @@ def main() -> None:
                          "particle": "warriorland_halloween:item/nocturne_sovereign_cowl"},
             "elements": voxel_elements(cowl_image, (6.2, 9.8)),
         }
-        model_json = json.dumps(cowl_model, ensure_ascii=False, separators=(",", ":")) + "\\n"
+        model_json = json.dumps(cowl_model, ensure_ascii=False, separators=(",", ":")) + "\n"
         MODEL_OUT.mkdir(parents=True, exist_ok=True)
         (MODEL_OUT / "nocturne_sovereign_cowl.json").write_text(model_json, encoding="utf-8")
         ARMOR_MODEL_OUT.mkdir(parents=True, exist_ok=True)
