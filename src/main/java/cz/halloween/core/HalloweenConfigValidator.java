@@ -56,6 +56,42 @@ public final class HalloweenConfigValidator {
             errors.add("gameplay.worlds.mode must be BLACKLIST or WHITELIST");
         }
 
+        if (plugin.getConfig().getBoolean("world-structures.enabled", true)) {
+            int villageDensity = plugin.getConfig().getInt("world-structures.village-region-chunks", 10);
+            int graveyardDensity = plugin.getConfig().getInt("world-structures.graveyard-region-chunks", 6);
+            int structureSlope = plugin.getConfig().getInt("world-structures.max-slope", 2);
+            int structureRetries = plugin.getConfig().getInt("world-structures.max-retries", 120);
+            if (villageDensity < 4 || villageDensity > 32) {
+                errors.add("world-structures.village-region-chunks must be between 4 and 32");
+            }
+            if (graveyardDensity < 3 || graveyardDensity > 24) {
+                errors.add("world-structures.graveyard-region-chunks must be between 3 and 24");
+            }
+            if (structureSlope < 0 || structureSlope > 4) {
+                errors.add("world-structures.max-slope must be between 0 and 4");
+            }
+            if (structureRetries < 10 || structureRetries > 600) {
+                errors.add("world-structures.max-retries must be between 10 and 600");
+            }
+        }
+
+        double wardThreshold = plugin.getConfig().getDouble("gear-effects.set-bonus.trigger-health-ratio", 0.35D);
+        if (wardThreshold < 0.1D || wardThreshold > 0.8D) {
+            errors.add("gear-effects.set-bonus.trigger-health-ratio must be between 0.1 and 0.8");
+        }
+        double splashDamage = plugin.getConfig().getDouble("gear-effects.shovel.splash-damage", 2.0D);
+        double splashRadius = plugin.getConfig().getDouble("gear-effects.shovel.splash-radius", 2.5D);
+        double soulHarvest = plugin.getConfig().getDouble("gear-effects.hoe.heal-health", 2.0D);
+        if (splashDamage < 0.0D || splashDamage > 6.0D) {
+            errors.add("gear-effects.shovel.splash-damage must be between 0 and 6");
+        }
+        if (splashRadius < 1.5D || splashRadius > 4.0D) {
+            errors.add("gear-effects.shovel.splash-radius must be between 1.5 and 4");
+        }
+        if (soulHarvest < 0.0D || soulHarvest > 6.0D) {
+            errors.add("gear-effects.hoe.heal-health must be between 0 and 6");
+        }
+
         for (String source : List.of("mining", "farming", "fishing")) {
             String key = "rewards." + source + ".max-fragment-rewards-per-minute";
             if (plugin.getConfig().contains(key)) {
