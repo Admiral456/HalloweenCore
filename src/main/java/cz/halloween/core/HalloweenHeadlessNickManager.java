@@ -14,15 +14,12 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Projectile;
 import org.bukkit.entity.SkeletonHorse;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerChangedWorldEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
 import org.bukkit.inventory.EntityEquipment;
 import org.bukkit.inventory.ItemStack;
@@ -457,8 +454,9 @@ public final class HalloweenHeadlessNickManager implements Listener {
 
     private boolean isNight(World world) {
         long time = world.getTime() % 24_000L;
-        return time >= plugin.getConfig().getLong("stalkers.headless-nick.night-start-tick", 13_000L)
-                || time <= plugin.getConfig().getLong("stalkers.headless-nick.night-end-tick", 23_000L);
+        long start = plugin.getConfig().getLong("stalkers.headless-nick.night-start-tick", 13_000L);
+        long end = plugin.getConfig().getLong("stalkers.headless-nick.night-end-tick", 23_000L);
+        return start <= end ? time >= start && time <= end : time >= start || time <= end;
     }
 
     private void retreatOrDespawn(SkeletonHorse horse, LivingEntity rider) {
@@ -554,13 +552,6 @@ public final class HalloweenHeadlessNickManager implements Listener {
             targetId = null;
             lastState = "cílový hráč změnil svět";
         }
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onNickAttack(EntityDamageByEntityEvent event) {
-        if (riderId == null || !riderId.equals(event.getDamager().getUniqueId())) return;
-        // Native rider damage is disabled by the scheduler; custom telegraphed attacks own all damage.
-        event.setCancelled(true);
     }
 
     @EventHandler
