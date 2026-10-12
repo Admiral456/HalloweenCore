@@ -6,6 +6,7 @@ import re
 import struct
 import subprocess
 import sys
+from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
@@ -102,13 +103,8 @@ EXPECTED_MUSIC_EVENTS = {
 
 
 def png_size(path: Path) -> tuple[int, int]:
-    """Return dimensions for legacy assets using the original basic PNG check."""
-    data = path.read_bytes()
-    if data[:8] != b"\x89PNG\r\n\x1a\n":
-        raise ValueError(f"{path} is not a PNG file")
-    if data[12:16] != b"IHDR":
-        raise ValueError(f"{path} has no PNG IHDR chunk")
-    return struct.unpack(">II", data[16:24])
+    """All PNG checks include actual pixel-data decoding, not just the IHDR."""
+    return strict_png_size(path)
 
 
 def strict_png_size(path: Path) -> tuple[int, int]:
@@ -142,6 +138,15 @@ def strict_png_size(path: Path) -> tuple[int, int]:
         offset = end + 4
     if not saw_iend or width is None or height is None or offset != len(data):
         raise ValueError(f"{path} has missing or trailing PNG data")
+    # Valid headers and chunk CRCs are not enough: a broken zlib/IDAT payload
+    # can still pass those checks and renders as missing-texture magenta in game.
+    try:
+        with Image.open(path) as image:
+            image.verify()
+        with Image.open(path) as image:
+            image.load()
+    except Exception as exc:
+        raise ValueError(f"{path} has undecodable PNG pixel data: {exc}") from exc
     return width, height
 
 def fail(message: str) -> None:
@@ -314,12 +319,19 @@ if shield_blocking.get("textures", {}).get("layer0") != "warriorland_halloween:i
     fail("Blocking shield model has an invalid namespaced texture reference")
 
 for layer in ("layer_1.png", "layer_2.png"):
-    path = ARMOR_TEXTURES / layer
-    if not path.is_file():
-        fail("Missing Crimson Warden armor layer: " + str(path.relative_to(ROOT)))
-    width, height = png_size(path)
-    if (width, height) != (64, 32):
-        fail(f"{layer} must be 64x32, got {width}x{height}")
+    packed_path = ARMOR_TEXTURES / layer
+    source_path = ARMOR_SOURCE_TEXTURES / layer
+    for path in (packed_path, source_path):
+        if not path.is_file():
+            fail("Missing Crimson Warden armor layer: " + str(path.relative_to(ROOT)))
+        try:
+            width, height = strict_png_size(path)
+        except (OSError, ValueError) as exc:
+            fail(f"Corrupt Crimson Warden armor PNG {path.relative_to(ROOT)}: {exc}")
+        if (width, height) != (64, 32):
+            fail(f"{layer} must be 64x32, got {width}x{height}")
+    if packed_path.read_bytes() != source_path.read_bytes():
+        fail(f"Source and resource-pack copies of {layer} do not match")
 
 # Validate the standalone Iris shader pack. Never override assets/minecraft/shaders/core,
 # because Iris does not support resource-pack core shader replacements.

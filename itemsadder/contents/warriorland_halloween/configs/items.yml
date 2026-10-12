@@ -21,9 +21,9 @@ items:
     name: "&5&lProkletý náhrdelník &8[2026]"
     lore:
       - "&7Náhrdelník prokletý prastarou duší."
-      - "&d+1 celý řádek srdcí (+20 HP)"
-      - "&7Aktivní při držení v ruce nebo offhandu."
-      - "&7Lze enchantovat, pokud máš vhodný enchant."
+      - "&d+20 maximálního zdraví (= +10 srdcí)."
+      - "&7Zdraví se doplní při aktivaci, nejvýše 1× za minutu."
+      - "&7Aktivní při držení v hlavní nebo vedlejší ruce."
     material: NETHER_STAR
     graphics:
       model: item/cursed_talisman

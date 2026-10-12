@@ -46,7 +46,7 @@ public final class HalloweenItemManager {
     }
 
     public boolean isSupportedVersion() {
-        String minimum = plugin.getConfig().getString("itemsadder.minimum-version", "4.0.13");
+        String minimum = plugin.getConfig().getString("itemsadder.minimum-version", "4.0.18");
         var pluginInstance = plugin.getServer().getPluginManager().getPlugin("ItemsAdder");
         if (pluginInstance == null) return false;
         return compareVersions(pluginInstance.getDescription().getVersion(), minimum) >= 0;

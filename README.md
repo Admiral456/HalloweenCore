@@ -42,7 +42,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin, testovací okamžité spuštění)
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
-- /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
+- /halloween shader <on|off|reload> (admin, zobrazí správný postup; server nemůže vynutit ani vzdáleně přenačíst klientský Iris shader)
 - /halloween quests — příběhová kampaň o devíti kapitolách, uložený postup a automatické odměny
 - /halloween challenge
 - /halloween rewards
@@ -135,7 +135,7 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 - ItemsAdder zvuky jsou registrované v `itemsadder/contents/warriorland_halloween/configs/sounds.yml`. Ambient používá `warriorland_halloween:haunted_theme`, šest eventů má samostatné ID a `event_sting` zůstává jako obecná znělka.
 - Ambientní hudba se spouští hned po připojení a opakuje se samostatně každému hráči podle délky skladby; při odchodu nebo vypnutí eventu se jeho přehrávací úloha zruší, aby nevznikala překrývající se hudba.
 - CI vytvoří ke stažení artefakt `WarriorLand-Halloween-ItemsAdder.zip` včetně zvuků.
-- Shader oblohy je v `itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh`; zachovává základní cyklus dne/noci a přidává oranžovo-karmínový filtr.
+- Iris shader je samostatný klientský ZIP v `shaderpack/`; nesmí být ukládán do `assets/minecraft/shaders/core` uvnitř ItemsAdder packu. Server doručuje resource pack s texturami/modely, ale shader si každý hráč instaluje a zapíná v Iris na svém klientovi.
 - Po nasazení obsahu na server spusť `/iazip` a zajisti, že hráči obdrží nový resource pack. ItemsAdder sloučí obsahy do jednoho packu; `warriorland_halloween` je namespace, ne druhý pack v seznamu Minecraftu. V `/iainfo` ověř hlavně hosting URL/status. Pro ItemsAdder 4.0.17+ je obvykle nejjednodušší `resource-pack.hosting.simple_self_host.enabled: true` a `server_address: auto`; dostupnost doručení na Hostify je nutné ověřit na skutečném serveru. V language souboru ItemsAdder lze nastavit `resourcepack-popup-message` na značkovaný text `&6WarriorLand Halloween 2026`. Vizuální vzhled shaderu je potřeba potvrdit v klientu; shaderový mod jej může přepsat.
 - Hlavní hudba má hlasitost zvýšenou na multiplikátor `3.0` (3× výchozí hlasitost). Starší serverové konfigurace se při aktualizaci jednou převedou přes `atmosphere.volume-tripled-v2-migrated`. Resource pack v `resourcepack/assets/minecraft/sounds.json` přepisuje přesně 31 existujících hudebních událostí Minecraftu 1.21.10 tichým OGG; server navíc každou sekundu zastavuje kategorii MUSIC. Halloween soundtrack běží v kategorii AMBIENT, aby ho muter neukončil.
 - Custom shop obsahuje čtyři kusy zbroje Krvavého strážce. Každý používá vlastní PNG ikonu a společné 64×32 armor layer_1/layer_2 textury, netheritový základ, brnění 6/12/9/6 podle kusu a vyšší výdrž; běžné enchantování zůstává povolené. Doplňuje je vlastní meč, krumpáč, sekera, lopatka a motyka s transparentními pixel-art ikonami, vyšší výdrží a posílenými atributy; všechny používají netheritové materiály a enchanty nejsou blokované.
@@ -181,7 +181,7 @@ Asset pipeline generuje 15 ostrých 32×32 RGBA ikon a také vlastní UV-mapovan
 - Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
 - Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
-- `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
+- `/halloween shader on|off|reload` nedokáže upravovat shader běžící na vzdáleném klientovi. Příkaz vysvětlí klientskou instalaci; změny ItemsAdder textur/modelů se sestavují samostatně příkazem `/iazip`. Samotný shader ZIP je třeba aktualizovat v `.minecraft/shaderpacks/`.
 - `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
 - Prokletý talisman stojí 1 000 000 fragmentů. Při držení v hlavní nebo vedlejší ruce přidá +20 k maximálnímu zdraví (jeden celý řádek srdcí) a zachovává 10% bonus k fragmentům.
 - Po nahrání obsahu do `plugins/ItemsAdder/contents/warriorland_halloween` restartuj server, spusť `/iazip` a ověř `/iainfo`. Pokud není URL resource packu dosažitelná nebo se žádná výzva neobjeví, je nutné opravit hosting resource packu v ItemsAdder, ne plugin HalloweenCore.
@@ -267,8 +267,8 @@ Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj 
 
 The graphics update consists of three separate pieces because the server-side Bukkit plugin cannot set shader uniforms in remote Minecraft clients:
 
-- **ItemsAdder resource pack** — seasonal pumpkin faces, jack-o'-lanterns, autumnal grass/foliage/water colormaps, a warm eight-phase moon atlas, red/brown haunted mushroom textures, all item icons/models and the existing Halloween audio definitions.
-- **Iris shader pack** — a dedicated shader ZIP under `shaderpack/`, with dark violet nights, burnt-orange horizon/daylight, tinted clouds, a directional moon halo, and a deep-crimson Blood Moon visual. Quality profiles are Low, Medium and High. The shader pack does not overwrite `assets/minecraft/shaders/core`, because Iris does not support resource-pack core-shader replacements.
+- **ItemsAdder resource pack** — Halloween item icons/models, the Crimson Warden 64×32 armor atlases, pumpkin/lantern variants, autumnal colormaps, ash-silver ordinary moon phases, haunted mushroom textures and audio definitions.
+- **Iris shader pack** — a separate client ZIP under `shaderpack/`, with charcoal-blue nights, earth-toned horizons, restrained gray-blue clouds and moonlight, plus a deep-crimson Blood Moon visual only when the client companion receives the server event marker. It does not overwrite `assets/minecraft/shaders/core`; ordinary players must enable it through Iris themselves.
 - **Fabric client companion** — the optional 1.21.10 client mod receives `halloweencore:visual_state` from the server. It exposes a client-only world-time marker during the actual `blood-moon-invasion` event, so the shader uses crimson mode only during that event and smoothly returns after it ends. It does not change the server clock or gameplay.
 
 #
@@ -311,7 +311,7 @@ Clients without the Fabric companion still get the ItemsAdder environment textur
 
 ### World-generation settings
 
-`world-structures.village-region-chunks` and `world-structures.graveyard-region-chunks` control candidate density; `max-slope`, `max-retries` and `spawn-exclusion-radius` constrain placement. Empty `village-biomes` and `graveyard-biomes` lists allow any biome that passes terrain checks; non-empty lists are Bukkit biome-name allow-lists. The generator only edits suitable loaded Overworld terrain, skips occupied/marked footprints, and leaves the vanilla block behavior intact. Structure generation in existing worlds is incremental as chunks naturally load; the plugin cannot retroactively inject vanilla structure-start data into an already-generated chunk.
+`world-structures.village-region-chunks` and `world-structures.graveyard-region-chunks` control candidate density; `max-terrain-relief` allows up to eight blocks of natural terrain relief by default, `max-retries` controls delayed attempts when chunks are not loaded, and `spawn-exclusion-radius` protects spawn areas. The old `max-slope` key is retained for backwards compatibility but is no longer the placement limit. Empty biome lists allow any biome that passes terrain and clearance checks; non-empty lists are Bukkit biome-name allow-lists. The generator skips occupied footprints and now reports a reason for the latest skipped candidate. Structure generation in existing worlds is incremental as chunks naturally load; it does not inject vanilla structure-start data into existing chunks.
 
 ### Verification boundary
 

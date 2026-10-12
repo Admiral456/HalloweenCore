@@ -14,7 +14,7 @@ currency:
   name: "fragmentů"
 
 itemsadder:
-  minimum-version: "4.0.13"
+  minimum-version: "4.0.18"
 
 gameplay:
   allowed-gamemodes:
