@@ -22,7 +22,6 @@ EXPECTED_3D_MODELS = {
     "crimson_warden_shovel": ("item/handheld", "item/crimson_warden_shovel"),
     "crimson_warden_hoe": ("item/handheld", "item/crimson_warden_hoe"),
     "crimson_warden_shield": ("item/generated", "item/crimson_warden_shield"),
-    "nocturne_sovereign_cowl": ("item/generated", "item/nocturne_sovereign_cowl"),
 }
 SHADERPACK = ROOT / "shaderpack"
 SHADER_PROGRAMS = (
