@@ -616,8 +616,8 @@ if "wings_texture: entity/equipment/wings/batwing_elytra" not in config:
     fail("Batwing Elytra must reference its custom worn-wing texture")
 if "durability_damage_multiplier: 0.65" not in config:
     fail("Batwing Elytra should reduce durability wear while retaining normal gliding/fireworks")
-if "model: armor/nocturne_sovereign_cowl_3d" not in config or "icon: item/nocturne_sovereign_cowl" not in config:
-    fail("Nocturne Cowl must define separate worn model and inventory icon")
+if "model_path: armor/nocturne_sovereign_cowl_3d" not in config or "icon: item/nocturne_sovereign_cowl" not in config:
+    fail("Nocturne Cowl must define separate worn 3D model_path and inventory icon")
 
 shop_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
 if "      cost: 1000000" not in shop_config or "      bonus-health: 20.0" not in shop_config:
