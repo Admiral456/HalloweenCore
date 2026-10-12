@@ -20,7 +20,15 @@ EXPECTED_3D_MODELS = {
     "crimson_warden_hoe": ("item/handheld", "item/crimson_warden_hoe"),
     "crimson_warden_shield": ("item/generated", "item/crimson_warden_shield"),
 }
-SHADER = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
+SHADERPACK = ROOT / "shaderpack"
+SHADER_PROGRAMS = (
+    "shaders/gbuffers_skybasic.vsh", "shaders/gbuffers_skybasic.fsh",
+    "shaders/gbuffers_skytextured.vsh", "shaders/gbuffers_skytextured.fsh",
+    "shaders/gbuffers_clouds.vsh", "shaders/gbuffers_clouds.fsh",
+)
+MOON_ATLAS = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "environment" / "moon_phases.png"
+BLOCK_MODELS = CONTENT / "resourcepack" / "assets" / "minecraft" / "models" / "block"
+BLOCKSTATES = CONTENT / "resourcepack" / "assets" / "minecraft" / "blockstates"
 CONFIG = CONTENT / "configs" / "items.yml"
 SOUNDS_CONFIG = CONTENT / "configs" / "sounds.yml"
 THEME = CONTENT / "sounds" / "haunted_theme.ogg"
@@ -64,6 +72,9 @@ VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "te
 EXPECTED_SEASONAL_BLOCK_TEXTURES = {
     "pumpkin_side.png", "pumpkin_top.png", "pumpkin_face.png",
     "jack_o_lantern.png", "cobweb.png", "red_candle.png", "red_candle_lit.png",
+    "red_mushroom.png", "brown_mushroom.png",
+    "pumpkin_face_classic.png", "pumpkin_face_bat.png", "pumpkin_face_grin.png", "pumpkin_face_skull.png",
+    "jack_o_lantern_classic.png", "jack_o_lantern_bat.png", "jack_o_lantern_grin.png", "jack_o_lantern_skull.png",
 }
 
 
@@ -196,12 +207,40 @@ for layer in ("layer_1.png", "layer_2.png"):
     if (width, height) != (64, 32):
         fail(f"{layer} must be 64x32, got {width}x{height}")
 
-if not SHADER.is_file():
-    fail("Missing Halloween sky shader: " + str(SHADER.relative_to(ROOT)))
-shader_text = SHADER.read_text(encoding="utf-8")
-for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "halloweenTint", "fragColor = sky;"):
-    if marker not in shader_text:
-        fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
+# Validate the standalone Iris shader pack. Never override assets/minecraft/shaders/core,
+# because Iris does not support resource-pack core shader replacements.
+if not (SHADERPACK / "shaders.properties").is_file():
+    fail("Missing standalone Iris shaderpack/shaders.properties")
+properties = (SHADERPACK / "shaders.properties").read_text(encoding="utf-8")
+for marker in ("profile.LOW", "profile.MEDIUM", "profile.HIGH", "HALLOWEEN_QUALITY", "BLOOD_MOON_STRENGTH"):
+    if marker not in properties:
+        fail(f"Shader pack properties are missing {marker}")
+for relative in SHADER_PROGRAMS:
+    shader_path = SHADERPACK / relative
+    if not shader_path.is_file():
+        fail("Missing Iris shader program: " + str(shader_path.relative_to(ROOT)))
+    shader_text = shader_path.read_text(encoding="utf-8")
+    if "#version 330" not in shader_text:
+        fail(f"{relative} must declare GLSL 330")
+    if "gbuffers_skybasic.fsh" in relative and not all(
+        marker in shader_text for marker in ("worldDay", "HALLOWEEN_BLOOD_MOON_DAY", "BLOOD_MOON_STRENGTH")
+    ):
+        fail("Sky shader must use the actual client-synchronized Blood Moon marker")
+    if "gbuffers_skytextured.fsh" in relative and "HALLOWEEN_BLOOD_MOON_DAY" not in shader_text:
+        fail("Moon texture shader is missing Blood Moon event condition")
+if not MOON_ATLAS.is_file():
+    fail("Missing seasonal moon texture atlas: " + str(MOON_ATLAS.relative_to(ROOT)))
+try:
+    moon_width, moon_height = strict_png_size(MOON_ATLAS)
+except (OSError, ValueError) as exc:
+    fail(f"Invalid moon phase atlas: {exc}")
+if (moon_width, moon_height) != (128, 64):
+    fail(f"Moon phase atlas must be 128x64, got {moon_width}x{moon_height}")
+
+# The physical vanilla resource pack remains free of shader-core overrides.
+core_shader_override = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
+if core_shader_override.exists():
+    fail("Remove unsupported resource-pack core shader override; use the standalone Iris shader pack")
 
 # Explicit vanilla texture overrides give physical Halloween decoration its
 # seasonal appearance while keeping the server-side blocks present with or
