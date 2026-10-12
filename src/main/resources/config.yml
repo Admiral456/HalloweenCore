@@ -595,6 +595,60 @@ bosses:
         phase-4-cooldown-seconds: 9
         phase-4-radius: 10
         phase-4-damage: 7.0
+  goblin:
+    enabled: true
+    id: "goblin-king"
+    health: 500.0
+    damage: 14.0
+    movement-speed: 0.28
+    knockback-resistance: 0.85
+    unlock-global-progress-percent: 50.0
+    reward-fragments: 1500
+    phase-one-cooldown-ms: 8000
+    phase-two-cooldown-ms: 7000
+    phase-three-cooldown-ms: 9000
+    rupture-delay-ticks: 28
+    rupture-damage: 16.0
+    max-minions: 3
+    minion-health: 24.0
+    minion-damage: 5.0
+    arena:
+      configured: false
+      generated: false
+      world: ""
+      x: 0
+      y: 80
+      z: 0
+      radius: 31
+
+stalkers:
+  headless-nick:
+    enabled: true
+    health: 120.0
+    damage: 10.0
+    night-only: true
+    night-start-tick: 13000
+    night-end-tick: 23000
+    spawn-distance-min: 10
+    spawn-distance-max: 19
+    ideal-stalk-distance: 12.0
+    movement-speed: 1.05
+    safe-spawn-radius-blocks: 32.0
+    no-target-timeout-seconds: 180
+    despawn-without-target: true
+    message-interval-seconds: 45
+    spectral-charge-range: 14.0
+    charge-hit-radius: 3.0
+    charge-warning-ticks: 22
+    charge-damage: 10.0
+    spectral-charge-cooldown-seconds: 28
+    executioner-damage: 9.0
+    executioner-cooldown-seconds: 20
+    chains-cooldown-seconds: 35
+    natural-spawn:
+      enabled: true
+      chance-per-check: 0.012
+      cooldown-seconds: 720
 
 world-decorations:
   enabled: true
