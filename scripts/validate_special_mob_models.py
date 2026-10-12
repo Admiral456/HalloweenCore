@@ -15,6 +15,19 @@ import zlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 MODEL_DIR = ROOT / "mythicmobs" / "models"
 MOB_CONFIG = ROOT / "mythicmobs" / "mobs" / "halloween-special-mobs.yml"
+SPECIAL_ATTACK_ANIMATIONS = {
+    "halloween_cursed_zombie": "frenzy",
+    "halloween_void_reaper": "void_cast",
+    "halloween_gravekeeper": "ground_slam",
+    "halloween_frost_stalker": "pounce",
+    "halloween_blood_spider": "blood_leap",
+    "halloween_pumpkin_wraith": "ember_burst",
+    "halloween_hex_witch": "hex_cast",
+    "halloween_nightmare": "spectral_charge",
+    "halloween_goblin_king": "heavy_attack",
+    "halloween_headless_nick": "executioner_strike",
+}
+
 MOB_IDS = (
     "halloween_cursed_zombie",
     "halloween_void_reaper",
@@ -162,6 +175,9 @@ def validate_model(mob_id: str) -> None:
         fail(f"{model_path.name} outliner must reference each model cube exactly once")
 
     names = {anim.get("name") for anim in model.get("animations", [])}
+    required_attack = SPECIAL_ATTACK_ANIMATIONS.get(mob_id)
+    if required_attack and required_attack not in names:
+        fail(f"{model_path.name} is missing its specific attack animation '{required_attack}'")
     if not {"idle", "walk", "attack"}.issubset(names):
         fail(f"{model_path.name} must have idle, walk and attack animations")
     if mob_id not in ("halloween_blood_spider", "halloween_frost_stalker") and "fly" not in names:
@@ -240,6 +256,13 @@ def main() -> None:
             fail(f"MythicMobs config is missing {mob_id}")
         if f"model{{mid={mob_id};n=false}}" not in yaml_text:
             fail(f"MythicMobs config does not attach the ModelEngine model {mob_id}")
+        attack_state = SPECIAL_ATTACK_ANIMATIONS[mob_id]
+        mob_section = re.search(
+            rf"(?ms)^{re.escape(mob_id)}:\s*\n(.*?)(?=^[a-z0-9_]+:\s*$|\Z)",
+            yaml_text,
+        )
+        if mob_section is None or f"s={attack_state}" not in mob_section.group(1):
+            fail(f"MythicMobs config does not trigger {attack_state} for {mob_id}")
     if "prevent_other_drops" in yaml_text.lower():
         fail("Use the proper MythicMobs option spelling PreventOtherDrops")
     print(f"PASS all {len(MOB_IDS)} custom MythicMobs definitions reference matching ModelEngine models")
