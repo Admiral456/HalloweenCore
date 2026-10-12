@@ -107,15 +107,26 @@ def moon_phase(phase: int) -> Image.Image:
             radius = (dx * dx + dy * dy) ** 0.5
             if radius > 12.8:
                 continue
-            # phase zero is full; other phases are progressively shadowed crescents.
-            light_fraction = phase / 7.0
-            boundary = (light_fraction * 2.0 - 1.0) * 12.8
-            # Phases 0..3 wane; phases 4..7 wax, so swap the illuminated direction.
-            lit_side = dx >= boundary if phase <= 3 else dx <= -boundary
+            # Match the eight-cell Minecraft cycle: full -> waning gibbous ->
+            # third quarter -> waning crescent -> new -> waxing crescent ->
+            # first quarter -> waxing gibbous. Keep the terminator on the right
+            # for waxing phases and on the left for waning phases.
             if phase == 0:
                 lit_side = True
-            if phase == 4:
+            elif phase == 1:
+                lit_side = dx >= -8.0
+            elif phase == 2:
+                lit_side = dx >= -4.0
+            elif phase == 3:
+                lit_side = dx >= 8.0
+            elif phase == 4:
                 lit_side = False
+            elif phase == 5:
+                lit_side = dx >= 8.0
+            elif phase == 6:
+                lit_side = dx >= 0.0
+            else:
+                lit_side = dx >= -4.0
             if lit_side:
                 if radius > 10.2:
                     color = ORANGE_DARK
