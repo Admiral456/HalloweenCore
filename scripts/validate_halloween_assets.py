@@ -165,6 +165,20 @@ for name in sorted(EXPECTED):
     if not source_texture.is_file() or png_size(source_texture) != (32, 32):
         fail(f"ItemsAdder source texture is missing or invalid: {source_texture.relative_to(ROOT)}")
 
+# Validate the worn custom helmet registry, not just the generated model file.
+try:
+    items_config_text = CONFIG.read_text(encoding="utf-8")
+except OSError as exc:
+    fail(f"Cannot read ItemsAdder item registry: {exc}")
+cowl_match = re.search(r"(?ms)^  nocturne_sovereign_cowl:\n(?P<block>.*?)(?=^  [A-Za-z0-9_]+:\n|\\Z)", items_config_text)
+if not cowl_match:
+    fail("Nocturne Sovereign Cowl is missing from ItemsAdder configs/items.yml")
+cowl_config = cowl_match.group("block")
+if not re.search(r"(?m)^    resource:\n      generate: false\n      model_path: armor/nocturne_sovereign_cowl_3d\n      material: NETHERITE_HELMET[ \\t]*$", cowl_config):
+    fail("Nocturne Cowl must use resource.generate=false and model_path=armor/nocturne_sovereign_cowl_3d")
+if re.search(r"(?m)^      id:[ \\t]*[^\\n]+", cowl_config):
+    fail("Nocturne Cowl must not set equipment.id; it overrides the custom 3D helmet model_path")
+
 if not WINGS_TEXTURE.is_file():
     fail("Missing Batwing Elytra worn-wings texture")
 if strict_png_size(WINGS_TEXTURE) != (64, 32):

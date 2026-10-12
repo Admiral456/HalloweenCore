@@ -259,11 +259,11 @@ items:
     lore:
       - "&8Obsidianová kápě se spektrálníma očima."
       - "&dNocturnal Perception • Curseguard • Veilstep."
-      - "&7Výdrž 900 • enchantovatelná jako netherit."
-    material: NETHERITE_HELMET
-    graphics:
-      model: armor/nocturne_sovereign_cowl_3d
-      icon: item/nocturne_sovereign_cowl
+      - "&7Zbroj +6 • výdrž 900 • enchantovatelná."
+    resource:
+      generate: false
+      model_path: armor/nocturne_sovereign_cowl_3d
+      material: NETHERITE_HELMET
     durability:
       max_durability: 900
     equipment:
