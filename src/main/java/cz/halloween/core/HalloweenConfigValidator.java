@@ -77,6 +77,15 @@ public final class HalloweenConfigValidator {
             if (spawnBuffer < 0 || spawnBuffer > 1024) {
                 errors.add("world-structures.spawn-exclusion-radius must be between 0 and 1024");
             }
+            for (String key : List.of("world-structures.village-biomes", "world-structures.graveyard-biomes")) {
+                for (String biomeName : plugin.getConfig().getStringList(key)) {
+                    try {
+                        org.bukkit.block.Biome.valueOf(biomeName.trim().toUpperCase(java.util.Locale.ROOT));
+                    } catch (IllegalArgumentException ex) {
+                        errors.add(key + " contains unknown Bukkit biome: " + biomeName);
+                    }
+                }
+            }
         }
 
         double wardThreshold = plugin.getConfig().getDouble("gear-effects.set-bonus.trigger-health-ratio", 0.35D);
