@@ -41,6 +41,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenVillageDiscoveryManager villageDiscoveryManager;
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
+    private HalloweenGoblinKingManager goblinKingManager;
+    private HalloweenHeadlessNickManager headlessNickManager;
     private HalloweenWorldDecorator worldDecorator;
     private HalloweenWorldStructureGenerator worldStructureGenerator;
     private HalloweenCombatEffectManager combatEffectManager;
@@ -57,6 +59,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
         migrateWorldStructuresAndCombatDefaults();
+        migrateNewEncounterDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -75,6 +78,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
+        goblinKingManager = new HalloweenGoblinKingManager(this);
+        headlessNickManager = new HalloweenHeadlessNickManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
         worldStructureGenerator = new HalloweenWorldStructureGenerator(this);
         combatEffectManager = new HalloweenCombatEffectManager(this);
@@ -91,6 +96,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(villageDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
+        getServer().getPluginManager().registerEvents(goblinKingManager, this);
+        getServer().getPluginManager().registerEvents(headlessNickManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
@@ -132,6 +139,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
         }
+        if (goblinKingManager != null) goblinKingManager.shutdown();
+        if (headlessNickManager != null) headlessNickManager.shutdown();
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
         if (worldStructureGenerator != null) worldStructureGenerator.stop();
@@ -181,6 +190,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
         if (bossManager != null) bossManager.stopVampireBossBar();
+        if (goblinKingManager != null) goblinKingManager.stopEncounter();
+        if (headlessNickManager != null) headlessNickManager.stopEncounter();
 
         if (atmosphere != null) atmosphere.refreshPlayback();
         if (worldDecorator != null) {
@@ -297,6 +308,32 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Additional Halloween mob and story-quest defaults applied without overwriting existing settings.");
         } catch (IOException ex) {
             getLogger().warning("Additional mob/quest migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateNewEncounterDefaults() {
+        if (getConfig().getBoolean("migrations.goblin-and-nick-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; Goblin/Nick defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String root : List.of("bosses.goblin", "stalkers.headless-nick")) {
+                ConfigurationSection section = defaults.getConfigurationSection(root);
+                if (section == null) continue;
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = root + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
+                }
+            }
+            getConfig().set("migrations.goblin-and-nick-v1", true);
+            saveConfig();
+            getLogger().info("Goblin King and Headless Nick defaults added without replacing existing server settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Goblin/Nick configuration migration failed: " + ex.getClass().getSimpleName());
         }
     }
 
@@ -585,6 +622,14 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenVampireEncounterManager getVampireEncounterManager() {
         return vampireEncounterManager;
+    }
+
+    public HalloweenGoblinKingManager getGoblinKingManager() {
+        return goblinKingManager;
+    }
+
+    public HalloweenHeadlessNickManager getHeadlessNickManager() {
+        return headlessNickManager;
     }
 
     public HalloweenSecretDiscoveryManager getSecretDiscoveryManager() {
