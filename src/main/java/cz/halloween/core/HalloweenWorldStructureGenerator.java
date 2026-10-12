@@ -370,6 +370,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         buildLamp(world, x, y, z - 10);
         buildLamp(world, x, y, z + 11);
         buildPumpkinPatch(world, x + 2, y, z - 10, random);
+        buildScarecrow(world, x + 11, y, z + 9);
 
         // Moss, graveside flowers and fallen branches break up repeated block lines.
         placeFoundation(world, x - 10, y, z - 10, Material.MOSS_BLOCK);
@@ -489,6 +490,18 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                 }
             }
         }
+    }
+
+    private void buildScarecrow(World world, int x, int y, int z) {
+        placeFoundation(world, x, y, z, Material.HAY_BLOCK);
+        place(world, x, y + 1, z, Material.HAY_BLOCK);
+        place(world, x, y + 2, z, Material.CARVED_PUMPKIN);
+        placeFacing(world, x, y + 1, z, Material.STRIPPED_DARK_OAK_LOG, BlockFace.SOUTH);
+        place(world, x - 1, y + 1, z, Material.DARK_OAK_FENCE);
+        place(world, x + 1, y + 1, z, Material.DARK_OAK_FENCE);
+        place(world, x - 2, y + 1, z, Material.COBWEB);
+        place(world, x + 2, y + 1, z, Material.COBWEB);
+        place(world, x, y, z + 1, Material.WITHER_ROSE);
     }
 
     private void buildGraveyard(World world, int x, int y, int z, Random random) {
