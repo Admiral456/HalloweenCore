@@ -620,7 +620,7 @@ print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces, 5 
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
 print(f"Seasonal vanilla block textures: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")\nprint("Autumn biome colormaps: grass, foliage, and water verified at 256x256; moon atlas verified at 128x64")
-print("Sky shader: Minecraft 1.21.10 entry point present")
+print("Iris shaderpack: required GLSL sources and actual Blood Moon marker validated")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")
 print("ItemsAdder sound definitions: present")
 print(f"Verified exact Minecraft 1.21.10 music-event overrides: {len(vanilla_sound_events)}")
