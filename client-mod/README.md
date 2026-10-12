@@ -20,7 +20,7 @@ Payload: exactly one byte.
 - 1 — the server's actual blood-moon-invasion event is active.
 - 0 — the event has ended, was cancelled/reloaded, or is inactive.
 
-The mod temporarily overrides World.getTimeOfDay() only for the client world renderer, exposing a reserved synthetic day marker to Iris standard uniforms worldDay and worldTime. It never changes the server world clock, the user's visible server time command, mob AI or gameplay time. On disconnect the client marker is cleared.
+The mod modifies only the value returned to the client renderer by World.getTimeOfDay(), exposing a reserved synthetic day marker to Iris' standard worldDay/worldTime uniforms. It transitions from actual time to night before the red sky fades in; on exit it fades red first and blends back to the live time-of-day. It never changes the server world clock, time commands, mob AI or gameplay time. On disconnect the client marker is cleared.
 
 ## Known limitations
 
