@@ -122,33 +122,66 @@ public final class HalloweenMobManager implements Listener {
         switch (mobId) {
             case "cursed-zombie" -> {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
-                soulSiphon(attacker, target);
+                if (useSecondaryAbility(mobId)) zombieFrenzy(attacker, target);
+                else soulSiphon(attacker, target);
             }
             case "gravekeeper" -> {
                 if (!(event.getDamager() instanceof Arrow arrow)
                         || !(arrow.getShooter() instanceof LivingEntity shooter)
                         || !shooter.getUniqueId().equals(attacker.getUniqueId())
                         || !canUseSpecialAbility(attacker, mobId)) return;
-                graveMark(attacker, target);
+                if (useSecondaryAbility(mobId)) {
+                    var section = plugin.getConfig().getConfigurationSection("special-mobs.types.gravekeeper");
+                    telegraphedGroundStrike(attacker, target, "Hrobník", "&8Hrobník vyvolává zemní výboj — uskoč z run!",
+                            Particle.SOUL,
+                            section == null ? 20L : section.getLong("grave-pulse-delay-ticks", 20L),
+                            section == null ? 2.4D : section.getDouble("grave-pulse-radius-blocks", 2.4D),
+                            section == null ? 2.5D : section.getDouble("grave-pulse-damage", 2.5D),
+                            section == null ? 30 : section.getInt("grave-pulse-slowness-ticks", 30), 0);
+                } else {
+                    graveMark(attacker, target);
+                }
             }
             case "blood-spider" -> {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
-                bloodWeb(attacker, target);
+                if (useSecondaryAbility(mobId)) bloodDrain(attacker, target);
+                else bloodWeb(attacker, target);
             }
             case "void-reaper" -> {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
-                reaperGloom(attacker, target);
+                if (useSecondaryAbility(mobId)) {
+                    var section = plugin.getConfig().getConfigurationSection("special-mobs.types.void-reaper");
+                    telegraphedGroundStrike(attacker, target, "Ženec prázdnoty", "&5Ženec otevírá trhlinu pod tvýma nohama — uhni!",
+                            Particle.REVERSE_PORTAL,
+                            section == null ? 22L : section.getLong("void-rift-delay-ticks", 22L),
+                            section == null ? 2.2D : section.getDouble("void-rift-radius-blocks", 2.2D),
+                            section == null ? 2.5D : section.getDouble("void-rift-damage", 2.5D),
+                            section == null ? 35 : section.getInt("void-rift-slowness-ticks", 35), 0);
+                } else {
+                    reaperGloom(attacker, target);
+                }
             }
             case "frost-stalker" -> {
                 if (!(event.getDamager() instanceof Arrow arrow)
                         || !(arrow.getShooter() instanceof LivingEntity shooter)
                         || !shooter.getUniqueId().equals(attacker.getUniqueId())
                         || !canUseSpecialAbility(attacker, mobId)) return;
-                frostbite(attacker, target);
+                if (useSecondaryAbility(mobId)) {
+                    var section = plugin.getConfig().getConfigurationSection("special-mobs.types.frost-stalker");
+                    telegraphedGroundStrike(attacker, target, "Ledový stopař", "&bLedový stopař míří na ledový výboj — vyběhni z kruhu!",
+                            Particle.SNOWFLAKE,
+                            section == null ? 18L : section.getLong("ice-lance-delay-ticks", 18L),
+                            section == null ? 2.25D : section.getDouble("ice-lance-radius-blocks", 2.25D),
+                            section == null ? 2.0D : section.getDouble("ice-lance-damage", 2.0D),
+                            section == null ? 40 : section.getInt("ice-lance-slowness-ticks", 40), 1);
+                } else {
+                    frostbite(attacker, target);
+                }
             }
             case "nightmare" -> {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
-                nightmareDread(attacker, target);
+                if (useSecondaryAbility(mobId)) nightmareSlam(attacker, target);
+                else nightmareDread(attacker, target);
             }
             default -> {
             }
@@ -187,6 +220,105 @@ public final class HalloweenMobManager implements Listener {
         if (last > 0L && now - last < cooldownSeconds * 1000L) return false;
         attacker.getPersistentDataContainer().set(abilityCooldownKey, PersistentDataType.LONG, now);
         return true;
+    }
+
+    private boolean useSecondaryAbility(String mobId) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types." + mobId);
+        double chance = section == null ? 0.5D : section.getDouble("secondary-ability-chance", 0.5D);
+        chance = Math.max(0.0D, Math.min(1.0D, chance));
+        return ThreadLocalRandom.current().nextDouble() < chance;
+    }
+
+    /**
+     * A readable ground warning followed by a bounded strike. The player can escape;
+     * the task never loads a chunk or damages a target who moved to another world.
+     */
+    private void telegraphedGroundStrike(LivingEntity attacker, Player target, String label, String message,
+                                         Particle warningParticle, long delayTicks, double radius,
+                                         double damage, int slownessTicks, int slownessAmplifier) {
+        if (!plugin.isEligibleGameplayPlayer(target)) return;
+        Location marked = target.getLocation().clone();
+        World world = marked.getWorld();
+        if (world == null) return;
+
+        long delay = Math.max(10L, Math.min(80L, delayTicks));
+        double strikeRadius = Math.max(0.75D, Math.min(5.0D, radius));
+        double strikeDamage = Math.max(0.0D, Math.min(10.0D, damage));
+        world.spawnParticle(warningParticle, marked.clone().add(0.0D, 0.12D, 0.0D),
+                36, strikeRadius * 0.45D, 0.08D, strikeRadius * 0.45D, 0.015D);
+        world.playSound(marked, "minecraft:block.sculk_sensor.clicking", 0.8f, 0.65f);
+        target.sendMessage(plugin.color(message));
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!plugin.isEventEnabled() || !attacker.isValid() || attacker.isDead()
+                    || !target.isOnline() || target.isDead()
+                    || !plugin.isEligibleGameplayPlayer(target)
+                    || !world.getUID().equals(target.getWorld().getUID())
+                    || !world.isChunkLoaded(marked.getBlockX() >> 4, marked.getBlockZ() >> 4)) return;
+
+            Location impact = marked.clone().add(0.0D, 0.18D, 0.0D);
+            world.spawnParticle(Particle.SOUL_FIRE_FLAME, impact, 34,
+                    strikeRadius * 0.4D, 0.22D, strikeRadius * 0.4D, 0.025D);
+            world.playSound(impact, "minecraft:block.soul_sand.break", 0.8f, 0.65f);
+            if (target.getLocation().distanceSquared(marked) > strikeRadius * strikeRadius) return;
+
+            if (strikeDamage > 0.0D) target.damage(strikeDamage, attacker);
+            if (slownessTicks > 0) {
+                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS,
+                        Math.min(100, slownessTicks), Math.max(0, Math.min(1, slownessAmplifier)),
+                        true, true, false));
+            }
+            target.sendMessage(plugin.color("&c" + label + " zasáhl místo označené runami!"));
+        }, delay);
+    }
+
+    private void zombieFrenzy(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.cursed-zombie");
+        int duration = Math.max(20, Math.min(100,
+                section == null ? 40 : section.getInt("frenzy-ticks", 40)));
+        int speed = Math.max(0, Math.min(2,
+                section == null ? 1 : section.getInt("frenzy-speed-level", 1)));
+        int strength = Math.max(0, Math.min(1,
+                section == null ? 0 : section.getInt("frenzy-strength-level", 0)));
+        attacker.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, speed, true, false, true));
+        attacker.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, strength, true, false, true));
+        Location impact = attacker.getLocation().clone().add(0.0D, 0.8D, 0.0D);
+        attacker.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, impact, 28, 0.4D, 0.5D, 0.4D, 0.04D);
+        attacker.getWorld().playSound(impact, "minecraft:entity.zombie.angry", 0.8f, 0.65f);
+        target.sendMessage(plugin.color("&cProkletý zombie se rozzuřil — drž si odstup, než jeho vztek odezní."));
+    }
+
+    private void bloodDrain(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.blood-spider");
+        double heal = Math.max(0.0D, Math.min(8.0D,
+                section == null ? 3.0D : section.getDouble("blood-drain-heal", 3.0D)));
+        int poisonTicks = Math.max(20, Math.min(80,
+                section == null ? 40 : section.getInt("blood-drain-poison-ticks", 40)));
+        attacker.setHealth(Math.min(attacker.getMaxHealth(), attacker.getHealth() + heal));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, poisonTicks, 0, true, true, false));
+        Location impact = target.getLocation().clone().add(0.0D, 1.0D, 0.0D);
+        target.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, impact, 14, 0.35D, 0.45D, 0.35D, 0.08D);
+        target.getWorld().spawnParticle(Particle.CRIMSON_SPORE, attacker.getLocation().clone().add(0, 0.7D, 0),
+                16, 0.35D, 0.4D, 0.35D, 0.02D);
+        target.playSound(impact, "minecraft:entity.spider.hurt", 0.9f, 0.45f);
+        target.sendMessage(plugin.color("&cKrvavý pavouk vysál část tvé životní síly."));
+    }
+
+    private void nightmareSlam(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.nightmare");
+        double strength = Math.max(0.2D, Math.min(1.5D,
+                section == null ? 0.75D : section.getDouble("spectral-slam-knockback", 0.75D)));
+        int weaknessTicks = Math.max(20, Math.min(100,
+                section == null ? 40 : section.getInt("spectral-slam-weakness-ticks", 40)));
+        org.bukkit.util.Vector push = target.getLocation().toVector().subtract(attacker.getLocation().toVector());
+        push.setY(0.0D);
+        if (push.lengthSquared() < 0.001D) push = attacker.getLocation().getDirection().multiply(-1.0D).setY(0.0D);
+        if (push.lengthSquared() > 0.001D) target.setVelocity(push.normalize().multiply(strength).setY(0.28D));
+        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, weaknessTicks, 0, true, true, false));
+        Location impact = target.getLocation().clone().add(0.0D, 0.9D, 0.0D);
+        target.getWorld().spawnParticle(Particle.ASH, impact, 34, 0.5D, 0.6D, 0.5D, 0.035D);
+        target.getWorld().playSound(impact, "minecraft:entity.phantom.flap", 0.9f, 0.55f);
+        target.sendMessage(plugin.color("&dNoční můra tě odrazila přízračným úderem!"));
     }
 
     private void soulSiphon(LivingEntity attacker, Player target) {
@@ -301,12 +433,33 @@ public final class HalloweenMobManager implements Listener {
                 70, 1.5D, 1.0D, 1.5D, 0.02D);
         origin.getWorld().playSound(origin, "minecraft:entity.warden.roar", 0.6f, 1.6f);
 
+        boolean emberRing = useSecondaryAbility("pumpkin-wraith");
+        int emberFireTicks = Math.max(0, Math.min(80, section == null ? 30 : section.getInt("ember-ring-fire-ticks", 30)));
+        int emberSlownessTicks = Math.max(0, Math.min(80, section == null ? 35 : section.getInt("ember-ring-slowness-ticks", 35)));
+        double emberKnockback = Math.max(0.0D, Math.min(1.2D,
+                section == null ? 0.55D : section.getDouble("ember-ring-knockback", 0.55D)));
+
         for (Player target : origin.getWorld().getPlayers()) {
             if (!plugin.isEligibleGameplayPlayer(target)) continue;
             if (target.getLocation().distanceSquared(origin) > radius * radius) continue;
-            target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, nauseaTicks, 0, true, true, false));
-            target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, true, false, false));
-            target.sendMessage(plugin.color("&6Dýňový přízrak vybuchl v závoji popela."));
+            if (emberRing) {
+                if (emberFireTicks > 0) target.setFireTicks(Math.max(target.getFireTicks(), emberFireTicks));
+                org.bukkit.util.Vector push = target.getLocation().toVector().subtract(origin.toVector());
+                push.setY(0.0D);
+                if (push.lengthSquared() > 0.001D && emberKnockback > 0.0D) {
+                    target.setVelocity(push.normalize().multiply(emberKnockback).setY(0.22D));
+                }
+                if (emberSlownessTicks > 0) {
+                    target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, emberSlownessTicks, 0, true, true, false));
+                }
+                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().clone().add(0, 0.8D, 0),
+                        18, 0.35D, 0.45D, 0.35D, 0.025D);
+                target.sendMessage(plugin.color("&6Dýňový přízrak vypustil žhnoucí kruh — popel ustupuje žáru!"));
+            } else {
+                target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, nauseaTicks, 0, true, true, false));
+                target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, true, false, false));
+                target.sendMessage(plugin.color("&6Dýňový přízrak vybuchl v závoji popela."));
+            }
         }
     }
 
@@ -330,16 +483,29 @@ public final class HalloweenMobManager implements Listener {
 
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.hex-witch");
         int duration = Math.max(20, section == null ? 65 : section.getInt("random-hex-duration-ticks", 65));
+        boolean markedHex = useSecondaryAbility("hex-witch");
         for (Player target : targets) {
-            switch (ThreadLocalRandom.current().nextInt(3)) {
-                case 0 -> target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, false, false));
-                case 1 -> target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
-                default -> target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 1, true, true, false));
+            if (markedHex) {
+                telegraphedGroundStrike(attacker, target, "Hexová čarodějka",
+                        "&5Hexová čarodějka označila zem pod tebou — opusti kruh kletby!",
+                        Particle.WITCH,
+                        section == null ? 20L : section.getLong("hex-mark-delay-ticks", 20L),
+                        section == null ? 2.25D : section.getDouble("hex-mark-radius-blocks", 2.25D),
+                        section == null ? 2.0D : section.getDouble("hex-mark-damage", 2.0D),
+                        section == null ? 35 : section.getInt("hex-mark-slowness-ticks", 35), 0);
+                target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().clone().add(0, 1, 0),
+                        18, 0.35D, 0.45D, 0.35D, 0.04D);
+            } else {
+                switch (ThreadLocalRandom.current().nextInt(3)) {
+                    case 0 -> target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, false, false));
+                    case 1 -> target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
+                    default -> target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 1, true, true, false));
+                }
+                target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().clone().add(0, 1, 0),
+                        22, 0.45D, 0.55D, 0.45D, 0.06D);
+                target.playSound(target.getLocation(), "minecraft:entity.witch.ambient", 0.8f, 0.5f);
+                target.sendMessage(plugin.color("&5Hexová čarodějka na tebe uvalila náhodnou kletbu."));
             }
-            target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().add(0, 1, 0),
-                    22, 0.45D, 0.55D, 0.45D, 0.06D);
-            target.playSound(target.getLocation(), "minecraft:entity.witch.ambient", 0.8f, 0.5f);
-            target.sendMessage(plugin.color("&5Hexová čarodějka na tebe uvalila náhodnou kletbu."));
         }
     }
 
