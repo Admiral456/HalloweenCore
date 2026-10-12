@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the five custom Halloween ModelEngine/Blockbench assets and mob definitions."""
+"""Validate all generated Halloween ModelEngine/Blockbench assets and mob definitions."""
 from __future__ import annotations
 
 import base64
@@ -24,6 +24,8 @@ MOB_IDS = (
     "halloween_pumpkin_wraith",
     "halloween_hex_witch",
     "halloween_nightmare",
+    "halloween_goblin_king",
+    "halloween_headless_nick",
 )
 
 
@@ -183,6 +185,40 @@ def validate_model(mob_id: str) -> None:
                     fail(f"{model_path.name} contains an invalid animation channel")
                 if not isinstance(keyframe.get("data_points"), list) or not keyframe["data_points"]:
                     fail(f"{model_path.name} has a keyframe without datapoints")
+
+    def find_named_group(nodes: list, wanted: str) -> dict | None:
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            if node.get("name") == wanted:
+                return node
+            nested = find_named_group(node.get("children", []), wanted)
+            if nested is not None:
+                return nested
+        return None
+
+    if mob_id == "halloween_goblin_king":
+        required_geometry = {"goblin_crown_band", "goblin_crown_spike_center",
+                             "goblin_heavy_pauldron", "goblin_cleaver_blade"}
+        element_names = {element.get("name") for element in elements}
+        if not required_geometry.issubset(element_names):
+            fail(f"{model_path.name} is missing the Goblin King's distinct crown/armor/weapon geometry")
+    if mob_id == "halloween_headless_nick":
+        head_group = find_named_group(model.get("outliner", []), "head")
+        if head_group is None:
+            fail(f"{model_path.name} must preserve its head animation bone even when headless")
+        def group_has_cubes(node: dict) -> bool:
+            for child in node.get("children", []):
+                if isinstance(child, str):
+                    return True
+                if isinstance(child, dict) and group_has_cubes(child):
+                    return True
+            return False
+        if group_has_cubes(head_group):
+            fail(f"{model_path.name} is not genuinely headless: head-bone cubes are still attached")
+        element_names = {element.get("name") for element in elements}
+        if "nick_bloody_neck_stump" not in element_names or "nick_executioner_blade" not in element_names:
+            fail(f"{model_path.name} must include the exposed neck stump and executioner's blade")
 
     texture_uuid = textures[0].get("uuid")
     if texture_uuid:
