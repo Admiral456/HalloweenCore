@@ -55,10 +55,6 @@ jobs:
         run: python3 scripts/validate_halloween_assets.py
       - name: Build Fabric client companion
         run: gradle -p client-mod --no-daemon clean build
-      - name: Prepare installable client companion JAR
-        run: |
-          mkdir -p target
-          cp client-mod/build/libs/halloweencore-client-1.21.10-1.0.0.jar target/HalloweenCore-Client-1.21.10.jar
       - name: Validate Vampire King model
         run: python3 scripts/validate_vampire_model.py
       - name: Generate additional Halloween mob models
@@ -67,6 +63,10 @@ jobs:
         run: python3 scripts/validate_special_mob_models.py
       - name: Build
         run: mvn -B clean package
+      - name: Prepare installable client companion JAR
+        run: |
+          mkdir -p target
+          cp client-mod/build/libs/halloweencore-client-1.21.10-1.0.0.jar target/HalloweenCore-Client-1.21.10.jar
       - name: Package ItemsAdder content
         run: |
           mkdir -p target
