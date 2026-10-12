@@ -850,16 +850,18 @@ def create_nick_steed_model() -> None:
     model["name"] = "halloween_nick_steed"
     model["model_identifier"] = "halloween_nick_steed"
     model["resolution"] = {"width": 128, "height": 128}
-    model["animations"] = []
-    # Keep valid sample keyframes around only while using the generic animation authoring helper.
-    model["animations"] = json.loads(json.dumps(model.get("animations", [])))
-    # The source animation templates were preserved above in a separate variable; restore a single
-    # standard attack clip temporarily so add_animation_clip can clone valid Blockbench metadata.
+    # Preserve valid sample keyframes for both position and rotation while authoring new clips.
+    # Rename the non-attack templates so they cannot collide with the steed's own animation names.
     source_model = json.loads(base_path.read_text(encoding="utf-8"))
-    source_attack = next((a for a in source_model.get("animations", []) if a.get("name") == "attack"), None)
-    if source_attack is None:
+    source_animations = source_model.get("animations", [])
+    if not any(animation.get("name") == "attack" for animation in source_animations):
         raise RuntimeError("Cannot generate Nick's steed: source model has no animation template")
-    model["animations"] = [source_attack]
+    model["animations"] = []
+    for source_animation in source_animations:
+        template_animation = copy.deepcopy(source_animation)
+        if template_animation.get("name") != "attack":
+            template_animation["name"] = "__template_" + str(template_animation.get("name", "clip"))
+        model["animations"].append(template_animation)
 
     add_animation_clip(model, "idle", 1.6, {
         "body": ("rotation", [(0.0, (0, 0, 0)), (0.8, (-1.5, 0, 0)), (1.6, (0, 0, 0))]),
