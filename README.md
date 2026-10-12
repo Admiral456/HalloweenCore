@@ -141,7 +141,7 @@ Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/hallow
 
 Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
 
-Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
+Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny, červené svíčky a v přirozeně zastíněných místech také červené/hnědé houby. Přidávání je dávkované a respektuje přirozený terén. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
 
 ### Náhodné Haunted Village a prokleté hřbitovy
 
