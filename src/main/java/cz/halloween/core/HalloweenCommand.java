@@ -221,7 +221,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
         sender.sendMessage(plugin.color("&6/halloween structures <status|scan> &7- diagnostika náhodných hřbitovů a vesnic (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween goblin <status|arena|dry-run|confirm|cancel|start|spawn|stop> &7- samostatný Král goblinů (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween goblin <status|arena|dry-run|confirm|cancel|start|spawn|stop> &7- samostatný Král skřítků (admin)"));
         sender.sendMessage(plugin.color("&6/halloween nick <status|spawn|test|target|attack|despawn> &7- Bezhlavý Nick (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
@@ -606,7 +606,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (!checkAdmin(sender)) return true;
         HalloweenGoblinKingManager manager = plugin.getGoblinKingManager();
         if (manager == null) {
-            sender.sendMessage(plugin.color("&cSprávce Krále goblinů není dostupný."));
+            sender.sendMessage(plugin.color("&cSprávce Krále skřítků není dostupný."));
             return true;
         }
         if (args.length < 2) {
@@ -615,7 +615,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         String action = args[1].toLowerCase(java.util.Locale.ROOT);
         if (action.equals("status")) {
-            sender.sendMessage(plugin.color("&6&lGOBLIN KING"));
+            sender.sendMessage(plugin.color("&6&lKRÁL SKŘÍTKŮ"));
             sender.sendMessage(plugin.color("&7" + manager.statusText()));
             sender.sendMessage(plugin.color("&7Server progress: &e" + String.format("%.1f", plugin.getService().getGlobalProgressPercent())
                     + "% &8/ odemčení: &e" + plugin.getConfig().getDouble("bosses.goblin.unlock-global-progress-percent", 50.0D) + "%"));
@@ -657,7 +657,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             org.bukkit.Location center = new org.bukkit.Location(world, x + 0.5D, y, z + 0.5D);
             HalloweenGoblinKingManager.ArenaInspection inspection = dryRun
                     ? manager.inspectArena(center, sender) : manager.previewArena(center, sender);
-            sender.sendMessage(plugin.color("&6&lGOBLINÍ PEVNOST — " + (dryRun ? "DRY-RUN" : "NÁHLED")));
+            sender.sendMessage(plugin.color("&6&lPEVNOST KRÁLE SKŘÍTKŮ — " + (dryRun ? "DRY-RUN" : "NÁHLED")));
             sender.sendMessage(plugin.color("&7Hranice: &e" + inspection.boundsText()));
             sender.sendMessage(plugin.color("&7Výška: &e" + inspection.minY() + " až " + inspection.maxY()));
             if (!inspection.clear()) {
@@ -677,9 +677,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         if (action.equals("spawn") || action.equals("test")) {
             if (!manager.spawnEncounter(true)) {
-                sender.sendMessage(plugin.color("&cTest spawnu selhal. Ověř povolení bossů a to, že pevnost byla úspěšně postavena."));
+                sender.sendMessage(plugin.color("&cTest spawnu selhal. Ověř načtení ModelEngine + MythicMobs, model halloween_goblin_king, povolení bosse a dokončenou arénu."));
             } else {
-                sender.sendMessage(plugin.color("&aTestovací Král goblinů je aktivní; testovací souboj nedává boss odměny."));
+                sender.sendMessage(plugin.color("&aTestovací Král skřítků je aktivní; testovací souboj nedává boss odměny."));
             }
             return true;
         }
@@ -687,20 +687,20 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             double required = plugin.getConfig().getDouble("bosses.goblin.unlock-global-progress-percent", 50.0D);
             double progress = plugin.getService().getGlobalProgressPercent();
             if (progress < required) {
-                sender.sendMessage(plugin.color("&cKrál goblinů se ještě neprobudí. Server progress: &e"
+                sender.sendMessage(plugin.color("&cKrál skřítků se ještě neprobudí. Server progress: &e"
                         + String.format("%.1f", progress) + "% &7/ potřebuje &e" + required + "%."));
                 return true;
             }
             if (!manager.spawnEncounter(false)) {
                 sender.sendMessage(plugin.color("&cBoss nešel spustit. Zkontroluj /halloween goblin status, nastavení a dokončenou arénu."));
             } else {
-                sender.sendMessage(plugin.color("&aKrál goblinů začal normální souboj. Odměny budou připsány aktivním účastníkům."));
+                sender.sendMessage(plugin.color("&aKrál skřítků začal normální souboj. Odměny budou připsány aktivním účastníkům."));
             }
             return true;
         }
         if (action.equals("stop")) {
             manager.stopEncounter();
-            sender.sendMessage(plugin.color("&eEncounter Krále goblinů byl bezpečně zastaven."));
+            sender.sendMessage(plugin.color("&eSouboj Krále skřítků byl bezpečně zastaven."));
             return true;
         }
         sender.sendMessage(plugin.color("&cPoužití: /halloween goblin <status|arena|dry-run|confirm|cancel|start|spawn|stop>"));
