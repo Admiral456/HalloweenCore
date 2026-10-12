@@ -26,7 +26,8 @@ items:
       - "&7Lze enchantovat, pokud máš vhodný enchant."
     material: NETHER_STAR
     graphics:
-      texture: item/cursed_talisman
+      model: item/cursed_talisman
+      icon: item/cursed_talisman
 
   halloween_token:
     name: "&c&lHalloween 2026"
@@ -124,7 +125,8 @@ items:
     material: NETHERITE_SWORD
     components_nbt_file: "crimson_warden_sword.json"
     graphics:
-      texture: item/crimson_warden_sword
+      model: item/crimson_warden_sword
+      icon: item/crimson_warden_sword
     durability:
       max_durability: 5000
     attribute_modifiers:
@@ -142,7 +144,8 @@ items:
     material: NETHERITE_PICKAXE
     components_nbt_file: "crimson_warden_pickaxe.json"
     graphics:
-      texture: item/crimson_warden_pickaxe
+      model: item/crimson_warden_pickaxe
+      icon: item/crimson_warden_pickaxe
     durability:
       max_durability: 5000
     attribute_modifiers:
@@ -160,7 +163,8 @@ items:
     material: NETHERITE_AXE
     components_nbt_file: "crimson_warden_axe.json"
     graphics:
-      texture: item/crimson_warden_axe
+      model: item/crimson_warden_axe
+      icon: item/crimson_warden_axe
     durability:
       max_durability: 5000
     attribute_modifiers:
@@ -178,7 +182,8 @@ items:
     material: NETHERITE_SHOVEL
     components_nbt_file: "crimson_warden_shovel.json"
     graphics:
-      texture: item/crimson_warden_shovel
+      model: item/crimson_warden_shovel
+      icon: item/crimson_warden_shovel
     durability:
       max_durability: 4500
     attribute_modifiers:
@@ -196,7 +201,8 @@ items:
     material: NETHERITE_HOE
     components_nbt_file: "crimson_warden_hoe.json"
     graphics:
-      texture: item/crimson_warden_hoe
+      model: item/crimson_warden_hoe
+      icon: item/crimson_warden_hoe
     durability:
       max_durability: 4500
     attribute_modifiers:
@@ -213,7 +219,10 @@ items:
     material: SHIELD
     components_nbt_file: "crimson_warden_shield.json"
     graphics:
-      texture: item/crimson_warden_shield
+      models:
+        normal: item/crimson_warden_shield
+        blocking: item/crimson_warden_shield_blocking
+      icon: item/crimson_warden_shield
     durability:
       max_durability: 1800
 
