@@ -27,6 +27,8 @@ SHADER_PROGRAMS = (
     "shaders/gbuffers_clouds.vsh", "shaders/gbuffers_clouds.fsh",
 )
 MOON_ATLAS = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "environment" / "moon_phases.png"
+COLORMAPS = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "colormap"
+EXPECTED_COLORMAPS = ("grass.png", "foliage.png", "water.png")
 BLOCK_MODELS = CONTENT / "resourcepack" / "assets" / "minecraft" / "models" / "block"
 BLOCKSTATES = CONTENT / "resourcepack" / "assets" / "minecraft" / "blockstates"
 CONFIG = CONTENT / "configs" / "items.yml"
@@ -236,6 +238,18 @@ except (OSError, ValueError) as exc:
     fail(f"Invalid moon phase atlas: {exc}")
 if (moon_width, moon_height) != (128, 64):
     fail(f"Moon phase atlas must be 128x64, got {moon_width}x{moon_height}")
+
+for colormap_name in EXPECTED_COLORMAPS:
+    colormap_path = COLORMAPS / colormap_name
+    if not colormap_path.is_file():
+        fail("Missing seasonal biome colormap: " + str(colormap_path.relative_to(ROOT)))
+    try:
+        colormap_width, colormap_height = strict_png_size(colormap_path)
+    except (OSError, ValueError) as exc:
+        fail(f"Invalid seasonal colormap {colormap_name}: {exc}")
+    if (colormap_width, colormap_height) != (256, 256):
+        fail(f"Seasonal colormap {colormap_name} must be 256x256")
+
 
 # The physical vanilla resource pack remains free of shader-core overrides.
 core_shader_override = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
@@ -605,7 +619,7 @@ print(f"3D equipment: {len(EXPECTED_3D_MODELS)} voxel models + separate shield b
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces, 5 weapons/tools, and shield enchantability verified")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
-print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
+print(f"Seasonal vanilla block textures: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")\nprint("Autumn biome colormaps: grass, foliage, and water verified at 256x256; moon atlas verified at 128x64")
 print("Sky shader: Minecraft 1.21.10 entry point present")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")
 print("ItemsAdder sound definitions: present")
