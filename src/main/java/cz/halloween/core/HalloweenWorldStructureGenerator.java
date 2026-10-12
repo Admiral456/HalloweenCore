@@ -485,7 +485,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         }
 
         buildMausoleum(world, x, y, z - 6);
-        buildRitualCircle(world, x - 4, y, z);
+        buildRitualCircle(world, x - 2, y, z);
         place(world, x - 7, y, z - 7, Material.JACK_O_LANTERN);
         place(world, x + 7, y, z - 7, Material.PUMPKIN);
         place(world, x - 7, y, z + 7, Material.PUMPKIN);
@@ -502,6 +502,8 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         Material stone = stones[(variant + random.nextInt(stones.length)) % stones.length];
         supportDown(world, x, y, z, stone);
         place(world, x, y, z, stone);
+        supportDown(world, x, y, z + 1, Material.COBBLED_DEEPSLATE);
+        supportDown(world, x, y, z + 2, Material.COBBLED_DEEPSLATE);
         place(world, x, y, z + 1, Material.STONE_BRICK_SLAB);
         place(world, x, y, z + 2, Material.MOSSY_STONE_BRICK_SLAB);
         place(world, x, y + 1, z, stone);
@@ -555,8 +557,10 @@ public final class HalloweenWorldStructureGenerator implements Listener {
             for (int dz = -2; dz <= 2; dz++) {
                 int distance = dx * dx + dz * dz;
                 if (distance >= 3 && distance <= 5) {
+                    supportDown(world, x + dx, y, z + dz, Material.COBBLED_DEEPSLATE);
                     place(world, x + dx, y, z + dz, Material.CRYING_OBSIDIAN);
                 } else if (distance <= 2) {
+                    supportDown(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE);
                     place(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE);
                 }
             }
