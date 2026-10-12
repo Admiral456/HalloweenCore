@@ -455,16 +455,75 @@ def add_animation_clip(model: dict, name: str, length: float,
 
 
 def enrich_animation_set(model: dict) -> None:
-    """Add authored damage/death and encounter-specific clips to all ten special models."""
-    add_animation_clip(model, "hit_reaction", 0.24, {
-        "body": ("rotation", [(0.0, (0, 0, 0)), (0.08, (-12, 0, 6)), (0.24, (0, 0, 0))]),
-    })
-    add_animation_clip(model, "death", 0.82, {
-        "body": ("rotation", [(0.0, (0, 0, 0)), (0.3, (28, 0, 0)), (0.82, (72, 0, 0))]),
-        "body_position": ("position", [(0.0, (0, 0, 0)), (0.3, (0, -2, 0)), (0.82, (0, -7, 0))]),
-    })
+    """Add authored reaction/death and encounter-specific clips to all ten special models."""
     mob_id = model.get("model_identifier", model.get("name", ""))
     if mob_id == "halloween_goblin_king":
+        add_animation_clip(model, "hit_reaction", 0.28, {
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.08, (-14, 0, 7)), (0.28, (0, 0, 0))]),
+            "head": ("rotation", [(0.0, (0, 0, 0)), (0.08, (0, 0, -9)), (0.28, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "death", 1.35, {
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.35, (14, 0, -5)), (1.35, (68, 0, 0))]),
+            "body_position": ("position", [(0.0, (0, 0, 0)), (0.55, (0, -1.5, 0)), (1.35, (0, -7, 0))]),
+            "left_wing": ("rotation", [(0.0, (0, 0, 18)), (0.8, (0, 0, 5)), (1.35, (0, 0, 0))]),
+            "right_wing": ("rotation", [(0.0, (0, 0, -18)), (0.8, (0, 0, -5)), (1.35, (0, 0, 0))]),
+        })
+    else:
+        add_animation_clip(model, "hit_reaction", 0.24, {
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.08, (-12, 0, 6)), (0.24, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "death", 0.82, {
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.3, (28, 0, 0)), (0.82, (72, 0, 0))]),
+            "body_position": ("position", [(0.0, (0, 0, 0)), (0.3, (0, -2, 0)), (0.82, (0, -7, 0))]),
+        })
+
+    if mob_id == "halloween_goblin_king":
+        add_animation_clip(model, "idle_breath", 2.4, {
+            "body": ("rotation", [(0.0, (0, 0, 0)), (1.2, (-1.8, 0, 0)), (2.4, (0, 0, 0))]),
+            "body_position": ("position", [(0.0, (0, 0, 0)), (1.2, (0, 0.45, 0)), (2.4, (0, 0, 0))]),
+        }, loop="loop")
+        add_animation_clip(model, "head_turn", 1.1, {
+            "head": ("rotation", [(0.0, (0, 0, 0)), (0.35, (0, 16, 0)), (0.75, (0, -11, 0)), (1.1, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "wing_fold", 1.0, {
+            "left_wing": ("rotation", [(0.0, (0, 0, 18)), (0.5, (0, 0, 25)), (1.0, (0, 0, 18))]),
+            "right_wing": ("rotation", [(0.0, (0, 0, -18)), (0.5, (0, 0, -25)), (1.0, (0, 0, -18))]),
+        })
+        add_animation_clip(model, "wing_spread", 0.9, {
+            "left_wing": ("rotation", [(0.0, (0, 0, 24)), (0.3, (0, 0, 2)), (0.9, (0, 0, -8))]),
+            "right_wing": ("rotation", [(0.0, (0, 0, -24)), (0.3, (0, 0, -2)), (0.9, (0, 0, 8))]),
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.4, (-5, 0, 0)), (0.9, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "wing_flap", 1.0, {
+            "left_wing": ("rotation", [(0.0, (0, 0, -6)), (0.25, (0, 0, -24)), (0.5, (0, 0, 2)), (0.75, (0, 0, -24)), (1.0, (0, 0, -6))]),
+            "right_wing": ("rotation", [(0.0, (0, 0, 6)), (0.25, (0, 0, 24)), (0.5, (0, 0, -2)), (0.75, (0, 0, 24)), (1.0, (0, 0, 6))]),
+        }, loop="loop")
+        add_animation_clip(model, "staff_raise", 0.8, {
+            "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.3, (-45, 0, 12)), (0.8, (-72, 0, 8))]),
+            "weapon": ("rotation", [(0.0, (0, 0, 0)), (0.3, (-10, 0, 4)), (0.8, (-18, 0, 0))]),
+        })
+        add_animation_clip(model, "spell_cast", 0.95, {
+            "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.28, (-68, 0, 6)), (0.55, (18, 0, -8)), (0.95, (0, 0, 0))]),
+            "weapon": ("rotation", [(0.0, (0, 0, 0)), (0.25, (-16, 0, 0)), (0.55, (14, 0, 0)), (0.95, (0, 0, 0))]),
+            "staff_orb": ("scale", [(0.0, (1.0, 1.0, 1.0)), (0.35, (1.25, 1.25, 1.25)), (0.65, (1.45, 1.45, 1.45)), (0.95, (1.0, 1.0, 1.0))]),
+        })
+        add_animation_clip(model, "staff_strike", 0.95, {
+            "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.22, (-82, 0, 6)), (0.48, (38, 0, -12)), (0.95, (0, 0, 0))]),
+            "weapon": ("rotation", [(0.0, (0, 0, 0)), (0.22, (-8, 0, 0)), (0.48, (20, 0, 0)), (0.95, (0, 0, 0))]),
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.48, (9, 0, 0)), (0.95, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "wing_slam", 1.0, {
+            "left_wing": ("rotation", [(0.0, (0, 0, -8)), (0.4, (0, 0, -43)), (0.62, (0, 0, 26)), (1.0, (0, 0, 0))]),
+            "right_wing": ("rotation", [(0.0, (0, 0, 8)), (0.4, (0, 0, 43)), (0.62, (0, 0, -26)), (1.0, (0, 0, 0))]),
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.5, (18, 0, 0)), (1.0, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "stagger", 0.68, {
+            "body": ("rotation", [(0.0, (0, 0, 0)), (0.12, (-17, 0, 8)), (0.35, (12, 0, -5)), (0.68, (0, 0, 0))]),
+            "head": ("rotation", [(0.0, (0, 0, 0)), (0.12, (12, 0, -12)), (0.5, (-5, 0, 5)), (0.68, (0, 0, 0))]),
+        })
+        add_animation_clip(model, "staff_orb_pulse", 1.4, {
+            "staff_orb": ("scale", [(0.0, (1.0, 1.0, 1.0)), (0.35, (1.22, 1.22, 1.22)), (0.7, (1.0, 1.0, 1.0)), (1.05, (1.3, 1.3, 1.3)), (1.4, (1.0, 1.0, 1.0))]),
+        }, loop="loop")
         add_animation_clip(model, "heavy_attack", 0.95, {
             "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.25, (-78, 0, 0)),
                                        (0.48, (52, 0, 0)), (0.95, (0, 0, 0))]),
@@ -474,6 +533,9 @@ def enrich_animation_set(model: dict) -> None:
         add_animation_clip(model, "phase_transition", 1.4, {
             "body_position": ("position", [(0.0, (0, 0, 0)), (0.3, (0, 1.5, 0)),
                                           (0.8, (0, -2, 0)), (1.4, (0, 0, 0))]),
+            "left_wing": ("rotation", [(0.0, (0, 0, 18)), (0.55, (0, 0, -18)), (1.4, (0, 0, -8))]),
+            "right_wing": ("rotation", [(0.0, (0, 0, -18)), (0.55, (0, 0, 18)), (1.4, (0, 0, 8))]),
+            "staff_orb": ("scale", [(0.0, (1.0, 1.0, 1.0)), (0.6, (1.4, 1.4, 1.4)), (1.4, (1.0, 1.0, 1.0))]),
             "left_arm": ("rotation", [(0.0, (0, 0, 0)), (0.45, (-80, 0, -12)),
                                      (0.9, (-105, 0, -8)), (1.4, (0, 0, 0))]),
             "right_arm": ("rotation", [(0.0, (0, 0, 0)), (0.45, (-80, 0, 12)),
