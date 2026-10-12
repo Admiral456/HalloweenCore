@@ -26,6 +26,7 @@ SPECIAL_ATTACK_ANIMATIONS = {
     "halloween_nightmare": "spectral_charge",
     "halloween_goblin_king": "heavy_attack",
     "halloween_headless_nick": "executioner_strike",
+    "halloween_nick_steed": "gallop",
 }
 
 MOB_IDS = (
@@ -39,6 +40,7 @@ MOB_IDS = (
     "halloween_nightmare",
     "halloween_goblin_king",
     "halloween_headless_nick",
+    "halloween_nick_steed",
 )
 
 
@@ -178,10 +180,15 @@ def validate_model(mob_id: str) -> None:
     required_attack = SPECIAL_ATTACK_ANIMATIONS.get(mob_id)
     if required_attack and required_attack not in names:
         fail(f"{model_path.name} is missing its specific attack animation '{required_attack}'")
-    if not {"idle", "walk", "attack"}.issubset(names):
-        fail(f"{model_path.name} must have idle, walk and attack animations")
-    if mob_id not in ("halloween_blood_spider", "halloween_frost_stalker") and "fly" not in names:
-        fail(f"{model_path.name} must include the floating/fly animation")
+    if mob_id == "halloween_nick_steed":
+        required_mount = {"idle", "walk", "trot", "gallop", "rear", "hit_reaction", "death"}
+        if not required_mount.issubset(names):
+            fail(f"{model_path.name} is missing horse-specific animations: {', '.join(sorted(required_mount - names))}")
+    else:
+        if not {"idle", "walk", "attack"}.issubset(names):
+            fail(f"{model_path.name} must have idle, walk and attack animations")
+        if mob_id not in ("halloween_blood_spider", "halloween_frost_stalker") and "fly" not in names:
+            fail(f"{model_path.name} must include the floating/fly animation")
     for animation in model.get("animations", []):
         anim_uuid = animation.get("uuid")
         if not anim_uuid:
