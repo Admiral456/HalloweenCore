@@ -114,11 +114,11 @@ def moon_phase(phase: int) -> Image.Image:
             if phase == 0:
                 lit_side = True
             elif phase == 1:
-                lit_side = dx >= -8.0
+                lit_side = dx <= 8.0
             elif phase == 2:
-                lit_side = dx >= -4.0
+                lit_side = dx <= 0.0
             elif phase == 3:
-                lit_side = dx >= 8.0
+                lit_side = dx <= -8.0
             elif phase == 4:
                 lit_side = False
             elif phase == 5:
@@ -126,7 +126,7 @@ def moon_phase(phase: int) -> Image.Image:
             elif phase == 6:
                 lit_side = dx >= 0.0
             else:
-                lit_side = dx >= -4.0
+                lit_side = dx >= -8.0
             if lit_side:
                 if radius > 10.2:
                     color = ORANGE_DARK
