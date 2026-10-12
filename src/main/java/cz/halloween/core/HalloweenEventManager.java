@@ -122,10 +122,10 @@ public final class HalloweenEventManager {
     public int getLastSurgeSpawned() { return lastSurgeSpawned; }
 
     private java.util.List<Player> eligibleEventPlayers() {
-        return Bukkit.getOnlinePlayers().stream()
+        return new java.util.ArrayList<>(Bukkit.getOnlinePlayers().stream()
                 .filter(plugin::isEligibleGameplayPlayer)
                 .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
-                .toList();
+                .toList());
     }
 
     public boolean stopActiveEventNow() {
