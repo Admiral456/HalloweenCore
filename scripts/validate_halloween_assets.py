@@ -751,10 +751,22 @@ for layer in ("layer_1.png", "layer_2.png"):
 
 root_textures = CONTENT / "textures"
 if root_textures.exists():
-    unexpected = [p for p in root_textures.rglob("*") if p.is_file()
-                  and not (p.parent == ARMOR_SOURCE_TEXTURES and p.name in ("layer_1.png", "layer_2.png"))]
+    allowed_source_items = {root_textures / "item" / name for name in EXPECTED}
+    allowed_source_wings = {
+        root_textures / "entity" / "equipment" / "wings" / "batwing_elytra.png"
+    }
+    allowed_armor_layers = {
+        ARMOR_SOURCE_TEXTURES / "layer_1.png",
+        ARMOR_SOURCE_TEXTURES / "layer_2.png",
+    }
+    unexpected = [
+        p for p in root_textures.rglob("*") if p.is_file()
+        and p not in allowed_source_items
+        and p not in allowed_source_wings
+        and p not in allowed_armor_layers
+    ]
     if unexpected:
-        fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
+        fail("Unexpected ItemsAdder source texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
 print("Halloween asset validation passed.")
 print("15 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
