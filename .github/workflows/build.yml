@@ -139,3 +139,17 @@ jobs:
           path: target/HalloweenCore.jar
           if-no-files-found: error
           retention-days: 14
+
+      - name: Assemble server-ready release package
+        run: |
+          python3 scripts/build_server_ready_package.py
+          cd target
+          zip -qr HalloweenCore-Server-ReadyToDrop.zip HalloweenCore-Server-ReadyToDrop
+          unzip -t HalloweenCore-Server-ReadyToDrop.zip
+      - name: Upload server-ready release package
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Server-ReadyToDrop
+          path: target/HalloweenCore-Server-ReadyToDrop.zip
+          if-no-files-found: error
+          retention-days: 14
