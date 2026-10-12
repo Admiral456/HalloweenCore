@@ -921,8 +921,10 @@ def create_nick_steed_model() -> None:
     })
 
     # Remove the source humanoid clips and retain only the new horse-specific animation set.
-    model["animations"] = [animation for animation in model["animations"]
-                           if animation.get("name") not in template_animation_names]
+    model["animations"] = [
+        animation for animation in model["animations"]
+        if not str(animation.get("name", "")).startswith("__template_")
+    ]
     # If the source has any non-standard animation names, the allow-list above keeps the new clips only.
     horse_clip_names = {"idle", "walk", "trot", "gallop", "charge", "rear", "hit_reaction", "death", "turn"}
     model["animations"] = [animation for animation in model["animations"]
