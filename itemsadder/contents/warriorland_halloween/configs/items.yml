@@ -264,7 +264,6 @@ items:
       generate: false
       model_path: armor/nocturne_sovereign_cowl_3d
       material: NETHERITE_HELMET
-    graphics:
       icon: item/nocturne_sovereign_cowl
     durability:
       max_durability: 900

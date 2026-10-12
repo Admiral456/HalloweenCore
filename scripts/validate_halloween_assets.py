@@ -178,6 +178,8 @@ if not re.search(r"(?m)^    resource:\n      generate: false\n      model_path: 
     fail("Nocturne Cowl must use resource.generate=false and model_path=armor/nocturne_sovereign_cowl_3d")
 if re.search(r"(?m)^      id:[ \\t]*[^\\n]+", cowl_config):
     fail("Nocturne Cowl must not set equipment.id; it overrides the custom 3D helmet model_path")
+if not re.search(r"(?m)^      icon: item/nocturne_sovereign_cowl[ \\t]*$", cowl_config):
+    fail("Nocturne Cowl must keep its distinct 2D inventory icon in resource.icon")
 
 if not WINGS_TEXTURE.is_file():
     fail("Missing Batwing Elytra worn-wings texture")
