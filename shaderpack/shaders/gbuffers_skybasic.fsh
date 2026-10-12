@@ -52,7 +52,8 @@ void main() {
     float horizon = 1.0 - smoothstep(-0.12, 0.56, elevation);
 
     // Muted autumn daytime and deep violet-blue nights.
-    float day = smoothstep(0.22, 0.40, sunAngle) * (1.0 - smoothstep(0.60, 0.78, sunAngle));
+    float daylightWave = 0.5 + 0.5 * cos(6.2831853 * (sunAngle - 0.25));
+    float day = smoothstep(0.02, 0.98, daylightWave);
     vec3 dayZenith = vec3(0.22, 0.19, 0.30);
     vec3 dayHorizon = vec3(0.69, 0.29, 0.12);
     vec3 nightZenith = vec3(0.018, 0.014, 0.052);
