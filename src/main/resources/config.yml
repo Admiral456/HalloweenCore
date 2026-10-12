@@ -581,6 +581,9 @@ world-structures:
   max-slope: 2
   max-retries: 120
   spawn-exclusion-radius: 64
+  # Empty lists allow any naturally eligible biome; explicit names form an allow-list.
+  village-biomes: []
+  graveyard-biomes: []
 
 # Passive bonuses and combat procs for items claimed through the Halloween reward shop.
 # Cooldowns limit spam; effects use particles/potions and never alter terrain.
