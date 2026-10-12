@@ -634,9 +634,310 @@ def create_model(new_id: str, template_id: str, hue_shift: float, saturation: fl
     print(f"Generated {new_id}.bbmodel and {new_id}.png from {template_id}")
 
 
+
+NICK_STEED_UVS = {
+    "hide": (0, 0, 16, 16),
+    "hide_light": (16, 0, 16, 16),
+    "rib": (32, 0, 16, 16),
+    "plate": (48, 0, 16, 16),
+    "crimson": (64, 0, 16, 16),
+    "gold": (80, 0, 16, 16),
+    "spectral": (96, 0, 16, 16),
+    "shadow": (112, 0, 16, 16),
+    "bone": (0, 16, 16, 16),
+    "bone_dark": (16, 16, 16, 16),
+    "leather": (32, 16, 16, 16),
+    "hoof": (48, 16, 16, 16),
+    "mane": (64, 16, 16, 16),
+    "rune": (80, 16, 16, 16),
+    "strap": (96, 16, 16, 16),
+    "rust": (112, 16, 16, 16),
+}
+
+
+def paint_nick_steed_texture() -> bytes:
+    """Create a crisp, original pixel-art atlas for Nick's separate undead warhorse."""
+    image = Image.new("RGBA", (128, 128), (21, 20, 26, 255))
+    draw = ImageDraw.Draw(image)
+    colors = {
+        "hide": ((35, 35, 43, 255), (76, 75, 82, 255), (15, 15, 21, 255)),
+        "hide_light": ((57, 58, 67, 255), (104, 103, 110, 255), (28, 28, 36, 255)),
+        "rib": ((87, 83, 82, 255), (145, 134, 122, 255), (39, 36, 40, 255)),
+        "plate": ((34, 42, 48, 255), (75, 87, 91, 255), (12, 17, 22, 255)),
+        "crimson": ((75, 10, 23, 255), (151, 27, 42, 255), (29, 5, 14, 255)),
+        "gold": ((110, 78, 35, 255), (204, 160, 73, 255), (48, 33, 21, 255)),
+        "spectral": ((19, 75, 69, 255), (66, 224, 174, 255), (7, 27, 32, 255)),
+        "shadow": ((13, 13, 20, 255), (37, 31, 45, 255), (4, 4, 10, 255)),
+        "bone": ((161, 153, 130, 255), (225, 210, 173, 255), (70, 63, 57, 255)),
+        "bone_dark": ((95, 88, 81, 255), (158, 145, 126, 255), (37, 34, 35, 255)),
+        "leather": ((54, 38, 34, 255), (111, 74, 55, 255), (22, 17, 20, 255)),
+        "hoof": ((22, 22, 28, 255), (61, 61, 69, 255), (7, 7, 12, 255)),
+        "mane": ((20, 16, 25, 255), (65, 33, 49, 255), (7, 6, 11, 255)),
+        "rune": ((10, 61, 50, 255), (101, 255, 167, 255), (5, 25, 26, 255)),
+        "strap": ((61, 42, 30, 255), (159, 114, 52, 255), (24, 19, 19, 255)),
+        "rust": ((71, 31, 31, 255), (137, 53, 41, 255), (28, 10, 17, 255)),
+    }
+    for name, (x, y, width, height) in NICK_STEED_UVS.items():
+        base, highlight, shadow = colors[name]
+        draw.rectangle((x, y, x + width - 1, y + height - 1), fill=base)
+        draw.line((x, y, x + width - 1, y), fill=highlight)
+        draw.line((x, y, x, y + height - 1), fill=highlight)
+        draw.line((x, y + height - 1, x + width - 1, y + height - 1), fill=shadow)
+        draw.line((x + width - 1, y, x + width - 1, y + height - 1), fill=shadow)
+        if name in {"hide", "hide_light", "shadow", "mane"}:
+            for offset in (3, 8, 12):
+                draw.line((x + offset, y + 2, x + max(0, offset - 2), y + 13),
+                          fill=highlight if offset != 8 else shadow)
+            draw.point((x + 5, y + 5), fill=shadow)
+            draw.point((x + 10, y + 9), fill=highlight)
+        elif name in {"rib", "bone", "bone_dark"}:
+            draw.rectangle((x + 3, y + 3, x + 5, y + 12), fill=highlight)
+            draw.rectangle((x + 10, y + 2, x + 12, y + 10), fill=shadow)
+            draw.line((x + 3, y + 12, x + 12, y + 12), fill=base)
+        elif name in {"plate", "hoof"}:
+            draw.rectangle((x + 3, y + 3, x + 12, y + 11), outline=highlight)
+            draw.line((x + 4, y + 5, x + 11, y + 5), fill=shadow)
+            draw.point((x + 5, y + 8), fill=highlight)
+            draw.point((x + 10, y + 8), fill=highlight)
+        elif name in {"crimson", "rust", "leather", "strap"}:
+            draw.line((x + 4, y + 2, x + 4, y + 13), fill=highlight)
+            draw.line((x + 11, y + 2, x + 11, y + 13), fill=shadow)
+            draw.rectangle((x + 6, y + 5, x + 9, y + 9), fill=base)
+            draw.point((x + 7, y + 7), fill=highlight)
+        elif name in {"gold", "spectral", "rune"}:
+            draw.polygon([(x + 8, y + 2), (x + 13, y + 7), (x + 8, y + 13), (x + 3, y + 7)],
+                         outline=highlight, fill=base)
+            draw.point((x + 8, y + 7), fill=highlight)
+            draw.point((x + 7, y + 8), fill=(232, 255, 220, 255))
+    output = io.BytesIO()
+    image.save(output, format="PNG", optimize=True)
+    return output.getvalue()
+
+
+def add_steed_bone(model: dict, template_bone: dict, name: str,
+                   origin: tuple[float, float, float], parent_name: str = "root") -> dict:
+    parent = find_group(model.get("outliner", []), parent_name)
+    if parent is None:
+        raise RuntimeError(f"{model.get('name')} has no '{parent_name}' parent for steed bone '{name}'")
+    bone = copy.deepcopy(template_bone)
+    bone["uuid"] = str(uuid.uuid4())
+    bone["name"] = name
+    bone["origin"] = list(origin)
+    bone["rotation"] = [0, 0, 0]
+    bone["children"] = []
+    bone["selected"] = False
+    bone["primary_selected"] = False
+    bone["isOpen"] = False
+    parent.setdefault("children", []).append(bone)
+    return bone
+
+
+def add_steed_cube(model: dict, template_cube: dict, parent_name: str, name: str,
+                   start: tuple[float, float, float], end: tuple[float, float, float],
+                   tile: str, rotation: tuple[float, float, float] = (0, 0, 0)) -> None:
+    parent = find_group(model.get("outliner", []), parent_name)
+    if parent is None:
+        raise RuntimeError(f"{model.get('name')} has no '{parent_name}' bone for steed part '{name}'")
+    cube = copy.deepcopy(template_cube)
+    cube_uuid = str(uuid.uuid4())
+    cube["uuid"] = cube_uuid
+    cube["name"] = name
+    cube["from"] = list(start)
+    cube["to"] = list(end)
+    cube["origin"] = [(start[i] + end[i]) / 2 for i in range(3)]
+    cube["rotation"] = list(rotation)
+    u, v, width, height = NICK_STEED_UVS[tile]
+    cube["faces"] = {
+        face: {"uv": [u, v, u + width, v + height], "texture": 0}
+        for face in ("north", "east", "south", "west", "up", "down")
+    }
+    model.setdefault("elements", []).append(cube)
+    parent.setdefault("children", []).append(cube_uuid)
+
+
+def create_nick_steed_model() -> None:
+    """Generate a separate four-legged undead warhorse blueprint for Headless Nick."""
+    base_path = MODEL_DIR / "halloween_cursed_zombie.bbmodel"
+    model = json.loads(base_path.read_text(encoding="utf-8"))
+    source_bone_template = find_group(model.get("outliner", []), "body")
+    source_cube_template = copy.deepcopy(model["elements"][0])
+    if source_bone_template is None:
+        raise RuntimeError("Cannot generate Nick's steed: missing compatible Blockbench bone template")
+    template_animation_names = {animation.get("name") for animation in model.get("animations", [])}
+
+    # Rebuild a clean skeleton instead of leaving any human/undead geometry visible.
+    root = copy.deepcopy(model["outliner"][0])
+    root["uuid"] = str(uuid.uuid4())
+    root["name"] = "root"
+    root["origin"] = [0, 0, 0]
+    root["children"] = []
+    root["selected"] = False
+    root["primary_selected"] = False
+    model["outliner"] = [root]
+    model["elements"] = []
+
+    bones = (
+        ("body", (0, 15, 0), "root"),
+        ("neck", (0, 20, -10), "root"),
+        ("head", (0, 24, -15), "neck"),
+        ("front_left_leg", (-4.5, 12, -7), "root"),
+        ("front_right_leg", (4.5, 12, -7), "root"),
+        ("rear_left_leg", (-4.5, 12, 6), "root"),
+        ("rear_right_leg", (4.5, 12, 6), "root"),
+        ("mane", (0, 22, -6), "root"),
+        ("tail", (0, 15, 9), "root"),
+        ("barding", (0, 15, 0), "root"),
+        ("bridle", (0, 24, -15), "head"),
+    )
+    for name, origin, parent in bones:
+        add_steed_bone(model, source_bone_template, name, origin, parent)
+
+    # Four distinct articulated legs and hooves; the rider's mount is not the Nightmare model.
+    cubes = (
+        ("body", "steed_barrel", (-7, 10, -10), (7, 20, 9), "hide", (0, 0, 0)),
+        ("body", "steed_rib_cage", (-6.7, 11.4, -7.5), (6.7, 18.0, 5.8), "rib", (0, 0, 0)),
+        ("body", "steed_flank_plate_left", (-7.8, 11.5, -6.2), (-6.7, 17.5, 5.7), "plate", (0, 0, 0)),
+        ("body", "steed_flank_plate_right", (6.7, 11.5, -6.2), (7.8, 17.5, 5.7), "plate", (0, 0, 0)),
+        ("neck", "steed_neck", (-4.2, 15.8, -15.3), (4.2, 24.8, -7.5), "hide_light", (0, 0, 0)),
+        ("head", "steed_skull", (-3.6, 21.5, -19.3), (3.6, 28.5, -12.7), "hide", (0, 0, 0)),
+        ("head", "steed_muzzle", (-3.25, 19.8, -22.0), (3.25, 23.8, -17.5), "bone_dark", (0, 0, 0)),
+        ("head", "steed_jaw", (-2.9, 20.0, -20.2), (2.9, 21.5, -17.0), "bone", (0, 0, 0)),
+        ("head", "steed_ear_left", (-2.8, 27.5, -16.7), (-1.3, 32.5, -14.9), "bone_dark", (0, 0, -8)),
+        ("head", "steed_ear_right", (1.3, 27.5, -16.7), (2.8, 32.5, -14.9), "bone_dark", (0, 0, 8)),
+        ("head", "steed_eye_left", (-3.72, 24.5, -17.3), (-3.25, 25.8, -15.8), "spectral", (0, 0, 0)),
+        ("head", "steed_eye_right", (3.25, 24.5, -17.3), (3.72, 25.8, -15.8), "spectral", (0, 0, 0)),
+        ("front_left_leg", "steed_front_left_shin", (-6.0, 1.8, -9.1), (-3.0, 13.0, -5.2), "hide_light", (0, 0, -2)),
+        ("front_right_leg", "steed_front_right_shin", (3.0, 1.8, -9.1), (6.0, 13.0, -5.2), "hide_light", (0, 0, 2)),
+        ("rear_left_leg", "steed_rear_left_shin", (-6.1, 1.8, 5.0), (-3.0, 13.0, 9.1), "hide_light", (0, 0, -2)),
+        ("rear_right_leg", "steed_rear_right_shin", (3.0, 1.8, 5.0), (6.1, 13.0, 9.1), "hide_light", (0, 0, 2)),
+        ("front_left_leg", "steed_front_left_hoof", (-6.3, 0.0, -9.5), (-2.8, 3.0, -4.8), "hoof", (0, 0, 0)),
+        ("front_right_leg", "steed_front_right_hoof", (2.8, 0.0, -9.5), (6.3, 3.0, -4.8), "hoof", (0, 0, 0)),
+        ("rear_left_leg", "steed_rear_left_hoof", (-6.3, 0.0, 4.7), (-2.8, 3.0, 9.5), "hoof", (0, 0, 0)),
+        ("rear_right_leg", "steed_rear_right_hoof", (2.8, 0.0, 4.7), (6.3, 3.0, 9.5), "hoof", (0, 0, 0)),
+        ("mane", "steed_mane_front", (-1.5, 22.5, -14.5), (1.5, 29.0, -7.0), "mane", (0, 0, 0)),
+        ("mane", "steed_mane_middle", (-2.0, 17.5, -6.8), (2.0, 24.0, 2.0), "mane", (0, 0, 0)),
+        ("mane", "steed_mane_left_tuft", (-3.4, 19.0, -9.0), (-1.5, 23.0, -4.8), "shadow", (0, 0, 13)),
+        ("mane", "steed_mane_right_tuft", (1.5, 19.0, -8.3), (3.4, 23.0, -4.2), "shadow", (0, 0, -13)),
+        ("tail", "steed_tail_root", (-1.2, 13.0, 8.0), (1.2, 19.0, 13.5), "mane", (0, 0, 0)),
+        ("tail", "steed_tail_tip", (-2.0, 8.0, 12.0), (2.0, 14.0, 17.0), "shadow", (0, 0, 0)),
+        ("barding", "steed_saddle_pad", (-4.5, 19.2, -5.8), (4.5, 21.0, 4.8), "leather", (0, 0, 0)),
+        ("barding", "steed_saddle_rim", (-4.8, 20.0, -5.0), (4.8, 22.0, 3.8), "crimson", (0, 0, 0)),
+        ("barding", "steed_chest_barding", (-5.2, 14.0, -11.0), (5.2, 19.0, -8.2), "plate", (0, 0, 0)),
+        ("barding", "steed_barding_gold_trim", (-5.3, 17.3, -11.2), (5.3, 18.3, -8.0), "gold", (0, 0, 0)),
+        ("barding", "steed_side_strap_left", (-7.9, 12.0, -6.5), (-7.0, 17.5, 6.0), "strap", (0, 0, 0)),
+        ("barding", "steed_side_strap_right", (7.0, 12.0, -6.5), (7.9, 17.5, 6.0), "strap", (0, 0, 0)),
+        ("barding", "steed_crimson_saddle_cloth", (-5.2, 17.8, -5.2), (5.2, 19.0, 4.0), "crimson", (0, 0, 0)),
+        ("barding", "steed_saddle_emblem", (-1.2, 18.9, -5.5), (1.2, 20.2, -4.4), "rune", (0, 0, 0)),
+        ("bridle", "steed_forehead_braid", (-0.8, 25.5, -19.6), (0.8, 27.2, -12.5), "bone", (0, 0, 0)),
+        ("bridle", "steed_muzzle_strap", (-3.5, 22.0, -22.2), (3.5, 23.2, -21.5), "leather", (0, 0, 0)),
+        ("bridle", "steed_cheek_strap_left", (-3.8, 21.5, -18.0), (-3.0, 26.2, -14.8), "strap", (0, 0, 0)),
+        ("bridle", "steed_cheek_strap_right", (3.0, 21.5, -18.0), (3.8, 26.2, -14.8), "strap", (0, 0, 0)),
+        ("bridle", "steed_rein_left", (-4.6, 19.0, -14.8), (-3.9, 20.2, -8.0), "leather", (0, 0, -8)),
+        ("bridle", "steed_rein_right", (3.9, 19.0, -14.8), (4.6, 20.2, -8.0), "leather", (0, 0, 8)),
+    )
+    for parent, name, start, end, tile, rotation in cubes:
+        add_steed_cube(model, source_cube_template, parent, name, start, end, tile, rotation)
+
+    encoded_png = paint_nick_steed_texture()
+    texture = model["textures"][0]
+    texture["uuid"] = str(uuid.uuid4())
+    texture["name"] = "halloween_nick_steed.png"
+    texture["path"] = "halloween_nick_steed.png"
+    texture["relative_path"] = "halloween_nick_steed.png"
+    texture["width"] = texture["height"] = 128
+    texture["uv_width"] = texture["uv_height"] = 128
+    texture["source"] = "data:image/png;base64," + base64.b64encode(encoded_png).decode("ascii")
+    model["name"] = "halloween_nick_steed"
+    model["model_identifier"] = "halloween_nick_steed"
+    model["resolution"] = {"width": 128, "height": 128}
+    model["animations"] = []
+    # Keep valid sample keyframes around only while using the generic animation authoring helper.
+    model["animations"] = json.loads(json.dumps(model.get("animations", [])))
+    # The source animation templates were preserved above in a separate variable; restore a single
+    # standard attack clip temporarily so add_animation_clip can clone valid Blockbench metadata.
+    source_model = json.loads(base_path.read_text(encoding="utf-8"))
+    source_attack = next((a for a in source_model.get("animations", []) if a.get("name") == "attack"), None)
+    if source_attack is None:
+        raise RuntimeError("Cannot generate Nick's steed: source model has no animation template")
+    model["animations"] = [source_attack]
+
+    add_animation_clip(model, "idle", 1.6, {
+        "body": ("rotation", [(0.0, (0, 0, 0)), (0.8, (-1.5, 0, 0)), (1.6, (0, 0, 0))]),
+        "body_position": ("position", [(0.0, (0, 0, 0)), (0.8, (0, 0.3, 0)), (1.6, (0, 0, 0))]),
+        "head": ("rotation", [(0.0, (0, 0, 0)), (0.6, (-2, 0, 1)), (1.2, (2, 0, -1)), (1.6, (0, 0, 0))]),
+        "tail": ("rotation", [(0.0, (0, 0, 0)), (0.4, (0, 0, 10)), (0.8, (0, 0, -8)), (1.2, (0, 0, 6)), (1.6, (0, 0, 0))]),
+    }, loop="loop")
+    add_animation_clip(model, "walk", 0.8, {
+        "front_left_leg": ("rotation", [(0.0, (18, 0, 0)), (0.2, (0, 0, 0)), (0.4, (-18, 0, 0)), (0.6, (0, 0, 0)), (0.8, (18, 0, 0))]),
+        "rear_right_leg": ("rotation", [(0.0, (-17, 0, 0)), (0.2, (0, 0, 0)), (0.4, (17, 0, 0)), (0.6, (0, 0, 0)), (0.8, (-17, 0, 0))]),
+        "front_right_leg": ("rotation", [(0.0, (-17, 0, 0)), (0.2, (0, 0, 0)), (0.4, (17, 0, 0)), (0.6, (0, 0, 0)), (0.8, (-17, 0, 0))]),
+        "rear_left_leg": ("rotation", [(0.0, (18, 0, 0)), (0.2, (0, 0, 0)), (0.4, (-18, 0, 0)), (0.6, (0, 0, 0)), (0.8, (18, 0, 0))]),
+        "tail": ("rotation", [(0.0, (0, 0, 0)), (0.4, (0, 0, 5)), (0.8, (0, 0, 0))]),
+    }, loop="loop")
+    add_animation_clip(model, "trot", 0.65, {
+        "front_left_leg": ("rotation", [(0.0, (25, 0, 0)), (0.16, (0, 0, 0)), (0.32, (-25, 0, 0)), (0.49, (0, 0, 0)), (0.65, (25, 0, 0))]),
+        "rear_right_leg": ("rotation", [(0.0, (25, 0, 0)), (0.16, (0, 0, 0)), (0.32, (-25, 0, 0)), (0.49, (0, 0, 0)), (0.65, (25, 0, 0))]),
+        "front_right_leg": ("rotation", [(0.0, (-25, 0, 0)), (0.16, (0, 0, 0)), (0.32, (25, 0, 0)), (0.49, (0, 0, 0)), (0.65, (-25, 0, 0))]),
+        "rear_left_leg": ("rotation", [(0.0, (-25, 0, 0)), (0.16, (0, 0, 0)), (0.32, (25, 0, 0)), (0.49, (0, 0, 0)), (0.65, (-25, 0, 0))]),
+        "body": ("rotation", [(0.0, (0, 0, 0)), (0.32, (-2, 0, 0)), (0.65, (0, 0, 0))]),
+    }, loop="loop")
+    add_animation_clip(model, "gallop", 0.55, {
+        "front_left_leg": ("rotation", [(0.0, (45, 0, 0)), (0.14, (-12, 0, 0)), (0.27, (-38, 0, 0)), (0.41, (24, 0, 0)), (0.55, (45, 0, 0))]),
+        "front_right_leg": ("rotation", [(0.0, (-35, 0, 0)), (0.14, (26, 0, 0)), (0.27, (38, 0, 0)), (0.41, (-14, 0, 0)), (0.55, (-35, 0, 0))]),
+        "rear_left_leg": ("rotation", [(0.0, (-32, 0, 0)), (0.14, (30, 0, 0)), (0.27, (43, 0, 0)), (0.41, (-20, 0, 0)), (0.55, (-32, 0, 0))]),
+        "rear_right_leg": ("rotation", [(0.0, (34, 0, 0)), (0.14, (-25, 0, 0)), (0.27, (-40, 0, 0)), (0.41, (18, 0, 0)), (0.55, (34, 0, 0))]),
+        "body": ("rotation", [(0.0, (0, 0, 0)), (0.27, (-4, 0, 0)), (0.55, (0, 0, 0))]),
+        "head": ("rotation", [(0.0, (5, 0, 0)), (0.27, (-7, 0, 0)), (0.55, (5, 0, 0))]),
+        "tail": ("rotation", [(0.0, (0, 0, 0)), (0.27, (0, 0, 16)), (0.55, (0, 0, 0))]),
+    }, loop="loop")
+    add_animation_clip(model, "charge", 0.75, {
+        "body": ("rotation", [(0.0, (0, 0, 0)), (0.25, (9, 0, 0)), (0.5, (-7, 0, 0)), (0.75, (0, 0, 0))]),
+        "neck": ("rotation", [(0.0, (0, 0, 0)), (0.25, (-14, 0, 0)), (0.5, (11, 0, 0)), (0.75, (0, 0, 0))]),
+        "front_left_leg": ("rotation", [(0.0, (0, 0, 0)), (0.25, (55, 0, 0)), (0.5, (-30, 0, 0)), (0.75, (0, 0, 0))]),
+        "front_right_leg": ("rotation", [(0.0, (0, 0, 0)), (0.25, (55, 0, 0)), (0.5, (-30, 0, 0)), (0.75, (0, 0, 0))]),
+    })
+    add_animation_clip(model, "rear", 0.9, {
+        "body": ("rotation", [(0.0, (0, 0, 0)), (0.3, (-15, 0, 0)), (0.65, (12, 0, 0)), (0.9, (0, 0, 0))]),
+        "neck": ("rotation", [(0.0, (0, 0, 0)), (0.35, (25, 0, 0)), (0.65, (12, 0, 0)), (0.9, (0, 0, 0))]),
+        "front_left_leg": ("rotation", [(0.0, (0, 0, 0)), (0.35, (70, 0, -8)), (0.65, (55, 0, -5)), (0.9, (0, 0, 0))]),
+        "front_right_leg": ("rotation", [(0.0, (0, 0, 0)), (0.35, (70, 0, 8)), (0.65, (55, 0, 5)), (0.9, (0, 0, 0))]),
+    })
+    add_animation_clip(model, "hit_reaction", 0.3, {
+        "body": ("rotation", [(0.0, (0, 0, 0)), (0.08, (0, 0, 8)), (0.3, (0, 0, 0))]),
+        "head": ("rotation", [(0.0, (0, 0, 0)), (0.08, (-12, 0, -4)), (0.3, (0, 0, 0))]),
+    })
+    add_animation_clip(model, "death", 1.1, {
+        "body": ("rotation", [(0.0, (0, 0, 0)), (0.35, (0, 0, 16)), (1.1, (0, 0, 64))]),
+        "body_position": ("position", [(0.0, (0, 0, 0)), (0.4, (0, -1.5, 0)), (1.1, (0, -7, 0))]),
+        "head": ("rotation", [(0.0, (0, 0, 0)), (0.4, (6, 0, 0)), (1.1, (24, 0, 0))]),
+        "front_left_leg": ("rotation", [(0.0, (0, 0, 0)), (0.4, (42, 0, 0)), (1.1, (60, 0, 0))]),
+        "front_right_leg": ("rotation", [(0.0, (0, 0, 0)), (0.4, (42, 0, 0)), (1.1, (60, 0, 0))]),
+    })
+    add_animation_clip(model, "turn", 0.6, {
+        "head": ("rotation", [(0.0, (0, 0, 0)), (0.2, (0, 18, 0)), (0.4, (0, -18, 0)), (0.6, (0, 0, 0))]),
+        "neck": ("rotation", [(0.0, (0, 0, 0)), (0.2, (0, 10, 0)), (0.4, (0, -10, 0)), (0.6, (0, 0, 0))]),
+    })
+
+    # Remove the source humanoid clips and retain only the new horse-specific animation set.
+    model["animations"] = [animation for animation in model["animations"]
+                           if animation.get("name") not in template_animation_names]
+    # If the source has any non-standard animation names, the allow-list above keeps the new clips only.
+    horse_clip_names = {"idle", "walk", "trot", "gallop", "charge", "rear", "hit_reaction", "death", "turn"}
+    model["animations"] = [animation for animation in model["animations"]
+                           if animation.get("name") in horse_clip_names]
+
+    (MODEL_DIR / "halloween_nick_steed.bbmodel").write_text(
+        json.dumps(model, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    (MODEL_DIR / "halloween_nick_steed.png").write_bytes(encoded_png)
+    print("Generated halloween_nick_steed.bbmodel and halloween_nick_steed.png with 11 steed bones and 9 animations")
+
 def main() -> None:
     for definition in MODELS:
         create_model(*definition)
+
+    # Nick's mount has its own equine skeleton and model; it is not the Nightmare's mesh.
+    create_nick_steed_model()
 
     # The repository stores five editable templates and generates the other five in CI.
     # Enrich all ten source/generated models with unique UUIDs before validation/packaging.
