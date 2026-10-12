@@ -445,15 +445,12 @@ def generate_voxel_models() -> None:
     # The shield has distinct normal and actively-blocking states as supported by
     # ItemsAdder's modern 1.21.4+ graphics.models property.
     save_voxel_model("crimson_warden_shield", "item/generated", (7.0, 9.0))
-    save_voxel_model("crimson_warden_shield", "item/generated", (6.2, 9.8))
     blocked_model = MODEL_OUT / "crimson_warden_shield_blocking.json"
     standard_model = MODEL_OUT / "crimson_warden_shield.json"
     if not standard_model.is_file():
         raise FileNotFoundError("Normal shield model was not written")
     # Keep separate state model files even though their texture source is shared;
-    # blocking state uses the heavier/deeper extrusion so the silhouette remains bold.
-    # The second export above uses the same model ID, so emit the blocking file with
-    # the same geometry at its own destination after making it independently valid.
+    # the blocking state uses a heavier/deeper extrusion so the silhouette remains bold.
     with Image.open(OUT / "crimson_warden_shield.png") as image:
         blocking = {
             "credit": "HalloweenCore - generated blocking-state voxel shield",
