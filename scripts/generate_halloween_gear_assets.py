@@ -309,7 +309,7 @@ def shield() -> Image.Image:
 
 
 
-MODEL_OUT = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "resourcepack" / "assets" / "warriorland_halloween" / "models" / "item"
+MODEL_OUT = ROOT / "itemsadder" / "contents" / "warriorland_halloween" / "models" / "item"
 MODEL_TEXTURE_IDS = {
     "crimson_warden_sword": "item/crimson_warden_sword",
     "crimson_warden_pickaxe": "item/crimson_warden_pickaxe",
