@@ -312,8 +312,8 @@ for index, element in enumerate(cowl_elements):
         fail(f"Wearable Cowl element {index} needs all six faces")
     for face_name, face in faces.items():
         uv = face.get("uv") if isinstance(face, dict) else None
-        if not isinstance(uv, list) or len(uv) != 4 or any(float(v) < 0 or float(v) > 16 for v in uv):
-            fail(f"Wearable Cowl element {index} face {face_name} has invalid UVs")
+        if not isinstance(uv, list) or len(uv) != 4 or any(float(v) < 0 or float(v) > 64 for v in uv):
+            fail(f"Wearable Cowl element {index} face {face_name} has invalid 64x64 atlas UVs")
         if face.get("texture") != "#layer0":
             fail(f"Wearable Cowl element {index} face {face_name} must use #layer0")
 
