@@ -36,6 +36,7 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey relicKey;
     private final NamespacedKey eventMobKey;
     private final NamespacedKey abilityCooldownKey;
+    private final NamespacedKey testMobKey;
     private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
     public HalloweenMobManager(HalloweenCore plugin) {
@@ -44,6 +45,7 @@ public final class HalloweenMobManager implements Listener {
         this.relicKey = new NamespacedKey(plugin, "halloween_relic");
         this.eventMobKey = new NamespacedKey(plugin, "event_mob");
         this.abilityCooldownKey = new NamespacedKey(plugin, "special_ability_cooldown");
+        this.testMobKey = new NamespacedKey(plugin, "test_mob");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -515,6 +517,8 @@ public final class HalloweenMobManager implements Listener {
 
         String mobId = event.getEntity().getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
         if (mobId == null) return;
+        // Admin test spawns must never grant fragments, relics or progression rewards.
+        if (event.getEntity().getPersistentDataContainer().has(testMobKey, PersistentDataType.BYTE)) return;
 
         Player killer = event.getEntity().getKiller();
         boolean eligibleKiller = killer != null
@@ -581,7 +585,8 @@ public final class HalloweenMobManager implements Listener {
     }
 
     public boolean spawnEventMob(Player player) {
-        String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
+        String[] ids = {"cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare"};
         return spawnEventMob(player, ids[ThreadLocalRandom.current().nextInt(ids.length)]);
     }
 
@@ -612,6 +617,33 @@ public final class HalloweenMobManager implements Listener {
 
         configureSpecialMob(living, mobId);
         living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
+        return true;
+    }
+
+    /**
+     * Admin-only spawn path used by controlled gameplay tests. It observes the ordinary
+     * model fallback and combat logic, but marks the entity so its death cannot grant rewards.
+     */
+    public boolean spawnTestMob(Player player, String mobId) {
+        if (!plugin.isEventEnabled() || player == null || !player.isOnline()
+                || !isKnownSpecialMob(mobId) || !plugin.isEligibleGameplayWorld(player.getWorld())) return false;
+
+        Location spawnLocation = findSafeEventLocation(player);
+        if (spawnLocation == null) return false;
+
+        LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
+        if (living == null) {
+            Entity entity = player.getWorld().spawnEntity(spawnLocation, baseEntityType(mobId));
+            if (!(entity instanceof LivingEntity spawned)) {
+                entity.remove();
+                return false;
+            }
+            living = spawned;
+        }
+
+        configureSpecialMob(living, mobId);
+        living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
+        living.getPersistentDataContainer().set(testMobKey, PersistentDataType.BYTE, (byte) 1);
         return true;
     }
 
@@ -658,17 +690,21 @@ public final class HalloweenMobManager implements Listener {
 
     private boolean isKnownSpecialMob(String mobId) {
         return mobId != null && switch (mobId) {
-            case "cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch" -> true;
+            case "cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                    "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare" -> true;
             default -> false;
         };
     }
 
     private EntityType baseEntityType(String mobId) {
         return switch (mobId) {
+            case "void-reaper" -> EntityType.HUSK;
             case "gravekeeper" -> EntityType.SKELETON;
+            case "frost-stalker" -> EntityType.STRAY;
             case "blood-spider" -> EntityType.SPIDER;
             case "pumpkin-wraith" -> EntityType.CREEPER;
             case "hex-witch" -> EntityType.WITCH;
+            case "nightmare" -> EntityType.PHANTOM;
             default -> EntityType.ZOMBIE;
         };
     }
