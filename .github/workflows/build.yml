@@ -63,6 +63,15 @@ jobs:
         run: python3 scripts/validate_special_mob_models.py
       - name: Build
         run: mvn -B clean package
+      - name: Build standalone portable relic plugin
+        run: mvn -B -f portable-relics/pom.xml clean package
+      - name: Assemble portable relic package
+        run: |
+          python3 scripts/build_portable_relics.py
+          mkdir -p target
+          cd target
+          zip -qr HalloweenCore-Portable-Relics.zip HalloweenCore-Portable-Relics
+          unzip -t HalloweenCore-Portable-Relics.zip
       - name: Prepare installable client companion JAR
         run: |
           mkdir -p target
@@ -83,6 +92,13 @@ jobs:
         with:
           name: WarriorLand-Halloween-ItemsAdder
           path: target/WarriorLand-Halloween-ItemsAdder.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload portable relic package
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Portable-Relics
+          path: target/HalloweenCore-Portable-Relics.zip
           if-no-files-found: error
           retention-days: 14
       - name: Upload Iris Halloween shader pack
