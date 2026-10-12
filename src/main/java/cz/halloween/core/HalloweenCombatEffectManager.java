@@ -2,6 +2,7 @@ package cz.halloween.core;
 
 import org.bukkit.Color;
 import org.bukkit.Particle;
+import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.Entity;
