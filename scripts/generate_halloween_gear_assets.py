@@ -711,7 +711,7 @@ def nocturne_cowl_model_elements() -> list[dict]:
         faces = {}
         for face_name, (col, row) in face_tiles[role].items():
             faces[face_name] = {
-                "uv": [col * 4, row * 4, (col + 1) * 4, (row + 1) * 4],
+                "uv": [col * 16, row * 16, (col + 1) * 16, (row + 1) * 16],
                 "texture": "#layer0",
             }
         elements.append({"from": frm, "to": to, "faces": faces})
@@ -754,7 +754,7 @@ def save_worn_cowl_assets() -> int:
         frm, to = part["from"], part["to"]
         faces = {
             name: {
-                "uv": [round(float(value) * 4.0, 3) for value in face["uv"]],
+                "uv": [round(float(value), 3) for value in face["uv"]],
                 "texture": 0,
             }
             for name, face in part["faces"].items()

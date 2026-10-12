@@ -174,12 +174,16 @@ cowl_match = re.search(r"(?ms)^  nocturne_sovereign_cowl:\n(?P<block>.*?)(?=^  [
 if not cowl_match:
     fail("Nocturne Sovereign Cowl is missing from ItemsAdder configs/items.yml")
 cowl_config = cowl_match.group("block")
-if not re.search(r"(?m)^    resource:\n      generate: false\n      model_path: armor/nocturne_sovereign_cowl_3d\n      material: NETHERITE_HELMET[ \\t]*$", cowl_config):
+if not re.search(r"(?m)^    resource:\n      generate: false\n      model_path: armor/nocturne_sovereign_cowl_3d\n      material: PAPER[ \\t]*$", cowl_config):
     fail("Nocturne Cowl must use resource.generate=false and model_path=armor/nocturne_sovereign_cowl_3d")
 if re.search(r"(?m)^      id:[ \\t]*[^\\n]+", cowl_config):
     fail("Nocturne Cowl must not set equipment.id; it overrides the custom 3D helmet model_path")
 if not re.search(r"(?m)^      icon: item/nocturne_sovereign_cowl[ \\t]*$", cowl_config):
     fail("Nocturne Cowl must keep its distinct 2D inventory icon in resource.icon")
+if not re.search(r"(?m)^    behaviours:\n      hat: true[ \\t]*$", cowl_config):
+    fail("Nocturne Cowl must use ItemsAdder's supported 3D hat behavior")
+if not re.search(r"(?m)^    attribute_modifiers:\n      head:\n        armor: 6[ \\t]*$", cowl_config):
+    fail("Nocturne Cowl must apply +6 armor in the head slot when rendered as a PAPER hat")
 
 if not WINGS_TEXTURE.is_file():
     fail("Missing Batwing Elytra worn-wings texture")
@@ -282,6 +286,13 @@ if cowl_texture_size != (64, 64):
 cowl_elements = wearable_cowl.get("elements")
 if not isinstance(cowl_elements, list) or len(cowl_elements) < 15 or len(cowl_elements) > 80:
     fail("Wearable Cowl model must be a shaped multi-piece hood with 15..80 cuboids")
+for index, element in enumerate(cowl_elements):
+    for face_name, face in element.get("faces", {}).items():
+        uv = face.get("uv", [])
+        if len(uv) != 4 or any(not isinstance(value, (int, float)) or value < 0 or value > 64 for value in uv):
+            fail(f"Wearable Cowl element {index} face {face_name} has invalid 64x64 atlas UVs")
+        if abs((uv[2] - uv[0]) - 16) > 0.01 or abs((uv[3] - uv[1]) - 16) > 0.01:
+            fail(f"Wearable Cowl element {index} face {face_name} must map a full 16x16 atlas tile")
 if cowl_elements:
     min_x = min(float(element["from"][0]) for element in cowl_elements)
     max_x = max(float(element["to"][0]) for element in cowl_elements)

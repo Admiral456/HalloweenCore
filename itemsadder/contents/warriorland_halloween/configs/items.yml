@@ -259,17 +259,19 @@ items:
     lore:
       - "&8Obsidianová kápě se spektrálníma očima."
       - "&dNocturnal Perception • Curseguard • Veilstep."
-      - "&7Zbroj +6 • výdrž 900 • enchantovatelná."
+      - "&7Zbroj +6 • výdrž 900 • vlastní 3D model."
     resource:
       generate: false
       model_path: armor/nocturne_sovereign_cowl_3d
-      material: NETHERITE_HELMET
+      material: PAPER
       icon: item/nocturne_sovereign_cowl
     durability:
       max_durability: 900
-    equipment:
-      slot_attribute_modifiers:
-        armor: 3
+    behaviours:
+      hat: true
+    attribute_modifiers:
+      head:
+        armor: 6
 
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"
