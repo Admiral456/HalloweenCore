@@ -30,7 +30,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests", "structures", "mob", "goblin", "nick",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "giveitem", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -168,6 +168,21 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                             .startsWith(args[3].toLowerCase(java.util.Locale.ROOT)))
                     .sorted().toList();
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("giveitem") && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted().toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("giveitem") && sender.hasPermission("halloweencore.admin")) {
+            return plugin.getRewardManager().getConfiguredRewardIds().stream()
+                    .collect(java.util.stream.Collectors.collectingAndThen(
+                            java.util.stream.Collectors.toList(), list -> {
+                                list.add("all");
+                                return list;
+                            }))
+                    .stream().filter(value -> value.toLowerCase(java.util.Locale.ROOT)
+                            .startsWith(args[2].toLowerCase(java.util.Locale.ROOT))).toList();
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("give") && sender.hasPermission("halloweencore.admin")) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
@@ -205,6 +220,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("bosseffects")) return bossEffects(sender, args);
         if (args[0].equalsIgnoreCase("modelpreview")) return modelPreview(sender, args);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
+        if (args[0].equalsIgnoreCase("giveitem")) return giveItem(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
@@ -231,7 +247,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween boss <status|start|test|stop> &7- finále nebo bezpečný test bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
+        sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- přidat fragmenty (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween giveitem <hráč> <id|all> &7- dát testovací položku bez ceny (admin)"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
         return true;
     }
@@ -1177,6 +1194,42 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         sender.sendMessage(plugin.color("&aPřidáno &e" + amount + " &afragmentů hráči &f" + target.getName() + "&a."));
         target.sendMessage(plugin.color("&6Získal jsi &e" + amount + " &6Halloween fragmentů. Celkem: &e" + newBalance));
+        return true;
+    }
+
+
+    private boolean giveItem(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (args.length != 3) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween giveitem <hráč> <id|all>"));
+            return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(plugin.color("&cHráč není online."));
+            return true;
+        }
+        String id = args[2].toLowerCase(java.util.Locale.ROOT);
+        if (id.equals("all")) {
+            int granted = 0;
+            List<String> failed = new ArrayList<>();
+            for (String rewardId : plugin.getRewardManager().getConfiguredRewardIds()) {
+                if (plugin.getRewardManager().giveAdminItem(target, rewardId)) granted++;
+                else failed.add(rewardId);
+            }
+            sender.sendMessage(plugin.color("&aTestovací předměty: předáno &e" + granted
+                    + "&a položek hráči &f" + target.getName() + "&a."));
+            if (!failed.isEmpty()) sender.sendMessage(plugin.color("&cNepodařilo se dát: &7" + String.join(", ", failed)));
+            target.sendMessage(plugin.color("&6HALLOWEEN &8» &eAdministrátor ti dal " + granted + " testovacích předmětů."));
+            return true;
+        }
+        if (!plugin.getRewardManager().giveAdminItem(target, id)) {
+            sender.sendMessage(plugin.color("&cNeznámý reward ID nebo neplatná definice: &e" + id
+                    + "&c. Zkontroluj /halloween rewards."));
+            return true;
+        }
+        sender.sendMessage(plugin.color("&aTestovací předmět &e" + id + " &apředán hráči &f" + target.getName() + "&a."));
+        target.sendMessage(plugin.color("&6HALLOWEEN &8» &eAdministrátor ti dal testovací předmět: &f" + id + "&e."));
         return true;
     }
 
