@@ -218,8 +218,9 @@ def add_animation_clip(model: dict, name: str, length: float,
         "saved": True,
         "animators": {},
     })
-    for track_name, (channel, frames) in tracks.items():
-        bone_name = track_name[:-9] if track_name.endswith(("_position", "_rotation")) else track_name
+    for bone_key, (channel, frames) in tracks.items():
+        # Suffix keys express multiple channels on the same bone in a normal dict.
+        bone_name = bone_key[:-9] if bone_key.endswith("_position") else bone_key
         bone = find_group(model.get("outliner", []), bone_name)
         if bone is None:
             raise RuntimeError(f"{model.get('name')} has no '{bone_name}' bone for {name}")
@@ -246,17 +247,9 @@ def add_animation_clip(model: dict, name: str, length: float,
 
 def enrich_animation_set(model: dict) -> None:
     """Add authored damage/death and encounter-specific clips to all ten special models."""
-    common_tracks = {
-        "hit_reaction": {
-            "body": ("rotation", [(0.0, (0, 0, 0)), (0.08, (-12, 0, 6)), (0.22, (0, 0, 0))]),
-        },
-        "death": {
-            "body": ("rotation", [(0.0, (0, 0, 0)), (0.3, (28, 0, 0)), (0.8, (72, 0, 0))]),
-            "body_position": ("position", [(0.0, (0, 0, 0)), (0.3, (0, -2, 0)), (0.8, (0, -7, 0))]),
-        },
-    }
-    add_animation_clip(model, "hit_reaction", 0.24, common_tracks["hit_reaction"])
-    # Use a separate key for the position channel while still targeting the same body bone.
+    add_animation_clip(model, "hit_reaction", 0.24, {
+        "body": ("rotation", [(0.0, (0, 0, 0)), (0.08, (-12, 0, 6)), (0.24, (0, 0, 0))]),
+    })
     add_animation_clip(model, "death", 0.82, {
         "body": ("rotation", [(0.0, (0, 0, 0)), (0.3, (28, 0, 0)), (0.82, (72, 0, 0))]),
         "body_position": ("position", [(0.0, (0, 0, 0)), (0.3, (0, -2, 0)), (0.82, (0, -7, 0))]),
@@ -337,8 +330,6 @@ def enrich_animation_set(model: dict) -> None:
             add_animation_clip(model, extra_clip[0], 0.9, extra_clip[1])
 
 
-def create_model(new_id: str, template_id: str, hue_shift: float, saturation: float,
-                 brightness: float, accent_hue: float) -> None:
 def create_model(new_id: str, template_id: str, hue_shift: float, saturation: float,
                  brightness: float, accent_hue: float) -> None:
     source_model = MODEL_DIR / f"{template_id}.bbmodel"
