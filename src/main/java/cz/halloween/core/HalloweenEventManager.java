@@ -88,11 +88,19 @@ public final class HalloweenEventManager {
         }
         String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
         if (eventId.isEmpty() || eventId.equals("random")) {
-            String[] events = getKnownEventIds().toArray(String[]::new);
-            eventId = events[ThreadLocalRandom.current().nextInt(events.length)];
+            java.util.List<String> available = getAvailableEventIds();
+            if (available.isEmpty()) {
+                lastStartFailure = "V konfiguraci není povolen žádný event (random-events.types.<id>.enabled).";
+                return false;
+            }
+            eventId = available.get(ThreadLocalRandom.current().nextInt(available.size()));
         }
         if (!getKnownEventIds().contains(eventId)) {
             lastStartFailure = "Neznámé ID eventu: " + eventId + ". Použij /halloween event list.";
+            return false;
+        }
+        if (!isEventIndividuallyEnabled(eventId)) {
+            lastStartFailure = "Event " + eventId + " je vypnutý přes random-events.types." + eventId + ".enabled=false.";
             return false;
         }
         if (eligibleEventPlayers().isEmpty()) {
@@ -128,6 +136,15 @@ public final class HalloweenEventManager {
 
     public java.util.List<String> getKnownEventIds() {
         return java.util.List.of("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising");
+    }
+
+    public boolean isEventIndividuallyEnabled(String id) {
+        if (id == null || !getKnownEventIds().contains(id)) return false;
+        return plugin.getConfig().getBoolean("random-events.types." + id + ".enabled", true);
+    }
+
+    public java.util.List<String> getAvailableEventIds() {
+        return getKnownEventIds().stream().filter(this::isEventIndividuallyEnabled).toList();
     }
 
     public void stop() {
@@ -183,8 +200,13 @@ public final class HalloweenEventManager {
     }
 
     private void startRandomEvent() {
-        String[] events = getKnownEventIds().toArray(String[]::new);
-        String selected = events[ThreadLocalRandom.current().nextInt(events.length)];
+        java.util.List<String> events = getAvailableEventIds();
+        if (events.isEmpty()) {
+            nextEventAt = 0L;
+            lastEffectSummary = "Žádný event není povolen. Zapni jej v random-events.types.<id>.enabled.";
+            return;
+        }
+        String selected = events.get(ThreadLocalRandom.current().nextInt(events.size()));
         beginEvent(selected);
     }
 
@@ -345,6 +367,10 @@ public final class HalloweenEventManager {
         lastSurgeSpawned = spawnedThisSurge;
         lastEffectSummary = "Event " + activeEventId + ": v cílovém světě " + target.getWorld().getName()
                 + " úspěšně spawnuto " + spawnedThisSurge + " event mobů v poslední vlně.";
+        if (spawnedThisSurge > 0 && activeEventId.equals("blood-moon-invasion")
+                && plugin.getQuestManager() != null) {
+            plugin.getQuestManager().recordAction(target, "event:blood-moon-invasion");
+        }
         if (spawnedThisSurge == 0) {
             String cause = plugin.getMobManager() == null ? "HalloweenMobManager není dostupný."
                     : plugin.getMobManager().getLastSpawnFailure();
