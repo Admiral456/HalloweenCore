@@ -163,7 +163,6 @@ halloween_goblin_king:
   Skills:
   - model{mid=halloween_goblin_king;n=false} @self ~onSpawn
   - state{mid=halloween_goblin_king;s=idle;} @self ~onSpawn
-  - state{mid=halloween_goblin_king;s=attack} @onAttack
   - state{mid=halloween_goblin_king;s=attack} @self ~onAttack
 
 halloween_headless_nick:
