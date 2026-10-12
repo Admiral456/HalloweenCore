@@ -18,9 +18,9 @@ items:
       texture: item/hunter_mask
 
   cursed_talisman:
-    name: "&5&lProkletý talisman &8[2026]"
+    name: "&5&lProkletý náhrdelník &8[2026]"
     lore:
-      - "&7Relikvie vysokého prokletí."
+      - "&7Náhrdelník prokletý prastarou duší."
       - "&d+1 celý řádek srdcí (+20 HP)"
       - "&7Aktivní při držení v ruce nebo offhandu."
       - "&7Lze enchantovat, pokud máš vhodný enchant."
@@ -203,6 +203,19 @@ items:
       mainhand:
         attackDamage: 7.0
         attackSpeed: 1.0
+
+  crimson_warden_shield:
+    name: "&4&lŠtít Krvavého strážce"
+    lore:
+      - "&7Těžký štít s karmínovou pečetí."
+      - "&cPři blokování může odrazit útočníka."
+      - "&7Výdrž 1 800 • enchantovatelnost 25."
+    material: SHIELD
+    components_nbt_file: "crimson_warden_shield.json"
+    graphics:
+      texture: item/crimson_warden_shield
+    durability:
+      max_durability: 1800
 
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"
