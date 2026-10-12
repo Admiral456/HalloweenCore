@@ -202,3 +202,23 @@ halloween_headless_nick:
   - state{mid=halloween_headless_nick;s=hit_reaction} @self ~onDamaged
   - state{mid=halloween_headless_nick;s=death} @self ~onDeath
   - state{mid=halloween_headless_nick;s=executioner_strike} @self ~onAttack
+
+halloween_nick_steed:
+  Type: SKELETON_HORSE
+  Display: '&2&lKRVAVÝ VÁLEČNÝ HŘEBEC'
+  Health: 80
+  Damage: 8
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: false
+    PreventRenaming: true
+    MovementSpeed: 0.34
+    KnockbackResistance: 0.55
+  Skills:
+  - model{mid=halloween_nick_steed;n=false} @self ~onSpawn
+  - state{mid=halloween_nick_steed;s=idle} @self ~onSpawn
+  - state{mid=halloween_nick_steed;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_nick_steed;s=death} @self ~onDeath
+  - state{mid=halloween_nick_steed;s=gallop} @self ~onAttack
