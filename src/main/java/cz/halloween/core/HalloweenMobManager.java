@@ -713,6 +713,21 @@ public final class HalloweenMobManager implements Listener {
      * The ModelEngine texture/model layer is used only when its dependencies and the
      * matching MythicMobs definition are present. If not, callers safely use vanilla.
      */
+    /**
+     * Shared encounter hook for separately managed bosses/stalkers. It uses the same
+     * verified MythicMobs/ModelEngine spawn bridge as seasonal enemies but does not tag
+     * the entity as a normal fragment-earning special mob.
+     */
+    public LivingEntity spawnEncounterEntity(Location location, String mobId, EntityType fallbackType) {
+        if (location == null || location.getWorld() == null || fallbackType == null) return null;
+        World world = location.getWorld();
+        if (!world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)) return null;
+        LivingEntity modeled = spawnMythicModelMob(location, mobId);
+        if (modeled != null) return modeled;
+        Entity entity = world.spawnEntity(location, fallbackType);
+        return entity instanceof LivingEntity living ? living : null;
+    }
+
     private LivingEntity spawnMythicModelMob(Location location, String mobId) {
         if (!plugin.getConfig().getBoolean("special-mobs.custom-models.enabled", true)) return null;
         var mythicPlugin = plugin.getServer().getPluginManager().getPlugin("MythicMobs");
@@ -728,6 +743,8 @@ public final class HalloweenMobManager implements Listener {
             case "pumpkin-wraith" -> "halloween_pumpkin_wraith";
             case "hex-witch" -> "halloween_hex_witch";
             case "nightmare" -> "halloween_nightmare";
+            case "goblin-king" -> "halloween_goblin_king";
+            case "headless-nick" -> "halloween_headless_nick";
             default -> null;
         };
         if (customId == null) return null;
