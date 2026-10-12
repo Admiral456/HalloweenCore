@@ -182,6 +182,47 @@ def save_blockstate(name: str, variants: list[str]) -> None:
     )
 
 
+def generate_seasonal_colormaps() -> None:
+    """Apply a restrained autumnal palette across biome-tinted grass, foliage, and water."""
+    colormap_root = PACK / "textures" / "colormap"
+    colormap_root.mkdir(parents=True, exist_ok=True)
+
+    grass = Image.new("RGB", (256, 256))
+    foliage = Image.new("RGB", (256, 256))
+    water = Image.new("RGB", (256, 256))
+    gpx, fpx, wpx = grass.load(), foliage.load(), water.load()
+
+    for y in range(256):
+        humidity = 1.0 - y / 255.0
+        for x in range(256):
+            temperature = x / 255.0
+            warm = temperature ** 1.25
+            damp = humidity ** 0.75
+
+            # Temperate biomes remain mossy olive; hot/dry biomes move toward
+            # burnt sienna and muted amber instead of bright neon orange.
+            gpx[x, y] = (
+                min(255, int(72 + 58 * warm + 12 * damp)),
+                min(255, int(72 + 29 * damp - 8 * warm)),
+                min(255, int(43 + 13 * damp + 4 * (1.0 - warm))),
+            )
+            fpx[x, y] = (
+                min(255, int(43 + 96 * warm + 10 * damp)),
+                min(255, int(59 + 29 * damp - 15 * warm)),
+                min(255, int(31 + 12 * damp + 4 * (1.0 - warm))),
+            )
+            wpx[x, y] = (
+                min(255, int(33 + 24 * warm)),
+                min(255, int(74 + 18 * damp)),
+                min(255, int(78 + 20 * damp - 5 * warm)),
+            )
+
+    grass.save(colormap_root / "grass.png", optimize=True)
+    foliage.save(colormap_root / "foliage.png", optimize=True)
+    water.save(colormap_root / "water.png", optimize=True)
+    print("Generated 3 seasonal 256x256 biome colormaps (grass, foliage, water).")
+
+
 def main() -> None:
     BLOCKS.mkdir(parents=True, exist_ok=True)
     for style in ("classic", "bat", "grin", "skull"):
@@ -210,8 +251,9 @@ def main() -> None:
     mushroom("red").save(BLOCKS / "red_mushroom.png", optimize=True)
     mushroom("brown").save(BLOCKS / "brown_mushroom.png", optimize=True)
     generate_moon_atlas()
+    generate_seasonal_colormaps()
 
-    print("Generated 8 pumpkin-face variants, 12 directional block models, 3 blockstates, 2 haunted mushroom textures, and a 128x64 moon phase atlas.")
+    print("Generated 8 pumpkin-face variants, 12 directional block models, 3 blockstates, 2 haunted mushroom textures, a 128x64 moon phase atlas, and 3 seasonal colormaps.")
     for path in sorted([*BLOCKS.glob("*_classic.png"), *BLOCKS.glob("red_mushroom.png"), *BLOCKS.glob("brown_mushroom.png"), ENVIRONMENT / "moon_phases.png"]):
         print(f"Generated {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
 
