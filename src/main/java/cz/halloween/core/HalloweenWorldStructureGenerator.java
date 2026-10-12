@@ -479,7 +479,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         // Low uneven wall, open gate and a clear path to the mausoleum.
         for (int offset = -8; offset <= 8; offset++) {
             place(world, x + offset, y + 1, z - 8, Material.MOSSY_STONE_BRICK_WALL);
-            if (offset != 0) place(world, x + offset, y + 1, z + 8, Material.MOSSY_STONE_BRICK_WALL);
+            if (Math.abs(offset) > 1) place(world, x + offset, y + 1, z + 8, Material.MOSSY_STONE_BRICK_WALL);
             place(world, x - 8, y + 1, z + offset, Material.MOSSY_STONE_BRICK_WALL);
             place(world, x + 8, y + 1, z + offset, Material.MOSSY_STONE_BRICK_WALL);
         }
