@@ -27,8 +27,6 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.EntityEquipment;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
@@ -82,6 +80,7 @@ public final class HalloweenGoblinKingManager implements Listener {
     private int phase = 1;
     private boolean rewardEnabled;
     private boolean stopping;
+    private final Set<String> modelWarnings = new HashSet<>();
 
     public HalloweenGoblinKingManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -105,7 +104,7 @@ public final class HalloweenGoblinKingManager implements Listener {
     public String statusText() {
         String world = plugin.getConfig().getString("bosses.goblin.arena.world", "");
         boolean enabled = plugin.getConfig().getBoolean("bosses.goblin.enabled", true);
-        return "Goblin King " + (isBossActive() ? "AKTIVNÍ" : "neaktivní")
+        return "Král skřítků " + (isBossActive() ? "AKTIVNÍ" : "neaktivní")
                 + " | povolení=" + enabled
                 + " | aréna=" + (isArenaConfigured() ? world : "nenastavena")
                 + " | vygenerována=" + isArenaGenerated()
@@ -437,7 +436,8 @@ public final class HalloweenGoblinKingManager implements Listener {
         if (!center.getWorld().isChunkLoaded(center.getBlockX() >> 4, center.getBlockZ() >> 4)) return false;
 
         Location spawn = center.clone().add(0.0D, 1.0D, 0.0D);
-        LivingEntity spawned = plugin.getMobManager().spawnEncounterEntity(spawn, "goblin-king", EntityType.PIGLIN_BRUTE);
+        // Stage A fails closed: never present a vanilla piglin as the custom Goblin King.
+        LivingEntity spawned = plugin.getMobManager().spawnCustomEncounterEntity(spawn, "goblin-king");
         if (spawned == null) return false;
         bossId = spawned.getUniqueId();
         arenaCenter = center.clone();
@@ -447,32 +447,36 @@ public final class HalloweenGoblinKingManager implements Listener {
         participants.clear();
         minionIds.clear();
         spawned.getPersistentDataContainer().set(bossKey, PersistentDataType.BYTE, (byte) 1);
-        spawned.setCustomName(ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "KRÁL GOBLINŮ");
+        spawned.setCustomName(ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "KRÁL SKŘÍTKŮ");
         spawned.setCustomNameVisible(true);
         spawned.setPersistent(true);
         spawned.setRemoveWhenFarAway(false);
         spawned.setCanPickupItems(false);
-        spawned.setGlowing(true);
+        spawned.setGlowing(false);
         setAttribute(spawned, Attribute.MAX_HEALTH, plugin.getConfig().getDouble("bosses.goblin.health", 500.0D));
         setAttribute(spawned, Attribute.ATTACK_DAMAGE, plugin.getConfig().getDouble("bosses.goblin.damage", 14.0D));
         setAttribute(spawned, Attribute.MOVEMENT_SPEED, plugin.getConfig().getDouble("bosses.goblin.movement-speed", 0.28D));
         setAttribute(spawned, Attribute.KNOCKBACK_RESISTANCE, plugin.getConfig().getDouble("bosses.goblin.knockback-resistance", 0.85D));
         AttributeInstance health = spawned.getAttribute(Attribute.MAX_HEALTH);
         if (health != null) spawned.setHealth(Math.min(health.getValue(), health.getBaseValue()));
-        EntityEquipment equipment = spawned.getEquipment();
-        if (equipment != null) {
-            equipment.setItemInMainHand(new ItemStack(Material.GOLDEN_AXE));
-            equipment.setItemInMainHandDropChance(0.0F);
-            equipment.setHelmet(new ItemStack(Material.GOLDEN_HELMET));
-            equipment.setHelmetDropChance(0.0F);
-        }
-        bossBar = Bukkit.createBossBar("KRÁL GOBLINŮ", BarColor.GREEN, BarStyle.SEGMENTED_10);
+        bossBar = Bukkit.createBossBar("KRÁL SKŘÍTKŮ", BarColor.GREEN, BarStyle.SEGMENTED_10);
         bossBar.setVisible(true);
+        UUID entranceBossId = spawned.getUniqueId();
+        Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            Entity current = Bukkit.getEntity(entranceBossId);
+            if (current instanceof LivingEntity living && living.isValid() && !living.isDead()) {
+                playGoblinAnimation(living, "wing_spread");
+            }
+        }, 2L);
+        Location entrance = spawned.getLocation().clone().add(0.0D, 1.8D, 0.0D);
+        entrance.getWorld().playSound(entrance, org.bukkit.Sound.ENTITY_ENDER_DRAGON_GROWL, 0.7F, 0.65F);
+        entrance.getWorld().spawnParticle(Particle.DUST, entrance, 18, 0.35D, 0.35D, 0.35D, 0.0D,
+                new Particle.DustOptions(org.bukkit.Color.fromRGB(100, 255, 45), 1.25F));
         stopping = false;
         bossTask = Bukkit.getScheduler().runTaskTimer(plugin, this::tickBoss, 10L, 10L);
         broadcastArena(testOnly
                 ? ChatColor.YELLOW + "Testovací souboj s Králem goblinů začíná. Odměny jsou vypnuté."
-                : ChatColor.DARK_GREEN + "KRÁL GOBLINŮ PROCITL! Jeho pevnost se uzavřela.");
+                : ChatColor.DARK_GREEN + "KRÁL SKŘÍTKŮ PROCITL! Jeho pevnost se uzavřela.");
         return true;
     }
 
@@ -505,19 +509,23 @@ public final class HalloweenGoblinKingManager implements Listener {
 
         double ratio = boss.getHealth() / Math.max(1.0D, boss.getAttribute(Attribute.MAX_HEALTH) == null
                 ? boss.getHealth() : boss.getAttribute(Attribute.MAX_HEALTH).getValue());
-        if (ratio <= 0.65D && phase < 2) {
+        if (ratio <= 0.70D && phase < 2) {
             phase = 2;
-            broadcastArena(ChatColor.GOLD + "Král goblinů zařval a povolal svou stráž!");
+            playGoblinAnimation(boss, "phase_transition");
+            broadcastArena(ChatColor.GOLD + "Král skřítků rozevřel křídla a povolal svou stráž!");
             spawnMinions(boss, 2);
         }
-        if (ratio <= 0.30D && phase < 3) {
+        if (ratio <= 0.35D && phase < 3) {
             phase = 3;
-            broadcastArena(ChatColor.RED + "Král goblinů přechází do poslední fáze — pozor na runové výbuchy!");
-            boss.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, boss.getLocation().add(0, 1.0D, 0),
-                    70, 1.2D, 1.0D, 1.2D, 0.04D);
+            playGoblinAnimation(boss, "phase_transition");
+            broadcastArena(ChatColor.RED + "Král skřítků uvolňuje sílu smaragdové koruny — pozor na runové výbuchy!");
+            boss.getWorld().spawnParticle(Particle.DUST, boss.getLocation().add(0, 2.0D, 0),
+                    42, 0.8D, 0.7D, 0.8D, 0.0D,
+                    new Particle.DustOptions(org.bukkit.Color.fromRGB(107, 255, 40), 1.4F));
         }
 
         updateBossBar(boss);
+        emitOrbMagic(boss);
         Player target = chooseTarget(boss);
         if (target == null) {
             if (boss instanceof Mob mob) mob.setTarget(null);
@@ -569,13 +577,65 @@ public final class HalloweenGoblinKingManager implements Listener {
         return best;
     }
 
+    private void emitOrbMagic(LivingEntity boss) {
+        if (boss == null || !boss.isValid() || boss.isDead()) return;
+        org.bukkit.util.Vector forward = boss.getLocation().getDirection().setY(0.0D);
+        if (forward.lengthSquared() < 0.001D) forward = new org.bukkit.util.Vector(0, 0, 1);
+        forward.normalize();
+        org.bukkit.util.Vector right = new org.bukkit.util.Vector(-forward.getZ(), 0.0D, forward.getX());
+        Location orb = boss.getLocation().clone().add(0.0D, 2.05D, 0.0D)
+                .add(right.multiply(0.62D)).add(forward.multiply(0.15D));
+        boss.getWorld().spawnParticle(Particle.DUST, orb, 2, 0.08D, 0.09D, 0.08D, 0.0D,
+                new Particle.DustOptions(org.bukkit.Color.fromRGB(100, 255, 45), 0.95F));
+    }
+
+    /** Plays a named animation on the custom ModelEngine blueprint without a hard dependency. */
+    private boolean playGoblinAnimation(LivingEntity target, String animation) {
+        if (target == null || !target.isValid() || target.isDead() || animation == null || animation.isBlank()) {
+            return false;
+        }
+        Plugin modelEngine = plugin.getServer().getPluginManager().getPlugin("ModelEngine");
+        if (modelEngine == null || !modelEngine.isEnabled()) return false;
+        try {
+            Class<?> apiClass = Class.forName("com.ticxo.modelengine.api.ModelEngineAPI");
+            Object modeledEntity = apiClass.getMethod("getModeledEntity", Entity.class).invoke(null, target);
+            if (modeledEntity == null) return false;
+            Class<?> modeledEntityApi = Class.forName("com.ticxo.modelengine.api.model.ModeledEntity");
+            Object modelResult = modeledEntityApi.getMethod("getModel", String.class)
+                    .invoke(modeledEntity, "halloween_goblin_king");
+            if (!(modelResult instanceof java.util.Optional<?> optional) || optional.isEmpty()) return false;
+            Object activeModel = optional.get();
+            Class<?> activeModelApi = Class.forName("com.ticxo.modelengine.api.model.ActiveModel");
+            Object handler = activeModelApi.getMethod("getAnimationHandler").invoke(activeModel);
+            Class<?> handlerApi = Class.forName("com.ticxo.modelengine.api.animation.handler.AnimationHandler");
+            Method play;
+            try {
+                play = handlerApi.getMethod("playAnimation",
+                        String.class, double.class, double.class, double.class, boolean.class);
+            } catch (NoSuchMethodException ex) {
+                warnModelOnce("animation-api", "ModelEngine animation API is incompatible with Goblin King clip playback.");
+                return false;
+            }
+            Object result = play.invoke(handler, animation, 0.08D, 0.12D, 1.0D, true);
+            return result != null;
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ex) {
+            warnModelOnce("animation-" + animation, "Goblin King animation '" + animation + "' could not start: "
+                    + ex.getClass().getSimpleName());
+            return false;
+        }
+    }
+
+    private void warnModelOnce(String key, String message) {
+        if (modelWarnings.add(key)) plugin.getLogger().warning(message);
+    }
+
     private void updateBossBar(LivingEntity boss) {
         if (bossBar == null) return;
         AttributeInstance maxHealth = boss.getAttribute(Attribute.MAX_HEALTH);
         double max = maxHealth == null ? boss.getHealth() : maxHealth.getValue();
         bossBar.setProgress(Math.max(0.0D, Math.min(1.0D, boss.getHealth() / Math.max(1.0D, max))));
         String phaseName = phase == 1 ? "I" : phase == 2 ? "II" : "III";
-        bossBar.setTitle(ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "KRÁL GOBLINŮ "
+        bossBar.setTitle(ChatColor.DARK_GREEN + "" + ChatColor.BOLD + "KRÁL SKŘÍTKŮ "
                 + ChatColor.YELLOW + "• FÁZE " + phaseName);
         for (Player viewer : new ArrayList<>(bossBar.getPlayers())) {
             if (!viewer.isOnline() || !viewer.getWorld().getUID().equals(arenaCenter.getWorld().getUID())
@@ -591,12 +651,13 @@ public final class HalloweenGoblinKingManager implements Listener {
     }
 
     private void telegraphedCleave(LivingEntity boss, Player target, double damage, double radius, long delay) {
+        playGoblinAnimation(boss, "staff_strike");
         Location mark = target.getLocation().clone();
         World world = mark.getWorld();
         if (world == null) return;
         warningRing(world, mark, radius, Particle.CRIT);
         world.playSound(mark, org.bukkit.Sound.ENTITY_IRON_GOLEM_ATTACK, 1.0F, 0.55F);
-        target.sendMessage(ChatColor.GOLD + "Král goblinů zvedá svou sekeru — uskoč z označeného místa!");
+        target.sendMessage(ChatColor.GOLD + "Král skřítků zvedá svou sekeru — uskoč z označeného místa!");
         Bukkit.getScheduler().runTaskLater(plugin, () -> {
             if (!encounterStillValid(boss, target, world, mark)) return;
             world.spawnParticle(Particle.SWEEP_ATTACK, mark.clone().add(0.0D, 1.0D, 0.0D), 16, 0.8D, 0.6D, 0.8D, 0.0D);
@@ -611,6 +672,7 @@ public final class HalloweenGoblinKingManager implements Listener {
     }
 
     private void arenaRupture(LivingEntity boss, Player target) {
+        playGoblinAnimation(boss, "spell_cast");
         Location origin = target.getLocation().clone();
         World world = origin.getWorld();
         if (world == null) return;
@@ -715,7 +777,7 @@ public final class HalloweenGoblinKingManager implements Listener {
         if (entity.getPersistentDataContainer().has(bossKey, PersistentDataType.BYTE)) {
             event.getDrops().clear();
             event.setDroppedExp(0);
-            broadcastArena(ChatColor.GREEN + "KRÁL GOBLINŮ PADL! Cesta ke koruně je volná.");
+            broadcastArena(ChatColor.GREEN + "KRÁL SKŘÍTKŮ PADL! Cesta ke koruně je volná.");
             if (rewardEnabled) {
                 long reward = Math.max(0L, plugin.getConfig().getLong("bosses.goblin.reward-fragments", 1500L));
                 for (UUID participantId : new HashSet<>(participants)) {
