@@ -1,0 +1,50 @@
+info:
+  namespace: halloween_relics
+
+items:
+  batwing_elytra:
+    name: "&5&lBatwing Elytra &8[Halloween Relic]"
+    lore:
+      - "&7Rozepjatá křídla prokletého netopýra."
+      - "&dMidnight Glide &8• &7snížené opotřebení"
+      - "&dNightwing Surge &8• &7F během letu"
+      - "&dBat Echo &8• &7Shift+F během letu"
+      - "&8Výdrž 768 • podporuje ohňostroje a Mending."
+    material: ELYTRA
+    graphics:
+      texture: item/batwing_elytra
+    durability:
+      max_durability: 768
+    elytra:
+      wings_texture: entity/equipment/wings/batwing_elytra
+      broken_item_texture: item/batwing_elytra_broken
+      max_flight_ticks: 0
+      firework:
+        enabled: true
+        consume: true
+        cooldown_ticks: 0
+      durability_damage_multiplier: 0.65
+      collision_damage_multiplier: 0.75
+    equipment:
+      sound: item.armor.equip_elytra
+      dispensable: true
+      swappable: true
+      damage_on_hurt: true
+
+  nocturne_sovereign_cowl:
+    name: "&5&lNocturne Sovereign Cowl"
+    lore:
+      - "&8Obsidianová kápě se spektrálníma očima."
+      - "&dNocturnal Perception &8• &7vidění a krátké pulzy"
+      - "&dCurseguard &8• &7zmírňuje kletby HalloweenCore"
+      - "&dVeilstep &8• &7Shift+F, krátký úhybný výpad"
+      - "&8Výdrž 900 • enchantovatelná jako netherit."
+    material: NETHERITE_HELMET
+    graphics:
+      model: armor/nocturne_sovereign_cowl_3d
+      icon: item/nocturne_sovereign_cowl
+    durability:
+      max_durability: 900
+    equipment:
+      slot_attribute_modifiers:
+        armor: 3
