@@ -901,6 +901,17 @@ public final class HalloweenMobManager implements Listener {
                 .count();
     }
 
+    /** Counts only the tagged event/test mobs in already loaded chunks. */
+    public int countManagedEventMobs() {
+        int count = 0;
+        for (World world : plugin.getServer().getWorlds()) {
+            for (LivingEntity entity : world.getLivingEntities()) {
+                if (entity.getPersistentDataContainer().has(eventMobKey, PersistentDataType.BYTE)) count++;
+            }
+        }
+        return count;
+    }
+
     public int cleanupEventMobs() {
         int removed = 0;
         for (World world : plugin.getServer().getWorlds()) {
