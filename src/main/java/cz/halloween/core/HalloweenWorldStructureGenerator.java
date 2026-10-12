@@ -82,6 +82,36 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         if (isEnabled()) consider(event.getChunk());
     }
 
+    /**
+     * Queue a requested village/graveyard in the selected player's currently loaded
+     * chunk. The normal full-footprint, natural-terrain, slope, height, biome and
+     * existing-structure checks still run in processQueue(); this never force-loads
+     * chunks or overwrites non-ground-cover blocks.
+     */
+    public String queueManualStructure(org.bukkit.Location selected, String requestedType) {
+        if (!isEnabled()) return "Generování struktur je vypnuté nebo Halloween event není aktivní.";
+        if (selected == null || selected.getWorld() == null) return "Neplatná pozice nebo svět.";
+        World world = selected.getWorld();
+        if (world.getEnvironment() != World.Environment.NORMAL) return "Struktury lze umisťovat pouze do normálního světa.";
+        StructureType type;
+        if (requestedType == null) return "Chybí typ struktury.";
+        type = switch (requestedType.toLowerCase(java.util.Locale.ROOT)) {
+            case "village", "haunted-village", "haunted_village" -> StructureType.HAUNTED_VILLAGE;
+            case "graveyard", "cursed-graveyard", "cursed_graveyard" -> StructureType.CURSED_GRAVEYARD;
+            default -> null;
+        };
+        if (type == null) return "Neznámý typ. Použij haunted-village nebo cursed-graveyard.";
+        int chunkX = selected.getBlockX() >> 4;
+        int chunkZ = selected.getBlockZ() >> 4;
+        if (!world.isChunkLoaded(chunkX, chunkZ)) return "Vybraný chunk není načtený; žádné chunky se nenačítají násilně.";
+        Chunk chunk = world.getChunkAt(chunkX, chunkZ);
+        if (insideSpawnBuffer(chunk, type)) return "Místo leží v ochranném okruhu spawnu; vyber vzdálenější oblast.";
+        String key = candidateKey(world, chunkX, chunkZ, type);
+        if (queued.contains(key)) return "Tato struktura už je zařazena ve frontě.";
+        enqueue(chunk, type, 0);
+        return "Požadavek byl zařazen do fronty. Stavba proběhne pouze pokud projdou kontroly terénu, výšky, biomu, načtených chunků a kolizí; střed bude uprostřed vybraného chunku.";
+    }
+
     public int getPendingCount() {
         return pending.size();
     }

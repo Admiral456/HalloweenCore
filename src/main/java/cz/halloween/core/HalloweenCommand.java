@@ -149,6 +149,21 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
                     .sorted().toList();
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("structures") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("status", "scan", "spawn").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT))).toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("structures")
+                && args[1].equalsIgnoreCase("spawn") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("haunted-village", "cursed-graveyard").stream()
+                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT))).toList();
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("structures")
+                && args[1].equalsIgnoreCase("spawn") && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT)
+                            .startsWith(args[3].toLowerCase(java.util.Locale.ROOT))).sorted().toList();
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("mob") && sender.hasPermission("halloweencore.admin")) {
             return List.of("spawn", "cleanup", "status").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
@@ -236,7 +251,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
-        sender.sendMessage(plugin.color("&6/halloween structures <status|scan> &7- diagnostika náhodných hřbitovů a vesnic (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween structures <status|scan|spawn> &7- diagnostika a bezpečný ruční spawn struktur (admin)"));
+        sender.sendMessage(plugin.color("&7Ruční spawn: &e/halloween structures spawn <haunted-village|cursed-graveyard> [hráč]"));
         sender.sendMessage(plugin.color("&6/halloween goblin <status|arena|dry-run|confirm|cancel|start|spawn|stop> &7- samostatný Král skřítků (admin)"));
         sender.sendMessage(plugin.color("&6/halloween nick <status|spawn|test|target|attack|despawn> &7- Bezhlavý Nick (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
@@ -871,6 +887,28 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         String action = args.length >= 2 ? args[1].toLowerCase(java.util.Locale.ROOT) : "status";
+        if (action.equals("spawn")) {
+            if (args.length < 3 || args.length > 4) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween structures spawn <haunted-village|cursed-graveyard> [hráč]"));
+                return true;
+            }
+            Player target;
+            if (args.length == 4) {
+                target = Bukkit.getPlayerExact(args[3]);
+                if (target == null) {
+                    sender.sendMessage(plugin.color("&cHráč není online: &e" + args[3]));
+                    return true;
+                }
+            } else if (sender instanceof Player player) {
+                target = player;
+            } else {
+                sender.sendMessage(plugin.color("&cZ konzole musíš zadat i hráče: /halloween structures spawn <typ> <hráč>"));
+                return true;
+            }
+            String result = generator.queueManualStructure(target.getLocation(), args[2]);
+            sender.sendMessage(plugin.color("&6[Halloween Structures] &7" + result));
+            return true;
+        }
         if (args.length > 2 || (!action.equals("status") && !action.equals("scan"))) {
             sender.sendMessage(plugin.color("&cPoužití: /halloween structures [status|scan]"));
             return true;
