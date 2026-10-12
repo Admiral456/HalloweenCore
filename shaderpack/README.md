@@ -11,7 +11,7 @@ Standalone OptiFine-style shader pack intended for Minecraft Java 1.21.10 + Iris
 
 ## Real Blood Moon signaling
 
-The Paper plugin cannot directly set arbitrary shader uniforms. HalloweenCore sends halloweencore:visual_state (one byte: 1 active, 0 inactive) to the optional client companion in client-mod/. That client mod makes a client-only world-time marker visible to Iris shader uniforms while the real blood-moon-invasion event is active, with a two-second transition in and out. It does not alter the server world clock.
+The Paper plugin cannot directly set arbitrary shader uniforms. HalloweenCore sends halloweencore:visual_state (one byte: 1 active, 0 inactive) to the optional client companion in client-mod/. That client mod makes a client-only world-time marker visible to Iris shader uniforms only during the real blood-moon-invasion event. Entry blends the actual time-of-day into night, then fades the sky into crimson; exit fades crimson first and then blends the visual clock back to the live world time. The server clock is never modified.
 
 Without the client companion the shader pack still provides the normal Halloween atmosphere, but it will not enter Blood Moon mode just because it happens to be nighttime. This avoids false red moons when no event is running.
 
