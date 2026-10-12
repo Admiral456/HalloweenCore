@@ -23,15 +23,9 @@ vec3 screenToView(vec3 screenPos) {
     return viewPos.xyz / max(abs(viewPos.w), 0.0001);
 }
 
-#ifndef HALLOWEEN_QUALITY
-#define HALLOWEEN_QUALITY 1
-#endif
-#ifndef BLOOD_MOON_STRENGTH
-#define BLOOD_MOON_STRENGTH 0.90
-#endif
-#ifndef HALLOWEEN_FOG_STRENGTH
-#define HALLOWEEN_FOG_STRENGTH 0.65
-#endif
+#define HALLOWEEN_QUALITY 1 // [0 1 2]
+#define BLOOD_MOON_STRENGTH 0.90 // [0.60 0.75 0.90 1.00]
+#define HALLOWEEN_FOG_STRENGTH 0.65 // [0.35 0.50 0.65 0.85]
 
 float bloodMoonTransition() {
     if (worldDay != HALLOWEEN_BLOOD_MOON_DAY) return 0.0;
