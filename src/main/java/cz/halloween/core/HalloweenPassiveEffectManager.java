@@ -61,17 +61,56 @@ public final class HalloweenPassiveEffectManager implements Listener {
 
             if (!gameplayEligible) continue;
             ItemStack helmet = player.getInventory().getHelmet();
-            if (!isReward(helmet, "hunter-mask")) continue;
+            if (isReward(helmet, "hunter-mask")) {
+                int duration = Math.max(2, plugin.getConfig().getInt("rewards.passive-effects.hunter-mask-night-vision-seconds", 5));
+                player.addPotionEffect(new PotionEffect(
+                        PotionEffectType.NIGHT_VISION,
+                        duration * 20,
+                        0,
+                        true,
+                        false,
+                        true
+                ));
+            }
 
-            int duration = Math.max(2, plugin.getConfig().getInt("rewards.passive-effects.hunter-mask-night-vision-seconds", 5));
-            player.addPotionEffect(new PotionEffect(
-                    PotionEffectType.NIGHT_VISION,
-                    duration * 20,
-                    0,
-                    true,
-                    false,
-                    true
-            ));
+            if (!plugin.getConfig().getBoolean("gear-effects.enabled", true)) continue;
+            ItemStack chestplate = player.getInventory().getChestplate();
+            ItemStack leggings = player.getInventory().getLeggings();
+            ItemStack boots = player.getInventory().getBoots();
+            int nightVisionSeconds = Math.max(2, plugin.getConfig().getInt("gear-effects.armor.helmet-night-vision-seconds", 4));
+            int fireResistanceSeconds = Math.max(2, plugin.getConfig().getInt("gear-effects.armor.chest-fire-resistance-seconds", 3));
+            int speedSeconds = Math.max(2, plugin.getConfig().getInt("gear-effects.armor.leggings-speed-seconds", 3));
+            int jumpSeconds = Math.max(2, plugin.getConfig().getInt("gear-effects.armor.boots-jump-boost-seconds", 3));
+
+            if (isReward(helmet, "crimson-warden-helmet")) {
+                player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION,
+                        nightVisionSeconds * 20, 0, true, false, true));
+            }
+            if (isReward(chestplate, "crimson-warden-chestplate")) {
+                player.addPotionEffect(new PotionEffect(PotionEffectType.FIRE_RESISTANCE,
+                        fireResistanceSeconds * 20, 0, true, false, true));
+            }
+            if (isReward(leggings, "crimson-warden-leggings")) {
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED,
+                        speedSeconds * 20, 0, true, false, true));
+            }
+            if (isReward(boots, "crimson-warden-boots")) {
+                player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST,
+                        jumpSeconds * 20, 0, true, false, true));
+            }
+
+            boolean fullSet = isReward(helmet, "crimson-warden-helmet")
+                    && isReward(chestplate, "crimson-warden-chestplate")
+                    && isReward(leggings, "crimson-warden-leggings")
+                    && isReward(boots, "crimson-warden-boots");
+            int auraInterval = Math.max(20, plugin.getConfig().getInt("gear-effects.armor.set-aura-interval-ticks", 40));
+            if (fullSet && player.getTicksLived() % auraInterval < 20) {
+                player.getWorld().spawnParticle(org.bukkit.Particle.DUST,
+                        player.getLocation().add(0, 0.9D, 0), 2, 0.35D, 0.45D, 0.35D, 0.0D,
+                        new org.bukkit.Particle.DustOptions(org.bukkit.Color.fromRGB(190, 25, 52), 1.0F));
+                player.getWorld().spawnParticle(org.bukkit.Particle.SOUL,
+                        player.getLocation().add(0, 0.8D, 0), 1, 0.25D, 0.3D, 0.25D, 0.01D);
+            }
         }
     }
 

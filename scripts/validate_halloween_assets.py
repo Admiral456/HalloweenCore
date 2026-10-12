@@ -10,7 +10,30 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
 TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
-SHADER = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
+MODELS = CONTENT / "models" / "item"
+WEARABLE_HELMET_MODEL = CONTENT / "models" / "armor" / "crimson_warden_helmet_3d.json"
+WEARABLE_COWL_MODEL = CONTENT / "models" / "armor" / "nocturne_sovereign_cowl_3d.json"
+WINGS_TEXTURE = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "entity" / "equipment" / "wings" / "batwing_elytra.png"
+EXPECTED_3D_MODELS = {
+    "cursed_talisman": ("item/generated", "item/cursed_talisman"),
+    "crimson_warden_sword": ("item/handheld", "item/crimson_warden_sword"),
+    "crimson_warden_pickaxe": ("item/handheld", "item/crimson_warden_pickaxe"),
+    "crimson_warden_axe": ("item/handheld", "item/crimson_warden_axe"),
+    "crimson_warden_shovel": ("item/handheld", "item/crimson_warden_shovel"),
+    "crimson_warden_hoe": ("item/handheld", "item/crimson_warden_hoe"),
+    "crimson_warden_shield": ("item/generated", "item/crimson_warden_shield"),
+}
+SHADERPACK = ROOT / "shaderpack"
+SHADER_PROGRAMS = (
+    "shaders/gbuffers_skybasic.vsh", "shaders/gbuffers_skybasic.fsh",
+    "shaders/gbuffers_skytextured.vsh", "shaders/gbuffers_skytextured.fsh",
+    "shaders/gbuffers_clouds.vsh", "shaders/gbuffers_clouds.fsh",
+)
+MOON_ATLAS = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "environment" / "moon_phases.png"
+COLORMAPS = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "colormap"
+EXPECTED_COLORMAPS = ("grass.png", "foliage.png", "water.png")
+BLOCK_MODELS = CONTENT / "resourcepack" / "assets" / "minecraft" / "models" / "block"
+BLOCKSTATES = CONTENT / "resourcepack" / "assets" / "minecraft" / "blockstates"
 CONFIG = CONTENT / "configs" / "items.yml"
 SOUNDS_CONFIG = CONTENT / "configs" / "sounds.yml"
 THEME = CONTENT / "sounds" / "haunted_theme.ogg"
@@ -47,12 +70,19 @@ EXPECTED = {
     "crimson_warden_axe.png",
     "crimson_warden_shovel.png",
     "crimson_warden_hoe.png",
+    "crimson_warden_shield.png",
+    "batwing_elytra.png",
+    "batwing_elytra_broken.png",
+    "nocturne_sovereign_cowl.png",
 }
 ARMOR_TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "armor" / "crimson_warden"
 VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "textures" / "block"
 EXPECTED_SEASONAL_BLOCK_TEXTURES = {
     "pumpkin_side.png", "pumpkin_top.png", "pumpkin_face.png",
     "jack_o_lantern.png", "cobweb.png", "red_candle.png", "red_candle_lit.png",
+    "red_mushroom.png", "brown_mushroom.png",
+    "pumpkin_face_classic.png", "pumpkin_face_bat.png", "pumpkin_face_grin.png", "pumpkin_face_skull.png",
+    "jack_o_lantern_classic.png", "jack_o_lantern_bat.png", "jack_o_lantern_grin.png", "jack_o_lantern_skull.png",
 }
 
 
@@ -125,6 +155,139 @@ for name in sorted(EXPECTED):
     width, height = png_size(TEXTURES / name)
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
+    source_texture = CONTENT / "textures" / "item" / name
+    if not source_texture.is_file() or png_size(source_texture) != (32, 32):
+        fail(f"ItemsAdder source texture is missing or invalid: {source_texture.relative_to(ROOT)}")
+
+if not WINGS_TEXTURE.is_file():
+    fail("Missing Batwing Elytra worn-wings texture")
+if strict_png_size(WINGS_TEXTURE) != (64, 32):
+    fail("Batwing Elytra wings texture must be a valid 64x32 PNG")
+source_wings = CONTENT / "textures" / "entity" / "equipment" / "wings" / "batwing_elytra.png"
+if not source_wings.is_file() or strict_png_size(source_wings) != (64, 32):
+    fail("ItemsAdder source Batwing texture must be a valid 64x32 PNG")
+
+# Validate every generated custom 3D model, its namespace-aware texture reference,
+# UVs and cuboid bounds. This catches missing or broken model references before /iazip.
+for item_id, (expected_parent, expected_texture) in EXPECTED_3D_MODELS.items():
+    model_path = MODELS / f"{item_id}.json"
+    if not model_path.is_file():
+        fail(f"Missing custom 3D model: {model_path.relative_to(ROOT)}")
+    try:
+        model = json.loads(model_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"Invalid JSON in model {item_id}: {exc}")
+    if model.get("parent") != expected_parent:
+        fail(f"{item_id} model must use parent {expected_parent}")
+    textures = model.get("textures", {})
+    if textures.get("layer0") != f"warriorland_halloween:{expected_texture}":
+        fail(f"{item_id} must use namespaced layer0 texture {expected_texture}")
+    if not isinstance(model.get("elements"), list) or not model["elements"]:
+        fail(f"{item_id} model needs non-empty voxel geometry")
+    if len(model["elements"]) > 700:
+        fail(f"{item_id} model exceeds the 700-element safety cap")
+    for index, element in enumerate(model["elements"]):
+        try:
+            frm, to, faces = element["from"], element["to"], element["faces"]
+        except (KeyError, TypeError):
+            fail(f"{item_id} element {index} is missing from/to/faces")
+        if len(frm) != 3 or len(to) != 3:
+            fail(f"{item_id} element {index} must have three-axis bounds")
+        if any(float(a) < 0 or float(b) > 16 or float(a) >= float(b) for a, b in zip(frm, to)):
+            fail(f"{item_id} element {index} has invalid Minecraft model bounds")
+        if not isinstance(faces, dict) or set(faces) != {"north", "south", "east", "west", "up", "down"}:
+            fail(f"{item_id} element {index} must define all six faces")
+        for face_name, face in faces.items():
+            uv = face.get("uv") if isinstance(face, dict) else None
+            if not isinstance(uv, list) or len(uv) != 4:
+                fail(f"{item_id} element {index} face {face_name} needs four UV coordinates")
+            if any(float(value) < 0 or float(value) > 16 for value in uv):
+                fail(f"{item_id} element {index} face {face_name} UV is outside the 0..16 texture space")
+            if face.get("texture") != "#layer0":
+                fail(f"{item_id} element {index} face {face_name} must use #layer0")
+
+# The worn Crimson Warden helmet uses the ItemsAdder-supported custom 3D helmet path.
+# The other armor pieces intentionally use the custom layer_1/layer_2 texture equipment.
+if not WEARABLE_HELMET_MODEL.is_file():
+    fail("Missing wearable 3D Crimson Warden helmet model")
+try:
+    wearable_helmet = json.loads(WEARABLE_HELMET_MODEL.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Invalid wearable helmet model JSON: {exc}")
+if wearable_helmet.get("parent") != "item/generated":
+    fail("Wearable helmet model must use item/generated parent")
+if wearable_helmet.get("textures", {}).get("layer0") != "warriorland_halloween:item/crimson_warden_helmet":
+    fail("Wearable helmet model references the wrong namespaced texture")
+helmet_elements = wearable_helmet.get("elements")
+if not isinstance(helmet_elements, list) or len(helmet_elements) < 8 or len(helmet_elements) > 700:
+    fail("Wearable helmet model must contain 8..700 voxel elements")
+for index, element in enumerate(helmet_elements):
+    if not isinstance(element, dict):
+        fail(f"Wearable helmet element {index} is invalid")
+    frm, to, faces = element.get("from"), element.get("to"), element.get("faces")
+    if not isinstance(frm, list) or not isinstance(to, list) or len(frm) != 3 or len(to) != 3:
+        fail(f"Wearable helmet element {index} has invalid bounds")
+    if any(float(a) < 0 or float(b) > 16 or float(a) >= float(b) for a, b in zip(frm, to)):
+        fail(f"Wearable helmet element {index} has out-of-range cuboid bounds")
+    if not isinstance(faces, dict) or set(faces) != {"north", "south", "east", "west", "up", "down"}:
+        fail(f"Wearable helmet element {index} needs all six faces")
+    for face_name, face in faces.items():
+        uv = face.get("uv") if isinstance(face, dict) else None
+        if not isinstance(uv, list) or len(uv) != 4 or any(float(v) < 0 or float(v) > 16 for v in uv):
+            fail(f"Wearable helmet element {index} face {face_name} has invalid UVs")
+        if face.get("texture") != "#layer0":
+            fail(f"Wearable helmet element {index} face {face_name} must use #layer0")
+
+# The Nocturne Sovereign Cowl must also use a distinct model when equipped.
+if not WEARABLE_COWL_MODEL.is_file():
+    fail("Missing wearable 3D Nocturne Sovereign Cowl model")
+try:
+    wearable_cowl = json.loads(WEARABLE_COWL_MODEL.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Invalid wearable Cowl model JSON: {exc}")
+if wearable_cowl.get("parent") != "item/generated":
+    fail("Wearable Cowl model must use item/generated parent")
+if wearable_cowl.get("textures", {}).get("layer0") != "warriorland_halloween:item/nocturne_sovereign_cowl":
+    fail("Wearable Cowl model references the wrong namespaced texture")
+cowl_elements = wearable_cowl.get("elements")
+if not isinstance(cowl_elements, list) or len(cowl_elements) < 8 or len(cowl_elements) > 700:
+    fail("Wearable Cowl model must contain 8..700 voxel elements")
+for index, element in enumerate(cowl_elements):
+    frm, to, faces = element.get("from"), element.get("to"), element.get("faces")
+    if not isinstance(frm, list) or not isinstance(to, list) or len(frm) != 3 or len(to) != 3:
+        fail(f"Wearable Cowl element {index} has invalid bounds")
+    if any(float(a) < 0 or float(b) > 16 or float(a) >= float(b) for a, b in zip(frm, to)):
+        fail(f"Wearable Cowl element {index} has invalid bounds")
+    if not isinstance(faces, dict) or set(faces) != {"north", "south", "east", "west", "up", "down"}:
+        fail(f"Wearable Cowl element {index} needs all six faces")
+    for face_name, face in faces.items():
+        uv = face.get("uv") if isinstance(face, dict) else None
+        if not isinstance(uv, list) or len(uv) != 4 or any(float(v) < 0 or float(v) > 16 for v in uv):
+            fail(f"Wearable Cowl element {index} face {face_name} has invalid UVs")
+        if face.get("texture") != "#layer0":
+            fail(f"Wearable Cowl element {index} face {face_name} must use #layer0")
+
+source_bbmodel = CONTENT / "models" / "source" / "nocturne_sovereign_cowl.bbmodel"
+if not source_bbmodel.is_file():
+    fail("Missing editable Blockbench source for the Nocturne Sovereign Cowl")
+try:
+    source_model = json.loads(source_bbmodel.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Invalid Blockbench source JSON: {exc}")
+if source_model.get("meta", {}).get("model_format") != "free" or not source_model.get("elements"):
+    fail("Nocturne Cowl Blockbench source must include editable voxel geometry")
+
+shield_blocking_path = MODELS / "crimson_warden_shield_blocking.json"
+if not shield_blocking_path.is_file():
+    fail("Missing custom shield blocking-state model")
+try:
+    shield_blocking = json.loads(shield_blocking_path.read_text(encoding="utf-8"))
+except (OSError, json.JSONDecodeError) as exc:
+    fail(f"Invalid blocking shield model JSON: {exc}")
+if shield_blocking.get("parent") != "item/generated" or not shield_blocking.get("elements"):
+    fail("Blocking shield model must have item/generated parent and voxel geometry")
+if shield_blocking.get("textures", {}).get("layer0") != "warriorland_halloween:item/crimson_warden_shield":
+    fail("Blocking shield model has an invalid namespaced texture reference")
 
 for layer in ("layer_1.png", "layer_2.png"):
     path = ARMOR_TEXTURES / layer
@@ -134,12 +297,52 @@ for layer in ("layer_1.png", "layer_2.png"):
     if (width, height) != (64, 32):
         fail(f"{layer} must be 64x32, got {width}x{height}")
 
-if not SHADER.is_file():
-    fail("Missing Halloween sky shader: " + str(SHADER.relative_to(ROOT)))
-shader_text = SHADER.read_text(encoding="utf-8")
-for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "halloweenTint", "fragColor = sky;"):
-    if marker not in shader_text:
-        fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
+# Validate the standalone Iris shader pack. Never override assets/minecraft/shaders/core,
+# because Iris does not support resource-pack core shader replacements.
+if not (SHADERPACK / "shaders" / "shaders.properties").is_file():
+    fail("Missing standalone Iris shaderpack/shaders.properties")
+properties = (SHADERPACK / "shaders" / "shaders.properties").read_text(encoding="utf-8")
+for marker in ("profile.LOW", "profile.MEDIUM", "profile.HIGH", "HALLOWEEN_QUALITY", "BLOOD_MOON_STRENGTH"):
+    if marker not in properties:
+        fail(f"Shader pack properties are missing {marker}")
+for relative in SHADER_PROGRAMS:
+    shader_path = SHADERPACK / relative
+    if not shader_path.is_file():
+        fail("Missing Iris shader program: " + str(shader_path.relative_to(ROOT)))
+    shader_text = shader_path.read_text(encoding="utf-8")
+    if "#version 330" not in shader_text:
+        fail(f"{relative} must declare GLSL 330")
+    if "gbuffers_skybasic.fsh" in relative and not all(
+        marker in shader_text for marker in ("worldDay", "HALLOWEEN_BLOOD_MOON_DAY", "BLOOD_MOON_STRENGTH")
+    ):
+        fail("Sky shader must use the actual client-synchronized Blood Moon marker")
+    if "gbuffers_skytextured.fsh" in relative and "HALLOWEEN_BLOOD_MOON_DAY" not in shader_text:
+        fail("Moon texture shader is missing Blood Moon event condition")
+if not MOON_ATLAS.is_file():
+    fail("Missing seasonal moon texture atlas: " + str(MOON_ATLAS.relative_to(ROOT)))
+try:
+    moon_width, moon_height = strict_png_size(MOON_ATLAS)
+except (OSError, ValueError) as exc:
+    fail(f"Invalid moon phase atlas: {exc}")
+if (moon_width, moon_height) != (128, 64):
+    fail(f"Moon phase atlas must be 128x64, got {moon_width}x{moon_height}")
+
+for colormap_name in EXPECTED_COLORMAPS:
+    colormap_path = COLORMAPS / colormap_name
+    if not colormap_path.is_file():
+        fail("Missing seasonal biome colormap: " + str(colormap_path.relative_to(ROOT)))
+    try:
+        colormap_width, colormap_height = strict_png_size(colormap_path)
+    except (OSError, ValueError) as exc:
+        fail(f"Invalid seasonal colormap {colormap_name}: {exc}")
+    if (colormap_width, colormap_height) != (256, 256):
+        fail(f"Seasonal colormap {colormap_name} must be 256x256")
+
+
+# The physical vanilla resource pack remains free of shader-core overrides.
+core_shader_override = CONTENT / "resourcepack" / "assets" / "minecraft" / "shaders" / "core" / "sky.fsh"
+if core_shader_override.exists():
+    fail("Remove unsupported resource-pack core shader override; use the standalone Iris shader pack")
 
 # Explicit vanilla texture overrides give physical Halloween decoration its
 # seasonal appearance while keeping the server-side blocks present with or
@@ -155,6 +358,51 @@ for name in sorted(EXPECTED_SEASONAL_BLOCK_TEXTURES):
         fail(f"Invalid seasonal vanilla block texture {name}: {exc}")
     if (width, height) != (16, 16):
         fail(f"Seasonal vanilla block texture {name} must be 16x16, got {width}x{height}")
+
+# Validate model/state references for the authored pumpkin variants. These retain
+# vanilla block collision/behavior while choosing a different crisp face by rotation.
+expected_block_models = {}
+for index, style in enumerate(("classic", "bat", "grin", "skull")):
+    expected_block_models[f"pumpkin_halloween_{index}"] = f"pumpkin_face_{style}"
+    expected_block_models[f"carved_pumpkin_halloween_{index}"] = f"pumpkin_face_{style}"
+    expected_block_models[f"jack_o_lantern_halloween_{index}"] = f"jack_o_lantern_{style}"
+
+for model_name, face_texture in expected_block_models.items():
+    model_path = BLOCK_MODELS / f"{model_name}.json"
+    if not model_path.is_file():
+        fail("Missing seasonal block model: " + str(model_path.relative_to(ROOT)))
+    try:
+        model = json.loads(model_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"Invalid seasonal block model {model_name}: {exc}")
+    if model.get("parent") != "minecraft:block/cube":
+        fail(f"{model_name} must extend minecraft:block/cube")
+    textures = model.get("textures", {})
+    if textures.get("north") != f"minecraft:block/{face_texture}":
+        fail(f"{model_name} references the wrong authored face texture")
+    for key in ("south", "west", "east"):
+        if textures.get(key) != "minecraft:block/pumpkin_side":
+            fail(f"{model_name} is missing compatible pumpkin side texture for {key}")
+    if textures.get("up") != "minecraft:block/pumpkin_top" or textures.get("down") != "minecraft:block/pumpkin_top":
+        fail(f"{model_name} must reference valid pumpkin top/bottom textures")
+
+for state_name in ("pumpkin", "carved_pumpkin", "jack_o_lantern"):
+    state_path = BLOCKSTATES / f"{state_name}.json"
+    if not state_path.is_file():
+        fail(f"Missing seasonal blockstate: {state_path.relative_to(ROOT)}")
+    try:
+        state = json.loads(state_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"Invalid blockstate JSON {state_name}: {exc}")
+    variants = state.get("variants", {})
+    expected_facing = {"facing=north", "facing=east", "facing=south", "facing=west"}
+    if set(variants) != expected_facing:
+        fail(f"{state_name} blockstate must define all four facing directions")
+    for variant in variants.values():
+        model_id = variant.get("model", "")
+        model_name = model_id.split(":")[-1].removeprefix("block/")
+        if model_name not in expected_block_models:
+            fail(f"{state_name} references unknown model {model_id}")
 
 theme_duration = 0.0
 audio_specs = [(THEME, None), (EVENT_STING, 5.0)]
@@ -309,13 +557,28 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
                 "crimson_warden_helmet", "crimson_warden_chestplate",
                 "crimson_warden_leggings", "crimson_warden_boots",
                 "crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
-                "crimson_warden_shovel", "crimson_warden_hoe"):
+                "crimson_warden_shovel", "crimson_warden_hoe", "crimson_warden_shield",
+                "batwing_elytra", "nocturne_sovereign_cowl"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
+
+if "wings_texture: entity/equipment/wings/batwing_elytra" not in config:
+    fail("Batwing Elytra must reference its custom worn-wing texture")
+if "durability_damage_multiplier: 0.65" not in config:
+    fail("Batwing Elytra should reduce durability wear while retaining normal gliding/fireworks")
+if "model: armor/nocturne_sovereign_cowl_3d" not in config or "icon: item/nocturne_sovereign_cowl" not in config:
+    fail("Nocturne Cowl must define separate worn model and inventory icon")
 
 shop_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
 if "      cost: 1000000" not in shop_config or "      bonus-health: 20.0" not in shop_config:
     fail("Cursed talisman must cost 1,000,000 fragments and grant +20 max health")
+for required in ("surge-cooldown-seconds", "echo-radius-blocks", "curse-duration-multiplier", "veilstep-cooldown-seconds"):
+    if required not in shop_config:
+        fail(f"Runtime config is missing relic setting {required}")
+engine_source = (ROOT / "src" / "shared" / "java" / "cz" / "halloween" / "core" / "HalloweenRelicAbilityEngine.java").read_text(encoding="utf-8")
+for marker in ("activateSurge", "activateEcho", "activateVeilstep", "applyCurseEffect", "PlayerSwapHandItemsEvent", "PlayerQuitEvent"):
+    if marker not in engine_source:
+        fail(f"Relic ability engine is missing {marker}")
 for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
                 "crimson_warden_shovel", "crimson_warden_hoe"):
     start = config.find(f"  {item_id}:")
@@ -331,22 +594,55 @@ for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warde
         fail(f"Custom gear '{item_id}' must remain enchantable")
 
 expected_armor_stats = {
-    "crimson_warden_helmet": ("max_durability: 900", "armor: 3"),
-    "crimson_warden_chestplate": ("max_durability: 1300", "armor: 4"),
-    "crimson_warden_leggings": ("max_durability: 1150", "armor: 3"),
-    "crimson_warden_boots": ("max_durability: 950", "armor: 3"),
+    "crimson_warden_helmet": ("NETHERITE_HELMET", 3.0, 6.0, 900),
+    "crimson_warden_chestplate": ("NETHERITE_CHESTPLATE", 4.0, 12.0, 1300),
+    "crimson_warden_leggings": ("NETHERITE_LEGGINGS", 3.0, 9.0, 1150),
+    "crimson_warden_boots": ("NETHERITE_BOOTS", 3.0, 6.0, 950),
 }
-for item_id, required_stats in expected_armor_stats.items():
+for item_id, (material, extra_armor, displayed_total, durability) in expected_armor_stats.items():
+    start = config.find(f"  {item_id}:")
+    if start < 0:
+        fail(f"{item_id} missing from ItemsAdder config")
+    section_tail = config[start + len(f"  {item_id}:"):]
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", section_tail)
+    end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
+    definition = config[start:end]
+    if not re.search(rf"(?m)^    material: {re.escape(material)}\s*$", definition):
+        fail(f"{item_id} must use base material {material}")
+    if not re.search(rf"(?m)^      max_durability: {durability}\s*$", definition):
+        fail(f"{item_id} durability must be {durability}")
+    if not re.search(rf"(?m)^        armor: {extra_armor:g}\s*$", definition):
+        fail(f"{item_id} added armor modifier must be {extra_armor:g}")
+    # Netherite base armor is 3 / 8 / 6 / 3; ItemsAdder's armor slot modifier adds to it.
+    base_armor = {"NETHERITE_HELMET": 3.0, "NETHERITE_CHESTPLATE": 8.0,
+                  "NETHERITE_LEGGINGS": 6.0, "NETHERITE_BOOTS": 3.0}[material]
+    effective_total = base_armor + extra_armor
+    if effective_total != displayed_total:
+        fail(f"{item_id} effective armor {effective_total:g} does not match intended {displayed_total:g}")
+    if not re.search(rf"Brnění {displayed_total:g}(?:\s|\()", definition):
+        fail(f"{item_id} lore must disclose the effective armor total {displayed_total:g}")
+    if "equipment:" not in definition or "slot_attribute_modifiers:" not in definition:
+        fail(f"{item_id} must define its armor slot attribute modifier")
+
+helmet_definition_start = config.find("  crimson_warden_helmet:")
+helmet_tail = config[helmet_definition_start + len("  crimson_warden_helmet:"):]
+helmet_next = re.search(r"(?m)^  [a-z0-9_]+:\s*$", helmet_tail)
+helmet_end = helmet_definition_start + len("  crimson_warden_helmet:") + helmet_next.start() if helmet_next else len(config)
+helmet_definition = config[helmet_definition_start:helmet_end]
+if "model: armor/crimson_warden_helmet_3d" not in helmet_definition:
+    fail("Crimson Warden helmet must equip its generated 3D worn model")
+if "icon: item/crimson_warden_helmet" not in helmet_definition:
+    fail("Crimson Warden helmet must keep a separate inventory icon")
+if "id: warriorland_halloween:crimson_warden" in helmet_definition:
+    fail("3D worn helmet must omit equipment.id so ItemsAdder honors its helmet model path")
+for item_id in ("crimson_warden_chestplate", "crimson_warden_leggings", "crimson_warden_boots"):
     start = config.find(f"  {item_id}:")
     section_tail = config[start + len(f"  {item_id}:"):]
     next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", section_tail)
     end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
     definition = config[start:end]
-    for stat in required_stats:
-        if stat not in definition:
-            fail(f"{item_id} is missing expected full-set armour/durability stat: {stat}")
-    if "equipment:" not in definition or "slot_attribute_modifiers:" not in definition:
-        fail(f"{item_id} must use its Crimson Warden equipment layer and required armor modifier")
+    if "id: warriorland_halloween:crimson_warden" not in definition:
+        fail(f"{item_id} must use the Crimson Warden worn armor layer equipment")
 
 expected_gear_stats = {
     "crimson_warden_sword": ("attackDamage: 15.0", "attackSpeed: 0.8", "max_durability: 5000"),
@@ -378,6 +674,7 @@ gear_components = {
     "crimson_warden_axe": ("crimson_warden_axe.json", "#minecraft:mineable/axe", 5000),
     "crimson_warden_shovel": ("crimson_warden_shovel.json", "#minecraft:mineable/shovel", 4500),
     "crimson_warden_hoe": ("crimson_warden_hoe.json", "#minecraft:mineable/hoe", 4500),
+    "crimson_warden_shield": ("crimson_warden_shield.json", None, 1800),
 }
 for item_id, (component_file, mining_tag, expected_max_damage) in gear_components.items():
     start = config.find(f"  {item_id}:")
@@ -413,8 +710,31 @@ for item_id, (component_file, mining_tag, expected_max_damage) in gear_component
         ):
             fail(f"{item_id} must have mining speed >= 14 and correct drops for {mining_tag}")
 
+# Ensure ItemsAdder is actually wired to use the models generated above while
+# preserving a separate crisp texture icon in inventories.
+for item_id in EXPECTED_3D_MODELS:
+    start = config.find(f"  {item_id}:")
+    if start < 0:
+        fail(f"Custom model item '{item_id}' is missing from ItemsAdder config")
+    tail = config[start + len(f"  {item_id}:"):]
+    next_item = re.search(r"(?m)^  [a-z0-9_]+:\s*$", tail)
+    end = start + len(f"  {item_id}:") + next_item.start() if next_item else len(config)
+    definition = config[start:end]
+    if item_id == "crimson_warden_shield":
+        for required in ("normal: item/crimson_warden_shield",
+                         "blocking: item/crimson_warden_shield_blocking",
+                         "icon: item/crimson_warden_shield"):
+            if required not in definition:
+                fail(f"Shield graphic configuration is missing {required}")
+        if not (MODELS / "crimson_warden_shield_blocking.json").is_file():
+            fail("Shield blocking-state model is missing")
+    else:
+        for required in (f"model: item/{item_id}", f"icon: item/{item_id}"):
+            if required not in definition:
+                fail(f"{item_id} graphic configuration is missing {required}")
+
 shop_ids = ("crimson-warden-sword", "crimson-warden-pickaxe", "crimson-warden-axe",
-            "crimson-warden-shovel", "crimson-warden-hoe")
+            "crimson-warden-shovel", "crimson-warden-hoe", "crimson-warden-shield")
 for shop_id in shop_ids:
     if f"    {shop_id}:" not in shop_config:
         fail(f"Shop reward '{shop_id}' missing from config.yml")
@@ -431,18 +751,33 @@ for layer in ("layer_1.png", "layer_2.png"):
 
 root_textures = CONTENT / "textures"
 if root_textures.exists():
-    unexpected = [p for p in root_textures.rglob("*") if p.is_file()
-                  and not (p.parent == ARMOR_SOURCE_TEXTURES and p.name in ("layer_1.png", "layer_2.png"))]
+    allowed_source_items = {root_textures / "item" / name for name in EXPECTED}
+    allowed_source_wings = {
+        root_textures / "entity" / "equipment" / "wings" / "batwing_elytra.png"
+    }
+    allowed_armor_layers = {
+        ARMOR_SOURCE_TEXTURES / "layer_1.png",
+        ARMOR_SOURCE_TEXTURES / "layer_2.png",
+    }
+    unexpected = [
+        p for p in root_textures.rglob("*") if p.is_file()
+        and p not in allowed_source_items
+        and p not in allowed_source_wings
+        and p not in allowed_armor_layers
+    ]
     if unexpected:
-        fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
+        fail("Unexpected ItemsAdder source texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
 print("Halloween asset validation passed.")
-print("14 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
-print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
+print("15 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
+print(f"3D equipment: {len(EXPECTED_3D_MODELS)} voxel models + separate shield blocking model; bounds/UVs/textures verified")
+print("Crimson Warden gear: attack stats/durability and effective additive armor totals verified")
+print("Worn armor: custom 3D helmet model verified; chestplate, leggings and boots use custom armor layers")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
-print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
-print("Sky shader: Minecraft 1.21.10 entry point present")
+print(f"Seasonal vanilla block textures: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
+print("Autumn biome colormaps: grass, foliage, and water verified at 256x256; moon atlas verified at 128x64")
+print("Iris shaderpack: required GLSL sources and actual Blood Moon marker validated")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")
 print("ItemsAdder sound definitions: present")
 print(f"Verified exact Minecraft 1.21.10 music-event overrides: {len(vanilla_sound_events)}")

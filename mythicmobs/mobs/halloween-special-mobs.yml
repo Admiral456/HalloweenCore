@@ -18,7 +18,9 @@ halloween_cursed_zombie:
   Skills:
   - model{mid=halloween_cursed_zombie;n=false} @self ~onSpawn
   - state{mid=halloween_cursed_zombie;s=idle;} @self ~onSpawn
-  - state{mid=halloween_cursed_zombie;s=attack} @self ~onAttack
+  - state{mid=halloween_cursed_zombie;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_cursed_zombie;s=death} @self ~onDeath
+  - state{mid=halloween_cursed_zombie;s=frenzy} @self ~onAttack
 
 halloween_gravekeeper:
   Type: SKELETON
@@ -36,7 +38,9 @@ halloween_gravekeeper:
   Skills:
   - model{mid=halloween_gravekeeper;n=false} @self ~onSpawn
   - state{mid=halloween_gravekeeper;s=idle;} @self ~onSpawn
-  - state{mid=halloween_gravekeeper;s=attack} @self ~onAttack
+  - state{mid=halloween_gravekeeper;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_gravekeeper;s=death} @self ~onDeath
+  - state{mid=halloween_gravekeeper;s=ground_slam} @self ~onAttack
 
 halloween_blood_spider:
   Type: SPIDER
@@ -54,7 +58,9 @@ halloween_blood_spider:
   Skills:
   - model{mid=halloween_blood_spider;n=false} @self ~onSpawn
   - state{mid=halloween_blood_spider;s=idle;} @self ~onSpawn
-  - state{mid=halloween_blood_spider;s=attack} @self ~onAttack
+  - state{mid=halloween_blood_spider;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_blood_spider;s=death} @self ~onDeath
+  - state{mid=halloween_blood_spider;s=blood_leap} @self ~onAttack
 
 halloween_pumpkin_wraith:
   Type: CREEPER
@@ -72,7 +78,9 @@ halloween_pumpkin_wraith:
   Skills:
   - model{mid=halloween_pumpkin_wraith;n=false} @self ~onSpawn
   - state{mid=halloween_pumpkin_wraith;s=idle;} @self ~onSpawn
-  - state{mid=halloween_pumpkin_wraith;s=attack} @self ~onAttack
+  - state{mid=halloween_pumpkin_wraith;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_pumpkin_wraith;s=death} @self ~onDeath
+  - state{mid=halloween_pumpkin_wraith;s=ember_burst} @self ~onAttack
 
 halloween_hex_witch:
   Type: WITCH
@@ -90,7 +98,9 @@ halloween_hex_witch:
   Skills:
   - model{mid=halloween_hex_witch;n=false} @self ~onSpawn
   - state{mid=halloween_hex_witch;s=idle;} @self ~onSpawn
-  - state{mid=halloween_hex_witch;s=attack} @self ~onAttack
+  - state{mid=halloween_hex_witch;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_hex_witch;s=death} @self ~onDeath
+  - state{mid=halloween_hex_witch;s=hex_cast} @self ~onAttack
 
 halloween_void_reaper:
   Type: HUSK
@@ -109,7 +119,9 @@ halloween_void_reaper:
   Skills:
   - model{mid=halloween_void_reaper;n=false} @self ~onSpawn
   - state{mid=halloween_void_reaper;s=idle;} @self ~onSpawn
-  - state{mid=halloween_void_reaper;s=attack} @self ~onAttack
+  - state{mid=halloween_void_reaper;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_void_reaper;s=death} @self ~onDeath
+  - state{mid=halloween_void_reaper;s=void_cast} @self ~onAttack
 
 halloween_frost_stalker:
   Type: STRAY
@@ -127,7 +139,9 @@ halloween_frost_stalker:
   Skills:
   - model{mid=halloween_frost_stalker;n=false} @self ~onSpawn
   - state{mid=halloween_frost_stalker;s=idle;} @self ~onSpawn
-  - state{mid=halloween_frost_stalker;s=attack} @self ~onAttack
+  - state{mid=halloween_frost_stalker;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_frost_stalker;s=death} @self ~onDeath
+  - state{mid=halloween_frost_stalker;s=pounce} @self ~onAttack
 
 halloween_nightmare:
   Type: PHANTOM
@@ -145,4 +159,66 @@ halloween_nightmare:
   Skills:
   - model{mid=halloween_nightmare;n=false} @self ~onSpawn
   - state{mid=halloween_nightmare;s=idle;} @self ~onSpawn
-  - state{mid=halloween_nightmare;s=attack} @self ~onAttack
+  - state{mid=halloween_nightmare;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_nightmare;s=death} @self ~onDeath
+  - state{mid=halloween_nightmare;s=spectral_charge} @self ~onAttack
+
+halloween_goblin_king:
+  Type: PIGLIN_BRUTE
+  Display: '&2&lKRÁL SKŘÍTKŮ'
+  Health: 500
+  Damage: 14
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: false
+    PreventRenaming: true
+    MovementSpeed: 0.28
+    KnockbackResistance: 0.85
+  Skills:
+  - model{mid=halloween_goblin_king;n=false} @self ~onSpawn
+  - state{mid=halloween_goblin_king;s=idle_breath;} @self ~onSpawn
+  - state{mid=halloween_goblin_king;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_goblin_king;s=death} @self ~onDeath
+  - state{mid=halloween_goblin_king;s=heavy_attack} @self ~onAttack
+
+halloween_headless_nick:
+  Type: WITHER_SKELETON
+  Display: '&8&lBEZHLAVÝ NICK'
+  Health: 120
+  Damage: 12
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: false
+    PreventRenaming: true
+    MovementSpeed: 0.29
+    KnockbackResistance: 0.45
+  Skills:
+  - model{mid=halloween_headless_nick;n=false} @self ~onSpawn
+  - state{mid=halloween_headless_nick;s=idle;} @self ~onSpawn
+  - state{mid=halloween_headless_nick;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_headless_nick;s=death} @self ~onDeath
+  - state{mid=halloween_headless_nick;s=executioner_strike} @self ~onAttack
+
+halloween_nick_steed:
+  Type: SKELETON_HORSE
+  Display: '&2&lKRVAVÝ VÁLEČNÝ HŘEBEC'
+  Health: 80
+  Damage: 8
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: false
+    PreventRenaming: true
+    MovementSpeed: 0.34
+    KnockbackResistance: 0.55
+  Skills:
+  - model{mid=halloween_nick_steed;n=false} @self ~onSpawn
+  - state{mid=halloween_nick_steed;s=idle} @self ~onSpawn
+  - state{mid=halloween_nick_steed;s=hit_reaction} @self ~onDamaged
+  - state{mid=halloween_nick_steed;s=death} @self ~onDeath
+  - state{mid=halloween_nick_steed;s=gallop} @self ~onAttack

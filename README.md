@@ -27,7 +27,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
 - Maska nočního lovce dává při nošení +5 % k zisku fragmentů; stojí 4 000 fragmentů a vyžaduje prokletí 3
-- Prokletý talisman stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +20 maximálního zdraví (jeden řádek srdcí navíc) a zachovává +10 % k zisku fragmentů
+- Prokletý náhrdelník (zachované interní ID `cursed_talisman`) stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +20 maximálního zdraví (jeden řádek srdcí navíc) a zachovává +10 % k zisku fragmentů
 - limitovaný token Halloween 2026 stojí 30 000 fragmentů a vyžaduje prokletí 5
 - po dosažení globálního cíle se natrvalo odemkne serverové finále
 - hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
@@ -50,6 +50,10 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
+- /halloween structures status|scan (admin, diagnostika náhodných struktur ve světě)
+- /halloween mob status (admin, stav event/test mobů v načtených chunkech)
+- /halloween mob spawn <id> [hráč] (admin, testovací spawn jednoho z osmi mobů bez odměn)
+- /halloween mob cleanup (admin, bezpečný úklid označených event/test mobů)
 - /halloween setvillage (admin)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
@@ -75,6 +79,20 @@ V základním repozitáři je připravený dormantní MythicMobs definition `myt
 Jakmile je finále odemčené a vše připravené, HalloweenCore přirozeně spustí znamení a pětiminutové varování. Potom bosse automaticky vyvolá přesně ve středu arény; příkaz `/halloween boss start` zůstává pouze pro admin testy. Útoky mají výrazné telegraphy a hráč je může přečíst a uhnout jim: Falešná kořist, Krvavý puls, Zrcadlový výpad se třemi klamnými runami a Zatmění s matoucími kruhy.
 
 Odměny jsou nastavené jako výzva: účast vyžaduje nejméně 120 sekund v dosahu i způsobení alespoň 2,5 % maximálního zdraví bosse. Top bonus získá pouze kvalifikovaný hráč s nejvyšším poškozením, nikoliv hráč, který jen stál v aréně.
+
+## Bezpečné ruční generování struktur
+
+- Přirozená tvorba vesnic a hřbitovů zůstává v `HalloweenWorldStructureGenerator` navázaná na načítání chunků, s frontou, limity a kontrolami přirozeného terénu.
+- Administrátor může zařadit bezpečný pokus o ruční generování příkazem `/halloween structures spawn haunted-village [hráč]` nebo `/halloween structures spawn cursed-graveyard [hráč]`. Z konzole je nutné zadat online hráče.
+- Umístění se plánuje do středu vybraného hráčova chunku; příkaz negarantuje stavbu za každých okolností. Kontrola načtených chunků, terénu, svahu, výšky, biomu, spawn bufferu a existujících struktur probíhá před stavbou. Nevhodné místo je bezpečně přeskočeno.
+
+## Přenosné relikvie — Batwing Elytra a Nocturne Sovereign Cowl
+
+- Batwing Elytra má vlastní 64×32 texturu nošených křídel, poškozenou ikonu, výdrž 768 a zachované létání/ohňostroje/Mending; během letu F aktivuje Nightwing Surge a Shift+F Bat Echo.
+- Nocturne Sovereign Cowl používá vlastní 3D head-slot model a ikonu, vidění ve tmě, omezené pulzy na označené Halloween moby, Curseguard pro debuffy aplikované přes HalloweenCore a krátký Veilstep přes Shift+F.
+- Přenosný balíček `HalloweenCore-Portable-Relics.zip` používá nezávislý namespace `halloween_relics`; standalone modul `portable-relics/` sdílí stejný engine schopností.
+- Worn custom Elytra vyžaduje Minecraft 1.21.2+ a ItemsAdder 4.0.18+; cílový server projektu je Paper/Purpur 1.21.10 a Java 21. Po změně obsahu spusť `/iazip` a ověř doručení packu klientům.
+- CI může potvrdit sestavení a strukturu assetů, nikoliv skutečné vykreslení modelů nebo let ve hře. Live test je NOT TESTED, dokud neproběhne na testovacím serveru.
 
 ## PlaceholderAPI
 
@@ -140,7 +158,21 @@ Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/hallow
 
 Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
 
-Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
+Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny, červené svíčky a v přirozeně zastíněných místech také červené/hnědé houby. Přidávání je dávkované a respektuje přirozený terén. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
+
+### Náhodné Haunted Village a prokleté hřbitovy
+
+Nový `HalloweenWorldStructureGenerator` se při zapnutém Halloween systému dívá na načtené chunky v Overworldu. Na vhodných travnatých a přírodních plochách může postavit variantované domky, kapli, studnu, lucerny a dýňový záhon nebo hřbitov s náhrobky, obvodovou zdí, skutečně otevřenou bránou, mauzoleem, rituálním kruhem a svíčkami. Podlahy a cesty se pokládají na úroveň terénu, ne jako vyvýšená plošina. Generátor vyžaduje načtenou celou plochu, přírodní terén s malým sklonem a volný prostor nad terénem. Vynechá lesy, existující stavby, strmé plochy i kruh 64 bloků kolem světového spawnu; nikdy kvůli hledání nevynucuje načtení vzdálených chunků. Náhodnost je opakovatelná podle seedu a souřadnic a použitá plocha se označuje v PDC, takže reload ani restart stavbu znovu nepostaví.
+
+- `world-structures.village-region-chunks` a `graveyard-region-chunks` určují četnost kandidátů; `max-slope` a `max-retries` nastavují bezpečnostní limity.
+- `/halloween structures status` ukáže stav generátoru, frontu, počet postavených vesnic/hřbitovů v aktuální relaci a počet přeskočených kandidátů.
+- `/halloween structures scan` znovu zkontroluje právě načtené chunky. Není to teleport ani příkaz pro generování kolem hráče; nové oblasti se kontrolují při přirozeném načítání chunků.
+
+### Vlastní efekty zbroje, zbraní a štítu
+
+Efekty spouštějí předměty získané přes Halloween obchod, protože ten jim při vydání přidává interní identifikátor odměny. Helma Krvavého strážce dává průběžné noční vidění, kyrys krátkou ohnivzdornost, nohavice rychlost a boty výskok; plný set vytváří decentní červeno-duševní auru a při kritickém zásahu může s cooldownem spustit krátkou ochrannou absorpci. Meč vyvolává krvavou ránu, sekera oslabí obranu, krumpáč zpomalí cíl, lopatka vytvoří malou rázovou vlnu bez ničení bloků a motyka může v boji obnovit zdraví. Štít Krvavého strážce může při úspěšném blokování odtlačit útočníka. Cooldowny a hodnoty jsou v konfiguraci `gear-effects`.
+
+Asset pipeline generuje 15 ostrých 32×32 RGBA ikon a také vlastní UV-mapované voxelové JSON modely pro meč, všechny pět nástrojů, štít a náhrdelník; zachovává samostatný 64×32 armor atlas, aby se nepoškodilo nasazení zbroje. Štít má oddělené modely pro běžný a blokovací stav, vlastní texturu, ItemsAdder definici a výdrž 1 800 / enchantovatelnost 25. Po instalaci změn je nutné sestavit a doručit nový ItemsAdder resource pack (`/iazip`, pak ověřit `/iainfo`). Automatické asset kontroly a Java build probíhají v CI; konečné vykreslení modelů, nasazení zbroje a chování soubojů je potřeba ověřit v živém Paper/Purpur 1.21.10 klientovi.
 
 - `/halloween boss test` vyvolá testovacího Krále upírů bez globálního progressu, odemčení finále a model-ready gate. Vyžaduje uložený střed arény a funkční MythicMobs mob `vampire-king`; testovací zabití nedává odměny ani neoznačí finále za splněné.
 
@@ -174,7 +206,8 @@ Vlastní PNG jsou v `itemsadder/contents/warriorland_halloween/resourcepack/asse
 V repozitáři je připravený namespace `warriorland_halloween`:
 
 - `itemsadder/contents/warriorland_halloween/configs/items.yml`
-- `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/*.png` — vlastní textury
+- `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/*.png` — 15 vlastních 32×32 pixel-art ikon včetně štítu a náhrdelníku
+- `scripts/generate_halloween_gear_assets.py` — deterministický generátor ostrých ikon
 - `itemsadder/contents/warriorland_halloween/ASSETS.md` — seznam assetů
 
 Po nasazení obsahu do ItemsAdder je potřeba znovu vygenerovat resource pack přes `/iazip`.
@@ -229,6 +262,60 @@ Výstup:
 Zdrojové Blockbench modely a externí atlasy pro speciální moby jsou v `mythicmobs/models/halloween_*.bbmodel` a `mythicmobs/models/halloween_*.png`. Kontroluje je `python3 scripts/validate_special_mob_models.py`; CI zároveň balí definice a blueprinty do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`.
 
 Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj blueprinty přes ModelEngine, spusť `/meg reload models` a `/mm reload`. Do stávajícího seznamu `merge_other_plugins_resourcepacks_folders` v konfiguraci ItemsAdderu přidej cestu `ModelEngine/resource pack`, aby se modelové textury dostaly do stejného klientského packu. Poté spusť `/iazip`, ověř `/iainfo`, přijmi pack na klientovi a znovu se připoj.
+
+## Halloween graphics: Iris shader and real Blood Moon sync
+
+The graphics update consists of three separate pieces because the server-side Bukkit plugin cannot set shader uniforms in remote Minecraft clients:
+
+- **ItemsAdder resource pack** — seasonal pumpkin faces, jack-o'-lanterns, autumnal grass/foliage/water colormaps, a warm eight-phase moon atlas, red/brown haunted mushroom textures, all item icons/models and the existing Halloween audio definitions.
+- **Iris shader pack** — a dedicated shader ZIP under `shaderpack/`, with dark violet nights, burnt-orange horizon/daylight, tinted clouds, a directional moon halo, and a deep-crimson Blood Moon visual. Quality profiles are Low, Medium and High. The shader pack does not overwrite `assets/minecraft/shaders/core`, because Iris does not support resource-pack core-shader replacements.
+- **Fabric client companion** — the optional 1.21.10 client mod receives `halloweencore:visual_state` from the server. It exposes a client-only world-time marker during the actual `blood-moon-invasion` event, so the shader uses crimson mode only during that event and smoothly returns after it ends. It does not change the server clock or gameplay.
+
+#
+## Goblin King — separate boss and fortress
+
+The Goblin King is an independent encounter; it does not replace or rename the Vampire King. Install the updated plugin JAR, ItemsAdder content and `HalloweenCore-Special-Mobs-ModelEngine.zip`. For the custom boss/rider visual, install the matching MythicMobs definition file from `mythicmobs/mobs/halloween-special-mobs.yml` into `plugins/MythicMobs/Mobs/`, then run `/mm reload`. If either MythicMobs or ModelEngine is unavailable, the core uses its documented vanilla fallback.
+
+**Arena safety workflow (admin):**
+1. Make a backup of the target world before any build.
+2. `/halloween goblin dry-run <world> <x> <y> <z>` prints the planned bounds and checks that the full build volume is air, all intersecting chunks are already loaded, height bounds are valid, and WorldGuard allows building when installed. It performs no edits.
+3. `/halloween goblin arena <world> <x> <y> <z>` repeats preflight and stores a pending plan; it does not build yet.
+4. Review the printed bounds, then run `/halloween goblin confirm`. Use `/halloween goblin cancel` to abort. Existing non-air blocks are never intentionally overwritten. If the build fails mid-operation, the manager rolls all touched blocks back to air.
+5. `/halloween goblin status` checks state. `/halloween goblin test` spawns the test encounter without boss fragment rewards. `/halloween goblin start` starts the reward-enabled encounter only after the configured global progress threshold; `stop` ends it.
+
+The first supported fortress version uses a 31-block radius and a 16-block build height; choose a completely clear area substantially larger than that footprint. Arena construction and boss combat need real staging-world tests before production release.
+
+## Headless Nick — stalking/ambush
+
+Install/reload the MythicMobs/ModelEngine companion pack and `mythicmobs/mobs/halloween-special-mobs.yml` for the genuine headless rider. If that model/integration cannot be loaded, Nick intentionally refuses to spawn rather than showing an ordinary headed skeleton. The mount is currently a vanilla Skeleton Horse; a custom horse model is not included yet. The encounter can be configured in `stalkers.headless-nick`.
+
+Admin commands: `/halloween nick status`, `/halloween nick test <player>` (allows testing outside night), `/halloween nick spawn <player>` (normal night/safety rules apply), `/halloween nick target <player>`, `/halloween nick attack`, `/halloween nick despawn`. Messages **“Vidím tě.”** and **“Sleduji tě.”** are target-only, not global chat. On production servers, verify safe zones, WorldGuard PVP behavior, mounted pathfinding and rider/horse cleanup in a staging world before enabling natural spawns.
+
+## Staged delivery verification status
+
+- **Stage 0 — PASS:** repository/version/baseline audit written in `docs/MASTER_PROMPT_STAGED_AUDIT_2026-10-12.md`.
+- **Stage 1 — automated PASS, in-game NOT TESTED:** eight mob IDs, secondary attacks, admin test spawning/cleanup and per-mob test matrix are in source. See `docs/SPECIAL_MOB_ABILITY_MATRIX.md` and [CI run #1140](https://github.com/Admiral456/HalloweenCore/actions/runs/38220557974).
+- **Stage 2 — in progress:** effective additive armor totals are validated in code; a generated 3D worn helmet model is being added. In-game worn appearance and ItemsAdder import are still NOT TESTED.
+- **Stages 3–4 — in progress:** independent Goblin King boss/fortress and Headless Nick manager/models/commands are being implemented. New branch-head build and live server combat tests are still required.
+- **No live Paper/Purpur server or Minecraft client was available to this workflow.** A passing compilation or structural asset validator is not represented as proof of in-game visuals/AI.
+
+## Installation
+
+1. Build/download `HalloweenCore-jar` and install it on the Paper/Purpur 1.21.10 server like the normal plugin.
+2. Extract `WarriorLand-Halloween-ItemsAdder.zip` from the GitHub Actions artifacts into `plugins/ItemsAdder/contents/` so the archive creates `plugins/ItemsAdder/contents/warriorland_halloween/`. Restart or reload ItemsAdder as appropriate, run `/iazip`, verify `/iainfo`, and make sure players accept the updated resource pack.
+3. On each client that should see the shader, use Minecraft Java 1.21.10 with Fabric Loader, Fabric API, Iris and Sodium. Put `HalloweenCore-Client-1.21.10.jar` into that client's `mods/` folder.
+4. Put `WarriorLand-Halloween-Iris-Shader.zip` into `.minecraft/shaderpacks/` and select it in Video Settings → Shader Packs. The ZIP contains the `shaders/` directory at its root.
+5. Test the real event with `/halloween event start blood-moon-invasion`, then `/halloween event stop`. Check both the red-sky transition and the restoration to normal Halloween colors.
+
+Clients without the Fabric companion still get the ItemsAdder environment textures and the normal shader mood if they manually select the Iris pack, but their shader cannot know when a server-only Blood Moon starts. For those clients the red-event sky is intentionally not simulated permanently.
+
+### World-generation settings
+
+`world-structures.village-region-chunks` and `world-structures.graveyard-region-chunks` control candidate density; `max-slope`, `max-retries` and `spawn-exclusion-radius` constrain placement. Empty `village-biomes` and `graveyard-biomes` lists allow any biome that passes terrain checks; non-empty lists are Bukkit biome-name allow-lists. The generator only edits suitable loaded Overworld terrain, skips occupied/marked footprints, and leaves the vanilla block behavior intact. Structure generation in existing worlds is incremental as chunks naturally load; the plugin cannot retroactively inject vanilla structure-start data into an already-generated chunk.
+
+### Verification boundary
+
+GitHub Actions compiles the shader source with `glslangValidator`, validates PNG dimensions/CRC and model/blockstate JSON, compiles the Paper plugin, and builds the Fabric client mod. This is not a substitute for testing the visuals with the exact Minecraft/Iris/GPU combination; the final sky appearance, ItemsAdder item renders and combat behavior must still be checked on a real staging server/client.
 
 ## Diagnostika hudby a klientského packu
 

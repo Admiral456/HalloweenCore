@@ -56,6 +56,7 @@ public final class HalloweenEventManager {
     }
 
     private void clearActiveEvent() {
+        if (isBloodMoonActive()) broadcastVisualState(false);
         if (activeEventId != null && plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
@@ -90,6 +91,7 @@ public final class HalloweenEventManager {
     }
 
     public void stop() {
+        if (isBloodMoonActive()) broadcastVisualState(false);
         if (activeEventId != null && plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
@@ -145,6 +147,7 @@ public final class HalloweenEventManager {
     private void beginEvent(String eventId) {
         if (eventId == null || eventId.isBlank() || activeEventId != null) return;
         activeEventId = eventId;
+        if (isBloodMoonActive()) broadcastVisualState(true);
         int phase = getGlobalPhase();
         int duration = Math.max(1, plugin.getConfig().getInt("random-events.duration-minutes", 5)
                 + Math.min(3, phase / 2));
@@ -163,6 +166,7 @@ public final class HalloweenEventManager {
     }
 
     private void endEvent() {
+        if (isBloodMoonActive()) broadcastVisualState(false);
         String path = "random-events.types." + activeEventId;
         String message = plugin.getConfig().getString(path + ".end-message",
                 "&6&lHALLOWEEN &8» &7Halloween událost skončila.");
@@ -325,6 +329,36 @@ public final class HalloweenEventManager {
             if (milestone > 0L && total >= milestone) phase++;
         }
         return phase;
+    }
+
+    private boolean isBloodMoonActive() {
+        return activeEventId != null && activeEventId.equalsIgnoreCase("blood-moon-invasion");
+    }
+
+    /**
+     * Sync the real server event to the optional client companion. The custom payload
+     * changes only client-side time used by the sky renderer/shader uniforms; it never
+     * changes the server world's day-night cycle or gameplay time.
+     */
+    public void syncVisualState(Player player) {
+        if (player == null || !player.isOnline()) return;
+        sendVisualState(player, isBloodMoonActive());
+    }
+
+    private void broadcastVisualState(boolean bloodMoon) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            sendVisualState(player, bloodMoon);
+        }
+    }
+
+    private void sendVisualState(Player player, boolean bloodMoon) {
+        try {
+            player.sendPluginMessage(plugin, "halloweencore:visual_state",
+                    new byte[]{(byte) (bloodMoon ? 1 : 0)});
+        } catch (IllegalArgumentException ignored) {
+            // Keep gameplay running if another plugin has intentionally unregistered
+            // the optional visual-state channel; the client companion is cosmetic.
+        }
     }
 
     public boolean isActive(String id) {
