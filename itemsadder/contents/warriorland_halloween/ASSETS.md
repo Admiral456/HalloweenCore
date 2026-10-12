@@ -124,14 +124,9 @@ Five ModelEngine blueprints with independent 128×128 atlases are stored in `myt
 
 ## Halloween world decoration textures
 
-The ItemsAdder ZIP also includes seven **16×16 vanilla-block texture overrides** under `resourcepack/assets/minecraft/textures/block/`:
+The ItemsAdder ZIP includes **17 16×16 vanilla block textures** under `resourcepack/assets/minecraft/textures/block/`: the existing pumpkin top/side and vanilla accents, two mushroom textures, and eight authored pumpkin/jack-o'-lantern face variants (`classic`, `bat`, `grin`, `skull`). Twelve compact block models and three `blockstates/` files select these faces while preserving vanilla block IDs, rotation and collision. The face variant is selected with the block's facing state (so the model is deterministic, not a random per-block component).
 
-- `pumpkin_side.png`, `pumpkin_top.png`, `pumpkin_face.png` — pumpkin body, top and carved face.
-- `jack_o_lantern.png` — glowing jack-o'-lantern face.
-- `cobweb.png` — crimson web strands with transparent background.
-- `red_candle.png`, `red_candle_lit.png` — dark red candles and a warmer lit state.
-
-The HalloweenCore decorator places actual vanilla blocks into the world, so the blocks remain present even if a player declines the resource pack. The accepted pack changes their appearance instead of controlling whether they exist. These are vanilla namespace overrides and therefore affect **all** vanilla pumpkins, jack-o'-lanterns, cobwebs and red candles in resource-pack-enabled clients, not just the ones placed by HalloweenCore. They are checked by `scripts/validate_halloween_assets.py` in CI.
+The resource pack also contains a `128×64 environment/moon_phases.png` eight-phase orange moon atlas plus `256×256 colormap/grass.png`, `foliage.png` and `water.png` to make tinted biomes more autumnal. These are vanilla texture/colormap overrides, so they affect all matching vanilla blocks/biome tint on clients who accept the pack, not only blocks spawned by HalloweenCore. The server decorator places actual vanilla blocks, so the gameplay block remains present even if a player declines the resource pack. CI validates PNG dimensions/CRC, model references and blockstate JSON.
 
 ## Iris Halloween shader and actual Blood Moon state
 
