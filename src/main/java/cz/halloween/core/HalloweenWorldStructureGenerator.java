@@ -184,7 +184,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                     ^ ((long) candidate.chunkX() * 341873128712L)
                     ^ ((long) candidate.chunkZ() * 132897987541L)
                     ^ candidate.type().salt);
-            int baseY = terrain.maxY() + 1;
+            int baseY = terrain.maxY();
 
             if (candidate.type() == StructureType.HAUNTED_VILLAGE) {
                 buildVillage(world, centerX, baseY, centerZ, random);
@@ -364,7 +364,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         for (int dx = -4; dx <= 4; dx++) {
             for (int dz = -3; dz <= 3; dz++) {
                 boolean perimeter = Math.abs(dx) == 4 || Math.abs(dz) == 3;
-                place(world, cx + dx, baseY, cz + dz, perimeter ? foundation : floor);
+                placeFoundation(world, cx + dx, baseY, cz + dz, perimeter ? foundation : floor);
                 supportDown(world, cx + dx, baseY, cz + dz, foundation);
             }
         }
@@ -419,7 +419,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
     private void buildWell(World world, int x, int y, int z) {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dz = -1; dz <= 1; dz++) {
-                place(world, x + dx, y, z + dz, Material.MOSSY_STONE_BRICKS);
+                placeFoundation(world, x + dx, y, z + dz, Material.MOSSY_STONE_BRICKS);
                 if (Math.abs(dx) == 1 || Math.abs(dz) == 1) {
                     place(world, x + dx, y + 1, z + dz, Material.MOSSY_COBBLESTONE_WALL);
                 }
@@ -436,7 +436,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
 
     private void buildLamp(World world, int x, int y, int z) {
         supportDown(world, x, y, z, Material.COBBLED_DEEPSLATE);
-        place(world, x, y, z, Material.POLISHED_BLACKSTONE_BRICKS);
+        placeFoundation(world, x, y, z, Material.POLISHED_BLACKSTONE_BRICKS);
         place(world, x, y + 1, z, Material.DARK_OAK_FENCE);
         place(world, x, y + 2, z, Material.DARK_OAK_FENCE);
         place(world, x, y + 3, z, Material.IRON_CHAIN);
@@ -526,7 +526,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         for (int dx = -3; dx <= 3; dx++) {
             for (int dz = -2; dz <= 2; dz++) {
                 supportDown(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE_BRICKS);
-                place(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE_BRICKS);
+                placeFoundation(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE_BRICKS);
                 boolean edge = Math.abs(dx) == 3 || Math.abs(dz) == 2;
                 if (edge && !(dz == 2 && dx == 0)) {
                     for (int level = 1; level <= 3; level++) {
@@ -558,10 +558,10 @@ public final class HalloweenWorldStructureGenerator implements Listener {
                 int distance = dx * dx + dz * dz;
                 if (distance >= 3 && distance <= 5) {
                     supportDown(world, x + dx, y, z + dz, Material.COBBLED_DEEPSLATE);
-                    place(world, x + dx, y, z + dz, Material.CRYING_OBSIDIAN);
+                    placeFoundation(world, x + dx, y, z + dz, Material.CRYING_OBSIDIAN);
                 } else if (distance <= 2) {
                     supportDown(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE);
-                    place(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE);
+                    placeFoundation(world, x + dx, y, z + dz, Material.POLISHED_BLACKSTONE);
                 }
             }
         }
@@ -579,7 +579,7 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         int x = startX;
         int z = startZ;
         while (true) {
-            place(world, centerX + x, baseY, centerZ + z, material);
+            placeFoundation(world, centerX + x, baseY, centerZ + z, material);
             supportDown(world, centerX + x, baseY, centerZ + z, Material.COBBLED_DEEPSLATE);
             if (x == endX && z == endZ) break;
             if (x != endX) x += dx;
@@ -631,6 +631,15 @@ public final class HalloweenWorldStructureGenerator implements Listener {
         if (y <= world.getMinHeight() || y >= world.getMaxHeight()) return;
         Block block = world.getBlockAt(x, y, z);
         if (canReplace(block)) block.setType(material, false);
+    }
+
+    /** Replace only natural surface blocks when a structure needs a flush foundation. */
+    private void placeFoundation(World world, int x, int y, int z, Material material) {
+        if (y <= world.getMinHeight() || y >= world.getMaxHeight()) return;
+        Block block = world.getBlockAt(x, y, z);
+        if (block.getState() instanceof TileState) return;
+        Material current = block.getType();
+        if (current.isAir() || isGroundCover(current) || isNaturalSurface(current)) block.setType(material, false);
     }
 
     private boolean canReplace(Block block) {
