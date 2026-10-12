@@ -117,10 +117,13 @@ jobs:
           retention-days: 14
       - name: Package special mob models
         run: |
-          mkdir -p target/halloween-mob-pack/MythicMobs/Mobs target/halloween-mob-pack/ModelEngine/blueprints
+          mkdir -p target/halloween-mob-pack/MythicMobs/Mobs target/halloween-mob-pack/MythicMobs/Skills target/halloween-mob-pack/ModelEngine/blueprints
           cp mythicmobs/mobs/halloween-special-mobs.yml target/halloween-mob-pack/MythicMobs/Mobs/
+          cp mythicmobs/mobs/vampire-king.yml target/halloween-mob-pack/MythicMobs/Mobs/
+          cp mythicmobs/skills/vampire-king.yml target/halloween-mob-pack/MythicMobs/Skills/
           cp mythicmobs/models/halloween_*.bbmodel target/halloween-mob-pack/ModelEngine/blueprints/
           cp mythicmobs/models/halloween_*.png target/halloween-mob-pack/ModelEngine/blueprints/
+          cp mythicmobs/models/vampire_king.bbmodel mythicmobs/models/vampire_king.png target/halloween-mob-pack/ModelEngine/blueprints/
           cp mythicmobs/README.md target/halloween-mob-pack/README.txt
           cd target/halloween-mob-pack
           zip -qr ../HalloweenCore-Special-Mobs-ModelEngine.zip .
