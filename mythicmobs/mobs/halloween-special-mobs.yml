@@ -146,3 +146,40 @@ halloween_nightmare:
   - model{mid=halloween_nightmare;n=false} @self ~onSpawn
   - state{mid=halloween_nightmare;s=idle;} @self ~onSpawn
   - state{mid=halloween_nightmare;s=attack} @self ~onAttack
+
+halloween_goblin_king:
+  Type: PIGLIN_BRUTE
+  Display: '&2&lKRÁL GOBLINŮ'
+  Health: 500
+  Damage: 14
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: false
+    PreventRenaming: true
+    MovementSpeed: 0.28
+    KnockbackResistance: 0.85
+  Skills:
+  - model{mid=halloween_goblin_king;n=false} @self ~onSpawn
+  - state{mid=halloween_goblin_king;s=idle;} @self ~onSpawn
+  - state{mid=halloween_goblin_king;s=attack} @onAttack
+  - state{mid=halloween_goblin_king;s=attack} @self ~onAttack
+
+halloween_headless_nick:
+  Type: WITHER_SKELETON
+  Display: '&8&lBEZHLAVÝ NICK'
+  Health: 120
+  Damage: 12
+  Options:
+    PreventOtherDrops: true
+    PreventMobKillDrops: true
+    Silent: true
+    Despawn: false
+    PreventRenaming: true
+    MovementSpeed: 0.29
+    KnockbackResistance: 0.45
+  Skills:
+  - model{mid=halloween_headless_nick;n=false} @self ~onSpawn
+  - state{mid=halloween_headless_nick;s=idle;} @self ~onSpawn
+  - state{mid=halloween_headless_nick;s=attack} @self ~onAttack
