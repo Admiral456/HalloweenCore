@@ -51,6 +51,9 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween reload
 - /halloween debug
 - /halloween structures status|scan (admin, diagnostika náhodných struktur ve světě)
+- /halloween mob status (admin, stav event/test mobů v načtených chunkech)
+- /halloween mob spawn <id> [hráč] (admin, testovací spawn jednoho z osmi mobů bez odměn)
+- /halloween mob cleanup (admin, bezpečný úklid označených event/test mobů)
 - /halloween setvillage (admin)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
