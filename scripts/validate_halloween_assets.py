@@ -10,7 +10,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 CONTENT = ROOT / "itemsadder" / "contents" / "warriorland_halloween"
 TEXTURES = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "textures" / "item"
-MODELS = CONTENT / "resourcepack" / "assets" / "warriorland_halloween" / "models" / "item"
+MODELS = CONTENT / "models" / "item"
 EXPECTED_3D_MODELS = {
     "cursed_talisman": ("item/generated", "item/cursed_talisman"),
     "crimson_warden_sword": ("item/handheld", "item/crimson_warden_sword"),
