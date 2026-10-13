@@ -39,7 +39,7 @@ neoForge {
         }
     }
     mods {
-        "\${mod_id}" {
+        "${mod_id}" {
             sourceSet(sourceSets.main)
         }
     }
