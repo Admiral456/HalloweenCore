@@ -41,12 +41,8 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public final class HalloweenGameplay {
-    private static final Map<UUID, Long> TALISMAN_UNTIL_TICK = new ConcurrentHashMap<>();
     private static final AttributeModifier TALISMAN_HEALTH = new AttributeModifier(
             ResourceLocation.fromNamespaceAndPath(HalloweenCoreMod.MOD_ID, "cursed_talisman_health"),
             2.0D, AttributeModifier.Operation.ADD_VALUE);
@@ -229,14 +225,15 @@ public final class HalloweenGameplay {
 
     public static void activateTalisman(ServerPlayer player) {
         if (!HalloweenWorldPolicy.isAllowed(player.level())) return;
-        long now = player.level().getGameTime();
-        Long until = TALISMAN_UNTIL_TICK.get(player.getUUID());
-        if (until != null && until > now) {
+        long now = System.currentTimeMillis();
+        HalloweenProgressData progress = HalloweenProgressData.get(player.getServer());
+        long until = progress.getPlayerValue(player.getUUID(), "talisman_until_epoch_ms");
+        if (until > now) {
             player.displayClientMessage(Component.literal(
-                    "Prokletý talisman už je aktivní ještě " + ((until - now) / 20L) + " s."), true);
+                    "Prokletý talisman už je aktivní ještě " + ((until - now) / 1000L) + " s."), true);
             return;
         }
-        TALISMAN_UNTIL_TICK.put(player.getUUID(), now + 20L * 60L);
+        progress.setPlayerValue(player.getUUID(), "talisman_until_epoch_ms", now + 60_000L);
         applyTalismanModifier(player);
         AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
         if (maxHealth != null) player.setHealth((float) Math.min(maxHealth.getValue(), player.getHealth() + 2.0F));
@@ -249,13 +246,19 @@ public final class HalloweenGameplay {
         if (player.tickCount % 20 != 0) return;
 
         boolean allowedWorld = HalloweenWorldPolicy.isAllowed(player.level());
-        Long until = TALISMAN_UNTIL_TICK.get(player.getUUID());
         AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
-        long now = player.level().getGameTime();
-        if (until != null && until > now && allowedWorld && maxHealth != null) {
+        long now = System.currentTimeMillis();
+        HalloweenProgressData progress = allowedWorld ? HalloweenProgressData.get(player.getServer()) : null;
+        long until = progress == null ? 0L
+                : progress.getPlayerValue(player.getUUID(), "talisman_until_epoch_ms");
+        if (until > now && allowedWorld && maxHealth != null) {
             applyTalismanModifier(player);
         } else {
-            TALISMAN_UNTIL_TICK.remove(player.getUUID());
+            // Do not touch global progression storage from a forbidden world; only remove
+            // temporary effects there. The saved expiry remains available if the player returns.
+            if (progress != null && until > 0L && until <= now) {
+                progress.setPlayerValue(player.getUUID(), "talisman_until_epoch_ms", 0L);
+            }
             if (maxHealth != null) {
                 maxHealth.removeModifier(TALISMAN_HEALTH.id());
                 if (player.getHealth() > maxHealth.getValue()) player.setHealth((float) maxHealth.getValue());
