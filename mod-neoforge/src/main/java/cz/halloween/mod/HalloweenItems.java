@@ -89,10 +89,10 @@ public final class HalloweenItems {
                     .durability(1300).enchantable(30)));
     public static final DeferredHolder<Item, Item> CRIMSON_WARDEN_LEGGINGS = ITEMS.register("crimson_warden_leggings",
             () -> new Item(new Item.Properties().humanoidArmor(CRIMSON_WARDEN_MATERIAL, ArmorType.LEGGINGS)
-                    .durability(1200).enchantable(30)));
+                    .durability(1150).enchantable(30)));
     public static final DeferredHolder<Item, Item> CRIMSON_WARDEN_BOOTS = ITEMS.register("crimson_warden_boots",
             () -> new Item(new Item.Properties().humanoidArmor(CRIMSON_WARDEN_MATERIAL, ArmorType.BOOTS)
-                    .durability(1040).enchantable(30)));
+                    .durability(950).enchantable(30)));
 
     public static final DeferredHolder<Item, Item> CRIMSON_WARDEN_SWORD = ITEMS.register("crimson_warden_sword",
             () -> new Item(new Item.Properties().sword(WARDEN_TOOL_MATERIAL, 6.5F, -2.2F)));
