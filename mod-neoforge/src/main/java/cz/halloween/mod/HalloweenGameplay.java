@@ -5,6 +5,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
@@ -114,6 +115,15 @@ public final class HalloweenGameplay {
                         .requires(source -> source.hasPermission(2))
                         .executes(context -> validateAssets(context.getSource())));
 
+        var atmosphereRoot = Commands.literal("atmosphere")
+                .then(Commands.literal("status").executes(context -> showAtmosphereStatus(context.getSource())))
+                .then(Commands.literal("preview")
+                        .requires(source -> source.hasPermission(2))
+                        .executes(context -> previewAtmosphere(context.getSource(), false)))
+                .then(Commands.literal("test")
+                        .requires(source -> source.hasPermission(2))
+                        .executes(context -> previewAtmosphere(context.getSource(), true)));
+
         var spawnTesting = Commands.literal("mob")
                 .then(Commands.argument("id", StringArgumentType.word())
                         .requires(source -> source.hasPermission(2))
@@ -153,7 +163,8 @@ public final class HalloweenGameplay {
                 .then(spawnRoot)
                 .then(giveRoot)
                 .then(Commands.literal("progress").executes(context -> showProgress(context.getSource())))
-                .then(questsRoot);
+                .then(questsRoot)
+                .then(atmosphereRoot);
         event.getDispatcher().register(root);
     }
 
@@ -462,6 +473,7 @@ public final class HalloweenGameplay {
         source.sendSuccess(() -> Component.literal("/halloween event start <id> | stop | list"), false);
         source.sendSuccess(() -> Component.literal("/halloween assets status | validate"), false);
         source.sendSuccess(() -> Component.literal("/halloween quests | quests reset <hráč>"), false);
+        source.sendSuccess(() -> Component.literal("/halloween atmosphere status | preview | test"), false);
         source.sendSuccess(() -> Component.literal("Všechny změny světa fungují jen v explicitně povolených dimenzích; seznam je ve výchozím stavu prázdný."), false);
         return 1;
     }
@@ -478,6 +490,54 @@ public final class HalloweenGameplay {
         source.sendSuccess(() -> Component.literal(
                 "Poznámka: modely/AI jsou zatím první fáze; vlastní animované modely a koňský Nick ještě nejsou dokončeny."), false);
         return MOB_IDS.size();
+    }
+
+    private static int showAtmosphereStatus(CommandSourceStack source) {
+        source.sendSuccess(() -> Component.literal("HalloweenCore — stav atmosféry"), false);
+        source.sendSuccess(() -> Component.literal("Povolené dimenze: " + HalloweenConfig.ALLOWED_WORLD_IDS.get()), false);
+        source.sendSuccess(() -> Component.literal("Povrchové dekorace: "
+                + (HalloweenConfig.WORLD_DECORATIONS_ENABLED.get() ? "zapnuté v povolených dimenzích" : "vypnuté")), false);
+        source.sendSuccess(() -> Component.literal("Předgenerované vesnice a hřbitovy: zatím nejsou v nativním módu implementované."), false);
+        source.sendSuccess(() -> Component.literal("Globální Halloween textura země a povinný shader: zatím nejsou součástí nativního buildu."), false);
+        source.sendSuccess(() -> Component.literal("Preview/test umí vyzkoušet jen ohraničené částice; neumisťuje bloky."), false);
+        return 1;
+    }
+
+    private static int previewAtmosphere(CommandSourceStack source, boolean fullTest) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("Tento vizuální test spusť přímo ve hře, nikoli z konzole."));
+            return 0;
+        }
+        if (!HalloweenWorldPolicy.isAllowed(player.level())) {
+            source.sendFailure(Component.literal("Atmosférický test odmítnut: tento svět není explicitně povolen."));
+            return 0;
+        }
+        if (!(player.level() instanceof ServerLevel level)) {
+            source.sendFailure(Component.literal("Atmosférický test je dostupný pouze na serverovém světě."));
+            return 0;
+        }
+
+        double radius = fullTest ? 3.0D : 2.0D;
+        int points = fullTest ? 24 : 12;
+        for (int i = 0; i < points; i++) {
+            double angle = (Math.PI * 2.0D * i) / points;
+            double x = player.getX() + Math.cos(angle) * radius;
+            double z = player.getZ() + Math.sin(angle) * radius;
+            level.sendParticles(fullTest ? ParticleTypes.SOUL_FIRE_FLAME : ParticleTypes.SOUL,
+                    x, player.getY() + 0.15D, z, 1, 0.03D, 0.06D, 0.03D, 0.005D);
+        }
+        if (fullTest) {
+            level.sendParticles(ParticleTypes.ASH, player.getX(), player.getY() + 1.0D, player.getZ(),
+                    24, 0.45D, 0.5D, 0.45D, 0.01D);
+            level.sendParticles(ParticleTypes.WITCH, player.getX(), player.getY() + 1.0D, player.getZ(),
+                    12, 0.3D, 0.4D, 0.3D, 0.01D);
+            source.sendSuccess(() -> Component.literal(
+                    "Omezený test částic dokončen. Nebyly umístěny ani změněny žádné bloky."), true);
+        } else {
+            source.sendSuccess(() -> Component.literal(
+                    "Atmosféra preview: vizuální kruh částic; žádné bloky nebyly umístěny ani změněny."), false);
+        }
+        return points;
     }
 
     private static int showAssetsStatus(CommandSourceStack source) {
