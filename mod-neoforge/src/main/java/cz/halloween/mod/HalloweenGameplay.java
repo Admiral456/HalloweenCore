@@ -177,8 +177,8 @@ public final class HalloweenGameplay {
         int fragments = HalloweenProgressRewards.cropFragments(harvested);
         if (fragments > 0) {
             long total = progress.addFragments(player.getUUID(), fragments);
-            player.sendSystemMessage(Component.literal(
-                    "HalloweenCore: +" + fragments + " fragment za sklizeň (celkem " + total + ")."));
+            player.displayClientMessage(Component.literal(
+                    "HalloweenCore: +" + fragments + " fragment za sklizeň (celkem " + total + ")."), true);
         }
 
         // Keep the event effect separate from permanent progression accounting:
@@ -203,8 +203,8 @@ public final class HalloweenGameplay {
         int fragments = HalloweenProgressRewards.oreFragments(mined);
         if (fragments > 0) {
             long total = progress.addFragments(player.getUUID(), fragments);
-            player.sendSystemMessage(Component.literal(
-                    "HalloweenCore: +" + fragments + " fragment za těžbu (celkem " + total + ")."));
+            player.displayClientMessage(Component.literal(
+                    "HalloweenCore: +" + fragments + " fragment za těžbu (celkem " + total + ")."), true);
         }
     }
 
@@ -221,10 +221,10 @@ public final class HalloweenGameplay {
         if (boss) progress.addPlayerValue(player.getUUID(), "bosses_defeated", 1L);
         int reward = HalloweenProgressRewards.mobKillFragments(boss);
         long total = progress.addFragments(player.getUUID(), reward);
-        player.sendSystemMessage(Component.literal(
+        player.displayClientMessage(Component.literal(
                 "HalloweenCore: +" + reward + " fragment" + (reward == 1 ? "" : "ů")
                         + " za poražení " + (boss ? "bosse" : "speciálního moba")
-                        + " (celkem " + total + ")."));
+                        + " (celkem " + total + ")."), true);
     }
 
     public static void activateTalisman(ServerPlayer player) {
@@ -292,9 +292,9 @@ public final class HalloweenGameplay {
             return 0;
         }
         HalloweenProgressData data = HalloweenProgressData.get(player.serverLevel().getServer());
-        source.sendSuccess(() -> Component.literal("§6HalloweenCore — tvůj trvalý postup"), false);
+        source.sendSuccess(() -> Component.literal("HalloweenCore — tvůj trvalý postup"), false);
         source.sendSuccess(() -> Component.literal("Fragmenty: " + data.getPlayerValue(player.getUUID(), "fragments")), false);
-        source.sendSuccess(() -> Component.literal("Speciální mibi poraženi: " + data.getPlayerValue(player.getUUID(), "special_mob_kills")), false);
+        source.sendSuccess(() -> Component.literal("Speciální mobů poraženo: " + data.getPlayerValue(player.getUUID(), "special_mob_kills")), false);
         source.sendSuccess(() -> Component.literal("Bossové poraženi: " + data.getPlayerValue(player.getUUID(), "bosses_defeated")), false);
         source.sendSuccess(() -> Component.literal("Rudy vytěženy: " + data.getPlayerValue(player.getUUID(), "ores_mined")), false);
         source.sendSuccess(() -> Component.literal("Dospělé plodiny sklizeny: " + data.getPlayerValue(player.getUUID(), "mature_crops_harvested")), false);
