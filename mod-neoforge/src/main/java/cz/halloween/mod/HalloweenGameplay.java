@@ -12,6 +12,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -159,7 +160,7 @@ public final class HalloweenGameplay {
         TALISMAN_UNTIL_TICK.put(player.getUUID(), now + 20L * 60L);
         applyTalismanModifier(player);
         AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
-        if (maxHealth != null) player.setHealth(Math.min(maxHealth.getValue(), player.getHealth() + 2.0F));
+        if (maxHealth != null) (float) Math.min(maxHealth.getValue(), player.getHealth() + 2.0F);
         player.displayClientMessage(Component.literal("Prokletý talisman: +1 srdce na 60 sekund."), true);
     }
 
@@ -176,7 +177,7 @@ public final class HalloweenGameplay {
         } else {
             TALISMAN_UNTIL_TICK.remove(player.getUUID());
             maxHealth.removeModifier(TALISMAN_HEALTH.id());
-            if (player.getHealth() > maxHealth.getValue()) player.setHealth(maxHealth.getValue());
+            if (player.getHealth() > maxHealth.getValue()) player.setHealth((float) maxHealth.getValue());
         }
     }
 
@@ -292,10 +293,11 @@ public final class HalloweenGameplay {
             if (position == null) continue;
             EntityType<HalloweenMonster> type = HalloweenEntities.byId(id);
             if (type == null) continue;
-            HalloweenMonster mob = type.create(level);
+            HalloweenMonster mob = type.create(level, null, position, EntitySpawnReason.COMMAND, false, false);
             if (mob == null) continue;
-            mob.moveTo(position.getX() + 0.5D, position.getY(), position.getZ() + 0.5D,
-                    level.random.nextFloat() * 360.0F, 0.0F);
+            mob.setPos(position.getX() + 0.5D, position.getY(), position.getZ() + 0.5D);
+            mob.setYRot(level.random.nextFloat() * 360.0F);
+            mob.setXRot(0.0F);
             mob.setTarget(player);
             level.addFreshEntity(mob);
         }
@@ -358,7 +360,7 @@ public final class HalloweenGameplay {
             source.sendFailure(Component.literal("Neznámý mob. ID: cursed_zombie, void_reaper, gravekeeper, frost_stalker, blood_spider, pumpkin_wraith, hex_witch, nightmare, headless_nick, goblin_king, vampire_king."));
             return 0;
         }
-        ServerLevel level = target.serverLevel();
+        ServerLevel level = (ServerLevel) target.level();
         BlockPos position = findSpawnPos(level, target, 0);
         if (position == null) {
             source.sendFailure(Component.literal("Nebyla nalezena bezpečná spawnovací pozice."));
@@ -369,8 +371,9 @@ public final class HalloweenGameplay {
             source.sendFailure(Component.literal("Entitu se nepodařilo vytvořit."));
             return 0;
         }
-        mob.moveTo(position.getX() + 0.5D, position.getY(), position.getZ() + 0.5D,
-                level.random.nextFloat() * 360.0F, 0.0F);
+        mob.setPos(position.getX() + 0.5D, position.getY(), position.getZ() + 0.5D);
+        mob.setYRot(level.random.nextFloat() * 360.0F);
+        mob.setXRot(0.0F);
         mob.setTarget(target);
         mob.setCustomNameVisible(isBoss(id));
         if (!level.addFreshEntity(mob)) {
@@ -379,7 +382,7 @@ public final class HalloweenGameplay {
         }
         final ServerPlayer spawnedFor = target;
         source.sendSuccess(() -> Component.literal(
-                "Spawnuto: " + id + " poblíž " + spawnedFor.getGameProfile().getName()), true);
+                "Spawnuto: " + id + " poblíž " + spawnedFor.getName().getString()), true);
         return 1;
     }
 
@@ -414,7 +417,7 @@ public final class HalloweenGameplay {
         ItemStack stack = new ItemStack(item);
         if (!player.getInventory().add(stack)) player.drop(stack, false);
         source.sendSuccess(() -> Component.literal(
-                "Předáno " + requested + " hráči " + player.getGameProfile().getName()), true);
+                "Předáno " + requested + " hráči " + player.getName().getString()), true);
         return 1;
     }
 }

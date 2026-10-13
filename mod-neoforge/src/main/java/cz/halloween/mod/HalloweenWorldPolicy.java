@@ -36,7 +36,7 @@ public final class HalloweenWorldPolicy {
             return false;
         }
         if (level instanceof ServerLevel serverLevel
-                && isReservedWorldIdentifier(serverLevel.getLevelData().getLevelName())) {
+                && isReservedWorldIdentifier(serverLevel.getServer().getWorldData().getLevelName())) {
             return false;
         }
         return isConfiguredWorldAllowed(dimension.toString(), HalloweenConfig.ALLOWED_WORLD_IDS.get());

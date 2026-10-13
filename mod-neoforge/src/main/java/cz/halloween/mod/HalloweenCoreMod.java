@@ -1,7 +1,9 @@
 package cz.halloween.mod;
 
 import com.mojang.logging.LogUtils;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
+import net.neoforged.fml.DistExecutor;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.neoforge.common.NeoForge;
@@ -19,6 +21,8 @@ public final class HalloweenCoreMod {
         HalloweenItems.CREATIVE_TABS.register(modBus);
         HalloweenFeatures.FEATURES.register(modBus);
         modBus.addListener(HalloweenEntities::registerAttributes);
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT,
+                () -> () -> modBus.addListener(HalloweenClientEvents::registerRenderers));
         NeoForge.EVENT_BUS.register(HalloweenGameplay.class);
         LOGGER.info("HalloweenCore Native initialized for Minecraft 1.21.10 / NeoForge 21.10.64.");
         LOGGER.warn("Halloween world operations use a default-deny allow-list; configure intended world IDs before enabling gameplay.");

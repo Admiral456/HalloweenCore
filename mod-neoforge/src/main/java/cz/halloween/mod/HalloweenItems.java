@@ -61,30 +61,6 @@ public final class HalloweenItems {
     private static final ToolMaterial WARDEN_TOOL_MATERIAL = new ToolMaterial(
             BlockTags.INCORRECT_FOR_DIAMOND_TOOL, 5000, 15.0F, 6.0F, 30, Tags.Items.INGOTS_NETHERITE);
 
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> HALLOWEEN_TAB =
-            CREATIVE_TABS.register("halloween", () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup.halloweencore.halloween"))
-                    .withTabsBefore(CreativeModeTabs.COMBAT)
-                    .icon(() -> new ItemStack(CURSED_TALISMAN.get()))
-                    .displayItems((parameters, output) -> {
-                        output.accept(CURSED_TALISMAN.get());
-                        output.accept(NOCTURNE_SOVEREIGN_COWL.get());
-                        output.accept(BATWING_ELYTRA.get());
-                        output.accept(CRIMSON_WARDEN_HELMET.get());
-                        output.accept(CRIMSON_WARDEN_CHESTPLATE.get());
-                        output.accept(CRIMSON_WARDEN_LEGGINGS.get());
-                        output.accept(CRIMSON_WARDEN_BOOTS.get());
-                        output.accept(CRIMSON_WARDEN_SWORD.get());
-                        output.accept(CRIMSON_WARDEN_PICKAXE.get());
-                        output.accept(CRIMSON_WARDEN_AXE.get());
-                        output.accept(CRIMSON_WARDEN_SHOVEL.get());
-                        output.accept(CRIMSON_WARDEN_HOE.get());
-                        output.accept(CRIMSON_WARDEN_SHIELD.get());
-                        output.accept(HALLOWEEN_TOKEN.get());
-                        output.accept(CURSED_CANDY.get());
-                        output.accept(HAUNTED_MAP.get());
-                    }).build());
-
     public static final DeferredHolder<Item, Item> CURSED_TALISMAN = ITEMS.register("cursed_talisman",
             () -> new CursedTalismanItem(new Item.Properties().stacksTo(1).rarity(Rarity.EPIC)));
 
@@ -143,6 +119,30 @@ public final class HalloweenItems {
                     .nutrition(2).saturationModifier(0.4F).alwaysEdible().build()).rarity(Rarity.UNCOMMON));
     public static final DeferredHolder<Item, Item> HAUNTED_MAP = ITEMS.registerSimpleItem("haunted_map",
             new Item.Properties().stacksTo(1).rarity(Rarity.UNCOMMON));
+
+    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> HALLOWEEN_TAB =
+            CREATIVE_TABS.register("halloween", () -> CreativeModeTab.builder()
+                    .title(Component.translatable("itemGroup.halloweencore.halloween"))
+                    .withTabsBefore(CreativeModeTabs.COMBAT)
+                    .icon(() -> new ItemStack(CURSED_TALISMAN.get()))
+                    .displayItems((parameters, output) -> {
+                        output.accept(CURSED_TALISMAN.get());
+                        output.accept(NOCTURNE_SOVEREIGN_COWL.get());
+                        output.accept(BATWING_ELYTRA.get());
+                        output.accept(CRIMSON_WARDEN_HELMET.get());
+                        output.accept(CRIMSON_WARDEN_CHESTPLATE.get());
+                        output.accept(CRIMSON_WARDEN_LEGGINGS.get());
+                        output.accept(CRIMSON_WARDEN_BOOTS.get());
+                        output.accept(CRIMSON_WARDEN_SWORD.get());
+                        output.accept(CRIMSON_WARDEN_PICKAXE.get());
+                        output.accept(CRIMSON_WARDEN_AXE.get());
+                        output.accept(CRIMSON_WARDEN_SHOVEL.get());
+                        output.accept(CRIMSON_WARDEN_HOE.get());
+                        output.accept(CRIMSON_WARDEN_SHIELD.get());
+                        output.accept(HALLOWEEN_TOKEN.get());
+                        output.accept(CURSED_CANDY.get());
+                        output.accept(HAUNTED_MAP.get());
+                    }).build());
 
     private HalloweenItems() {}
 }

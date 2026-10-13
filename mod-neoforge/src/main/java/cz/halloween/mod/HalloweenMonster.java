@@ -32,8 +32,8 @@ public final class HalloweenMonster extends Zombie {
         switch (id) {
             case "cursed_zombie" -> player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 80, 0), this);
             case "void_reaper" -> player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 60, 0), this);
-            case "gravekeeper" -> player.addEffect(new MobEffectInstance(MobEffects.DIG_SLOWDOWN, 100, 0), this);
-            case "frost_stalker" -> player.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 80, 1), this);
+            case "gravekeeper" -> player.addEffect(new MobEffectInstance(MobEffects.MINING_FATIGUE, 100, 0), this);
+            case "frost_stalker" -> player.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 80, 1), this);
             case "blood_spider" -> player.addEffect(new MobEffectInstance(MobEffects.POISON, 60, 0), this);
             case "pumpkin_wraith" -> player.igniteForSeconds(2.5F);
             case "hex_witch" -> player.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 80, 0), this);
