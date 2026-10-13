@@ -160,7 +160,7 @@ public final class HalloweenGameplay {
         TALISMAN_UNTIL_TICK.put(player.getUUID(), now + 20L * 60L);
         applyTalismanModifier(player);
         AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
-        if (maxHealth != null) (float) Math.min(maxHealth.getValue(), player.getHealth() + 2.0F);
+        if (maxHealth != null) player.setHealth((float) Math.min(maxHealth.getValue(), player.getHealth() + 2.0F));
         player.displayClientMessage(Component.literal("Prokletý talisman: +1 srdce na 60 sekund."), true);
     }
 
