@@ -55,6 +55,9 @@ public final class HalloweenGameplay {
     private static String activeEventId = "";
     private static long eventEndsAtTick;
     private static long nextWaveAtTick;
+    private static final List<String> EVENT_IDS = List.of(
+            "soulstorm", "witching_hour", "cursed_harvest",
+            "blood_moon_invasion", "pumpkin_apocalypse", "graveyard_rising");
 
     private HalloweenGameplay() {}
 
@@ -107,6 +110,37 @@ public final class HalloweenGameplay {
         ServerLevel overworld = server.overworld();
         if (overworld == null) return;
         long tick = overworld.getGameTime();
+        long nowMs = System.currentTimeMillis();
+        HalloweenProgressData saved = HalloweenProgressData.get(server);
+
+        // Rebuild the in-memory timer state after a restart using durable wall-clock deadlines.
+        if (activeEventId.isBlank()) {
+            long savedCode = saved.getGlobalValue("active_event_code");
+            long savedExpiry = saved.getGlobalValue("active_event_until_epoch_ms");
+            if (savedCode > 0L && savedExpiry > nowMs) {
+                String restored = eventIdForCode(savedCode);
+                if (!restored.isBlank()) {
+                    activeEventId = restored;
+                    eventEndsAtTick = tick + millisecondsToTicks(savedExpiry - nowMs);
+                    long nextWaveMs = saved.getGlobalValue("active_event_next_wave_epoch_ms");
+                    nextWaveAtTick = tick + millisecondsToTicks(Math.max(0L, nextWaveMs - nowMs));
+                    saved.setGlobalValue("next_event_at_epoch_ms", 0L);
+                    HalloweenCoreMod.LOGGER.info("Restored active Halloween event {} after restart.", activeEventId);
+                } else {
+                    clearPersistedActiveEvent(saved);
+                    if (saved.getGlobalValue("next_event_at_epoch_ms") <= nowMs) {
+                        saved.setGlobalValue("next_event_at_epoch_ms",
+                                nowMs + 1000L * HalloweenConfig.EVENT_INTERVAL_SECONDS.get());
+                    }
+                }
+            } else if (savedCode > 0L) {
+                clearPersistedActiveEvent(saved);
+                if (saved.getGlobalValue("next_event_at_epoch_ms") <= nowMs) {
+                    saved.setGlobalValue("next_event_at_epoch_ms",
+                            nowMs + 1000L * HalloweenConfig.EVENT_INTERVAL_SECONDS.get());
+                }
+            }
+        }
 
         if (!HalloweenConfig.EVENTS_ENABLED.get()) {
             if (!activeEventId.isBlank()) stopEventForServer(server);
@@ -114,10 +148,16 @@ public final class HalloweenGameplay {
         }
         if (!activeEventId.isBlank() && tick >= eventEndsAtTick) stopEventForServer(server);
 
-        // Without this bootstrap, a fresh server would leave nextWaveAtTick at zero
-        // and automatic events would never start until an administrator manually ran one.
+        // The initial delay and subsequent schedule are stored so a restart does not reset the event clock.
         if (activeEventId.isBlank() && nextWaveAtTick <= 0L) {
-            nextWaveAtTick = tick + 20L * HalloweenConfig.INITIAL_DELAY_SECONDS.get();
+            long savedNextEvent = saved.getGlobalValue("next_event_at_epoch_ms");
+            if (savedNextEvent > 0L) {
+                nextWaveAtTick = tick + millisecondsToTicks(Math.max(0L, savedNextEvent - nowMs));
+            } else {
+                long initialDelayMs = 1000L * HalloweenConfig.INITIAL_DELAY_SECONDS.get();
+                nextWaveAtTick = tick + millisecondsToTicks(initialDelayMs);
+                saved.setGlobalValue("next_event_at_epoch_ms", nowMs + initialDelayMs);
+            }
         }
 
         if (activeEventId.isBlank() && nextWaveAtTick > 0 && tick >= nextWaveAtTick) {
@@ -126,12 +166,14 @@ public final class HalloweenGameplay {
                 startEventInternal(server, randomEventId(), tick);
             } else {
                 nextWaveAtTick = tick + 200L;
+                saved.setGlobalValue("next_event_at_epoch_ms", nowMs + 10_000L);
             }
         }
         if (!activeEventId.isBlank() && tick >= nextWaveAtTick) {
             List<ServerPlayer> players = eligiblePlayers(server);
             if (!players.isEmpty()) runEventWave(players);
             nextWaveAtTick = tick + 20L * 25L;
+            saved.setGlobalValue("active_event_next_wave_epoch_ms", System.currentTimeMillis() + 25_000L);
         }
     }
 
@@ -326,8 +368,7 @@ public final class HalloweenGameplay {
 
     private static int startEvent(CommandSourceStack source, String requested) {
         String id = requested.toLowerCase(Locale.ROOT);
-        if (!List.of("soulstorm", "witching_hour", "cursed_harvest", "blood_moon_invasion",
-                "pumpkin_apocalypse", "graveyard_rising").contains(id)) {
+        if (!EVENT_IDS.contains(id)) {
             source.sendFailure(Component.literal("Neznámý event. Použij /halloween event list."));
             return 0;
         }
@@ -347,8 +388,15 @@ public final class HalloweenGameplay {
 
     private static void startEventInternal(MinecraftServer server, String id, long tick) {
         activeEventId = id;
-        eventEndsAtTick = tick + 20L * HalloweenConfig.EVENT_DURATION_SECONDS.get();
+        int durationSeconds = HalloweenConfig.EVENT_DURATION_SECONDS.get();
+        eventEndsAtTick = tick + 20L * durationSeconds;
         nextWaveAtTick = tick + 20L * 3L;
+        HalloweenProgressData saved = HalloweenProgressData.get(server);
+        long now = System.currentTimeMillis();
+        saved.setGlobalValue("active_event_code", eventCodeForId(id));
+        saved.setGlobalValue("active_event_until_epoch_ms", now + 1000L * durationSeconds);
+        saved.setGlobalValue("active_event_next_wave_epoch_ms", now + 3_000L);
+        saved.setGlobalValue("next_event_at_epoch_ms", 0L);
         broadcastAllowed(server, "[HalloweenCore] " + id + " začíná!");
         HalloweenCoreMod.LOGGER.info("Halloween event {} started.", id);
     }
@@ -366,9 +414,33 @@ public final class HalloweenGameplay {
         String ended = activeEventId;
         activeEventId = "";
         eventEndsAtTick = 0L;
-        nextWaveAtTick = server.overworld().getGameTime() + 20L * HalloweenConfig.EVENT_INTERVAL_SECONDS.get();
+        int intervalSeconds = HalloweenConfig.EVENT_INTERVAL_SECONDS.get();
+        nextWaveAtTick = server.overworld().getGameTime() + 20L * intervalSeconds;
+        HalloweenProgressData saved = HalloweenProgressData.get(server);
+        clearPersistedActiveEvent(saved);
+        saved.setGlobalValue("next_event_at_epoch_ms", System.currentTimeMillis() + 1000L * intervalSeconds);
         broadcastAllowed(server, "[HalloweenCore] " + ended + " skončil.");
         HalloweenCoreMod.LOGGER.info("Halloween event {} stopped.", ended);
+    }
+
+    private static void clearPersistedActiveEvent(HalloweenProgressData saved) {
+        saved.setGlobalValue("active_event_code", 0L);
+        saved.setGlobalValue("active_event_until_epoch_ms", 0L);
+        saved.setGlobalValue("active_event_next_wave_epoch_ms", 0L);
+    }
+
+    private static long eventCodeForId(String id) {
+        int index = EVENT_IDS.indexOf(id);
+        return index < 0 ? 0L : index + 1L;
+    }
+
+    private static String eventIdForCode(long code) {
+        return code < 1L || code > EVENT_IDS.size() ? "" : EVENT_IDS.get((int) code - 1);
+    }
+
+    private static long millisecondsToTicks(long milliseconds) {
+        if (milliseconds <= 0L) return 1L;
+        return Math.max(1L, (milliseconds + 49L) / 50L);
     }
 
     private static void runEventWave(List<ServerPlayer> players) {
@@ -446,9 +518,7 @@ public final class HalloweenGameplay {
     }
 
     private static String randomEventId() {
-        List<String> ids = List.of("soulstorm", "witching_hour", "cursed_harvest",
-                "blood_moon_invasion", "pumpkin_apocalypse", "graveyard_rising");
-        return ids.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(ids.size()));
+        return EVENT_IDS.get(java.util.concurrent.ThreadLocalRandom.current().nextInt(EVENT_IDS.size()));
     }
 
     private static List<ServerPlayer> eligiblePlayers(MinecraftServer server) {
