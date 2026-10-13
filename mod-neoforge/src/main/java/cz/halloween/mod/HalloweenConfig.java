@@ -12,6 +12,7 @@ public final class HalloweenConfig {
     public static final ModConfigSpec.ConfigValue<List<? extends String>> ALLOWED_WORLD_IDS;
     public static final ModConfigSpec.BooleanValue EVENTS_ENABLED;
     public static final ModConfigSpec.BooleanValue WORLD_DECORATIONS_ENABLED;
+    public static final ModConfigSpec.IntValue INITIAL_DELAY_SECONDS;
     public static final ModConfigSpec.IntValue EVENT_INTERVAL_SECONDS;
     public static final ModConfigSpec.IntValue EVENT_DURATION_SECONDS;
     public static final ModConfigSpec.IntValue MAX_ACTIVE_HALLOWEEN_MOBS;
@@ -26,6 +27,7 @@ public final class HalloweenConfig {
 
         BUILDER.push("events");
         EVENTS_ENABLED = BUILDER.define("enabled", true);
+        INITIAL_DELAY_SECONDS = BUILDER.defineInRange("initial-delay-seconds", 45, 5, 600);
         EVENT_INTERVAL_SECONDS = BUILDER.defineInRange("interval-seconds", 900, 60, 86400);
         EVENT_DURATION_SECONDS = BUILDER.defineInRange("duration-seconds", 360, 30, 3600);
         MAX_ACTIVE_HALLOWEEN_MOBS = BUILDER.defineInRange("max-active-mobs-per-world", 40, 1, 100);

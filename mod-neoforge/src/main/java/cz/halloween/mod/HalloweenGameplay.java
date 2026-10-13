@@ -12,11 +12,18 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.boss.enderdragon.EnderDragon;
+import net.minecraft.world.entity.boss.wither.WitherBoss;
+import net.minecraft.world.entity.monster.Ghast;
+import net.minecraft.world.entity.monster.Phantom;
+import net.minecraft.world.entity.monster.Shulker;
+import net.minecraft.world.entity.monster.Slime;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -41,6 +48,12 @@ public final class HalloweenGameplay {
     private static final AttributeModifier TALISMAN_HEALTH = new AttributeModifier(
             ResourceLocation.fromNamespaceAndPath(HalloweenCoreMod.MOD_ID, "cursed_talisman_health"),
             2.0D, AttributeModifier.Operation.ADD_VALUE);
+    private static final AttributeModifier WARDEN_SET_TOUGHNESS = new AttributeModifier(
+            ResourceLocation.fromNamespaceAndPath(HalloweenCoreMod.MOD_ID, "crimson_warden_set_toughness"),
+            4.0D, AttributeModifier.Operation.ADD_VALUE);
+    private static final AttributeModifier WARDEN_SET_KNOCKBACK = new AttributeModifier(
+            ResourceLocation.fromNamespaceAndPath(HalloweenCoreMod.MOD_ID, "crimson_warden_set_knockback"),
+            0.10D, AttributeModifier.Operation.ADD_VALUE);
     private static String activeEventId = "";
     private static long eventEndsAtTick;
     private static long nextWaveAtTick;
@@ -102,6 +115,12 @@ public final class HalloweenGameplay {
         }
         if (!activeEventId.isBlank() && tick >= eventEndsAtTick) stopEventForServer(server);
 
+        // Without this bootstrap, a fresh server would leave nextWaveAtTick at zero
+        // and automatic events would never start until an administrator manually ran one.
+        if (activeEventId.isBlank() && nextWaveAtTick <= 0L) {
+            nextWaveAtTick = tick + 20L * HalloweenConfig.INITIAL_DELAY_SECONDS.get();
+        }
+
         if (activeEventId.isBlank() && nextWaveAtTick > 0 && tick >= nextWaveAtTick) {
             List<ServerPlayer> players = eligiblePlayers(server);
             if (!players.isEmpty()) {
@@ -131,7 +150,12 @@ public final class HalloweenGameplay {
         if (!"blood_moon_invasion".equals(activeEventId)) return;
         if (!(event.getEntity() instanceof ServerPlayer player) || !HalloweenWorldPolicy.isAllowed(player.level())) return;
         Entity attacker = event.getSource().getEntity();
-        if (attacker instanceof Monster && HalloweenWorldPolicy.isAllowed(attacker.level())) {
+        boolean hostile = attacker instanceof Monster || attacker instanceof EnderDragon
+                || attacker instanceof WitherBoss || attacker instanceof Ghast
+                || attacker instanceof Phantom || attacker instanceof Shulker || attacker instanceof Slime;
+        if (hostile && HalloweenWorldPolicy.isAllowed(attacker.level())) {
+            // This is the single central multiplier point; do not also multiply
+            // in the event wave handler or per-mob attack code.
             event.setNewDamage(Math.min(1000.0F, event.getNewDamage() * 3.0F));
         }
     }
@@ -168,17 +192,34 @@ public final class HalloweenGameplay {
     public static void playerTick(PlayerTickEvent.Post event) {
         if (!(event.getEntity() instanceof ServerPlayer player) || player.level().isClientSide()) return;
         if (player.tickCount % 20 != 0) return;
+
+        boolean allowedWorld = HalloweenWorldPolicy.isAllowed(player.level());
         Long until = TALISMAN_UNTIL_TICK.get(player.getUUID());
         AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
-        if (maxHealth == null) return;
         long now = player.level().getGameTime();
-        if (until != null && until > now && HalloweenWorldPolicy.isAllowed(player.level())) {
+        if (until != null && until > now && allowedWorld && maxHealth != null) {
             applyTalismanModifier(player);
         } else {
             TALISMAN_UNTIL_TICK.remove(player.getUUID());
-            maxHealth.removeModifier(TALISMAN_HEALTH.id());
-            if (player.getHealth() > maxHealth.getValue()) player.setHealth((float) maxHealth.getValue());
+            if (maxHealth != null) {
+                maxHealth.removeModifier(TALISMAN_HEALTH.id());
+                if (player.getHealth() > maxHealth.getValue()) player.setHealth((float) maxHealth.getValue());
+            }
         }
+
+        boolean fullWardenSet = allowedWorld
+                && player.getItemBySlot(EquipmentSlot.HEAD).is(HalloweenItems.CRIMSON_WARDEN_HELMET.get())
+                && player.getItemBySlot(EquipmentSlot.CHEST).is(HalloweenItems.CRIMSON_WARDEN_CHESTPLATE.get())
+                && player.getItemBySlot(EquipmentSlot.LEGS).is(HalloweenItems.CRIMSON_WARDEN_LEGGINGS.get())
+                && player.getItemBySlot(EquipmentSlot.FEET).is(HalloweenItems.CRIMSON_WARDEN_BOOTS.get());
+        updateSetModifier(player.getAttribute(Attributes.ARMOR_TOUGHNESS), WARDEN_SET_TOUGHNESS, fullWardenSet);
+        updateSetModifier(player.getAttribute(Attributes.KNOCKBACK_RESISTANCE), WARDEN_SET_KNOCKBACK, fullWardenSet);
+    }
+
+    private static void updateSetModifier(AttributeInstance attribute, AttributeModifier modifier, boolean active) {
+        if (attribute == null) return;
+        if (active) attribute.addOrUpdateTransientModifier(modifier);
+        else attribute.removeModifier(modifier.id());
     }
 
     private static void applyTalismanModifier(ServerPlayer player) {
@@ -191,6 +232,7 @@ public final class HalloweenGameplay {
         source.sendSuccess(() -> Component.literal(
                 "Event: " + (activeEventId.isBlank() ? "NEAKTIVNÍ" : activeEventId)), false);
         source.sendSuccess(() -> Component.literal("Povolené dimenze: " + HalloweenConfig.ALLOWED_WORLD_IDS.get()), false);
+        source.sendSuccess(() -> Component.literal("První event: " + HalloweenConfig.INITIAL_DELAY_SECONDS.get() + " s; další interval: " + HalloweenConfig.EVENT_INTERVAL_SECONDS.get() + " s."), false);
         source.sendSuccess(() -> Component.literal(
                 "Prázdný allow-list = zakázat vše; svět Spawn je vždy blokován."), false);
         source.sendSuccess(() -> Component.literal(

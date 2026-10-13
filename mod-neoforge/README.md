@@ -27,9 +27,10 @@ Important limitation: vanilla/NeoForge dimensions do not expose Multiverse-Core'
 
 - Native mod metadata and NeoForge registries.
 - Registered native item identities for the Cursed Talisman, Nocturne Cowl, Batwing Elytra, Crimson Warden armor, sword, pickaxe, axe, shovel, hoe, shield and seasonal items.
+- An idempotent full Crimson Warden set bonus (+4 armor toughness and +10% knockback resistance) which is removed when a piece is removed or the player leaves an allowed world.
 - Eleven registered entity identities, individual health/damage/speed values and server-side debuff behavior.
 - Server-authoritative commands for status, starting/stopping events, spawning mobs and giving items.
-- Six event IDs, bounded event waves, a three-times Blood Moon damage modifier, and a harvest event that reacts to ripe crops.
+- Six event IDs, an initial automatic event schedule, bounded event waves, a single-point three-times Blood Moon damage multiplier for common and special hostile mobs, and a harvest event that reacts to ripe crops.
 - A time-limited +1-heart Cursed Talisman modifier and generated art/model resources.
 - A native biome-modifier/placed-feature path for rare surface decorations, gated by the explicit world policy.
 - Initial automated tests for the fail-closed allow-list and reserved Spawn identifier.
