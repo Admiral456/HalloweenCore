@@ -10,6 +10,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -32,6 +33,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
@@ -98,7 +100,8 @@ public final class HalloweenGameplay {
                 .then(Commands.literal("status").executes(context -> showStatus(context.getSource())))
                 .then(eventRoot)
                 .then(spawnRoot)
-                .then(giveRoot);
+                .then(giveRoot)
+                .then(Commands.literal("progress").executes(context -> showProgress(context.getSource())));
         event.getDispatcher().register(root);
     }
 
@@ -162,14 +165,66 @@ public final class HalloweenGameplay {
 
     @SubscribeEvent
     public static void onHarvest(BlockEvent.BreakEvent event) {
-        if (!"cursed_harvest".equals(activeEventId) || !(event.getPlayer() instanceof ServerPlayer player)) return;
+        if (!(event.getPlayer() instanceof ServerPlayer player)) return;
         if (!HalloweenWorldPolicy.isAllowed(player.level())) return;
         var state = event.getState();
         if (!(state.getBlock() instanceof net.minecraft.world.level.block.CropBlock crop)
                 || !state.hasProperty(net.minecraft.world.level.block.CropBlock.AGE)
                 || state.getValue(net.minecraft.world.level.block.CropBlock.AGE) < crop.getMaxAge()) return;
+
+        HalloweenProgressData progress = HalloweenProgressData.get(player.serverLevel().getServer());
+        long harvested = progress.addPlayerValue(player.getUUID(), "mature_crops_harvested", 1L);
+        int fragments = HalloweenProgressRewards.cropFragments(harvested);
+        if (fragments > 0) {
+            long total = progress.addFragments(player.getUUID(), fragments);
+            player.sendSystemMessage(Component.literal(
+                    "HalloweenCore: +" + fragments + " fragment za sklizeň (celkem " + total + ")."));
+        }
+
+        // Keep the event effect separate from permanent progression accounting:
+        // ripe crops advance the player's statistics even when Cursed Harvest is inactive.
+        if (!"cursed_harvest".equals(activeEventId)) return;
         if (!(player.level() instanceof ServerLevel level)) return;
         spawnWaveAround(level, player, 2);
+    }
+
+    @SubscribeEvent
+    public static void onOreMined(BlockEvent.BreakEvent event) {
+        if (!(event.getPlayer() instanceof ServerPlayer player)) return;
+        if (!HalloweenWorldPolicy.isAllowed(player.level())) return;
+        var state = event.getState();
+        if (!(state.is(BlockTags.COAL_ORES) || state.is(BlockTags.IRON_ORES)
+                || state.is(BlockTags.COPPER_ORES) || state.is(BlockTags.GOLD_ORES)
+                || state.is(BlockTags.REDSTONE_ORES) || state.is(BlockTags.LAPIS_ORES)
+                || state.is(BlockTags.DIAMOND_ORES) || state.is(BlockTags.EMERALD_ORES))) return;
+
+        HalloweenProgressData progress = HalloweenProgressData.get(player.serverLevel().getServer());
+        long mined = progress.addPlayerValue(player.getUUID(), "ores_mined", 1L);
+        int fragments = HalloweenProgressRewards.oreFragments(mined);
+        if (fragments > 0) {
+            long total = progress.addFragments(player.getUUID(), fragments);
+            player.sendSystemMessage(Component.literal(
+                    "HalloweenCore: +" + fragments + " fragment za těžbu (celkem " + total + ")."));
+        }
+    }
+
+    @SubscribeEvent
+    public static void onHalloweenMobDeath(LivingDeathEvent event) {
+        if (!(event.getEntity() instanceof HalloweenMonster mob)) return;
+        if (!(event.getSource().getEntity() instanceof ServerPlayer player)) return;
+        if (!HalloweenWorldPolicy.isAllowed(player.level())
+                || !HalloweenWorldPolicy.isAllowed(mob.level())) return;
+
+        boolean boss = HalloweenEntities.isBoss(mob.getType());
+        HalloweenProgressData progress = HalloweenProgressData.get(player.serverLevel().getServer());
+        progress.addPlayerValue(player.getUUID(), "special_mob_kills", 1L);
+        if (boss) progress.addPlayerValue(player.getUUID(), "bosses_defeated", 1L);
+        int reward = HalloweenProgressRewards.mobKillFragments(boss);
+        long total = progress.addFragments(player.getUUID(), reward);
+        player.sendSystemMessage(Component.literal(
+                "HalloweenCore: +" + reward + " fragment" + (reward == 1 ? "" : "ů")
+                        + " za poražení " + (boss ? "bosse" : "speciálního moba")
+                        + " (celkem " + total + ")."));
     }
 
     public static void activateTalisman(ServerPlayer player) {
@@ -225,6 +280,26 @@ public final class HalloweenGameplay {
     private static void applyTalismanModifier(ServerPlayer player) {
         AttributeInstance attribute = player.getAttribute(Attributes.MAX_HEALTH);
         if (attribute != null) attribute.addOrUpdateTransientModifier(TALISMAN_HEALTH);
+    }
+
+    private static int showProgress(CommandSourceStack source) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("Přehled postupu je dostupný přímo hráči ve hře."));
+            return 0;
+        }
+        if (!HalloweenWorldPolicy.isAllowed(player.level())) {
+            source.sendFailure(Component.literal("HalloweenCore: tento svět není povolen pro Halloween obsah."));
+            return 0;
+        }
+        HalloweenProgressData data = HalloweenProgressData.get(player.serverLevel().getServer());
+        source.sendSuccess(() -> Component.literal("§6HalloweenCore — tvůj trvalý postup"), false);
+        source.sendSuccess(() -> Component.literal("Fragmenty: " + data.getPlayerValue(player.getUUID(), "fragments")), false);
+        source.sendSuccess(() -> Component.literal("Speciální mibi poraženi: " + data.getPlayerValue(player.getUUID(), "special_mob_kills")), false);
+        source.sendSuccess(() -> Component.literal("Bossové poraženi: " + data.getPlayerValue(player.getUUID(), "bosses_defeated")), false);
+        source.sendSuccess(() -> Component.literal("Rudy vytěženy: " + data.getPlayerValue(player.getUUID(), "ores_mined")), false);
+        source.sendSuccess(() -> Component.literal("Dospělé plodiny sklizeny: " + data.getPlayerValue(player.getUUID(), "mature_crops_harvested")), false);
+        source.sendSuccess(() -> Component.literal("Společné fragmenty serveru: " + data.getGlobalValue("fragments_collected")), false);
+        return 1;
     }
 
     private static int showStatus(CommandSourceStack source) {
