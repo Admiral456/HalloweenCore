@@ -172,7 +172,7 @@ public final class HalloweenGameplay {
                 || !state.hasProperty(net.minecraft.world.level.block.CropBlock.AGE)
                 || state.getValue(net.minecraft.world.level.block.CropBlock.AGE) < crop.getMaxAge()) return;
 
-        HalloweenProgressData progress = HalloweenProgressData.get(player.serverLevel().getServer());
+        HalloweenProgressData progress = HalloweenProgressData.get(player.getServer());
         long harvested = progress.addPlayerValue(player.getUUID(), "mature_crops_harvested", 1L);
         int fragments = HalloweenProgressRewards.cropFragments(harvested);
         if (fragments > 0) {
@@ -198,7 +198,7 @@ public final class HalloweenGameplay {
                 || state.is(BlockTags.REDSTONE_ORES) || state.is(BlockTags.LAPIS_ORES)
                 || state.is(BlockTags.DIAMOND_ORES) || state.is(BlockTags.EMERALD_ORES))) return;
 
-        HalloweenProgressData progress = HalloweenProgressData.get(player.serverLevel().getServer());
+        HalloweenProgressData progress = HalloweenProgressData.get(player.getServer());
         long mined = progress.addPlayerValue(player.getUUID(), "ores_mined", 1L);
         int fragments = HalloweenProgressRewards.oreFragments(mined);
         if (fragments > 0) {
@@ -216,7 +216,7 @@ public final class HalloweenGameplay {
                 || !HalloweenWorldPolicy.isAllowed(mob.level())) return;
 
         boolean boss = HalloweenEntities.isBoss(mob.getType());
-        HalloweenProgressData progress = HalloweenProgressData.get(player.serverLevel().getServer());
+        HalloweenProgressData progress = HalloweenProgressData.get(player.getServer());
         progress.addPlayerValue(player.getUUID(), "special_mob_kills", 1L);
         if (boss) progress.addPlayerValue(player.getUUID(), "bosses_defeated", 1L);
         int reward = HalloweenProgressRewards.mobKillFragments(boss);
@@ -291,7 +291,7 @@ public final class HalloweenGameplay {
             source.sendFailure(Component.literal("HalloweenCore: tento svět není povolen pro Halloween obsah."));
             return 0;
         }
-        HalloweenProgressData data = HalloweenProgressData.get(player.serverLevel().getServer());
+        HalloweenProgressData data = HalloweenProgressData.get(player.getServer());
         source.sendSuccess(() -> Component.literal("HalloweenCore — tvůj trvalý postup"), false);
         source.sendSuccess(() -> Component.literal("Fragmenty: " + data.getPlayerValue(player.getUUID(), "fragments")), false);
         source.sendSuccess(() -> Component.literal("Speciální mobů poraženo: " + data.getPlayerValue(player.getUUID(), "special_mob_kills")), false);
