@@ -10,26 +10,32 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 final class HalloweenWorldPolicyTest {
     @Test
     void spawnIsAlwaysReservedRegardlessOfCapitalizationOrNamespace() {
-        assertTrue(HalloweenWorldPolicy.isReservedWorldIdentifier("Spawn"));
-        assertTrue(HalloweenWorldPolicy.isReservedWorldIdentifier("spawn"));
-        assertTrue(HalloweenWorldPolicy.isReservedWorldIdentifier("minecraft:spawn"));
-        assertTrue(HalloweenWorldPolicy.isReservedWorldIdentifier("multiverse:Spawn"));
+        assertTrue(HalloweenWorldIdPolicy.isReservedWorldIdentifier("Spawn"));
+        assertTrue(HalloweenWorldIdPolicy.isReservedWorldIdentifier("spawn"));
+        assertTrue(HalloweenWorldIdPolicy.isReservedWorldIdentifier("minecraft:spawn"));
+        assertTrue(HalloweenWorldIdPolicy.isReservedWorldIdentifier("multiverse:Spawn"));
+        assertTrue(HalloweenWorldIdPolicy.isReservedWorldIdentifier("spawn/resource"));
+        assertTrue(HalloweenWorldIdPolicy.isReservedWorldIdentifier(" "));
+        assertTrue(HalloweenWorldIdPolicy.isReservedWorldIdentifier(null));
     }
 
     @Test
     void anEmptyAllowListFailsClosed() {
-        assertFalse(HalloweenWorldPolicy.isConfiguredWorldAllowed("minecraft:overworld", List.of()));
+        assertFalse(HalloweenWorldIdPolicy.isConfiguredWorldAllowed("minecraft:overworld", List.of()));
+        assertFalse(HalloweenWorldIdPolicy.isConfiguredWorldAllowed("minecraft:overworld", null));
     }
 
     @Test
     void onlyExactNonReservedDimensionIdsAreAllowed() {
-        assertTrue(HalloweenWorldPolicy.isConfiguredWorldAllowed(
+        assertTrue(HalloweenWorldIdPolicy.isConfiguredWorldAllowed(
                 "minecraft:overworld", List.of("minecraft:overworld")));
-        assertFalse(HalloweenWorldPolicy.isConfiguredWorldAllowed(
+        assertFalse(HalloweenWorldIdPolicy.isConfiguredWorldAllowed(
                 "minecraft:the_nether", List.of("minecraft:overworld")));
-        assertFalse(HalloweenWorldPolicy.isConfiguredWorldAllowed(
+        assertFalse(HalloweenWorldIdPolicy.isConfiguredWorldAllowed(
                 "minecraft:spawn", List.of("minecraft:spawn")));
-        assertFalse(HalloweenWorldPolicy.isConfiguredWorldAllowed(
+        assertFalse(HalloweenWorldIdPolicy.isConfiguredWorldAllowed(
                 "minecraft:overworld", List.of("Spawn", "minecraft:spawn")));
+        assertFalse(HalloweenWorldIdPolicy.isConfiguredWorldAllowed(
+                "minecraft:overworld", List.of(" minecraft:overworld ")));
     }
 }

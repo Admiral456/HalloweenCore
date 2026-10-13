@@ -13,20 +13,11 @@ public final class HalloweenWorldPolicy {
     private HalloweenWorldPolicy() {}
 
     public static boolean isReservedWorldIdentifier(String value) {
-        if (value == null || value.isBlank()) return true;
-        String normalized = value.trim().toLowerCase(Locale.ROOT);
-        if (normalized.equals("spawn")) return true;
-        int colon = normalized.indexOf(':');
-        String path = colon >= 0 ? normalized.substring(colon + 1) : normalized;
-        return path.equals("spawn") || path.startsWith("spawn/");
+        return HalloweenWorldIdPolicy.isReservedWorldIdentifier(value);
     }
 
     public static boolean isConfiguredWorldAllowed(String dimensionId, List<? extends String> allowedIds) {
-        if (isReservedWorldIdentifier(dimensionId) || allowedIds == null || allowedIds.isEmpty()) return false;
-        return allowedIds.stream().filter(value -> value != null)
-                .map(value -> value.trim().toLowerCase(Locale.ROOT))
-                .anyMatch(value -> !isReservedWorldIdentifier(value)
-                        && value.equals(dimensionId.trim().toLowerCase(Locale.ROOT)));
+        return HalloweenWorldIdPolicy.isConfiguredWorldAllowed(dimensionId, allowedIds);
     }
 
     public static boolean isAllowed(Level level) {
