@@ -191,13 +191,13 @@ public final class HalloweenMonster extends Zombie {
             case "nightmare" -> {
                 target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 65, 0), this);
                 target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 60, 1), this);
-                target.knockback(0.55D, target.getX() - getX(), target.getZ() - getZ());
+                target.knockback(0.55D, getX() - target.getX(), getZ() - target.getZ());
             }
             case "headless_nick" -> target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 45, 0), this);
             case "goblin_king" -> {
                 target.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 75, 1), this);
                 target.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 30, 0), this);
-                target.knockback(0.75D, target.getX() - getX(), target.getZ() - getZ());
+                target.knockback(0.75D, getX() - target.getX(), getZ() - target.getZ());
             }
             case "vampire_king" -> {
                 target.addEffect(new MobEffectInstance(MobEffects.DARKNESS, 65, 0), this);
