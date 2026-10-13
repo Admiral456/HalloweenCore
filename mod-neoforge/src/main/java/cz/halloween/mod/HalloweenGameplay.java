@@ -135,6 +135,14 @@ public final class HalloweenGameplay {
         var helpRoot = Commands.literal("help")
                 .executes(context -> showHelp(context.getSource()));
 
+        var questsRoot = Commands.literal("quests")
+                .executes(context -> showQuests(context.getSource()))
+                .then(Commands.literal("reset")
+                        .requires(source -> source.hasPermission(2))
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .executes(context -> resetQuests(context.getSource(),
+                                        EntityArgument.getPlayer(context, "player")))));
+
         var root = Commands.literal("halloween")
                 .executes(context -> showStatus(context.getSource()))
                 .then(Commands.literal("status").executes(context -> showStatus(context.getSource())))
@@ -144,7 +152,8 @@ public final class HalloweenGameplay {
                 .then(eventRoot)
                 .then(spawnRoot)
                 .then(giveRoot)
-                .then(Commands.literal("progress").executes(context -> showProgress(context.getSource())));
+                .then(Commands.literal("progress").executes(context -> showProgress(context.getSource())))
+                .then(questsRoot);
         event.getDispatcher().register(root);
     }
 
@@ -256,6 +265,7 @@ public final class HalloweenGameplay {
 
         HalloweenProgressData progress = progressDataFor(player);
         long harvested = progress.addPlayerValue(player.getUUID(), "mature_crops_harvested", 1L);
+        recordStoryAction(player, "farming");
         int fragments = HalloweenProgressRewards.cropFragments(harvested);
         if (fragments > 0) {
             long total = progress.addFragments(player.getUUID(), fragments);
@@ -292,21 +302,85 @@ public final class HalloweenGameplay {
 
     @SubscribeEvent
     public static void onHalloweenMobDeath(LivingDeathEvent event) {
-        if (!(event.getEntity() instanceof HalloweenMonster mob)) return;
         if (!(event.getSource().getEntity() instanceof ServerPlayer player)) return;
+        var dead = event.getEntity();
         if (!HalloweenWorldPolicy.isAllowed(player.level())
-                || !HalloweenWorldPolicy.isAllowed(mob.level())) return;
+                || !HalloweenWorldPolicy.isAllowed(dead.level()) || !isHostileEntity(dead)) return;
 
-        boolean boss = HalloweenEntities.isBoss(mob.getType());
-        HalloweenProgressData progress = progressDataFor(player);
-        progress.addPlayerValue(player.getUUID(), "special_mob_kills", 1L);
-        if (boss) progress.addPlayerValue(player.getUUID(), "bosses_defeated", 1L);
-        int reward = HalloweenProgressRewards.mobKillFragments(boss);
-        long total = progress.addFragments(player.getUUID(), reward);
-        player.displayClientMessage(Component.literal(
-                "HalloweenCore: +" + reward + " fragment" + (reward == 1 ? "" : "ů")
-                        + " za poražení " + (boss ? "bosse" : "speciálního moba")
-                        + " (celkem " + total + ")."), true);
+        if (dead instanceof HalloweenMonster mob) {
+            boolean boss = HalloweenEntities.isBoss(mob.getType());
+            HalloweenProgressData progress = progressDataFor(player);
+            progress.addPlayerValue(player.getUUID(), "special_mob_kills", 1L);
+            if (boss) progress.addPlayerValue(player.getUUID(), "bosses_defeated", 1L);
+            int reward = HalloweenProgressRewards.mobKillFragments(boss);
+            long total = progress.addFragments(player.getUUID(), reward);
+            player.displayClientMessage(Component.literal(
+                    "HalloweenCore: +" + reward + " fragment" + (reward == 1 ? "" : "ů")
+                            + " za poražení " + (boss ? "bosse" : "speciálního moba")
+                            + " (celkem " + total + ")."), true);
+            String mobId = net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE.getKey(mob.getType()).getPath();
+            recordStoryMobKill(player, mobId, true);
+            return;
+        }
+
+        // Preserve the original first chapter objective: any hostile vanilla mob kill counts,
+        // but only for the currently active story chapter.
+        recordStoryMobKill(player, null, true);
+    }
+
+    private static boolean isHostileEntity(net.minecraft.world.entity.LivingEntity entity) {
+        return entity instanceof Monster || entity instanceof EnderDragon || entity instanceof WitherBoss
+                || entity instanceof Ghast || entity instanceof Phantom || entity instanceof Shulker
+                || entity instanceof Slime;
+    }
+
+    private static void recordStoryAction(ServerPlayer player, String action) {
+        if (!HalloweenConfig.STORY_QUESTS_ENABLED.get() || !HalloweenWorldPolicy.isAllowed(player.level())) return;
+        HalloweenProgressData data = progressDataFor(player);
+        int index = HalloweenStoryQuests.normalizeIndex(
+                data.getPlayerValue(player.getUUID(), "story_quest_index"));
+        if (index >= HalloweenStoryQuests.ALL.size()) return;
+        HalloweenStoryQuests.Quest quest = HalloweenStoryQuests.ALL.get(index);
+        if (!HalloweenStoryQuests.matchesAction(quest, action)) return;
+        advanceStoryQuest(player, data, quest, index);
+    }
+
+    private static void recordStoryMobKill(ServerPlayer player, String mobId, boolean hostile) {
+        if (!HalloweenConfig.STORY_QUESTS_ENABLED.get() || !HalloweenWorldPolicy.isAllowed(player.level())) return;
+        HalloweenProgressData data = progressDataFor(player);
+        int index = HalloweenStoryQuests.normalizeIndex(
+                data.getPlayerValue(player.getUUID(), "story_quest_index"));
+        if (index >= HalloweenStoryQuests.ALL.size()) return;
+        HalloweenStoryQuests.Quest quest = HalloweenStoryQuests.ALL.get(index);
+        if (!HalloweenStoryQuests.matchesMobKill(quest, mobId, hostile)) return;
+        advanceStoryQuest(player, data, quest, index);
+    }
+
+    private static void advanceStoryQuest(ServerPlayer player, HalloweenProgressData data,
+                                          HalloweenStoryQuests.Quest quest, int index) {
+        long progress = data.addPlayerValue(player.getUUID(), "story_quest_progress", 1L);
+        if (progress < quest.target()) {
+            if (progress == 1L || progress == quest.target() - 1L) {
+                player.displayClientMessage(Component.literal(
+                        "Quest " + (index + 1) + "/" + HalloweenStoryQuests.ALL.size() + ": "
+                                + quest.title() + " (" + progress + "/" + quest.target() + ")"), true);
+            }
+            return;
+        }
+
+        data.setPlayerValue(player.getUUID(), "story_quest_index", index + 1L);
+        data.setPlayerValue(player.getUUID(), "story_quest_progress", 0L);
+        long total = data.addFragments(player.getUUID(), quest.reward());
+        player.sendSystemMessage(Component.literal(
+                "§6§lKAPITOLA DOKONČENA §8» §f" + quest.title() + " §8• §e+" + quest.reward() + " fragmentů"));
+        player.sendSystemMessage(Component.literal("HalloweenCore: zůstatek " + total + " fragmentů."));
+        if (index + 1 < HalloweenStoryQuests.ALL.size()) {
+            HalloweenStoryQuests.Quest next = HalloweenStoryQuests.ALL.get(index + 1);
+            player.sendSystemMessage(Component.literal("Další úkol odemčen: " + next.title()
+                    + ". Použij /halloween quests."));
+        } else {
+            player.sendSystemMessage(Component.literal("§6§lPŘÍBĚH DOKONČEN §8» §eDěkujeme za záchranu světa."));
+        }
     }
 
     public static void activateTalisman(ServerPlayer player) {
@@ -387,6 +461,7 @@ public final class HalloweenGameplay {
         source.sendSuccess(() -> Component.literal("/halloween spawn mob <mob-id> [hráč] | nick <hráč>"), false);
         source.sendSuccess(() -> Component.literal("/halloween event start <id> | stop | list"), false);
         source.sendSuccess(() -> Component.literal("/halloween assets status | validate"), false);
+        source.sendSuccess(() -> Component.literal("/halloween quests | quests reset <hráč>"), false);
         source.sendSuccess(() -> Component.literal("Všechny změny světa fungují jen v explicitně povolených dimenzích; seznam je ve výchozím stavu prázdný."), false);
         return 1;
     }
@@ -444,6 +519,51 @@ public final class HalloweenGameplay {
         return 0;
     }
 
+    private static int showQuests(CommandSourceStack source) {
+        if (!(source.getEntity() instanceof ServerPlayer player)) {
+            source.sendFailure(Component.literal("Příběhové questy zobrazíš přímo ve hře: /halloween quests."));
+            return 0;
+        }
+        if (!HalloweenWorldPolicy.isAllowed(player.level())) {
+            source.sendFailure(Component.literal("HalloweenCore: příběh není v tomto světě povolen."));
+            return 0;
+        }
+        if (!HalloweenConfig.STORY_QUESTS_ENABLED.get()) {
+            source.sendFailure(Component.literal("Příběhové questy jsou vypnuté v konfiguraci."));
+            return 0;
+        }
+        HalloweenProgressData data = progressDataFor(player);
+        int index = HalloweenStoryQuests.normalizeIndex(
+                data.getPlayerValue(player.getUUID(), "story_quest_index"));
+        long progress = data.getPlayerValue(player.getUUID(), "story_quest_progress");
+        source.sendSuccess(() -> Component.literal("§6§lPŘÍBĚHOVÉ HALLOWEEN QUESTY"), false);
+        source.sendSuccess(() -> Component.literal("Dokončeno: " + index + "/" + HalloweenStoryQuests.ALL.size()), false);
+        if (index >= HalloweenStoryQuests.ALL.size()) {
+            source.sendSuccess(() -> Component.literal("§aVšechny kapitoly jsou dokončeny."), false);
+            return 1;
+        }
+        HalloweenStoryQuests.Quest quest = HalloweenStoryQuests.ALL.get(index);
+        long safeProgress = Math.min(progress, quest.target());
+        source.sendSuccess(() -> Component.literal("Kapitola " + (index + 1) + ": " + quest.title()), false);
+        source.sendSuccess(() -> Component.literal(quest.description()), false);
+        source.sendSuccess(() -> Component.literal("Postup: " + safeProgress + "/" + quest.target()), false);
+        source.sendSuccess(() -> Component.literal("Odměna: " + quest.reward() + " fragmentů"), false);
+        return 1;
+    }
+
+    private static int resetQuests(CommandSourceStack source, ServerPlayer player) {
+        if (!HalloweenWorldPolicy.isAllowed(player.level())) {
+            source.sendFailure(Component.literal("Quest reset odmítnut: cílový hráč je v zakázaném/nepovoleném světě."));
+            return 0;
+        }
+        HalloweenProgressData data = progressDataFor(player);
+        data.setPlayerValue(player.getUUID(), "story_quest_index", 0L);
+        data.setPlayerValue(player.getUUID(), "story_quest_progress", 0L);
+        source.sendSuccess(() -> Component.literal("Příběhové questy hráče " + player.getName().getString()
+                + " byly resetovány. Fragmenty a ostatní statistiky zůstaly zachovány."), true);
+        return 1;
+    }
+
     private static int showProgress(CommandSourceStack source) {
         if (!(source.getEntity() instanceof ServerPlayer player)) {
             source.sendFailure(Component.literal("Přehled postupu je dostupný přímo hráči ve hře."));
@@ -469,6 +589,7 @@ public final class HalloweenGameplay {
         source.sendSuccess(() -> Component.literal(
                 "Event: " + (activeEventId.isBlank() ? "NEAKTIVNÍ" : activeEventId)), false);
         source.sendSuccess(() -> Component.literal("Povolené dimenze: " + HalloweenConfig.ALLOWED_WORLD_IDS.get()), false);
+        source.sendSuccess(() -> Component.literal("Příběhové questy: " + HalloweenConfig.STORY_QUESTS_ENABLED.get()), false);
         source.sendSuccess(() -> Component.literal("První event: " + HalloweenConfig.INITIAL_DELAY_SECONDS.get() + " s; další interval: " + HalloweenConfig.EVENT_INTERVAL_SECONDS.get() + " s."), false);
         source.sendSuccess(() -> Component.literal(
                 "Prázdný allow-list = zakázat vše; svět Spawn je vždy blokován."), false);
