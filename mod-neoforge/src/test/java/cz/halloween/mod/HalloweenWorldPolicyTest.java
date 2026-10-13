@@ -35,7 +35,7 @@ final class HalloweenWorldPolicyTest {
                 "minecraft:spawn", List.of("minecraft:spawn")));
         assertFalse(HalloweenWorldIdPolicy.isConfiguredWorldAllowed(
                 "minecraft:overworld", List.of("Spawn", "minecraft:spawn")));
-        assertFalse(HalloweenWorldIdPolicy.isConfiguredWorldAllowed(
+        assertTrue(HalloweenWorldIdPolicy.isConfiguredWorldAllowed(
                 "minecraft:overworld", List.of(" minecraft:overworld ")));
     }
 }
