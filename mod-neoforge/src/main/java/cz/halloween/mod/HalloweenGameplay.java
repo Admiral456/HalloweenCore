@@ -58,6 +58,15 @@ public final class HalloweenGameplay {
     private static final List<String> EVENT_IDS = List.of(
             "soulstorm", "witching_hour", "cursed_harvest",
             "blood_moon_invasion", "pumpkin_apocalypse", "graveyard_rising");
+    private static final List<String> ITEM_IDS = List.of(
+            "cursed_talisman", "nocturne_sovereign_cowl", "batwing_elytra",
+            "crimson_warden_helmet", "crimson_warden_chestplate", "crimson_warden_leggings",
+            "crimson_warden_boots", "crimson_warden_sword", "crimson_warden_pickaxe",
+            "crimson_warden_axe", "crimson_warden_shovel", "crimson_warden_hoe",
+            "crimson_warden_shield", "halloween_token", "cursed_candy", "haunted_map");
+    private static final List<String> MOB_IDS = List.of(
+            "cursed_zombie", "void_reaper", "gravekeeper", "frost_stalker", "blood_spider",
+            "pumpkin_wraith", "hex_witch", "nightmare", "headless_nick", "goblin_king", "vampire_king");
 
     private HalloweenGameplay() {}
 
@@ -94,9 +103,44 @@ public final class HalloweenGameplay {
                 .requires(source -> source.hasPermission(2))
                 .then(playerForGive);
 
+        var listRoot = Commands.literal("list")
+                .then(Commands.literal("items").executes(context -> listItems(context.getSource())))
+                .then(Commands.literal("mobs").executes(context -> listMobs(context.getSource())))
+                .then(Commands.literal("events").executes(context -> listEvents(context.getSource())));
+
+        var assetsRoot = Commands.literal("assets")
+                .then(Commands.literal("status").executes(context -> showAssetsStatus(context.getSource())))
+                .then(Commands.literal("validate")
+                        .requires(source -> source.hasPermission(2))
+                        .executes(context -> validateAssets(context.getSource())));
+
+        var spawnTesting = Commands.literal("mob")
+                .then(Commands.argument("id", StringArgumentType.word())
+                        .requires(source -> source.hasPermission(2))
+                        .executes(context -> spawnMob(context.getSource(),
+                                StringArgumentType.getString(context, "id"), null))
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .executes(context -> spawnMob(context.getSource(),
+                                        StringArgumentType.getString(context, "id"),
+                                        EntityArgument.getPlayer(context, "player")))));
+
+        var spawnNick = Commands.literal("nick")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.argument("player", EntityArgument.player())
+                        .executes(context -> spawnMob(context.getSource(), "headless_nick",
+                                EntityArgument.getPlayer(context, "player"))));
+
+        spawnRoot.then(spawnTesting).then(spawnNick);
+
+        var helpRoot = Commands.literal("help")
+                .executes(context -> showHelp(context.getSource()));
+
         var root = Commands.literal("halloween")
                 .executes(context -> showStatus(context.getSource()))
                 .then(Commands.literal("status").executes(context -> showStatus(context.getSource())))
+                .then(helpRoot)
+                .then(listRoot)
+                .then(assetsRoot)
                 .then(eventRoot)
                 .then(spawnRoot)
                 .then(giveRoot)
@@ -332,6 +376,72 @@ public final class HalloweenGameplay {
     private static void applyTalismanModifier(ServerPlayer player) {
         AttributeInstance attribute = player.getAttribute(Attributes.MAX_HEALTH);
         if (attribute != null) attribute.addOrUpdateTransientModifier(TALISMAN_HEALTH);
+    }
+
+    private static int showHelp(CommandSourceStack source) {
+        source.sendSuccess(() -> Component.literal("HalloweenCore — nativní příkazy"), false);
+        source.sendSuccess(() -> Component.literal("/halloween status | progress | help"), false);
+        source.sendSuccess(() -> Component.literal("/halloween list items | mobs | events"), false);
+        source.sendSuccess(() -> Component.literal("/halloween give <hráč> <id-předmětu|all>"), false);
+        source.sendSuccess(() -> Component.literal("/halloween spawn <mob-id> <hráč>"), false);
+        source.sendSuccess(() -> Component.literal("/halloween spawn mob <mob-id> [hráč] | nick <hráč>"), false);
+        source.sendSuccess(() -> Component.literal("/halloween event start <id> | stop | list"), false);
+        source.sendSuccess(() -> Component.literal("/halloween assets status | validate"), false);
+        source.sendSuccess(() -> Component.literal("Všechny změny světa fungují jen v explicitně povolených dimenzích; seznam je ve výchozím stavu prázdný."), false);
+        return 1;
+    }
+
+    private static int listItems(CommandSourceStack source) {
+        source.sendSuccess(() -> Component.literal("HalloweenCore item ID (" + ITEM_IDS.size() + "):"), false);
+        for (String id : ITEM_IDS) source.sendSuccess(() -> Component.literal(" • " + id), false);
+        return ITEM_IDS.size();
+    }
+
+    private static int listMobs(CommandSourceStack source) {
+        source.sendSuccess(() -> Component.literal("HalloweenCore mob ID (" + MOB_IDS.size() + "):"), false);
+        for (String id : MOB_IDS) source.sendSuccess(() -> Component.literal(" • " + id), false);
+        source.sendSuccess(() -> Component.literal(
+                "Poznámka: modely/AI jsou zatím první fáze; vlastní animované modely a koňský Nick ještě nejsou dokončeny."), false);
+        return MOB_IDS.size();
+    }
+
+    private static int showAssetsStatus(CommandSourceStack source) {
+        source.sendSuccess(() -> Component.literal("HalloweenCore assets: " + ITEM_IDS.size()
+                + " item IDs, " + MOB_IDS.size() + " entity IDs, " + EVENT_IDS.size() + " event IDs."), false);
+        source.sendSuccess(() -> Component.literal("První fáze: jednotlivé item ikony a entity textury; všechny moby zatím sdílejí zombie geometrii."), false);
+        source.sendSuccess(() -> Component.literal("World decorations enabled: " + HalloweenConfig.WORLD_DECORATIONS_ENABLED.get()), false);
+        source.sendSuccess(() -> Component.literal("Allowed dimension IDs: " + HalloweenConfig.ALLOWED_WORLD_IDS.get()), false);
+        source.sendSuccess(() -> Component.literal("ItemsAdder/ModelEngine/Paper bridge: v nativním NeoForge buildu není součástí."), false);
+        return 1;
+    }
+
+    private static int validateAssets(CommandSourceStack source) {
+        List<String> expected = new ArrayList<>();
+        expected.add("/assets/halloweencore/lang/cs_cz.json");
+        expected.add("/assets/halloweencore/equipment/crimson_warden.json");
+        for (String id : ITEM_IDS) {
+            expected.add("/assets/halloweencore/textures/item/" + id + ".png");
+            expected.add("/assets/halloweencore/models/item/" + id + ".json");
+        }
+        for (String id : MOB_IDS) expected.add("/assets/halloweencore/textures/entity/" + id + ".png");
+        expected.add("/assets/halloweencore/textures/entity/equipment/humanoid/crimson_warden.png");
+        expected.add("/assets/halloweencore/textures/entity/equipment/humanoid_leggings/crimson_warden_leggings.png");
+        expected.add("/assets/halloweencore/textures/entity/equipment/humanoid/nocturne_cowl.png");
+        expected.add("/assets/halloweencore/textures/entity/equipment/wings/batwing_elytra.png");
+
+        List<String> missing = new ArrayList<>();
+        for (String resource : expected) {
+            if (HalloweenCoreMod.class.getResource(resource) == null) missing.add(resource);
+        }
+        if (missing.isEmpty()) {
+            source.sendSuccess(() -> Component.literal("HalloweenCore assets VALID: ověřeno " + expected.size()
+                    + " záznamů classpath (modely, textury a český překlad)."), true);
+            return expected.size();
+        }
+        source.sendFailure(Component.literal("HalloweenCore assets INVALID: chybí " + missing.size()
+                + " z " + expected.size() + " souborů."));
+        for (String path : missing) source.sendFailure(Component.literal(" • " + path));
+        return 0;
     }
 
     private static int showProgress(CommandSourceStack source) {
@@ -583,12 +693,9 @@ public final class HalloweenGameplay {
         return 1;
     }
 
-    private static int giveItem(CommandSourceStack source, ServerPlayer player, String requested) {
-        if (!HalloweenWorldPolicy.isAllowed(player.level())) {
-            source.sendFailure(Component.literal("Předmět nebyl předán: hráč je v zakázaném/nepovoleném světě."));
-            return 0;
-        }
-        Item item = switch (requested.toLowerCase(Locale.ROOT)) {
+    private static Item itemById(String requested) {
+        if (requested == null) return null;
+        return switch (requested.toLowerCase(Locale.ROOT)) {
             case "cursed_talisman" -> HalloweenItems.CURSED_TALISMAN.get();
             case "nocturne_sovereign_cowl" -> HalloweenItems.NOCTURNE_SOVEREIGN_COWL.get();
             case "batwing_elytra" -> HalloweenItems.BATWING_ELYTRA.get();
@@ -607,6 +714,36 @@ public final class HalloweenGameplay {
             case "haunted_map" -> HalloweenItems.HAUNTED_MAP.get();
             default -> null;
         };
+    }
+
+    private static int giveItem(CommandSourceStack source, ServerPlayer player, String requested) {
+        if (!HalloweenWorldPolicy.isAllowed(player.level())) {
+            source.sendFailure(Component.literal("Předmět nebyl předán: hráč je v zakázaném/nepovoleném světě."));
+            return 0;
+        }
+        if ("all".equalsIgnoreCase(requested)) {
+            int delivered = 0;
+            int failed = 0;
+            for (String id : ITEM_IDS) {
+                Item candidate = itemById(id);
+                if (candidate == null) {
+                    failed++;
+                    continue;
+                }
+                ItemStack itemStack = new ItemStack(candidate);
+                if (!player.getInventory().add(itemStack)) player.drop(itemStack, false);
+                delivered++;
+            }
+            final int successCount = delivered;
+            final int failureCount = failed;
+            source.sendSuccess(() -> Component.literal(
+                    "HalloweenCore: hráči " + player.getName().getString() + " předáno "
+                            + successCount + "/" + ITEM_IDS.size() + " unikátních předmětů"
+                            + (failureCount > 0 ? "; chyby: " + failureCount : "")
+                            + ". Plný inventář: zbylé předměty byly bezpečně vyhozeny."), true);
+            return delivered;
+        }
+        Item item = itemById(requested);
         if (item == null) {
             source.sendFailure(Component.literal("Neznámý předmět. Zkontroluj ID předmětu."));
             return 0;
