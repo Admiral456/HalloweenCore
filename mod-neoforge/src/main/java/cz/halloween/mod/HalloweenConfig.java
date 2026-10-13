@@ -12,6 +12,7 @@ public final class HalloweenConfig {
     public static final ModConfigSpec.ConfigValue<List<? extends String>> ALLOWED_WORLD_IDS;
     public static final ModConfigSpec.BooleanValue EVENTS_ENABLED;
     public static final ModConfigSpec.BooleanValue WORLD_DECORATIONS_ENABLED;
+    public static final ModConfigSpec.BooleanValue STORY_QUESTS_ENABLED;
     public static final ModConfigSpec.IntValue INITIAL_DELAY_SECONDS;
     public static final ModConfigSpec.IntValue EVENT_INTERVAL_SECONDS;
     public static final ModConfigSpec.IntValue EVENT_DURATION_SECONDS;
@@ -35,6 +36,12 @@ public final class HalloweenConfig {
 
         BUILDER.push("world-generation");
         WORLD_DECORATIONS_ENABLED = BUILDER.define("decorations-enabled", true);
+        BUILDER.pop();
+
+        BUILDER.push("story-quests");
+        STORY_QUESTS_ENABLED = BUILDER
+                .comment("Enable the ordered nine-chapter Halloween story quest chain.")
+                .define("enabled", true);
         BUILDER.pop();
 
         SPEC = BUILDER.build();
