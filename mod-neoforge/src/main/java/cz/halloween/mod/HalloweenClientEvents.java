@@ -5,14 +5,15 @@ import net.minecraft.client.renderer.entity.ZombieRenderer;
 import net.minecraft.client.renderer.entity.state.ZombieRenderState;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.EntityType;
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
 @EventBusSubscriber(modid = HalloweenCoreMod.MOD_ID, value = Dist.CLIENT)
 public final class HalloweenClientEvents {
     private HalloweenClientEvents() {}
 
-    @SubscribeEvent
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         // Every registered entity gets a valid renderer and a separate 64x64 texture.
