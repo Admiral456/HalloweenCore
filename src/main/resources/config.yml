@@ -14,7 +14,7 @@ currency:
   name: "fragmentů"
 
 itemsadder:
-  minimum-version: "4.0.13"
+  minimum-version: "4.0.18"
 
 gameplay:
   allowed-gamemodes:
@@ -228,6 +228,41 @@ rewards:
         - "&cTěžba 14 • útokový modifier 7 • rychlostní modifier 1,0."
         - "&7Výdrž 4 500 • plně enchantovatelná."
 
+    crimson-warden-shield:
+      cost: 28000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:crimson_warden_shield"
+      material: SHIELD
+      amount: 1
+      name: "&4&lŠtít Krvavého strážce"
+      lore:
+        - "&7Těžký štít s karmínovou pečetí."
+        - "&cBlokování útoku může odrazit útočníka."
+        - "&7Výdrž 1 800 • enchantovatelnost 25."
+
+    batwing-elytra:
+      cost: 120000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:batwing_elytra"
+      material: ELYTRA
+      amount: 1
+      name: "&5&lBatwing Elytra &8[Relikvie Halloween]"
+      lore:
+        - "&7Netopýří křídla s vlastním vzhledem."
+        - "&dMidnight Glide • Nightwing Surge • Bat Echo."
+        - "&7Výdrž 768 • běžné ohňostroje a Mending."
+    nocturne-sovereign-cowl:
+      cost: 180000
+      min-curse: 5
+      itemsadder-id: "warriorland_halloween:nocturne_sovereign_cowl"
+      material: NETHERITE_HELMET
+      amount: 1
+      name: "&5&lNocturne Sovereign Cowl"
+      lore:
+        - "&8Obsidiánová kápě se spektrálníma očima."
+        - "&dNocturnal Perception • Curseguard • Veilstep."
+        - "&7Výdrž 900 • enchantovatelná."
+
 haunted-village:
   enabled: false
   world: ""
@@ -299,8 +334,12 @@ special-mobs:
       speed-level: 0
       strength-level: 0
       ability-cooldown-seconds: 12
+      secondary-ability-chance: 0.5
       soul-siphon-blindness-ticks: 35
       soul-siphon-weakness-ticks: 80
+      frenzy-ticks: 40
+      frenzy-speed-level: 1
+      frenzy-strength-level: 0
     void-reaper:
       name: "&5&lŽenec prázdnoty"
       glowing: true
@@ -308,7 +347,12 @@ special-mobs:
       speed-level: 0
       strength-level: 1
       ability-cooldown-seconds: 13
+      secondary-ability-chance: 0.5
       gloom-ticks: 70
+      void-rift-delay-ticks: 22
+      void-rift-radius-blocks: 2.2
+      void-rift-damage: 2.5
+      void-rift-slowness-ticks: 35
     gravekeeper:
       name: "&8&lHrobník"
       glowing: true
@@ -316,9 +360,14 @@ special-mobs:
       speed-level: 0
       strength-level: 0
       ability-cooldown-seconds: 9
+      secondary-ability-chance: 0.5
       grave-mark-delay-ticks: 24
       grave-mark-radius-blocks: 1.5
       grave-mark-damage: 3.0
+      grave-pulse-delay-ticks: 20
+      grave-pulse-radius-blocks: 2.4
+      grave-pulse-damage: 2.5
+      grave-pulse-slowness-ticks: 30
     frost-stalker:
       name: "&b&lLedový stopař"
       glowing: true
@@ -326,7 +375,12 @@ special-mobs:
       speed-level: 1
       strength-level: 0
       ability-cooldown-seconds: 10
+      secondary-ability-chance: 0.5
       frostbite-ticks: 80
+      ice-lance-delay-ticks: 18
+      ice-lance-radius-blocks: 2.25
+      ice-lance-damage: 2.0
+      ice-lance-slowness-ticks: 40
     blood-spider:
       name: "&c&lKrvavý pavouk"
       glowing: true
@@ -334,8 +388,11 @@ special-mobs:
       speed-level: 1
       strength-level: 0
       ability-cooldown-seconds: 8
+      secondary-ability-chance: 0.5
       blood-web-poison-ticks: 80
       blood-web-slowness-ticks: 45
+      blood-drain-heal: 3.0
+      blood-drain-poison-ticks: 40
     nightmare:
       name: "&d&lNoční můra"
       glowing: true
@@ -343,7 +400,10 @@ special-mobs:
       speed-level: 1
       strength-level: 1
       ability-cooldown-seconds: 12
+      secondary-ability-chance: 0.5
       night-terror-ticks: 60
+      spectral-slam-knockback: 0.75
+      spectral-slam-weakness-ticks: 40
     pumpkin-wraith:
       name: "&6&lDýňový přízrak"
       glowing: true
@@ -351,9 +411,13 @@ special-mobs:
       speed-level: 0
       strength-level: 1
       explosion-radius: 3
+      secondary-ability-chance: 0.5
       ash-flash-radius-blocks: 5.0
       ash-flash-nausea-ticks: 70
       ash-flash-blindness-ticks: 30
+      ember-ring-fire-ticks: 30
+      ember-ring-slowness-ticks: 35
+      ember-ring-knockback: 0.55
     hex-witch:
       name: "&5&lHexová čarodějka"
       glowing: true
@@ -361,7 +425,12 @@ special-mobs:
       speed-level: 0
       strength-level: 0
       ability-cooldown-seconds: 10
+      secondary-ability-chance: 0.5
       random-hex-duration-ticks: 65
+      hex-mark-delay-ticks: 20
+      hex-mark-radius-blocks: 2.25
+      hex-mark-damage: 2.0
+      hex-mark-slowness-ticks: 35
 
 notifications:
   fragment-gain: true
@@ -424,6 +493,7 @@ random-events:
   sound: "warriorland_halloween:event_sting"
   types:
     soulstorm:
+      enabled: true
       name: "Duševní bouře"
       sound: "warriorland_halloween:soulstorm_sting"
       start-message: "&6&lDUŠEVNÍ BOUŘE &8» &dZávoj mezi světy se trhá! Lovci duší vyráží na hráče; lov a rybaření přináší více fragmentů."
@@ -433,6 +503,7 @@ random-events:
         fishing: 1.5
 
     witching-hour:
+      enabled: true
       name: "Čarodějnická hodina"
       sound: "warriorland_halloween:witching_sting"
       start-message: "&5&lČARODĚJNICKÁ HODINA &8» &dČarodějnice rozsévají kletby a lovci číhají ze stínů. Těžba i lov mají vyšší odměny."
@@ -443,6 +514,7 @@ random-events:
         fishing: 1.25
 
     cursed-harvest:
+      enabled: true
       name: "Prokletá sklizeň"
       sound: "warriorland_halloween:harvest_sting"
       start-message: "&a&lPROKLETÁ SKLIZEŇ &8» &2Plodiny ožívají pod temnou magií. Sklízej, než pole pohltí prokletí strážci."
@@ -453,6 +525,7 @@ random-events:
         mob-kill: 1.5
 
     blood-moon-invasion:
+      enabled: true
       name: "Krvavý měsíc — invaze"
       sound: "warriorland_halloween:blood_moon_rise"
       start-message: "&4&lKRVAVÝ MĚSÍC &8» &cObloha zrudla! Přichází husté vlny speciálních monster a VŠECHNA monstra udělují 3× poškození. Přežijte invazi!"
@@ -462,6 +535,7 @@ random-events:
         mining: 1.25
 
     pumpkin-apocalypse:
+      enabled: true
       name: "Dýňová apokalypsa"
       sound: "warriorland_halloween:pumpkin_apocalypse"
       start-message: "&6&lDÝŇOVÁ APOKALYPSA &8» &cDýně praskají a ze země šlehají plameny! Dýňoví přízraci přichází ve velkých skupinách."
@@ -471,6 +545,7 @@ random-events:
         farming: 1.5
 
     graveyard-rising:
+      enabled: true
       name: "Hřbitov vstává"
       sound: "warriorland_halloween:graveyard_rising"
       start-message: "&8&lHŘBITOV VSTÁVÁ &8» &7Z hrobů se valí mlha, hrobníci vstávají a každou chvíli se objeví další vlna nemrtvých."
@@ -549,6 +624,60 @@ bosses:
         phase-4-cooldown-seconds: 9
         phase-4-radius: 10
         phase-4-damage: 7.0
+  goblin:
+    enabled: true
+    id: "goblin-king"
+    health: 500.0
+    damage: 14.0
+    movement-speed: 0.28
+    knockback-resistance: 0.85
+    unlock-global-progress-percent: 50.0
+    reward-fragments: 1500
+    phase-one-cooldown-ms: 8000
+    phase-two-cooldown-ms: 7000
+    phase-three-cooldown-ms: 9000
+    rupture-delay-ticks: 28
+    rupture-damage: 16.0
+    max-minions: 3
+    minion-health: 24.0
+    minion-damage: 5.0
+    arena:
+      configured: false
+      generated: false
+      world: ""
+      x: 0
+      y: 80
+      z: 0
+      radius: 31
+
+stalkers:
+  headless-nick:
+    enabled: true
+    health: 120.0
+    damage: 10.0
+    night-only: true
+    night-start-tick: 13000
+    night-end-tick: 23000
+    spawn-distance-min: 10
+    spawn-distance-max: 19
+    ideal-stalk-distance: 12.0
+    movement-speed: 1.05
+    safe-spawn-radius-blocks: 32.0
+    no-target-timeout-seconds: 180
+    despawn-without-target: true
+    message-interval-seconds: 45
+    spectral-charge-range: 14.0
+    charge-hit-radius: 3.0
+    charge-warning-ticks: 22
+    charge-damage: 10.0
+    spectral-charge-cooldown-seconds: 28
+    executioner-damage: 9.0
+    executioner-cooldown-seconds: 20
+    chains-cooldown-seconds: 35
+    natural-spawn:
+      enabled: true
+      chance-per-check: 0.012
+      cooldown-seconds: 720
 
 world-decorations:
   enabled: true
@@ -556,8 +685,90 @@ world-decorations:
   pumpkins-per-chunk: 5
   cobwebs-per-chunk: 2
   red-candles-per-chunk: 1
+  mushrooms-per-chunk: 2
   attempts-per-placement: 32
   chunks-per-tick: 2
+
+# Whole structures are placed only in the Overworld on flat, clear natural ground.
+# Candidate selection is deterministic per seed/chunk, and occupied chunks are marked in their PDC.
+world-structures:
+  enabled: true
+  village-region-chunks: 10
+  graveyard-region-chunks: 6
+  # Deprecated compatibility key; placement now uses max-terrain-relief.
+  max-slope: 2
+  max-terrain-relief: 8
+  max-retries: 120
+  spawn-exclusion-radius: 64
+  # Empty lists allow any naturally eligible biome; explicit names form an allow-list.
+  village-biomes: []
+  graveyard-biomes: []
+
+# Passive bonuses and combat procs for items claimed through the Halloween reward shop.
+# Cooldowns limit spam; effects use particles/potions and never alter terrain.
+gear-effects:
+  enabled: true
+  armor:
+    helmet-night-vision-seconds: 4
+    chest-fire-resistance-seconds: 3
+    leggings-speed-seconds: 3
+    boots-jump-boost-seconds: 3
+    set-aura-interval-ticks: 40
+  set-bonus:
+    enabled: true
+    trigger-health-ratio: 0.35
+    cooldown-ms: 30000
+    absorption-ticks: 100
+    absorption-amplifier: 1
+  sword:
+    cooldown-ms: 5000
+    poison-ticks: 50
+    slowness-ticks: 30
+  axe:
+    cooldown-ms: 6000
+    weakness-ticks: 60
+  pickaxe:
+    cooldown-ms: 6000
+    slowness-ticks: 50
+  shovel:
+    cooldown-ms: 8000
+    splash-damage: 2.0
+    splash-radius: 2.5
+  hoe:
+    cooldown-ms: 5000
+    heal-health: 2.0
+  shield:
+    cooldown-ms: 4000
+
+# Shared bounded abilities for Batwing Elytra and Nocturne Sovereign Cowl.
+relics:
+  enabled: true
+  require-survival: true
+  allowed-worlds: []
+  world-mode: BLACKLIST
+  elytra:
+    midnight-glide-speed-multiplier: 1.02
+    max-glide-velocity: 2.2
+    surge-cooldown-seconds: 10
+    surge-velocity: 0.62
+    max-surge-velocity: 2.35
+    echo-cooldown-seconds: 20
+    echo-radius-blocks: 18.0
+    echo-duration-ticks: 50
+    echo-max-targets: 8
+  cowl:
+    nocturnal-perception-enabled: true
+    night-vision-seconds: 6
+    sense-pulse-interval-seconds: 4
+    sense-radius-blocks: 12.0
+    sense-max-targets: 3
+    sense-glow-ticks: 30
+    curseguard-enabled: true
+    curse-duration-multiplier: 0.65
+    reduce-curse-amplifier: true
+    veilstep-cooldown-seconds: 12
+    veilstep-velocity: 0.58
+    veilstep-speed-ticks: 30
 
 atmosphere:
   enabled: true

@@ -21,6 +21,14 @@ public final class HalloweenEventManager {
     private boolean started;
     private long lastSurgeAt;
     private boolean invasionCaptainSpawned;
+    private String lastStartFailure = "";
+    private String lastEffectEventId = "";
+    private String lastEffectSummary = "Dosud nebyla ověřena žádná aktivní vlna.";
+    private long lastEffectAt;
+    private int lastSurgeSpawned = -1;
+    private long lastFailureLogAt;
+    private boolean initializingEvent;
+    private int lastAuxiliaryEffects;
 
     public HalloweenEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -56,6 +64,7 @@ public final class HalloweenEventManager {
     }
 
     private void clearActiveEvent() {
+        if (isBloodMoonActive()) broadcastVisualState(false);
         if (activeEventId != null && plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
@@ -66,17 +75,61 @@ public final class HalloweenEventManager {
     }
 
     public boolean startEventNow(String requestedId) {
-        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)) return false;
-        if (activeEventId != null) return false;
-
+        lastStartFailure = "";
+        if (!plugin.isEventEnabled()) {
+            lastStartFailure = "HalloweenCore je vypnutý. Použij /halloween on.";
+            return false;
+        }
+        if (!plugin.getConfig().getBoolean("random-events.enabled", true)) {
+            lastStartFailure = "Automatické a ruční eventy jsou zakázány v random-events.enabled.";
+            return false;
+        }
+        if (activeEventId != null) {
+            lastStartFailure = "Již běží event " + activeEventId + ". Nejprve použij /halloween event stop.";
+            return false;
+        }
         String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
         if (eventId.isEmpty() || eventId.equals("random")) {
-            String[] events = getKnownEventIds().toArray(String[]::new);
-            eventId = events[ThreadLocalRandom.current().nextInt(events.length)];
+            java.util.List<String> available = getAvailableEventIds();
+            if (available.isEmpty()) {
+                lastStartFailure = "V konfiguraci není povolen žádný event (random-events.types.<id>.enabled).";
+                return false;
+            }
+            eventId = available.get(ThreadLocalRandom.current().nextInt(available.size()));
         }
-        if (!getKnownEventIds().contains(eventId)) return false;
+        if (!getKnownEventIds().contains(eventId)) {
+            lastStartFailure = "Neznámé ID eventu: " + eventId + ". Použij /halloween event list.";
+            return false;
+        }
+        if (!isEventIndividuallyEnabled(eventId)) {
+            lastStartFailure = "Event " + eventId + " je vypnutý přes random-events.types." + eventId + ".enabled=false.";
+            return false;
+        }
+        if (eligibleEventPlayers().isEmpty()) {
+            lastStartFailure = "Není online žádný způsobilý hráč v povoleném Halloween světě; event proto nemá komu spustit gameplay.";
+            return false;
+        }
         beginEvent(eventId);
+        if (!eventId.equals(activeEventId)) {
+            if (lastStartFailure == null || lastStartFailure.isBlank()) {
+                lastStartFailure = "Gameplay eventu se nepodařilo inicializovat. Detaily: " + lastEffectSummary;
+            }
+            return false;
+        }
         return true;
+    }
+
+    public String getLastStartFailure() { return lastStartFailure; }
+    public String getLastEffectEventId() { return lastEffectEventId; }
+    public String getLastEffectSummary() { return lastEffectSummary; }
+    public long getLastEffectAt() { return lastEffectAt; }
+    public int getLastSurgeSpawned() { return lastSurgeSpawned; }
+
+    private java.util.List<Player> eligibleEventPlayers() {
+        return new java.util.ArrayList<>(Bukkit.getOnlinePlayers().stream()
+                .filter(plugin::isEligibleGameplayPlayer)
+                .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
+                .toList());
     }
 
     public boolean stopActiveEventNow() {
@@ -89,7 +142,17 @@ public final class HalloweenEventManager {
         return java.util.List.of("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising");
     }
 
+    public boolean isEventIndividuallyEnabled(String id) {
+        if (id == null || !getKnownEventIds().contains(id)) return false;
+        return plugin.getConfig().getBoolean("random-events.types." + id + ".enabled", true);
+    }
+
+    public java.util.List<String> getAvailableEventIds() {
+        return getKnownEventIds().stream().filter(this::isEventIndividuallyEnabled).toList();
+    }
+
     public void stop() {
+        if (isBloodMoonActive()) broadcastVisualState(false);
         if (activeEventId != null && plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
@@ -117,8 +180,12 @@ public final class HalloweenEventManager {
             runActiveEventEffects(now);
         }
 
-        if (activeEventId == null && now >= nextEventAt && !Bukkit.getOnlinePlayers().isEmpty()) {
-            startRandomEvent();
+        if (activeEventId == null && nextEventAt > 0L && now >= nextEventAt) {
+            if (!eligibleEventPlayers().isEmpty()) {
+                startRandomEvent();
+            } else {
+                lastEffectSummary = "Čekám na online hráče v povoleném Halloween světě; event zatím nebyl spuštěn.";
+            }
         }
     }
 
@@ -137,8 +204,13 @@ public final class HalloweenEventManager {
     }
 
     private void startRandomEvent() {
-        String[] events = getKnownEventIds().toArray(String[]::new);
-        String selected = events[ThreadLocalRandom.current().nextInt(events.length)];
+        java.util.List<String> events = getAvailableEventIds();
+        if (events.isEmpty()) {
+            nextEventAt = 0L;
+            lastEffectSummary = "Žádný event není povolen. Zapni jej v random-events.types.<id>.enabled.";
+            return;
+        }
+        String selected = events.get(ThreadLocalRandom.current().nextInt(events.size()));
         beginEvent(selected);
     }
 
@@ -150,7 +222,34 @@ public final class HalloweenEventManager {
                 + Math.min(3, phase / 2));
         activeUntil = System.currentTimeMillis() + duration * 60_000L;
         lastSurgeAt = 0L;
+        lastAuxiliaryEffects = 0;
         invasionCaptainSpawned = false;
+        initializingEvent = true;
+
+        // Start with a real first surge. Do not tell the server that an event started
+        // until at least one intended mob or event-specific gameplay effect was created.
+        if (isBloodMoonActive()) broadcastVisualState(true);
+        runActiveEventEffects(System.currentTimeMillis());
+        initializingEvent = false;
+
+        if (lastSurgeSpawned <= 0 && lastAuxiliaryEffects <= 0) {
+            String failedId = activeEventId;
+            if (isBloodMoonActive()) broadcastVisualState(false);
+            if (plugin.getMobManager() != null) plugin.getMobManager().cleanupEventMobs();
+            activeEventId = null;
+            activeUntil = 0L;
+            lastSurgeAt = 0L;
+            invasionCaptainSpawned = false;
+            lastStartFailure = "První gameplay vlna eventu " + failedId
+                    + " neuspěla; event nebyl oznámen jako aktivní. " + lastEffectSummary;
+            lastEffectSummary = lastStartFailure;
+            if (System.currentTimeMillis() - lastFailureLogAt >= 60_000L) {
+                plugin.getLogger().warning(lastStartFailure);
+                lastFailureLogAt = System.currentTimeMillis();
+            }
+            scheduleNextEvent();
+            return;
+        }
 
         String path = "random-events.types." + activeEventId;
         String name = plugin.getConfig().getString(path + ".name", activeEventId);
@@ -158,11 +257,13 @@ public final class HalloweenEventManager {
                 "&6&lHALLOWEEN &8» &f" + name + " začíná!");
         String announcement = plugin.color(message.replace("%duration%", Integer.toString(duration)));
         Bukkit.broadcastMessage(announcement);
-        plugin.getLogger().info("Halloween event started: " + activeEventId + " (duration=" + duration + "m)");
+        plugin.getLogger().info("Halloween event started after successful gameplay initialization: "
+                + activeEventId + " (duration=" + duration + "m, first-wave=" + lastSurgeSpawned + ")");
         playEventSound();
     }
 
     private void endEvent() {
+        if (isBloodMoonActive()) broadcastVisualState(false);
         String path = "random-events.types." + activeEventId;
         String message = plugin.getConfig().getString(path + ".end-message",
                 "&6&lHALLOWEEN &8» &7Halloween událost skončila.");
@@ -198,43 +299,55 @@ public final class HalloweenEventManager {
         if (now - lastSurgeAt < surgeIntervalSeconds * 1000L) return;
         if (Bukkit.getOnlinePlayers().isEmpty()) return;
 
-        Player[] players = Bukkit.getOnlinePlayers().stream()
-                .filter(plugin::isEligibleGameplayPlayer)
-                .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
-                .toArray(Player[]::new);
-        if (players.length == 0) return;
+        Player[] players = eligibleEventPlayers().toArray(Player[]::new);
+        if (players.length == 0) {
+            lastEffectEventId = activeEventId;
+            lastEffectAt = now;
+            lastSurgeSpawned = 0;
+            lastEffectSummary = "Event je ACTIVE, ale není online hráč v povoleném Halloween světě.";
+            return;
+        }
         Player target = players[ThreadLocalRandom.current().nextInt(players.length)];
+        int spawnedThisSurge = 0;
+        lastAuxiliaryEffects = 0;
 
         switch (activeEventId.toLowerCase(Locale.ROOT)) {
             case "soulstorm" -> {
                 int spawned = spawnWave(target, new String[]{"cursed-zombie", "gravekeeper", "blood-spider"}, 3);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.SOUL, target.getLocation().clone().add(0, 1.0D, 0),
                         38, 1.8D, 1.1D, 1.8D, 0.04D);
                 target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().clone().add(0, 0.5D, 0),
                         16, 1.3D, 0.5D, 1.3D, 0.025D);
-                if (spawned > 0) target.sendMessage(plugin.color("&5Duše se shlukují... &7Z mlhy vyrazilo několik prokletých lovců."));
+                if (spawned > 0 && !initializingEvent) target.sendMessage(plugin.color("&5Duše se shlukují... &7Z mlhy vyrazilo několik prokletých lovců."));
             }
             case "witching-hour" -> {
                 int spawned = spawnWave(target, new String[]{"hex-witch", "blood-spider", "cursed-zombie"}, 3);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().clone().add(0, 1.0D, 0),
                         32, 1.4D, 1.0D, 1.4D, 0.08D);
                 target.getWorld().spawnParticle(Particle.PORTAL, target.getLocation().clone().add(0, 0.7D, 0),
                         28, 1.2D, 0.7D, 1.2D, 0.15D);
                 if (ThreadLocalRandom.current().nextBoolean()) {
                     target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, 35, 0, true, false, false));
-                    target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7čarodějnice ti na okamžik zastřela zrak."));
-                } else if (spawned > 0) {
+                    lastAuxiliaryEffects++;
+                    if (!initializingEvent) target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7čarodějnice ti na okamžik zastřela zrak."));
+                } else if (spawned > 0 && !initializingEvent) {
                     target.sendMessage(plugin.color("&5Čarodějnická hodina &8» &7Z temnoty se vynořila lovící smečka."));
                 }
             }
             case "cursed-harvest" -> {
                 int cropsGrown = empowerNearbyCrops(target, 8, 5);
                 int spawned = spawnWave(target, new String[]{"blood-spider", "pumpkin-wraith"}, 2);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.COMPOSTER, target.getLocation().clone().add(0, 1.0D, 0),
                         24, 1.5D, 0.8D, 1.5D, 0.04D);
                 target.getWorld().spawnParticle(Particle.HAPPY_VILLAGER, target.getLocation().clone().add(0, 1.0D, 0),
                         14, 1.1D, 0.7D, 1.1D, 0.02D);
-                if (cropsGrown > 0) target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Temná magie popohnala růst okolních plodin."));
+                if (cropsGrown > 0) {
+                    lastAuxiliaryEffects += cropsGrown;
+                    if (!initializingEvent) target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Temná magie popohnala okolní plodiny."));
+                }
                 if (spawned > 0) target.sendMessage(plugin.color("&aProkletá sklizeň &8» &7Ze záhonů vylézají prokletí strážci."));
             }
             case "blood-moon-invasion" -> {
@@ -253,35 +366,60 @@ public final class HalloweenEventManager {
                 int spawned = spawnWave(target,
                         new String[]{"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"},
                         waveSize);
+                spawnedThisSurge += spawned;
                 target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME,
                         target.getLocation().clone().add(0, 1.0D, 0), 34, 1.5D, 1.0D, 1.5D, 0.035D);
                 target.getWorld().spawnParticle(Particle.ASH,
                         target.getLocation().clone().add(0, 1.0D, 0), 30, 1.4D, 0.8D, 1.4D, 0.015D);
-                if (spawned > 0) target.sendMessage(plugin.color("&4Krvavý měsíc &8» &cDalší vlna nepřátel útočí! Veškerá monstra udělují trojnásobné poškození."));
+                if (spawned > 0 && !initializingEvent) target.sendMessage(plugin.color("&4Krvavý měsíc &8» &cDalší vlna nepřátel útočí! Veškerá monstra udělují trojnásobné poškození."));
             }
             case "pumpkin-apocalypse" -> {
                 int spawned = spawnWave(target, new String[]{"pumpkin-wraith", "pumpkin-wraith", "cursed-zombie"}, 5);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.FLAME, target.getLocation().clone().add(0, 1.0D, 0),
                         48, 1.8D, 1.0D, 1.8D, 0.035D);
                 target.getWorld().spawnParticle(Particle.LAVA, target.getLocation().clone().add(0, 0.5D, 0),
                         12, 1.4D, 0.5D, 1.4D, 0.0D);
                 target.getWorld().spawnParticle(Particle.ASH, target.getLocation().clone().add(0, 1.0D, 0),
                         25, 1.3D, 0.8D, 1.3D, 0.02D);
-                if (spawned > 0) target.sendMessage(plugin.color("&6&lDÝŇOVÁ APOKALYPSA &8» &7Z pukajících dýní vyrazila další vlna přízraků."));
+                if (spawned > 0 && !initializingEvent) target.sendMessage(plugin.color("&6&lDÝŇOVÁ APOKALYPSA &8» &7Z pukajících dýní vyrazila další vlna přízraků."));
             }
             case "graveyard-rising" -> {
                 int spawned = spawnWave(target, new String[]{"gravekeeper", "gravekeeper", "cursed-zombie", "blood-spider"}, 4);
+                spawnedThisSurge = spawned;
                 target.getWorld().spawnParticle(Particle.SOUL, target.getLocation().clone().add(0, 0.3D, 0),
                         44, 1.8D, 0.15D, 1.8D, 0.025D);
                 target.getWorld().spawnParticle(Particle.ASH, target.getLocation().clone().add(0, 1.0D, 0),
                         22, 1.2D, 0.8D, 1.2D, 0.015D);
-                if (spawned > 0) target.sendMessage(plugin.color("&8&lHŘBITOV VSTÁVÁ &8» &7Náhrobky se otřásají a mrtví vstávají ze země."));
+                if (spawned > 0 && !initializingEvent) target.sendMessage(plugin.color("&8&lHŘBITOV VSTÁVÁ &8» &7Náhrobky se otřásají a mrtví vstávají ze země."));
             }
             default -> {
                 // Unknown custom event IDs are ignored safely; known IDs are validated before activation.
             }
         }
         lastSurgeAt = now;
+        lastEffectEventId = activeEventId;
+        lastEffectAt = now;
+        lastSurgeSpawned = spawnedThisSurge;
+        lastEffectSummary = "Event " + activeEventId + ": v cílovém světě " + target.getWorld().getName()
+                + " úspěšně spawnuto " + spawnedThisSurge + " event mobů v poslední vlně.";
+        if (spawnedThisSurge > 0 && plugin.getMobManager() != null) {
+            lastEffectSummary += " Poslední mob: " + plugin.getMobManager().getLastSpawnedMobId() + ".";
+        }
+        if (spawnedThisSurge > 0 && activeEventId.equals("blood-moon-invasion")
+                && plugin.getQuestManager() != null) {
+            plugin.getQuestManager().recordAction(target, "event:blood-moon-invasion");
+        }
+        if (spawnedThisSurge == 0) {
+            String cause = plugin.getMobManager() == null ? "HalloweenMobManager není dostupný."
+                    : plugin.getMobManager().getLastSpawnFailure();
+            if (cause == null || cause.isBlank()) cause = "Není znám důvod; ověř spawn location a mob konfiguraci.";
+            lastEffectSummary += " Poslední důvod selhání: " + cause;
+            if (now - lastFailureLogAt >= 60_000L) {
+                plugin.getLogger().warning(lastEffectSummary);
+                lastFailureLogAt = now;
+            }
+        }
     }
 
     private int spawnWave(Player target, String[] mobIds, int count) {
@@ -325,6 +463,36 @@ public final class HalloweenEventManager {
             if (milestone > 0L && total >= milestone) phase++;
         }
         return phase;
+    }
+
+    private boolean isBloodMoonActive() {
+        return activeEventId != null && activeEventId.equalsIgnoreCase("blood-moon-invasion");
+    }
+
+    /**
+     * Sync the real server event to the optional client companion. The custom payload
+     * changes only client-side time used by the sky renderer/shader uniforms; it never
+     * changes the server world's day-night cycle or gameplay time.
+     */
+    public void syncVisualState(Player player) {
+        if (player == null || !player.isOnline()) return;
+        sendVisualState(player, isBloodMoonActive());
+    }
+
+    private void broadcastVisualState(boolean bloodMoon) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            sendVisualState(player, bloodMoon);
+        }
+    }
+
+    private void sendVisualState(Player player, boolean bloodMoon) {
+        try {
+            player.sendPluginMessage(plugin, "halloweencore:visual_state",
+                    new byte[]{(byte) (bloodMoon ? 1 : 0)});
+        } catch (IllegalArgumentException ignored) {
+            // Keep gameplay running if another plugin has intentionally unregistered
+            // the optional visual-state channel; the client companion is cosmetic.
+        }
     }
 
     public boolean isActive(String id) {

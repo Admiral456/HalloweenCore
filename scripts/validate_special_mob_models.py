@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the five custom Halloween ModelEngine/Blockbench assets and mob definitions."""
+"""Validate all generated Halloween ModelEngine/Blockbench assets and mob definitions."""
 from __future__ import annotations
 
 import base64
@@ -15,6 +15,20 @@ import zlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 MODEL_DIR = ROOT / "mythicmobs" / "models"
 MOB_CONFIG = ROOT / "mythicmobs" / "mobs" / "halloween-special-mobs.yml"
+SPECIAL_ATTACK_ANIMATIONS = {
+    "halloween_cursed_zombie": "frenzy",
+    "halloween_void_reaper": "void_cast",
+    "halloween_gravekeeper": "ground_slam",
+    "halloween_frost_stalker": "pounce",
+    "halloween_blood_spider": "blood_leap",
+    "halloween_pumpkin_wraith": "ember_burst",
+    "halloween_hex_witch": "hex_cast",
+    "halloween_nightmare": "spectral_charge",
+    "halloween_goblin_king": "heavy_attack",
+    "halloween_headless_nick": "executioner_strike",
+    "halloween_nick_steed": "gallop",
+}
+
 MOB_IDS = (
     "halloween_cursed_zombie",
     "halloween_void_reaper",
@@ -24,6 +38,9 @@ MOB_IDS = (
     "halloween_pumpkin_wraith",
     "halloween_hex_witch",
     "halloween_nightmare",
+    "halloween_goblin_king",
+    "halloween_headless_nick",
+    "halloween_nick_steed",
 )
 
 
@@ -160,10 +177,18 @@ def validate_model(mob_id: str) -> None:
         fail(f"{model_path.name} outliner must reference each model cube exactly once")
 
     names = {anim.get("name") for anim in model.get("animations", [])}
-    if not {"idle", "walk", "attack"}.issubset(names):
-        fail(f"{model_path.name} must have idle, walk and attack animations")
-    if mob_id not in ("halloween_blood_spider", "halloween_frost_stalker") and "fly" not in names:
-        fail(f"{model_path.name} must include the floating/fly animation")
+    required_attack = SPECIAL_ATTACK_ANIMATIONS.get(mob_id)
+    if required_attack and required_attack not in names:
+        fail(f"{model_path.name} is missing its specific attack animation '{required_attack}'")
+    if mob_id == "halloween_nick_steed":
+        required_mount = {"idle", "walk", "trot", "gallop", "rear", "hit_reaction", "death"}
+        if not required_mount.issubset(names):
+            fail(f"{model_path.name} is missing horse-specific animations: {', '.join(sorted(required_mount - names))}")
+    else:
+        if not {"idle", "walk", "attack"}.issubset(names):
+            fail(f"{model_path.name} must have idle, walk and attack animations")
+        if mob_id not in ("halloween_blood_spider", "halloween_frost_stalker") and "fly" not in names:
+            fail(f"{model_path.name} must include the floating/fly animation")
     for animation in model.get("animations", []):
         anim_uuid = animation.get("uuid")
         if not anim_uuid:
@@ -183,6 +208,74 @@ def validate_model(mob_id: str) -> None:
                     fail(f"{model_path.name} contains an invalid animation channel")
                 if not isinstance(keyframe.get("data_points"), list) or not keyframe["data_points"]:
                     fail(f"{model_path.name} has a keyframe without datapoints")
+
+    def find_named_group(nodes: list, wanted: str) -> dict | None:
+        for node in nodes:
+            if not isinstance(node, dict):
+                continue
+            if node.get("name") == wanted:
+                return node
+            nested = find_named_group(node.get("children", []), wanted)
+            if nested is not None:
+                return nested
+        return None
+
+    if mob_id == "halloween_goblin_king":
+        required_geometry = {
+            "goblin_horn_left_base", "goblin_horn_left_tip",
+            "goblin_horn_right_base", "goblin_horn_right_tip",
+            "goblin_crown_band", "goblin_crown_spike_center", "goblin_crown_gem",
+            "goblin_heavy_pauldron", "goblin_royal_cuirass", "goblin_central_emblem",
+            "goblin_royal_cape_panel", "goblin_cape_clasp",
+            "goblin_wing_left_inner_membrane", "goblin_wing_right_inner_membrane",
+            "goblin_staff_shaft", "goblin_staff_orb_core", "goblin_staff_orb_highlight",
+        }
+        element_names = {element.get("name") for element in elements}
+        if not required_geometry.issubset(element_names):
+            missing = sorted(required_geometry - element_names)
+            fail(f"{model_path.name} is missing the Goblin King's custom geometry: {', '.join(missing)}")
+        if not {"left_wing", "right_wing", "staff_orb"}.issubset(bone_names):
+            fail(f"{model_path.name} must contain independently animated left/right wing and orb bones")
+        required_clip_bones = {
+            "idle_breath": {"body"},
+            "head_turn": {"head"},
+            "wing_fold": {"left_wing", "right_wing"},
+            "wing_spread": {"left_wing", "right_wing"},
+            "wing_flap": {"left_wing", "right_wing"},
+            "staff_raise": {"right_arm", "weapon"},
+            "spell_cast": {"right_arm", "weapon", "staff_orb"},
+            "staff_strike": {"right_arm", "weapon"},
+            "wing_slam": {"left_wing", "right_wing"},
+            "phase_transition": {"left_wing", "right_wing", "staff_orb"},
+            "stagger": {"body", "head"},
+            "death": {"body", "left_wing", "right_wing"},
+            "staff_orb_pulse": {"staff_orb"},
+        }
+        for clip_name, required_bones in required_clip_bones.items():
+            clip = next((animation for animation in model.get("animations", [])
+                         if animation.get("name") == clip_name), None)
+            if clip is None:
+                fail(f"{model_path.name} is missing required Goblin King animation '{clip_name}'")
+            track_bones = {track.get("name") for track in (clip.get("animators") or {}).values()}
+            if not required_bones.issubset(track_bones):
+                fail(f"{model_path.name} animation '{clip_name}' is not wired to bones: "
+                     f"{', '.join(sorted(required_bones - track_bones))}")
+    if mob_id == "halloween_headless_nick":
+        head_group = find_named_group(model.get("outliner", []), "head")
+        if head_group is None:
+            fail(f"{model_path.name} must preserve its head animation bone even when headless")
+        def group_has_cubes(node: dict) -> bool:
+            for child in node.get("children", []):
+                if isinstance(child, str):
+                    return True
+                if isinstance(child, dict) and group_has_cubes(child):
+                    return True
+            return False
+        if group_has_cubes(head_group):
+            fail(f"{model_path.name} is not genuinely headless: head-bone cubes are still attached")
+        element_names = {element.get("name") for element in elements}
+        if "nick_bloody_neck_stump" not in element_names or "nick_executioner_blade" not in element_names:
+            fail(f"{model_path.name} must include the exposed neck stump and executioner's blade")
 
     texture_uuid = textures[0].get("uuid")
     if texture_uuid:
@@ -204,6 +297,13 @@ def main() -> None:
             fail(f"MythicMobs config is missing {mob_id}")
         if f"model{{mid={mob_id};n=false}}" not in yaml_text:
             fail(f"MythicMobs config does not attach the ModelEngine model {mob_id}")
+        attack_state = SPECIAL_ATTACK_ANIMATIONS[mob_id]
+        mob_section = re.search(
+            rf"(?ms)^{re.escape(mob_id)}:\s*\n(.*?)(?=^[a-z0-9_]+:\s*$|\Z)",
+            yaml_text,
+        )
+        if mob_section is None or f"s={attack_state}" not in mob_section.group(1):
+            fail(f"MythicMobs config does not trigger {attack_state} for {mob_id}")
     if "prevent_other_drops" in yaml_text.lower():
         fail("Use the proper MythicMobs option spelling PreventOtherDrops")
     print(f"PASS all {len(MOB_IDS)} custom MythicMobs definitions reference matching ModelEngine models")

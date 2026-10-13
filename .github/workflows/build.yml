@@ -16,6 +16,10 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Set up Gradle for the optional Fabric client companion
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.5.0'
       - name: Ensure audio encoder
         run: |
           if ! command -v ffmpeg >/dev/null 2>&1; then
@@ -26,23 +30,65 @@ jobs:
         run: python3 scripts/generate_halloween_audio.py
       - name: Generate Halloween block textures
         run: python3 scripts/generate_halloween_block_textures.py
+      - name: Install pixel-art and Blockbench texture generator dependency
+        run: python3 -m pip install --user Pillow
+      - name: Generate detailed Halloween gear icons and 3D models
+        run: python3 scripts/generate_halloween_gear_assets.py
+      - name: Generate valid custom armor layer textures
+        run: python3 scripts/generate_halloween_armor_layers.py
+      - name: Generate Halloween environment textures and pumpkin variants
+        run: python3 scripts/generate_halloween_environment_textures.py
+      - name: Install GLSL validator
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y glslang-tools
+      - name: Compile Iris shader sources
+        run: |
+          set -e
+          for shader in shaderpack/shaders/*.vsh; do
+            echo "Compiling vertex shader: $shader"
+            glslangValidator -S vert "$shader"
+          done
+          for shader in shaderpack/shaders/*.fsh; do
+            echo "Compiling fragment shader: $shader"
+            glslangValidator -S frag "$shader"
+          done
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
+      - name: Build Fabric client companion
+        run: gradle -p client-mod --no-daemon clean build
       - name: Validate Vampire King model
         run: python3 scripts/validate_vampire_model.py
-      - name: Install Blockbench texture generator dependency
-        run: python3 -m pip install --user Pillow
       - name: Generate additional Halloween mob models
         run: python3 scripts/generate_additional_halloween_mobs.py
       - name: Validate custom Halloween mob models
         run: python3 scripts/validate_special_mob_models.py
       - name: Build
         run: mvn -B clean package
+      - name: Build standalone portable relic plugin
+        run: mvn -B -f portable-relics/pom.xml clean package
+      - name: Assemble portable relic package
+        run: |
+          python3 scripts/build_portable_relics.py
+          mkdir -p target
+          cd target
+          zip -qr HalloweenCore-Portable-Relics.zip HalloweenCore-Portable-Relics
+          unzip -t HalloweenCore-Portable-Relics.zip
+      - name: Prepare installable client companion JAR
+        run: |
+          mkdir -p target
+          cp client-mod/build/libs/halloweencore-client-1.21.10-1.0.0.jar target/HalloweenCore-Client-1.21.10.jar
       - name: Package ItemsAdder content
         run: |
           mkdir -p target
           cd itemsadder/contents
           zip -qr ../../target/WarriorLand-Halloween-ItemsAdder.zip warriorland_halloween
+      - name: Package Iris Halloween shader pack
+        run: |
+          mkdir -p target
+          cd shaderpack
+          zip -qr ../target/WarriorLand-Halloween-Iris-Shader.zip shaders README.md
+          unzip -t ../target/WarriorLand-Halloween-Iris-Shader.zip
       - name: Upload ItemsAdder content pack
         uses: actions/upload-artifact@v4
         with:
@@ -50,12 +96,36 @@ jobs:
           path: target/WarriorLand-Halloween-ItemsAdder.zip
           if-no-files-found: error
           retention-days: 14
+      - name: Upload portable relic package
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Portable-Relics
+          path: target/HalloweenCore-Portable-Relics.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Iris Halloween shader pack
+        uses: actions/upload-artifact@v4
+        with:
+          name: WarriorLand-Halloween-Iris-Shader
+          path: target/WarriorLand-Halloween-Iris-Shader.zip
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload Fabric client companion
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Client-1.21.10
+          path: target/HalloweenCore-Client-1.21.10.jar
+          if-no-files-found: error
+          retention-days: 14
       - name: Package special mob models
         run: |
-          mkdir -p target/halloween-mob-pack/MythicMobs/Mobs target/halloween-mob-pack/ModelEngine/blueprints
+          mkdir -p target/halloween-mob-pack/MythicMobs/Mobs target/halloween-mob-pack/MythicMobs/Skills target/halloween-mob-pack/ModelEngine/blueprints
           cp mythicmobs/mobs/halloween-special-mobs.yml target/halloween-mob-pack/MythicMobs/Mobs/
+          cp mythicmobs/mobs/vampire-king.yml target/halloween-mob-pack/MythicMobs/Mobs/
+          cp mythicmobs/skills/vampire-king.yml target/halloween-mob-pack/MythicMobs/Skills/
           cp mythicmobs/models/halloween_*.bbmodel target/halloween-mob-pack/ModelEngine/blueprints/
           cp mythicmobs/models/halloween_*.png target/halloween-mob-pack/ModelEngine/blueprints/
+          cp mythicmobs/models/vampire_king.bbmodel mythicmobs/models/vampire_king.png target/halloween-mob-pack/ModelEngine/blueprints/
           cp mythicmobs/README.md target/halloween-mob-pack/README.txt
           cd target/halloween-mob-pack
           zip -qr ../HalloweenCore-Special-Mobs-ModelEngine.zip .
@@ -72,5 +142,19 @@ jobs:
         with:
           name: HalloweenCore-jar
           path: target/HalloweenCore.jar
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Assemble server-ready release package
+        run: |
+          python3 scripts/build_server_ready_package.py
+          cd target
+          zip -qr HalloweenCore-Server-ReadyToDrop.zip HalloweenCore-Server-ReadyToDrop
+          unzip -t HalloweenCore-Server-ReadyToDrop.zip
+      - name: Upload server-ready release package
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Server-ReadyToDrop
+          path: target/HalloweenCore-Server-ReadyToDrop.zip
           if-no-files-found: error
           retention-days: 14

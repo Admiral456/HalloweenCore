@@ -276,4 +276,55 @@ public final class HalloweenRewardManager {
         player.sendMessage(plugin.color("&6HALLOWEEN &8» &aZískal jsi limitovanou odměnu &f" + section.getString("name", normalizedId) + "&a."));
         return true;
     }
+
+    /**
+     * Admin testing grant: grants one configured reward without charging currency,
+     * bypassing the one-time claim ledger, or changing normal claim eligibility.
+     */
+    public boolean giveAdminItem(Player player, String id) {
+        if (player == null || id == null || id.isBlank()) return false;
+        String normalizedId = id.toLowerCase(Locale.ROOT);
+        var section = plugin.getConfig().getConfigurationSection("rewards.shop." + normalizedId);
+        if (section == null) return false;
+
+        int amount = Math.max(1, Math.min(64, section.getInt("amount", 1)));
+        String itemsAdderId = section.getString("itemsadder-id", "");
+        ItemStack item = itemsAdderId.isBlank() ? null
+                : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount);
+        if (item == null) {
+            Material material;
+            try {
+                material = Material.valueOf(section.getString("material", "PAPER").toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                plugin.getLogger().warning("Admin item grant skipped invalid material for reward '" + normalizedId + "'.");
+                return false;
+            }
+            item = new ItemStack(material, amount);
+            if (!itemsAdderId.isBlank()) plugin.getItemManager().warnIfMissing(itemsAdderId, "admin item grant " + normalizedId);
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(plugin.color(section.getString("name", normalizedId)));
+            List<String> lore = new ArrayList<>();
+            for (String line : section.getStringList("lore")) lore.add(plugin.color(line));
+            meta.setLore(lore);
+            meta.getPersistentDataContainer().set(rewardKey, PersistentDataType.STRING, normalizedId);
+            item.setItemMeta(meta);
+        }
+
+        for (ItemStack overflow : player.getInventory().addItem(item).values()) {
+            if (overflow != null && !overflow.getType().isAir() && overflow.getAmount() > 0) {
+                player.getWorld().dropItemNaturally(player.getLocation(), overflow);
+            }
+        }
+        return true;
+    }
+
+    public List<String> getConfiguredRewardIds() {
+        var shop = plugin.getConfig().getConfigurationSection("rewards.shop");
+        if (shop == null) return List.of();
+        return shop.getKeys(false).stream().sorted(String.CASE_INSENSITIVE_ORDER).toList();
+    }
+
 }

@@ -1,9 +1,17 @@
 package cz.halloween.core;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.block.TileState;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+
+import java.lang.reflect.Array;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 
 /**
  * Builds a large gothic raid arena (97-block diameter) after a separate,
@@ -13,11 +21,17 @@ import org.bukkit.block.Block;
 public final class VampireArenaBuilder {
     public static final int RADIUS = 48;
     private static final int CLEARANCE_HEIGHT = 20;
+    private static final int MAX_TERRAIN_CUT = 8;
+    private static final int MAX_TERRAIN_FILL = 12;
 
     public record Inspection(boolean clear, String problem, int obstructions, String firstObstruction) {}
     private record Point(int x, int z) {}
 
     public Inspection inspect(Location center) {
+        return inspect(center, null);
+    }
+
+    public Inspection inspect(Location center, Player actor) {
         if (center == null || center.getWorld() == null) {
             return new Inspection(false, "Střed arény nemá načtený svět.", 0, "");
         }
@@ -30,18 +44,27 @@ public final class VampireArenaBuilder {
             return new Inspection(false, "Střed je příliš blízko hranici výšky světa.", 0, "");
         }
 
-        int minChunkX = (centerX - RADIUS) >> 4;
-        int maxChunkX = (centerX + RADIUS) >> 4;
-        int minChunkZ = (centerZ - RADIUS) >> 4;
-        int maxChunkZ = (centerZ + RADIUS) >> 4;
+        int minChunkX = Math.floorDiv(centerX - RADIUS, 16);
+        int maxChunkX = Math.floorDiv(centerX + RADIUS, 16);
+        int minChunkZ = Math.floorDiv(centerZ - RADIUS, 16);
+        int maxChunkZ = Math.floorDiv(centerZ + RADIUS, 16);
         for (int cx = minChunkX; cx <= maxChunkX; cx++) {
             for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
                 if (!world.isChunkLoaded(cx, cz)) {
                     return new Inspection(false,
-                            "Některé chunky obří arény nejsou načtené. Zvyš dohled a stůj uprostřed lokace.",
+                            "Část 97blokové arény není načtená. Přijď blíže a zvyš dohled.",
                             0, "");
                 }
             }
+        }
+
+        WorldGuardAccess worldGuard;
+        try {
+            worldGuard = createWorldGuardAccess(actor);
+        } catch (ReflectiveOperationException | LinkageError error) {
+            return new Inspection(false,
+                    "WorldGuard je aktivní, ale ochranu nelze ověřit; stavba byla z bezpečnostních důvodů odmítnuta.",
+                    1, error.getClass().getSimpleName());
         }
 
         int obstructionCount = 0;
@@ -53,33 +76,149 @@ public final class VampireArenaBuilder {
                 int x = centerX + dx;
                 int z = centerZ + dz;
                 int groundY = world.getHighestBlockYAt(x, z);
-                if (groundY < floorY - 6) {
+
+                if (groundY < floorY - MAX_TERRAIN_FILL || groundY > floorY + MAX_TERRAIN_CUT) {
                     obstructionCount++;
                     if (first.isEmpty()) {
-                        first = x + " " + groundY + " " + z + " (terrain is over 6 blocks below arena floor)";
+                        first = x + " " + groundY + " " + z + " (překročen bezpečný limit řezu/zasypání terénu)";
                     }
                 }
-                for (int y = centerY; y < centerY + CLEARANCE_HEIGHT; y++) {
-                    Material material = world.getBlockAt(x, y, z).getType();
-                    if (!material.isAir()) {
-                        obstructionCount++;
-                        if (first.isEmpty()) {
-                            first = x + " " + y + " " + z + " (" + material.name() + ")";
+
+                // Low terrain may receive foundation only through air. Hills may be
+                // cut only when every affected block is natural and has no tile state.
+                if (groundY < floorY) {
+                    for (int y = groundY + 1; y < floorY; y++) {
+                        Block block = world.getBlockAt(x, y, z);
+                        if (!block.getType().isAir() || block.getState() instanceof TileState) {
+                            obstructionCount++;
+                            if (first.isEmpty()) {
+                                first = x + " " + y + " " + z + " (blok uvnitř budoucího základu)";
+                            }
+                            break;
                         }
+                    }
+                } else {
+                    for (int y = floorY; y <= groundY; y++) {
+                        Block block = world.getBlockAt(x, y, z);
+                        if (!isSafeNaturalCutBlock(block)) {
+                            obstructionCount++;
+                            if (first.isEmpty()) {
+                                first = x + " " + y + " " + z + " (" + block.getType().name() + " není bezpečný přírodní terén)";
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                for (int y = centerY; y < centerY + CLEARANCE_HEIGHT; y++) {
+                    Block block = world.getBlockAt(x, y, z);
+                    if (block.getType().isAir()) continue;
+                    if (y <= groundY && isSafeNaturalCutBlock(block)) continue;
+                    obstructionCount++;
+                    if (first.isEmpty()) {
+                        first = x + " " + y + " " + z + " (" + block.getType().name() + " v prostoru arény)";
+                    }
+                }
+
+                if (worldGuard != null) {
+                    String protectionProblem = worldGuardBuildProblem(
+                            new Location(world, x + 0.5D, floorY, z + 0.5D), worldGuard);
+                    if (protectionProblem != null) {
+                        obstructionCount++;
+                        if (first.isEmpty()) first = x + " " + floorY + " " + z + " (" + protectionProblem + ")";
                     }
                 }
             }
         }
         if (obstructionCount > 0) {
-            return new Inspection(false, "Nad podlahou obří arény musí být volných 20 bloků a terén nesmí být o více než 6 bloků níž.",
+            return new Inspection(false,
+                    "Předkontrola odmítla nebezpečnou oblast. Povoleno: řez přírodního terénu do "
+                            + MAX_TERRAIN_CUT + " bloků, zásyp do " + MAX_TERRAIN_FILL
+                            + " bloků a volný prostor 20 bloků. Stavby a chráněné oblasti se nepřepisují.",
                     obstructionCount, first);
         }
         return new Inspection(true, "", 0, "");
     }
 
+    private record WorldGuardAccess(Method adaptLocation, Method testState, Object query,
+                                    Object localPlayer, Object buildFlags) { }
+
+    private WorldGuardAccess createWorldGuardAccess(Player actor) throws ReflectiveOperationException {
+        Plugin worldGuard = Bukkit.getPluginManager().getPlugin("WorldGuard");
+        if (worldGuard == null || !worldGuard.isEnabled()) return null;
+
+        Class<?> worldGuardClass = Class.forName("com.sk89q.worldguard.WorldGuard");
+        Object instance = worldGuardClass.getMethod("getInstance").invoke(null);
+        Object platform = worldGuardClass.getMethod("getPlatform").invoke(instance);
+        Object container = platform.getClass().getMethod("getRegionContainer").invoke(platform);
+        Object query = container.getClass().getMethod("createQuery").invoke(container);
+
+        Class<?> adapterClass = Class.forName("com.sk89q.worldguard.bukkit.BukkitAdapter");
+        Method adaptLocation = adapterClass.getMethod("adapt", Location.class);
+        Object localPlayer = null;
+        if (actor != null) {
+            Class<?> pluginClass = Class.forName("com.sk89q.worldguard.bukkit.WorldGuardPlugin");
+            Object pluginInstance = pluginClass.getMethod("inst").invoke(null);
+            localPlayer = pluginClass.getMethod("wrapPlayer", Player.class).invoke(pluginInstance, actor);
+        }
+
+        Class<?> associableClass = Class.forName("com.sk89q.worldguard.protection.association.RegionAssociable");
+        Class<?> stateFlagClass = Class.forName("com.sk89q.worldguard.protection.flags.StateFlag");
+        Class<?> flagsClass = Class.forName("com.sk89q.worldguard.protection.flags.Flags");
+        Field buildField = flagsClass.getField("BUILD");
+        Object flags = Array.newInstance(stateFlagClass, 1);
+        Array.set(flags, 0, buildField.get(null));
+        Class<?> locationClass = Class.forName("com.sk89q.worldedit.util.Location");
+        Class<?> regionQueryClass = Class.forName("com.sk89q.worldguard.protection.regions.RegionQuery");
+        Method testState = regionQueryClass.getMethod("testState", locationClass, associableClass, flags.getClass());
+        return new WorldGuardAccess(adaptLocation, testState, query, localPlayer, flags);
+    }
+
+    private String worldGuardBuildProblem(Location location, WorldGuardAccess access) {
+        try {
+            Object worldEditLocation = access.adaptLocation().invoke(null, location);
+            boolean permitted = (Boolean) access.testState().invoke(
+                    access.query(), worldEditLocation, access.localPlayer(), access.buildFlags());
+            return permitted ? null : "WorldGuard nepovoluje stavbu";
+        } catch (ReflectiveOperationException | LinkageError error) {
+            return "kontrola WorldGuardu selhala; stavba byla odmítnuta";
+        }
+    }
+
+    private boolean isSafeNaturalCutBlock(Block block) {
+        if (block.getState() instanceof TileState) return false;
+        Material type = block.getType();
+        return type.isAir() || isGroundCover(type) || switch (type) {
+            case GRASS_BLOCK, DIRT, COARSE_DIRT, ROOTED_DIRT, PODZOL, MYCELIUM, MOSS_BLOCK, MUD,
+                    STONE, GRANITE, DIORITE, ANDESITE, DEEPSLATE, COBBLED_DEEPSLATE,
+                    TUFF, CALCITE, DRIPSTONE_BLOCK, GRAVEL, SAND, RED_SAND, CLAY,
+                    SANDSTONE, RED_SANDSTONE, MOSSY_COBBLESTONE, COBBLESTONE,
+                    SNOW_BLOCK, PACKED_ICE -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isGroundCover(Material material) {
+        return switch (material) {
+            case SHORT_GRASS, TALL_GRASS, FERN, LARGE_FERN, DEAD_BUSH, DANDELION,
+                    POPPY, BLUE_ORCHID, ALLIUM, AZURE_BLUET, RED_TULIP, ORANGE_TULIP,
+                    WHITE_TULIP, PINK_TULIP, OXEYE_DAISY, CORNFLOWER, LILY_OF_THE_VALLEY,
+                    WITHER_ROSE, SNOW, VINE, GLOW_LICHEN, MOSS_CARPET -> true;
+            default -> false;
+        };
+    }
+
     public int build(Location center) {
+        return build(center, null);
+    }
+
+    public int build(Location center, Player actor) {
         if (center == null || center.getWorld() == null) {
             throw new IllegalArgumentException("Arena center and world must be available");
+        }
+        Inspection inspection = inspect(center, actor);
+        if (!inspection.clear()) {
+            throw new IllegalStateException(inspection.problem() + " První překážka: " + inspection.firstObstruction());
         }
         World world = center.getWorld();
         int cx = center.getBlockX();
@@ -97,12 +236,21 @@ public final class VampireArenaBuilder {
                 int x = cx + dx;
                 int z = cz + dz;
                 int groundY = world.getHighestBlockYAt(x, z);
-                // Fill shallow low spots before laying the single flat arena floor.
-                // Inspection already rejects holes deeper than six blocks.
-                for (int y = groundY + 1; y < floorY; y++) {
-                    Material foundation = ((y + dx + dz) & 1) == 0
-                            ? Material.POLISHED_BLACKSTONE : Material.DEEPSLATE_BRICKS;
-                    changed += set(world.getBlockAt(x, y, z), foundation);
+                if (groundY > floorY) {
+                    for (int y = floorY; y <= groundY; y++) {
+                        Block block = world.getBlockAt(x, y, z);
+                        if (!isSafeNaturalCutBlock(block)) {
+                            throw new IllegalStateException("Terén se po předkontrole změnil na "
+                                    + x + " " + y + " " + z + "; další bloky se nepoložily.");
+                        }
+                        if (!block.getType().isAir()) changed += set(block, Material.AIR);
+                    }
+                } else {
+                    for (int y = groundY + 1; y < floorY; y++) {
+                        Material foundation = ((y + dx + dz) & 1) == 0
+                                ? Material.POLISHED_BLACKSTONE : Material.DEEPSLATE_BRICKS;
+                        changed += set(world.getBlockAt(x, y, z), foundation);
+                    }
                 }
                 changed += set(world.getBlockAt(x, floorY, z), floorMaterial(dx, dz, radius));
             }

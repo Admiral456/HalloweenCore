@@ -1,0 +1,7 @@
+name: HalloweenPortableRelics
+version: 1.0.0
+main: cz.halloween.relics.HalloweenPortableRelics
+api-version: '1.21'
+author: Admiral456
+description: Standalone abilities for the HalloweenCore Batwing Elytra and Nocturne Sovereign Cowl.
+softdepend: [ItemsAdder]

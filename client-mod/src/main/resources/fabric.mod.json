@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "halloweencore",
+  "version": "${version}",
+  "name": "HalloweenCore Client Companion",
+  "description": "Receives real HalloweenCore event state and exposes a client-only time marker to Iris shaders for Blood Moon visuals.",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "cz.halloween.client.HalloweenCoreClient"
+    ]
+  },
+  "mixins": [
+    "halloweencore.client.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.17.3",
+    "minecraft": "=1.21.10",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}

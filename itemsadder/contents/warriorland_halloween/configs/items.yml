@@ -18,15 +18,16 @@ items:
       texture: item/hunter_mask
 
   cursed_talisman:
-    name: "&5&lProkletý talisman &8[2026]"
+    name: "&5&lProkletý náhrdelník &8[2026]"
     lore:
-      - "&7Relikvie vysokého prokletí."
-      - "&d+1 celý řádek srdcí (+20 HP)"
-      - "&7Aktivní při držení v ruce nebo offhandu."
-      - "&7Lze enchantovat, pokud máš vhodný enchant."
+      - "&7Náhrdelník prokletý prastarou duší."
+      - "&d+20 maximálního zdraví (= +10 srdcí)."
+      - "&7Zdraví se doplní při aktivaci, nejvýše 1× za minutu."
+      - "&7Aktivní při držení v hlavní nebo vedlejší ruce."
     material: NETHER_STAR
     graphics:
-      texture: item/cursed_talisman
+      model: item/cursed_talisman
+      icon: item/cursed_talisman
 
   halloween_token:
     name: "&c&lHalloween 2026"
@@ -55,11 +56,12 @@ items:
     material: NETHERITE_HELMET
     components_nbt_file: "crimson_warden_helmet.json"
     graphics:
-      texture: item/crimson_warden_helmet
+      model: armor/crimson_warden_helmet_3d
+      icon: item/crimson_warden_helmet
     durability:
       max_durability: 900
+    # Custom 3D worn helmet: no equipment.id here, or ItemsAdder selects the layer-texture helmet instead.
     equipment:
-      id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
         armor: 3
 
@@ -124,7 +126,8 @@ items:
     material: NETHERITE_SWORD
     components_nbt_file: "crimson_warden_sword.json"
     graphics:
-      texture: item/crimson_warden_sword
+      model: item/crimson_warden_sword
+      icon: item/crimson_warden_sword
     durability:
       max_durability: 5000
     attribute_modifiers:
@@ -142,7 +145,8 @@ items:
     material: NETHERITE_PICKAXE
     components_nbt_file: "crimson_warden_pickaxe.json"
     graphics:
-      texture: item/crimson_warden_pickaxe
+      model: item/crimson_warden_pickaxe
+      icon: item/crimson_warden_pickaxe
     durability:
       max_durability: 5000
     attribute_modifiers:
@@ -160,7 +164,8 @@ items:
     material: NETHERITE_AXE
     components_nbt_file: "crimson_warden_axe.json"
     graphics:
-      texture: item/crimson_warden_axe
+      model: item/crimson_warden_axe
+      icon: item/crimson_warden_axe
     durability:
       max_durability: 5000
     attribute_modifiers:
@@ -178,7 +183,8 @@ items:
     material: NETHERITE_SHOVEL
     components_nbt_file: "crimson_warden_shovel.json"
     graphics:
-      texture: item/crimson_warden_shovel
+      model: item/crimson_warden_shovel
+      icon: item/crimson_warden_shovel
     durability:
       max_durability: 4500
     attribute_modifiers:
@@ -196,13 +202,76 @@ items:
     material: NETHERITE_HOE
     components_nbt_file: "crimson_warden_hoe.json"
     graphics:
-      texture: item/crimson_warden_hoe
+      model: item/crimson_warden_hoe
+      icon: item/crimson_warden_hoe
     durability:
       max_durability: 4500
     attribute_modifiers:
       mainhand:
         attackDamage: 7.0
         attackSpeed: 1.0
+
+  crimson_warden_shield:
+    name: "&4&lŠtít Krvavého strážce"
+    lore:
+      - "&7Těžký štít s karmínovou pečetí."
+      - "&cPři blokování může odrazit útočníka."
+      - "&7Výdrž 1 800 • enchantovatelnost 25."
+    material: SHIELD
+    components_nbt_file: "crimson_warden_shield.json"
+    graphics:
+      models:
+        normal: item/crimson_warden_shield
+        blocking: item/crimson_warden_shield_blocking
+      icon: item/crimson_warden_shield
+    durability:
+      max_durability: 1800
+
+  batwing_elytra:
+    name: "&5&lBatwing Elytra &8[Halloween Relic]"
+    lore:
+      - "&7Netopýří křídla z temného obsidiánu."
+      - "&dMidnight Glide • Nightwing Surge • Bat Echo."
+      - "&8Výdrž 768 • Mending a běžné ohňostroje."
+    material: ELYTRA
+    graphics:
+      texture: item/batwing_elytra
+    durability:
+      max_durability: 768
+    elytra:
+      wings_texture: entity/equipment/wings/batwing_elytra
+      broken_item_texture: item/batwing_elytra_broken
+      max_flight_ticks: 0
+      firework:
+        enabled: true
+        consume: true
+        cooldown_ticks: 0
+      durability_damage_multiplier: 0.65
+      collision_damage_multiplier: 0.75
+    equipment:
+      sound: item.armor.equip_elytra
+      dispensable: true
+      swappable: true
+      damage_on_hurt: true
+
+  nocturne_sovereign_cowl:
+    name: "&5&lNocturne Sovereign Cowl"
+    lore:
+      - "&8Obsidianová kápě se spektrálníma očima."
+      - "&dNocturnal Perception • Curseguard • Veilstep."
+      - "&7Zbroj +6 • výdrž 900 • vlastní 3D model."
+    resource:
+      generate: false
+      model_path: armor/nocturne_sovereign_cowl_3d
+      material: PAPER
+      icon: item/nocturne_sovereign_cowl
+    durability:
+      max_durability: 900
+    behaviours:
+      hat: true
+    attribute_modifiers:
+      head:
+        armor: 6
 
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"

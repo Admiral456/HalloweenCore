@@ -36,6 +36,9 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey relicKey;
     private final NamespacedKey eventMobKey;
     private final NamespacedKey abilityCooldownKey;
+    private final NamespacedKey testMobKey;
+    private String lastSpawnFailure = "Zatím nebyl proveden spawn test.";
+    private String lastSpawnedMobId = "";
     private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
     public HalloweenMobManager(HalloweenCore plugin) {
@@ -44,6 +47,7 @@ public final class HalloweenMobManager implements Listener {
         this.relicKey = new NamespacedKey(plugin, "halloween_relic");
         this.eventMobKey = new NamespacedKey(plugin, "event_mob");
         this.abilityCooldownKey = new NamespacedKey(plugin, "special_ability_cooldown");
+        this.testMobKey = new NamespacedKey(plugin, "test_mob");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -122,33 +126,66 @@ public final class HalloweenMobManager implements Listener {
         switch (mobId) {
             case "cursed-zombie" -> {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
-                soulSiphon(attacker, target);
+                if (useSecondaryAbility(mobId)) zombieFrenzy(attacker, target);
+                else soulSiphon(attacker, target);
             }
             case "gravekeeper" -> {
                 if (!(event.getDamager() instanceof Arrow arrow)
                         || !(arrow.getShooter() instanceof LivingEntity shooter)
                         || !shooter.getUniqueId().equals(attacker.getUniqueId())
                         || !canUseSpecialAbility(attacker, mobId)) return;
-                graveMark(attacker, target);
+                if (useSecondaryAbility(mobId)) {
+                    var section = plugin.getConfig().getConfigurationSection("special-mobs.types.gravekeeper");
+                    telegraphedGroundStrike(attacker, target, "Hrobník", "&8Hrobník vyvolává zemní výboj — uskoč z run!",
+                            Particle.SOUL,
+                            section == null ? 20L : section.getLong("grave-pulse-delay-ticks", 20L),
+                            section == null ? 2.4D : section.getDouble("grave-pulse-radius-blocks", 2.4D),
+                            section == null ? 2.5D : section.getDouble("grave-pulse-damage", 2.5D),
+                            section == null ? 30 : section.getInt("grave-pulse-slowness-ticks", 30), 0);
+                } else {
+                    graveMark(attacker, target);
+                }
             }
             case "blood-spider" -> {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
-                bloodWeb(attacker, target);
+                if (useSecondaryAbility(mobId)) bloodDrain(attacker, target);
+                else bloodWeb(attacker, target);
             }
             case "void-reaper" -> {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
-                reaperGloom(attacker, target);
+                if (useSecondaryAbility(mobId)) {
+                    var section = plugin.getConfig().getConfigurationSection("special-mobs.types.void-reaper");
+                    telegraphedGroundStrike(attacker, target, "Ženec prázdnoty", "&5Ženec otevírá trhlinu pod tvýma nohama — uhni!",
+                            Particle.REVERSE_PORTAL,
+                            section == null ? 22L : section.getLong("void-rift-delay-ticks", 22L),
+                            section == null ? 2.2D : section.getDouble("void-rift-radius-blocks", 2.2D),
+                            section == null ? 2.5D : section.getDouble("void-rift-damage", 2.5D),
+                            section == null ? 35 : section.getInt("void-rift-slowness-ticks", 35), 0);
+                } else {
+                    reaperGloom(attacker, target);
+                }
             }
             case "frost-stalker" -> {
                 if (!(event.getDamager() instanceof Arrow arrow)
                         || !(arrow.getShooter() instanceof LivingEntity shooter)
                         || !shooter.getUniqueId().equals(attacker.getUniqueId())
                         || !canUseSpecialAbility(attacker, mobId)) return;
-                frostbite(attacker, target);
+                if (useSecondaryAbility(mobId)) {
+                    var section = plugin.getConfig().getConfigurationSection("special-mobs.types.frost-stalker");
+                    telegraphedGroundStrike(attacker, target, "Ledový stopař", "&bLedový stopař míří na ledový výboj — vyběhni z kruhu!",
+                            Particle.SNOWFLAKE,
+                            section == null ? 18L : section.getLong("ice-lance-delay-ticks", 18L),
+                            section == null ? 2.25D : section.getDouble("ice-lance-radius-blocks", 2.25D),
+                            section == null ? 2.0D : section.getDouble("ice-lance-damage", 2.0D),
+                            section == null ? 40 : section.getInt("ice-lance-slowness-ticks", 40), 1);
+                } else {
+                    frostbite(attacker, target);
+                }
             }
             case "nightmare" -> {
                 if (event.getDamager() != attacker || !canUseSpecialAbility(attacker, mobId)) return;
-                nightmareDread(attacker, target);
+                if (useSecondaryAbility(mobId)) nightmareSlam(attacker, target);
+                else nightmareDread(attacker, target);
             }
             default -> {
             }
@@ -189,12 +226,115 @@ public final class HalloweenMobManager implements Listener {
         return true;
     }
 
+    private boolean useSecondaryAbility(String mobId) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types." + mobId);
+        double chance = section == null ? 0.5D : section.getDouble("secondary-ability-chance", 0.5D);
+        chance = Math.max(0.0D, Math.min(1.0D, chance));
+        return ThreadLocalRandom.current().nextDouble() < chance;
+    }
+
+    /**
+     * A readable ground warning followed by a bounded strike. The player can escape;
+     * the task never loads a chunk or damages a target who moved to another world.
+     */
+    private void applyCurseEffect(Player target, PotionEffect effect) {
+        plugin.applyHalloweenDebuff(target, effect);
+    }
+
+    private void telegraphedGroundStrike(LivingEntity attacker, Player target, String label, String message,
+                                         Particle warningParticle, long delayTicks, double radius,
+                                         double damage, int slownessTicks, int slownessAmplifier) {
+        if (!plugin.isEligibleGameplayPlayer(target)) return;
+        Location marked = target.getLocation().clone();
+        World world = marked.getWorld();
+        if (world == null) return;
+
+        long delay = Math.max(10L, Math.min(80L, delayTicks));
+        double strikeRadius = Math.max(0.75D, Math.min(5.0D, radius));
+        double strikeDamage = Math.max(0.0D, Math.min(10.0D, damage));
+        world.spawnParticle(warningParticle, marked.clone().add(0.0D, 0.12D, 0.0D),
+                36, strikeRadius * 0.45D, 0.08D, strikeRadius * 0.45D, 0.015D);
+        world.playSound(marked, "minecraft:block.sculk_sensor.clicking", 0.8f, 0.65f);
+        target.sendMessage(plugin.color(message));
+
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (!plugin.isEventEnabled() || !attacker.isValid() || attacker.isDead()
+                    || !target.isOnline() || target.isDead()
+                    || !plugin.isEligibleGameplayPlayer(target)
+                    || !world.getUID().equals(target.getWorld().getUID())
+                    || !world.isChunkLoaded(marked.getBlockX() >> 4, marked.getBlockZ() >> 4)) return;
+
+            Location impact = marked.clone().add(0.0D, 0.18D, 0.0D);
+            world.spawnParticle(Particle.SOUL_FIRE_FLAME, impact, 34,
+                    strikeRadius * 0.4D, 0.22D, strikeRadius * 0.4D, 0.025D);
+            world.playSound(impact, "minecraft:block.soul_sand.break", 0.8f, 0.65f);
+            if (target.getLocation().distanceSquared(marked) > strikeRadius * strikeRadius) return;
+
+            if (strikeDamage > 0.0D) target.damage(strikeDamage, attacker);
+            if (slownessTicks > 0) {
+                applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS,
+                        Math.min(100, slownessTicks), Math.max(0, Math.min(1, slownessAmplifier)),
+                        true, true, false));
+            }
+            target.sendMessage(plugin.color("&c" + label + " zasáhl místo označené runami!"));
+        }, delay);
+    }
+
+    private void zombieFrenzy(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.cursed-zombie");
+        int duration = Math.max(20, Math.min(100,
+                section == null ? 40 : section.getInt("frenzy-ticks", 40)));
+        int speed = Math.max(0, Math.min(2,
+                section == null ? 1 : section.getInt("frenzy-speed-level", 1)));
+        int strength = Math.max(0, Math.min(1,
+                section == null ? 0 : section.getInt("frenzy-strength-level", 0)));
+        attacker.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, duration, speed, true, false, true));
+        attacker.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, duration, strength, true, false, true));
+        Location impact = attacker.getLocation().clone().add(0.0D, 0.8D, 0.0D);
+        attacker.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, impact, 28, 0.4D, 0.5D, 0.4D, 0.04D);
+        attacker.getWorld().playSound(impact, "minecraft:entity.zombie.angry", 0.8f, 0.65f);
+        target.sendMessage(plugin.color("&cProkletý zombie se rozzuřil — drž si odstup, než jeho vztek odezní."));
+    }
+
+    private void bloodDrain(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.blood-spider");
+        double heal = Math.max(0.0D, Math.min(8.0D,
+                section == null ? 3.0D : section.getDouble("blood-drain-heal", 3.0D)));
+        int poisonTicks = Math.max(20, Math.min(80,
+                section == null ? 40 : section.getInt("blood-drain-poison-ticks", 40)));
+        attacker.setHealth(Math.min(attacker.getMaxHealth(), attacker.getHealth() + heal));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.POISON, poisonTicks, 0, true, true, false));
+        Location impact = target.getLocation().clone().add(0.0D, 1.0D, 0.0D);
+        target.getWorld().spawnParticle(Particle.DAMAGE_INDICATOR, impact, 14, 0.35D, 0.45D, 0.35D, 0.08D);
+        target.getWorld().spawnParticle(Particle.CRIMSON_SPORE, attacker.getLocation().clone().add(0, 0.7D, 0),
+                16, 0.35D, 0.4D, 0.35D, 0.02D);
+        target.playSound(impact, "minecraft:entity.spider.hurt", 0.9f, 0.45f);
+        target.sendMessage(plugin.color("&cKrvavý pavouk vysál část tvé životní síly."));
+    }
+
+    private void nightmareSlam(LivingEntity attacker, Player target) {
+        var section = plugin.getConfig().getConfigurationSection("special-mobs.types.nightmare");
+        double strength = Math.max(0.2D, Math.min(1.5D,
+                section == null ? 0.75D : section.getDouble("spectral-slam-knockback", 0.75D)));
+        int weaknessTicks = Math.max(20, Math.min(100,
+                section == null ? 40 : section.getInt("spectral-slam-weakness-ticks", 40)));
+        org.bukkit.util.Vector push = target.getLocation().toVector().subtract(attacker.getLocation().toVector());
+        push.setY(0.0D);
+        if (push.lengthSquared() < 0.001D) push = attacker.getLocation().getDirection().multiply(-1.0D).setY(0.0D);
+        if (push.lengthSquared() > 0.001D) target.setVelocity(push.normalize().multiply(strength).setY(0.28D));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, weaknessTicks, 0, true, true, false));
+        Location impact = target.getLocation().clone().add(0.0D, 0.9D, 0.0D);
+        target.getWorld().spawnParticle(Particle.ASH, impact, 34, 0.5D, 0.6D, 0.5D, 0.035D);
+        target.getWorld().playSound(impact, "minecraft:entity.phantom.flap", 0.9f, 0.55f);
+        target.sendMessage(plugin.color("&dNoční můra tě odrazila přízračným úderem!"));
+    }
+
     private void soulSiphon(LivingEntity attacker, Player target) {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.cursed-zombie");
         int blindnessTicks = Math.max(10, section == null ? 35 : section.getInt("soul-siphon-blindness-ticks", 35));
         int weaknessTicks = Math.max(20, section == null ? 80 : section.getInt("soul-siphon-weakness-ticks", 80));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, blindnessTicks, 0, true, false, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, weaknessTicks, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.DARKNESS, blindnessTicks, 0, true, false, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, weaknessTicks, 0, true, true, false));
         Location impact = target.getLocation().clone().add(0, 1, 0);
         target.getWorld().spawnParticle(Particle.SOUL, impact, 22, 0.45D, 0.6D, 0.45D, 0.04D);
         target.playSound(target.getLocation(), "minecraft:entity.zombie.ambient", 0.7f, 0.45f);
@@ -210,7 +350,7 @@ public final class HalloweenMobManager implements Listener {
                 section == null ? 3.0D : section.getDouble("grave-mark-damage", 3.0D));
         Location markedLocation = target.getLocation().clone();
 
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 25, 0, true, false, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, 25, 0, true, false, false));
         target.getWorld().spawnParticle(Particle.SOUL, markedLocation.clone().add(0, 0.1D, 0),
                 16, 0.55D, 0.08D, 0.55D, 0.01D);
         target.getWorld().spawnParticle(Particle.REVERSE_PORTAL, markedLocation.clone().add(0, 0.15D, 0),
@@ -227,7 +367,7 @@ public final class HalloweenMobManager implements Listener {
             target.getWorld().playSound(markedLocation, "minecraft:block.soul_sand.break", 0.9f, 0.7f);
             if (target.getLocation().distanceSquared(markedLocation) <= markRadius * markRadius) {
                 target.damage(markDamage, attacker);
-                target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 55, 1, true, true, false));
+                applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, 55, 1, true, true, false));
             }
         }, delayTicks);
     }
@@ -235,8 +375,8 @@ public final class HalloweenMobManager implements Listener {
     private void reaperGloom(LivingEntity attacker, Player target) {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.void-reaper");
         int duration = Math.max(20, section == null ? 70 : section.getInt("gloom-ticks", 70));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, duration, 0, true, true, false));
         Location impact = target.getLocation().clone().add(0, 1.0D, 0);
         target.getWorld().spawnParticle(Particle.REVERSE_PORTAL, impact, 28, 0.45D, 0.55D, 0.45D, 0.035D);
         target.getWorld().playSound(impact, "minecraft:entity.warden.heartbeat", 0.9f, 0.55f);
@@ -246,8 +386,8 @@ public final class HalloweenMobManager implements Listener {
     private void frostbite(LivingEntity attacker, Player target) {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.frost-stalker");
         int duration = Math.max(20, section == null ? 80 : section.getInt("frostbite-ticks", 80));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, Math.max(20, duration / 2), 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, Math.max(20, duration / 2), 0, true, true, false));
         Location impact = target.getLocation().clone().add(0, 1.0D, 0);
         target.getWorld().spawnParticle(Particle.SNOWFLAKE, impact, 28, 0.5D, 0.55D, 0.5D, 0.015D);
         target.getWorld().playSound(impact, "minecraft:block.glass.break", 0.7f, 0.6f);
@@ -257,8 +397,8 @@ public final class HalloweenMobManager implements Listener {
     private void nightmareDread(LivingEntity attacker, Player target) {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.nightmare");
         int duration = Math.max(20, section == null ? 60 : section.getInt("night-terror-ticks", 60));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, duration, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.NAUSEA, duration, 0, true, true, false));
         Location impact = target.getLocation().clone().add(0, 1.0D, 0);
         target.getWorld().spawnParticle(Particle.ASH, impact, 35, 0.6D, 0.7D, 0.6D, 0.025D);
         target.getWorld().spawnParticle(Particle.PORTAL, impact, 20, 0.5D, 0.5D, 0.5D, 0.04D);
@@ -270,8 +410,8 @@ public final class HalloweenMobManager implements Listener {
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.blood-spider");
         int poisonTicks = Math.max(20, section == null ? 80 : section.getInt("blood-web-poison-ticks", 80));
         int slownessTicks = Math.max(20, section == null ? 45 : section.getInt("blood-web-slowness-ticks", 45));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.POISON, poisonTicks, 0, true, true, false));
-        target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, slownessTicks, 0, true, false, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.POISON, poisonTicks, 0, true, true, false));
+        applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, slownessTicks, 0, true, false, false));
         Location impact = target.getLocation().clone().add(0, 1, 0);
         target.getWorld().spawnParticle(Particle.CRIT, impact, 18, 0.4D, 0.5D, 0.4D, 0.1D);
         target.playSound(target.getLocation(), "minecraft:entity.spider.hurt", 0.8f, 0.55f);
@@ -301,12 +441,33 @@ public final class HalloweenMobManager implements Listener {
                 70, 1.5D, 1.0D, 1.5D, 0.02D);
         origin.getWorld().playSound(origin, "minecraft:entity.warden.roar", 0.6f, 1.6f);
 
+        boolean emberRing = useSecondaryAbility("pumpkin-wraith");
+        int emberFireTicks = Math.max(0, Math.min(80, section == null ? 30 : section.getInt("ember-ring-fire-ticks", 30)));
+        int emberSlownessTicks = Math.max(0, Math.min(80, section == null ? 35 : section.getInt("ember-ring-slowness-ticks", 35)));
+        double emberKnockback = Math.max(0.0D, Math.min(1.2D,
+                section == null ? 0.55D : section.getDouble("ember-ring-knockback", 0.55D)));
+
         for (Player target : origin.getWorld().getPlayers()) {
             if (!plugin.isEligibleGameplayPlayer(target)) continue;
             if (target.getLocation().distanceSquared(origin) > radius * radius) continue;
-            target.addPotionEffect(new PotionEffect(PotionEffectType.NAUSEA, nauseaTicks, 0, true, true, false));
-            target.addPotionEffect(new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, true, false, false));
-            target.sendMessage(plugin.color("&6Dýňový přízrak vybuchl v závoji popela."));
+            if (emberRing) {
+                if (emberFireTicks > 0) target.setFireTicks(Math.max(target.getFireTicks(), emberFireTicks));
+                org.bukkit.util.Vector push = target.getLocation().toVector().subtract(origin.toVector());
+                push.setY(0.0D);
+                if (push.lengthSquared() > 0.001D && emberKnockback > 0.0D) {
+                    target.setVelocity(push.normalize().multiply(emberKnockback).setY(0.22D));
+                }
+                if (emberSlownessTicks > 0) {
+                    applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, emberSlownessTicks, 0, true, true, false));
+                }
+                target.getWorld().spawnParticle(Particle.SOUL_FIRE_FLAME, target.getLocation().clone().add(0, 0.8D, 0),
+                        18, 0.35D, 0.45D, 0.35D, 0.025D);
+                target.sendMessage(plugin.color("&6Dýňový přízrak vypustil žhnoucí kruh — popel ustupuje žáru!"));
+            } else {
+                applyCurseEffect(target, new PotionEffect(PotionEffectType.NAUSEA, nauseaTicks, 0, true, true, false));
+                applyCurseEffect(target, new PotionEffect(PotionEffectType.BLINDNESS, blindnessTicks, 0, true, false, false));
+                target.sendMessage(plugin.color("&6Dýňový přízrak vybuchl v závoji popela."));
+            }
         }
     }
 
@@ -330,16 +491,29 @@ public final class HalloweenMobManager implements Listener {
 
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.hex-witch");
         int duration = Math.max(20, section == null ? 65 : section.getInt("random-hex-duration-ticks", 65));
+        boolean markedHex = useSecondaryAbility("hex-witch");
         for (Player target : targets) {
-            switch (ThreadLocalRandom.current().nextInt(3)) {
-                case 0 -> target.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, false, false));
-                case 1 -> target.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
-                default -> target.addPotionEffect(new PotionEffect(PotionEffectType.WEAKNESS, duration, 1, true, true, false));
+            if (markedHex) {
+                telegraphedGroundStrike(attacker, target, "Hexová čarodějka",
+                        "&5Hexová čarodějka označila zem pod tebou — opusti kruh kletby!",
+                        Particle.WITCH,
+                        section == null ? 20L : section.getLong("hex-mark-delay-ticks", 20L),
+                        section == null ? 2.25D : section.getDouble("hex-mark-radius-blocks", 2.25D),
+                        section == null ? 2.0D : section.getDouble("hex-mark-damage", 2.0D),
+                        section == null ? 35 : section.getInt("hex-mark-slowness-ticks", 35), 0);
+                target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().clone().add(0, 1, 0),
+                        18, 0.35D, 0.45D, 0.35D, 0.04D);
+            } else {
+                switch (ThreadLocalRandom.current().nextInt(3)) {
+                    case 0 -> applyCurseEffect(target, new PotionEffect(PotionEffectType.DARKNESS, duration, 0, true, false, false));
+                    case 1 -> applyCurseEffect(target, new PotionEffect(PotionEffectType.SLOWNESS, duration, 1, true, true, false));
+                    default -> applyCurseEffect(target, new PotionEffect(PotionEffectType.WEAKNESS, duration, 1, true, true, false));
+                }
+                target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().clone().add(0, 1, 0),
+                        22, 0.45D, 0.55D, 0.45D, 0.06D);
+                target.playSound(target.getLocation(), "minecraft:entity.witch.ambient", 0.8f, 0.5f);
+                target.sendMessage(plugin.color("&5Hexová čarodějka na tebe uvalila náhodnou kletbu."));
             }
-            target.getWorld().spawnParticle(Particle.WITCH, target.getLocation().add(0, 1, 0),
-                    22, 0.45D, 0.55D, 0.45D, 0.06D);
-            target.playSound(target.getLocation(), "minecraft:entity.witch.ambient", 0.8f, 0.5f);
-            target.sendMessage(plugin.color("&5Hexová čarodějka na tebe uvalila náhodnou kletbu."));
         }
     }
 
@@ -349,6 +523,8 @@ public final class HalloweenMobManager implements Listener {
 
         String mobId = event.getEntity().getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
         if (mobId == null) return;
+        // Admin test spawns must never grant fragments, relics or progression rewards.
+        if (event.getEntity().getPersistentDataContainer().has(testMobKey, PersistentDataType.BYTE)) return;
 
         Player killer = event.getEntity().getKiller();
         boolean eligibleKiller = killer != null
@@ -415,28 +591,81 @@ public final class HalloweenMobManager implements Listener {
     }
 
     public boolean spawnEventMob(Player player) {
-        String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
+        String[] ids = {"cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare"};
         return spawnEventMob(player, ids[ThreadLocalRandom.current().nextInt(ids.length)]);
     }
 
     /** Spawn a specific special type so every event can choose its own enemy mix. */
     public boolean spawnEventMob(Player player, String mobId) {
-        if (!plugin.isEventEnabled() || player == null
-                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
-        if (!isKnownSpecialMob(mobId)) return false;
-
+        if (!plugin.isEventEnabled()) {
+            lastSpawnFailure = "HalloweenCore je vypnutý.";
+            return false;
+        }
+        if (player == null || !player.isOnline()) {
+            lastSpawnFailure = "Cílový hráč není online.";
+            return false;
+        }
+        if (!plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) {
+            lastSpawnFailure = "random-events.event-mobs-enabled=false.";
+            return false;
+        }
+        if (!isKnownSpecialMob(mobId)) {
+            lastSpawnFailure = "Neznámé ID speciálního moba: " + mobId;
+            return false;
+        }
         World world = player.getWorld();
-        if (!plugin.isEligibleGameplayWorld(world)) return false;
+        if (!plugin.isEligibleGameplayWorld(world)) {
+            lastSpawnFailure = "Svět " + world.getName() + " není povolen pro Halloween gameplay.";
+            return false;
+        }
         int maxEventMobs = Math.max(1, Math.min(80,
                 plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
-        if (countEventMobs(world) >= maxEventMobs) return false;
+        if (countEventMobs(world) >= maxEventMobs) {
+            lastSpawnFailure = "Dosažen limit event mobů (" + maxEventMobs + ") ve světě " + world.getName() + ".";
+            return false;
+        }
+        Location spawnLocation = findSafeEventLocation(player);
+        if (spawnLocation == null) {
+            lastSpawnFailure = "V okruhu 12–28 bloků nebylo nalezeno bezpečné místo pro spawn.";
+            return false;
+        }
+        LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
+        if (living == null) {
+            Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
+            if (!(entity instanceof LivingEntity spawned)) {
+                entity.remove();
+                lastSpawnFailure = "Záložní entita pro " + mobId + " není živý mob.";
+                return false;
+            }
+            living = spawned;
+            lastSpawnedMobId = mobId + " (vanilla fallback; MythicMobs/ModelEngine model nebyl vytvořen)";
+        } else {
+            lastSpawnedMobId = mobId + " (MythicMobs/ModelEngine)";
+        }
+        configureSpecialMob(living, mobId);
+        living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
+        lastSpawnFailure = "";
+        return true;
+    }
+
+    public String getLastSpawnFailure() { return lastSpawnFailure; }
+    public String getLastSpawnedMobId() { return lastSpawnedMobId; }
+
+    /**
+     * Admin-only spawn path used by controlled gameplay tests. It observes the ordinary
+     * model fallback and combat logic, but marks the entity so its death cannot grant rewards.
+     */
+    public boolean spawnTestMob(Player player, String mobId) {
+        if (!plugin.isEventEnabled() || player == null || !player.isOnline()
+                || !isKnownSpecialMob(mobId) || !plugin.isEligibleGameplayWorld(player.getWorld())) return false;
 
         Location spawnLocation = findSafeEventLocation(player);
         if (spawnLocation == null) return false;
 
         LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
         if (living == null) {
-            Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
+            Entity entity = player.getWorld().spawnEntity(spawnLocation, baseEntityType(mobId));
             if (!(entity instanceof LivingEntity spawned)) {
                 entity.remove();
                 return false;
@@ -446,6 +675,7 @@ public final class HalloweenMobManager implements Listener {
 
         configureSpecialMob(living, mobId);
         living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
+        living.getPersistentDataContainer().set(testMobKey, PersistentDataType.BYTE, (byte) 1);
         return true;
     }
 
@@ -492,17 +722,21 @@ public final class HalloweenMobManager implements Listener {
 
     private boolean isKnownSpecialMob(String mobId) {
         return mobId != null && switch (mobId) {
-            case "cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch" -> true;
+            case "cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                    "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare" -> true;
             default -> false;
         };
     }
 
     private EntityType baseEntityType(String mobId) {
         return switch (mobId) {
+            case "void-reaper" -> EntityType.HUSK;
             case "gravekeeper" -> EntityType.SKELETON;
+            case "frost-stalker" -> EntityType.STRAY;
             case "blood-spider" -> EntityType.SPIDER;
             case "pumpkin-wraith" -> EntityType.CREEPER;
             case "hex-witch" -> EntityType.WITCH;
+            case "nightmare" -> EntityType.PHANTOM;
             default -> EntityType.ZOMBIE;
         };
     }
@@ -511,6 +745,35 @@ public final class HalloweenMobManager implements Listener {
      * The ModelEngine texture/model layer is used only when its dependencies and the
      * matching MythicMobs definition are present. If not, callers safely use vanilla.
      */
+    /**
+     * Shared encounter hook for separately managed bosses/stalkers. It uses the same
+     * verified MythicMobs/ModelEngine spawn bridge as seasonal enemies but does not tag
+     * the entity as a normal fragment-earning special mob.
+     */
+    /**
+     * Strict model-only route for encounters whose silhouette is part of the mechanic
+     * (for example a genuinely headless rider). Unlike the normal event spawn path,
+     * it never substitutes a visually misleading vanilla entity.
+     */
+    public LivingEntity spawnCustomEncounterEntity(Location location, String mobId) {
+        if (location == null || location.getWorld() == null || mobId == null
+                || !plugin.getConfig().getBoolean("special-mobs.custom-models.enabled", true)) return null;
+        int cx = location.getBlockX() >> 4;
+        int cz = location.getBlockZ() >> 4;
+        if (!location.getWorld().isChunkLoaded(cx, cz)) return null;
+        return spawnMythicModelMob(location, mobId);
+    }
+
+    public LivingEntity spawnEncounterEntity(Location location, String mobId, EntityType fallbackType) {
+        if (location == null || location.getWorld() == null || fallbackType == null) return null;
+        World world = location.getWorld();
+        if (!world.isChunkLoaded(location.getBlockX() >> 4, location.getBlockZ() >> 4)) return null;
+        LivingEntity modeled = spawnMythicModelMob(location, mobId);
+        if (modeled != null) return modeled;
+        Entity entity = world.spawnEntity(location, fallbackType);
+        return entity instanceof LivingEntity living ? living : null;
+    }
+
     private LivingEntity spawnMythicModelMob(Location location, String mobId) {
         if (!plugin.getConfig().getBoolean("special-mobs.custom-models.enabled", true)) return null;
         var mythicPlugin = plugin.getServer().getPluginManager().getPlugin("MythicMobs");
@@ -526,6 +789,9 @@ public final class HalloweenMobManager implements Listener {
             case "pumpkin-wraith" -> "halloween_pumpkin_wraith";
             case "hex-witch" -> "halloween_hex_witch";
             case "nightmare" -> "halloween_nightmare";
+            case "goblin-king" -> "halloween_goblin_king";
+            case "headless-nick" -> "halloween_headless_nick";
+            case "nick-steed" -> "halloween_nick_steed";
             default -> null;
         };
         if (customId == null) return null;
@@ -697,6 +963,17 @@ public final class HalloweenMobManager implements Listener {
         return world.getLivingEntities().stream()
                 .filter(entity -> entity.getPersistentDataContainer().has(eventMobKey, PersistentDataType.BYTE))
                 .count();
+    }
+
+    /** Counts only the tagged event/test mobs in already loaded chunks. */
+    public int countManagedEventMobs() {
+        int count = 0;
+        for (World world : plugin.getServer().getWorlds()) {
+            for (LivingEntity entity : world.getLivingEntities()) {
+                if (entity.getPersistentDataContainer().has(eventMobKey, PersistentDataType.BYTE)) count++;
+            }
+        }
+        return count;
     }
 
     public int cleanupEventMobs() {

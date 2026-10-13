@@ -1,0 +1,25 @@
+modLoader="javafml"
+loaderVersion="[4,)"
+license="${mod_license}"
+
+[[mods]]
+modId="${mod_id}"
+version="${mod_version}"
+displayName="${mod_name}"
+authors="WarriorLand / HalloweenCore"
+description='''Native Halloween gameplay mod for Minecraft 1.21.10.
+The legacy Paper plugin is a separate edition and is not this mod.'''
+
+[[dependencies.${mod_id}]]
+modId="neoforge"
+type="required"
+versionRange="[21.10.64,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.${mod_id}]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.10]"
+ordering="NONE"
+side="BOTH"

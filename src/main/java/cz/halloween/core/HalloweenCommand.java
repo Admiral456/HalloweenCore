@@ -29,8 +29,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = List.of(
-                    "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "stats", "progress", "curse", "event", "challenge", "quests", "structures", "mob", "goblin", "nick",
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "giveitem", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -38,12 +38,13 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
                 && sender.hasPermission("halloweencore.admin")) {
-            return List.of("reset").stream()
+            return List.of("status", "debug", "reset").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 3 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
-                && args[1].equalsIgnoreCase("reset") && sender.hasPermission("halloweencore.admin")) {
+                && (args[1].equalsIgnoreCase("reset") || args[1].equalsIgnoreCase("status")
+                || args[1].equalsIgnoreCase("debug")) && sender.hasPermission("halloweencore.admin")) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
                     .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
@@ -51,16 +52,22 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("event") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("status", "start", "stop", "soulstorm", "witching-hour",
+            return List.of("list", "status", "start", "stop", "soulstorm", "witching-hour",
                     "cursed-harvest", "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising", "random").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("event")
-                && args[1].equalsIgnoreCase("start") && sender.hasPermission("halloweencore.admin")) {
+                && (args[1].equalsIgnoreCase("start") || args[1].equalsIgnoreCase("status"))
+                && sender.hasPermission("halloweencore.admin")) {
             return List.of("random", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion",
                     "pumpkin-apocalypse", "graveyard-rising").stream()
                     .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("structures") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("status", "scan").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("shader") && sender.hasPermission("halloweencore.admin")) {
@@ -120,6 +127,79 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("goblin") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("status", "arena", "dry-run", "confirm", "cancel", "start", "spawn", "test", "stop").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("goblin")
+                && (args[1].equalsIgnoreCase("arena") || args[1].equalsIgnoreCase("dry-run"))
+                && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getWorlds().stream().map(org.bukkit.World::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted().toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("nick") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("status", "state", "spawn", "test", "target", "attack", "despawn", "cleanup").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("nick")
+                && (args[1].equalsIgnoreCase("spawn") || args[1].equalsIgnoreCase("test") || args[1].equalsIgnoreCase("target"))
+                && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted().toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("structures") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("status", "scan", "spawn").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT))).toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("structures")
+                && args[1].equalsIgnoreCase("spawn") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("haunted-village", "cursed-graveyard").stream()
+                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT))).toList();
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("structures")
+                && args[1].equalsIgnoreCase("spawn") && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT)
+                            .startsWith(args[3].toLowerCase(java.util.Locale.ROOT))).sorted().toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("mob") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("spawn", "cleanup", "status").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("mob") && args[1].equalsIgnoreCase("spawn")
+                && sender.hasPermission("halloweencore.admin")) {
+            return List.of("cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                            "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare").stream()
+                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("mob") && args[1].equalsIgnoreCase("spawn")
+                && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT)
+                            .startsWith(args[3].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted().toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("giveitem") && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream().map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted().toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("giveitem") && sender.hasPermission("halloweencore.admin")) {
+            return plugin.getRewardManager().getConfiguredRewardIds().stream()
+                    .collect(java.util.stream.Collectors.collectingAndThen(
+                            java.util.stream.Collectors.toList(), list -> {
+                                list.add("all");
+                                return list;
+                            }))
+                    .stream().filter(value -> value.toLowerCase(java.util.Locale.ROOT)
+                            .startsWith(args[2].toLowerCase(java.util.Locale.ROOT))).toList();
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("give") && sender.hasPermission("halloweencore.admin")) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
@@ -144,6 +224,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
+        if (args[0].equalsIgnoreCase("structures")) return structures(sender, args);
+        if (args[0].equalsIgnoreCase("mob")) return mob(sender, args);
+        if (args[0].equalsIgnoreCase("goblin")) return goblin(sender, args);
+        if (args[0].equalsIgnoreCase("nick")) return nick(sender, args);
         if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
         if (args[0].equalsIgnoreCase("buildvampirearena")) return buildVampireArena(sender, args);
@@ -153,21 +237,27 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("bosseffects")) return bossEffects(sender, args);
         if (args[0].equalsIgnoreCase("modelpreview")) return modelPreview(sender, args);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
+        if (args[0].equalsIgnoreCase("giveitem")) return giveItem(sender, args);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
-        sender.sendMessage(plugin.color("&6/halloween event [start|stop] &7- stav a testovací spuštění eventu (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween event [list|status [id]|start [id]|stop] &7- event diagnostika (admin)"));
         sender.sendMessage(plugin.color("&6/halloween rewards &7- limitované odměny 2026"));
         sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní Halloween lov"));
         sender.sendMessage(plugin.color("&6/halloween quests &7- příběhová řada Halloween questů"));
-        sender.sendMessage(plugin.color("&6/halloween quests reset <hráč> &7- restart příběhu hráče (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween quests status|debug <hráč> &7- diagnostika příběhu (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween quests reset <hráč> confirm &7- potvrzený reset příběhu (admin)"));
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
+        sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- nápověda ke klientskému Iris shaderu"));
+        sender.sendMessage(plugin.color("&6/halloween structures <status|scan|spawn> &7- diagnostika a bezpečný ruční spawn struktur (admin)"));
+        sender.sendMessage(plugin.color("&7Ruční spawn: &e/halloween structures spawn <haunted-village|cursed-graveyard> [hráč]"));
+        sender.sendMessage(plugin.color("&6/halloween goblin <status|arena|dry-run|confirm|cancel|start|spawn|stop> &7- samostatný Král skřítků (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween nick <status|spawn|test|target|attack|despawn> &7- Bezhlavý Nick (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
@@ -176,7 +266,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween boss <status|start|test|stop> &7- finále nebo bezpečný test bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
+        sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- přidat fragmenty (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween giveitem <hráč> <id|all> &7- dát testovací položku bez ceny (admin)"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
         return true;
     }
@@ -249,6 +340,17 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             String action = args[1].toLowerCase(java.util.Locale.ROOT);
+            if (action.equals("list")) {
+                sender.sendMessage(plugin.color("&6&lHALLOWEEN EVENTY &8» &7Registrované události:"));
+                for (String id : plugin.getEventManager().getKnownEventIds()) {
+                    String name = plugin.getConfig().getString("random-events.types." + id + ".name", id);
+                    String state = !plugin.getEventManager().isEventIndividuallyEnabled(id) ? "&cDISABLED"
+                            : plugin.getEventManager().isActive(id) ? "&aACTIVE" : "&7WAITING";
+                    sender.sendMessage(plugin.color(" &8• &f" + id + " &8— &e" + name + " &8[ " + state + " &8]"));
+                }
+                sender.sendMessage(plugin.color("&7Poslední skutečný výsledek: &f" + plugin.getEventManager().getLastEffectSummary()));
+                return true;
+            }
             if (action.equals("start")) {
                 String requested = args.length >= 3 ? args[2] : "random";
                 if (!plugin.isEventEnabled()) {
@@ -256,7 +358,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     return true;
                 }
                 if (!plugin.getEventManager().startEventNow(requested)) {
-                    sender.sendMessage(plugin.color("&cEvent nelze spustit. Už jeden běží, nebo je ID neplatné. Použij /halloween event start random."));
+                    sender.sendMessage(plugin.color("&cEvent nelze spustit: &e" + plugin.getEventManager().getLastStartFailure()));
                     return true;
                 }
                 sender.sendMessage(plugin.color("&aTestovací okamžité spuštění eventu: &e" + requested));
@@ -271,7 +373,25 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             if (!action.equals("status")) {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween event [status|start [random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion|pumpkin-apocalypse|graveyard-rising]|stop]"));
+                sender.sendMessage(plugin.color("&cPoužití: /halloween event [list|status [event-id]|start [random|event-id]|stop]"));
+                return true;
+            }
+            if (args.length >= 3) {
+                String requested = args[2].toLowerCase(java.util.Locale.ROOT);
+                if (!plugin.getEventManager().getKnownEventIds().contains(requested)) {
+                    sender.sendMessage(plugin.color("&cNeznámé ID eventu: &e" + requested + "&c. Použij /halloween event list."));
+                    return true;
+                }
+                String name = plugin.getConfig().getString("random-events.types." + requested + ".name", requested);
+                sender.sendMessage(plugin.color("&6&lEVENT STATUS &8» &e" + name + " &8(" + requested + ")"));
+                String state = !plugin.getEventManager().isEventIndividuallyEnabled(requested) ? "&cDISABLED"
+                        : plugin.getEventManager().isActive(requested) ? "&aACTIVE" : "&7WAITING";
+                sender.sendMessage(plugin.color("&7Stav: " + state));
+                if (requested.equals(plugin.getEventManager().getLastEffectEventId())) {
+                    sender.sendMessage(plugin.color("&7Poslední vlna: &f" + plugin.getEventManager().getLastEffectSummary()));
+                } else {
+                    sender.sendMessage(plugin.color("&7Pro tento event zatím není zaznamenána poslední vlna."));
+                }
                 return true;
             }
         } else if (!checkUse(sender)) {
@@ -297,8 +417,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             } else {
                 sender.sendMessage(plugin.color("&7Další event přibližně za &e" + seconds + " s&7."));
             }
+            sender.sendMessage(plugin.color("&7Poslední výsledek vlny: &f" + manager.getLastEffectSummary()));
             if (sender.hasPermission("halloweencore.admin")) {
-                sender.sendMessage(plugin.color("&7Pro test: &e/halloween event start random"));
+                sender.sendMessage(plugin.color("&7Pro test: &e/halloween event list &8| &e/halloween event start blood-moon-invasion"));
             }
             return true;
         }
@@ -306,6 +427,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6&lHALLOWEEN UDÁLOST"));
         sender.sendMessage(plugin.color("&7Typ: &e" + eventName + " &8(" + active + ")"));
         sender.sendMessage(plugin.color("&7Zbývá: &e" + manager.getRemainingSeconds() + " s"));
+        sender.sendMessage(plugin.color("&7Poslední skutečný výsledek: &f" + manager.getLastEffectSummary()));
         return true;
     }
 
@@ -345,32 +467,46 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
     private boolean quests(CommandSender sender, String[] args) {
         if (args.length >= 2) {
-            if (!args[1].equalsIgnoreCase("reset")) {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween quests [reset <online hráč>]"));
+            String action = args[1].toLowerCase(java.util.Locale.ROOT);
+            if (action.equals("reset")) {
+                if (!checkAdmin(sender)) return true;
+                if (args.length != 4 || !args[3].equalsIgnoreCase("confirm")) {
+                    sender.sendMessage(plugin.color("&ePozor: reset smaže aktivní i dokončené kapitoly tohoto hráče."));
+                    sender.sendMessage(plugin.color("&7Fragmenty a ostatní statistiky zůstanou zachované."));
+                    sender.sendMessage(plugin.color("&cPotvrď příkazem: &f/halloween quests reset <online hráč> confirm"));
+                    return true;
+                }
+                Player target = Bukkit.getPlayerExact(args[2]);
+                if (target == null) {
+                    sender.sendMessage(plugin.color("&cHráč není online. Vyber online hráče."));
+                    return true;
+                }
+                plugin.getDataManager().resetStoryQuests(target.getUniqueId());
+                plugin.getQuestManager().show(target);
+                plugin.getDataManager().save();
+                sender.sendMessage(plugin.color("&aPříběhové questy hráče &f" + target.getName()
+                        + " &abyly resetovány na první kapitolu."));
+                if (sender != target) {
+                    target.sendMessage(plugin.color("&6HALLOWEEN &8» &eTvůj příběhový postup byl restartován správcem. Začínáš znovu od první kapitoly."));
+                }
                 return true;
             }
-            if (!checkAdmin(sender)) return true;
-            if (args.length != 3) {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween quests reset <online hráč>"));
+            if (action.equals("status") || action.equals("debug")) {
+                if (!checkAdmin(sender)) return true;
+                if (args.length != 3) {
+                    sender.sendMessage(plugin.color("&cPoužití: /halloween quests " + action + " <online hráč>"));
+                    return true;
+                }
+                Player target = Bukkit.getPlayerExact(args[2]);
+                if (target == null) {
+                    sender.sendMessage(plugin.color("&cHráč není online. Vyber online hráče."));
+                    return true;
+                }
+                sender.sendMessage(plugin.color("&6&lHALLOWEEN QUEST DEBUG"));
+                sender.sendMessage(plugin.color("&7" + plugin.getQuestManager().getDebugSummary(target)));
                 return true;
             }
-
-            Player target = Bukkit.getPlayerExact(args[2]);
-            if (target == null) {
-                sender.sendMessage(plugin.color("&cHráč není online. Vyber online hráče."));
-                return true;
-            }
-
-            plugin.getDataManager().resetStoryQuests(target.getUniqueId());
-            plugin.getQuestManager().show(target);
-            plugin.getDataManager().save();
-
-            sender.sendMessage(plugin.color("&aPříběhové questy hráče &f" + target.getName()
-                    + " &abyly resetovány na první kapitolu."));
-            sender.sendMessage(plugin.color("&7Resetuje se jen postup questů. Získané fragmenty a ostatní statistiky zůstávají."));
-            if (sender != target) {
-                target.sendMessage(plugin.color("&6HALLOWEEN &8» &eTvůj příběhový postup byl restartován správcem. Začínáš znovu od první kapitoly."));
-            }
+            sender.sendMessage(plugin.color("&cPoužití: /halloween quests [status|debug <online hráč>|reset <online hráč> confirm]"));
             return true;
         }
 
@@ -422,6 +558,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 plugin.getConfig().getString("special-mobs.relic-item-id", ""));
         boolean hauntedMap = plugin.getItemManager().isCustomItemAvailable(
                 plugin.getConfig().getString("special-mobs.map-item-id", ""));
+        boolean crimsonShield = plugin.getItemManager().isCustomItemAvailable(
+                "warriorland_halloween:crimson_warden_shield");
 
         long total = plugin.getService().getServerFragments();
         long goal = plugin.getService().getGlobalGoal();
@@ -447,6 +585,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7  halloween_token: " + status(halloweenToken)));
         sender.sendMessage(plugin.color("&7  cursed_candy: " + status(cursedCandy)));
         sender.sendMessage(plugin.color("&7  haunted_map: " + status(hauntedMap)));
+        sender.sendMessage(plugin.color("&7  crimson_warden_shield: " + status(crimsonShield)));
         sender.sendMessage(plugin.color("&7MythicMobs: " + status(mythicMobs)));
         sender.sendMessage(plugin.color("&7ModelEngine: " + status(modelEngine)));
         sender.sendMessage(plugin.color("&7BattlePass: " + status(battlePass)));
@@ -454,7 +593,12 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7PlaceholderAPI: " + status(papi)));
         boolean villageConfigured = plugin.getConfig().getBoolean("haunted-village.enabled", false)
                 && !plugin.getConfig().getString("haunted-village.world", "").isBlank();
-        sender.sendMessage(plugin.color("&7Haunted Village: " + (villageConfigured ? "&aKONFIGUROVÁNA" : "&eČEKÁ NA SOUŘADNICE")));
+        sender.sendMessage(plugin.color("&7Haunted Village marker: " + (villageConfigured ? "&aKONFIGUROVÁNA" : "&eČEKÁ NA SOUŘADNICE")));
+        var structures = plugin.getWorldStructureGenerator();
+        sender.sendMessage(plugin.color("&7Náhodné struktury: " + (structures != null && structures.isEnabled() ? "&aAKTIVNÍ" : "&cVYPNUTÉ")
+                + " &8• fronta " + (structures == null ? 0 : structures.getPendingCount())
+                + " • vesnice " + (structures == null ? 0 : structures.getVillagesBuilt())
+                + " • hřbitovy " + (structures == null ? 0 : structures.getGraveyardsBuilt())));
         var configErrors = HalloweenConfigValidator.validate(plugin);
         sender.sendMessage(plugin.color("&7Config preflight: " + (configErrors.isEmpty() ? "&aOK" : "&c" + configErrors.size() + " chyba/chyb")));
         if (!configErrors.isEmpty()) {
@@ -539,6 +683,311 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+    private boolean goblin(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        HalloweenGoblinKingManager manager = plugin.getGoblinKingManager();
+        if (manager == null) {
+            sender.sendMessage(plugin.color("&cSprávce Krále skřítků není dostupný."));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(plugin.color("&6/halloween goblin <status|arena|dry-run|confirm|cancel|start|spawn|stop>"));
+            return true;
+        }
+        String action = args[1].toLowerCase(java.util.Locale.ROOT);
+        if (action.equals("status")) {
+            sender.sendMessage(plugin.color("&6&lKRÁL SKŘÍTKŮ"));
+            sender.sendMessage(plugin.color("&7" + manager.statusText()));
+            sender.sendMessage(plugin.color("&7Server progress: &e" + String.format("%.1f", plugin.getService().getGlobalProgressPercent())
+                    + "% &8/ odemčení: &e" + plugin.getConfig().getDouble("bosses.goblin.unlock-global-progress-percent", 50.0D) + "%"));
+            return true;
+        }
+        if (action.equals("confirm")) {
+            String result = manager.confirmArena(sender);
+            sender.sendMessage(plugin.color("&6[Goblin Arena] &7" + result));
+            return true;
+        }
+        if (action.equals("cancel")) {
+            manager.cancelArenaPlan();
+            sender.sendMessage(plugin.color("&ePlán arény byl zrušen; nebyly provedeny žádné změny."));
+            return true;
+        }
+        if (action.equals("arena") || action.equals("dry-run")) {
+            boolean dryRun = action.equals("dry-run");
+            if (args.length != 6) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween goblin " + action + " <world> <x> <y> <z>"));
+                sender.sendMessage(plugin.color("&7Souřadnice musí být explicitní; aktuální pozice se nepoužívá automaticky."));
+                return true;
+            }
+            org.bukkit.World world = Bukkit.getWorld(args[2]);
+            if (world == null) {
+                sender.sendMessage(plugin.color("&cNeznámý svět: &e" + args[2]));
+                return true;
+            }
+            int x;
+            int y;
+            int z;
+            try {
+                x = Integer.parseInt(args[3]);
+                y = Integer.parseInt(args[4]);
+                z = Integer.parseInt(args[5]);
+            } catch (NumberFormatException ex) {
+                sender.sendMessage(plugin.color("&cSouřadnice x/y/z musí být celá čísla."));
+                return true;
+            }
+            org.bukkit.Location center = new org.bukkit.Location(world, x + 0.5D, y, z + 0.5D);
+            HalloweenGoblinKingManager.ArenaInspection inspection = dryRun
+                    ? manager.inspectArena(center, sender) : manager.previewArena(center, sender);
+            sender.sendMessage(plugin.color("&6&lPEVNOST KRÁLE SKŘÍTKŮ — " + (dryRun ? "DRY-RUN" : "NÁHLED")));
+            sender.sendMessage(plugin.color("&7Hranice: &e" + inspection.boundsText()));
+            sender.sendMessage(plugin.color("&7Výška: &e" + inspection.minY() + " až " + inspection.maxY()));
+            if (!inspection.clear()) {
+                sender.sendMessage(plugin.color("&cStavba není bezpečná: " + inspection.issue()));
+                if (inspection.firstObstruction() != null) {
+                    sender.sendMessage(plugin.color("&7První překážka: &e" + inspection.firstObstruction()));
+                }
+                sender.sendMessage(plugin.color("&7Existující bloky se nepřepisují. Zvol prázdné místo."));
+            } else if (dryRun) {
+                sender.sendMessage(plugin.color("&aDRY-RUN OK: oblast je prázdná, chunky načtené a hranice zkontrolované. Nic nebylo postaveno."));
+            } else {
+                sender.sendMessage(plugin.color("&aPředkontrola prošla. Výstavba zatím neproběhla."));
+                sender.sendMessage(plugin.color("&eZkontroluj hranice a zadej /halloween goblin confirm."));
+                sender.sendMessage(plugin.color("&7Doporučený předběžný backup světa: " + world.getName()));
+            }
+            return true;
+        }
+        if (action.equals("spawn") || action.equals("test")) {
+            if (!manager.spawnEncounter(true)) {
+                sender.sendMessage(plugin.color("&cTest spawnu selhal. Ověř načtení ModelEngine + MythicMobs, model halloween_goblin_king, povolení bosse a dokončenou arénu."));
+            } else {
+                sender.sendMessage(plugin.color("&aTestovací Král skřítků je aktivní; testovací souboj nedává boss odměny."));
+            }
+            return true;
+        }
+        if (action.equals("start")) {
+            double required = plugin.getConfig().getDouble("bosses.goblin.unlock-global-progress-percent", 50.0D);
+            double progress = plugin.getService().getGlobalProgressPercent();
+            if (progress < required) {
+                sender.sendMessage(plugin.color("&cKrál skřítků se ještě neprobudí. Server progress: &e"
+                        + String.format("%.1f", progress) + "% &7/ potřebuje &e" + required + "%."));
+                return true;
+            }
+            if (!manager.spawnEncounter(false)) {
+                sender.sendMessage(plugin.color("&cBoss nešel spustit. Zkontroluj /halloween goblin status, nastavení a dokončenou arénu."));
+            } else {
+                sender.sendMessage(plugin.color("&aKrál skřítků začal normální souboj. Odměny budou připsány aktivním účastníkům."));
+            }
+            return true;
+        }
+        if (action.equals("stop")) {
+            manager.stopEncounter();
+            sender.sendMessage(plugin.color("&eSouboj Krále skřítků byl bezpečně zastaven."));
+            return true;
+        }
+        sender.sendMessage(plugin.color("&cPoužití: /halloween goblin <status|arena|dry-run|confirm|cancel|start|spawn|stop>"));
+        return true;
+    }
+
+    private boolean nick(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        HalloweenHeadlessNickManager manager = plugin.getHeadlessNickManager();
+        if (manager == null) {
+            sender.sendMessage(plugin.color("&cSprávce Bezhlavého Nicka není dostupný."));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(plugin.color("&6/halloween nick <status|spawn|test|target|attack|despawn>"));
+            return true;
+        }
+        String action = args[1].toLowerCase(java.util.Locale.ROOT);
+        if (action.equals("status") || action.equals("state")) {
+            sender.sendMessage(plugin.color("&6&lBEZHLAVÝ NICK"));
+            sender.sendMessage(plugin.color("&7" + manager.statusText()));
+            return true;
+        }
+        if (action.equals("despawn") || action.equals("cleanup")) {
+            manager.stopEncounter();
+            sender.sendMessage(plugin.color("&eNick i jeho kůň byli uklizeni."));
+            return true;
+        }
+        if (action.equals("attack")) {
+            if (!manager.forceAttack()) {
+                sender.sendMessage(plugin.color("&cÚtok se nepodařilo spustit. Nick potřebuje aktivní cíl, přímou viditelnost a platné entity."));
+            } else {
+                sender.sendMessage(plugin.color("&aTestovací Spectral Charge byl spuštěn."));
+            }
+            return true;
+        }
+        if (action.equals("spawn") || action.equals("test")) {
+            Player target = args.length >= 3 ? Bukkit.getPlayerExact(args[2])
+                    : (sender instanceof Player player ? player : null);
+            if (target == null || !target.isOnline()) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween nick " + action + " <online-hráč>"));
+                return true;
+            }
+            boolean testOnly = action.equals("test");
+            if (!manager.spawnFor(target, testOnly)) {
+                sender.sendMessage(plugin.color("&cNick se nepodařilo spawnout. Zkontroluj čas noci, bezpečnou zónu, cílový svět a volné místo."));
+            } else {
+                sender.sendMessage(plugin.color("&aBezhlavý Nick začal stalking u hráče &e" + target.getName() + "&a."));
+                sender.sendMessage(plugin.color("&7Soukromé zprávy dostává pouze vybraný cíl."));
+            }
+            return true;
+        }
+        if (action.equals("target")) {
+            if (args.length != 3) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween nick target <online-hráč>"));
+                return true;
+            }
+            Player target = Bukkit.getPlayerExact(args[2]);
+            if (target == null || !manager.assignTarget(target)) {
+                sender.sendMessage(plugin.color("&cNový cíl není platný, je v bezpečné zóně, nebo Nick není aktivní."));
+            } else {
+                sender.sendMessage(plugin.color("&aNick sleduje nově přiřazený cíl. Soukromou zprávu dostal pouze tento hráč."));
+            }
+            return true;
+        }
+        sender.sendMessage(plugin.color("&cPoužití: /halloween nick <status|spawn|test|target|attack|despawn>"));
+        return true;
+    }
+
+    private boolean mob(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("halloweencore.admin")) {
+            sender.sendMessage(plugin.color("&cTento příkaz je pouze pro administrátory."));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(plugin.color("&6/halloween mob <spawn|cleanup|status> &7— testování speciálních mobů"));
+            sender.sendMessage(plugin.color("&7Spawn: &e/halloween mob spawn <id> [hráč]"));
+            return true;
+        }
+
+        String action = args[1].toLowerCase(java.util.Locale.ROOT);
+        if (action.equals("status")) {
+            if (args.length != 2) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween mob status"));
+                return true;
+            }
+            int count = plugin.getMobManager().countManagedEventMobs();
+            sender.sendMessage(plugin.color("&6Halloween mobové"));
+            sender.sendMessage(plugin.color("&7Event: " + (plugin.isEventEnabled() ? "&aaktivní" : "&cvypnutý")
+                    + " &8• označení event/test mobové v načtených chunkech: &e" + count));
+            sender.sendMessage(plugin.color("&7Custom model: "
+                    + (plugin.getConfig().getBoolean("special-mobs.custom-models.enabled", true) ? "&apovoleny" : "&cvypnuty")
+                    + " &8• bez MythicMobs/ModelEngine se použije vanilla fallback."));
+            return true;
+        }
+        if (action.equals("cleanup")) {
+            if (args.length != 2) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween mob cleanup"));
+                return true;
+            }
+            int removed = plugin.getMobManager().cleanupEventMobs();
+            sender.sendMessage(plugin.color("&aOdstraněno označených event/test mobů: &e" + removed));
+            return true;
+        }
+        if (action.equals("spawn")) {
+            if (args.length < 3 || args.length > 4) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween mob spawn <cursed-zombie|void-reaper|gravekeeper|frost-stalker|blood-spider|pumpkin-wraith|hex-witch|nightmare> [hráč]"));
+                return true;
+            }
+            String mobId = args[2].toLowerCase(java.util.Locale.ROOT);
+            List<String> ids = List.of("cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                    "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare");
+            if (!ids.contains(mobId)) {
+                sender.sendMessage(plugin.color("&cNeznámý mob. Platné ID: &7" + String.join(", ", ids)));
+                return true;
+            }
+
+            Player target;
+            if (args.length == 4) {
+                target = Bukkit.getPlayerExact(args[3]);
+                if (target == null) {
+                    sender.sendMessage(plugin.color("&cHráč není online: &e" + args[3]));
+                    return true;
+                }
+            } else if (sender instanceof Player player) {
+                target = player;
+            } else {
+                sender.sendMessage(plugin.color("&cZ konzole zadej i cílového hráče: /halloween mob spawn <id> <hráč>"));
+                return true;
+            }
+
+            if (!plugin.getMobManager().spawnTestMob(target, mobId)) {
+                sender.sendMessage(plugin.color("&cSpawn selhal. Ověř, že je HalloweenCore zapnutý, svět povolený a poblíž hráče je bezpečné místo."));
+                return true;
+            }
+            sender.sendMessage(plugin.color("&aTestovací mob &e" + mobId + " &abyl vyvolán poblíž hráče &e" + target.getName() + "&a."));
+            sender.sendMessage(plugin.color("&7Testovací mob nedává eventové odměny. Úklid: &e/halloween mob cleanup"));
+            return true;
+        }
+
+        sender.sendMessage(plugin.color("&cPoužití: /halloween mob <spawn|cleanup|status>"));
+        return true;
+    }
+
+    private boolean structures(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        HalloweenWorldStructureGenerator generator = plugin.getWorldStructureGenerator();
+        if (generator == null) {
+            sender.sendMessage(plugin.color("&cGenerátor Halloween struktur není dostupný."));
+            return true;
+        }
+
+        String action = args.length >= 2 ? args[1].toLowerCase(java.util.Locale.ROOT) : "status";
+        if (action.equals("spawn")) {
+            if (args.length < 3 || args.length > 4) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween structures spawn <haunted-village|cursed-graveyard> [hráč]"));
+                return true;
+            }
+            Player target;
+            if (args.length == 4) {
+                target = Bukkit.getPlayerExact(args[3]);
+                if (target == null) {
+                    sender.sendMessage(plugin.color("&cHráč není online: &e" + args[3]));
+                    return true;
+                }
+            } else if (sender instanceof Player player) {
+                target = player;
+            } else {
+                sender.sendMessage(plugin.color("&cZ konzole musíš zadat i hráče: /halloween structures spawn <typ> <hráč>"));
+                return true;
+            }
+            String result = generator.queueManualStructure(target.getLocation(), args[2]);
+            sender.sendMessage(plugin.color("&6[Halloween Structures] &7" + result));
+            return true;
+        }
+        if (args.length > 2 || (!action.equals("status") && !action.equals("scan"))) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween structures [status|scan]"));
+            return true;
+        }
+        if (action.equals("scan")) {
+            generator.scanLoadedChunks();
+            sender.sendMessage(plugin.color("&6HALLOWEEN &8» &aKontrola načtených chunků zařazena."));
+            sender.sendMessage(plugin.color("&7Generátor nenačítá vzdálené chunky; ověřuje jen již načtené části mapy."));
+        }
+
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        sender.sendMessage(plugin.color("&6&lHALLOWEEN – STRUKTURY SVĚTA"));
+        sender.sendMessage(plugin.color("&7Stav: " + (generator.isEnabled() ? "&aAKTIVNÍ" : "&cVYPNUTÝ")));
+        sender.sendMessage(plugin.color("&7Čekající kandidáti: &e" + generator.getPendingCount()));
+        sender.sendMessage(plugin.color("&7Postavené vesnice v této relaci: &e" + generator.getVillagesBuilt()));
+        sender.sendMessage(plugin.color("&7Postavené hřbitovy v této relaci: &e" + generator.getGraveyardsBuilt()));
+        sender.sendMessage(plugin.color("&7Přeskočené kandidáty: &e" + generator.getCandidatesSkipped()));
+        sender.sendMessage(plugin.color("&7Poslední důvod přeskočení: &e"
+                + (generator.getLastSkipReason().isBlank() ? "žádný" : generator.getLastSkipReason())));
+        sender.sendMessage(plugin.color("&7Hustota: vesnice &e1/"
+                + Math.max(4, plugin.getConfig().getInt("world-structures.village-region-chunks", 10))
+                + "² &7chunků, hřbitovy &e1/"
+                + Math.max(3, plugin.getConfig().getInt("world-structures.graveyard-region-chunks", 6))
+                + "² &7chunků (před kontrolou terénu)."));
+        sender.sendMessage(plugin.color("&7Ochrana spawnu: &e"
+                + Math.max(0, Math.min(1024, plugin.getConfig().getInt("world-structures.spawn-exclusion-radius", 64)))
+                + " bloků od světového spawnu."));
+        sender.sendMessage(plugin.color("&7Příkaz scan znovu zkontroluje pouze právě načtené chunky."));
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        return true;
+    }
     private boolean setVillage(CommandSender sender) {
         if (!checkAdmin(sender)) return true;
         if (!(sender instanceof Player player)) {
@@ -599,7 +1048,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         VampireArenaBuilder builder = new VampireArenaBuilder();
-        VampireArenaBuilder.Inspection inspection = builder.inspect(center);
+        VampireArenaBuilder.Inspection inspection = builder.inspect(center, player);
         if (!inspection.clear()) {
             sender.sendMessage(plugin.color("&cArénu nelze bezpečně postavit: " + inspection.problem()));
             if (inspection.obstructions() > 0) {
@@ -615,13 +1064,20 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(plugin.color("&7Svět: &e" + world.getName()));
             sender.sendMessage(plugin.color("&7Střed: &e" + center.getBlockX() + " " + center.getBlockY() + " " + center.getBlockZ()));
             sender.sendMessage(plugin.color("&7Průměr arény: &e97 bloků &8• &78 věží, 4 monumentální brány, 8 vnitřních obelisků, obvodová zeď a runový kruh"));
-            sender.sendMessage(plugin.color("&7Kontrola prošla: nad podlahou je 20 bloků volného prostoru. Vrchní vrstva terénu v kruhu bude nahrazena podlahou."));
+            sender.sendMessage(plugin.color("&7Předkontrola prošla: přírodní terén lze bezpečně seříznout do 8 bloků a zasypat do 12 bloků."));
+            sender.sendMessage(plugin.color("&7Stavby, bloky s inventářem a oblasti zamítnuté WorldGuardem se nepřepisují."));
             sender.sendMessage(plugin.color("&ePokud je místo správné, potvrď stavbu: &6/halloween buildvampirearena confirm"));
             sender.sendMessage(plugin.color("&cPotvrzení změní povrch v kruhu o poloměru 48 bloků a přestaví arénu až do 15 bloků výšky. Předem zazálohuj svět!"));
             return true;
         }
 
-        int changed = builder.build(center);
+        int changed;
+        try {
+            changed = builder.build(center, player);
+        } catch (IllegalStateException exception) {
+            sender.sendMessage(plugin.color("&cStavba byla bezpečně zastavena: &e" + exception.getMessage()));
+            return true;
+        }
         plugin.getConfig().set("bosses.vampire.arena.generated", true);
         plugin.saveConfig();
         sender.sendMessage(plugin.color("&aGotovo! Upíří aréna byla postavena."));
@@ -836,6 +1292,42 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         return true;
     }
 
+
+    private boolean giveItem(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (args.length != 3) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween giveitem <hráč> <id|all>"));
+            return true;
+        }
+        Player target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) {
+            sender.sendMessage(plugin.color("&cHráč není online."));
+            return true;
+        }
+        String id = args[2].toLowerCase(java.util.Locale.ROOT);
+        if (id.equals("all")) {
+            int granted = 0;
+            List<String> failed = new ArrayList<>();
+            for (String rewardId : plugin.getRewardManager().getConfiguredRewardIds()) {
+                if (plugin.getRewardManager().giveAdminItem(target, rewardId)) granted++;
+                else failed.add(rewardId);
+            }
+            sender.sendMessage(plugin.color("&aTestovací předměty: předáno &e" + granted
+                    + "&a položek hráči &f" + target.getName() + "&a."));
+            if (!failed.isEmpty()) sender.sendMessage(plugin.color("&cNepodařilo se dát: &7" + String.join(", ", failed)));
+            target.sendMessage(plugin.color("&6HALLOWEEN &8» &eAdministrátor ti dal " + granted + " testovacích předmětů."));
+            return true;
+        }
+        if (!plugin.getRewardManager().giveAdminItem(target, id)) {
+            sender.sendMessage(plugin.color("&cNeznámý reward ID nebo neplatná definice: &e" + id
+                    + "&c. Zkontroluj /halloween rewards."));
+            return true;
+        }
+        sender.sendMessage(plugin.color("&aTestovací předmět &e" + id + " &apředán hráči &f" + target.getName() + "&a."));
+        target.sendMessage(plugin.color("&6HALLOWEEN &8» &eAdministrátor ti dal testovací předmět: &f" + id + "&e."));
+        return true;
+    }
+
     private boolean shader(CommandSender sender, String[] args) {
         if (!checkAdmin(sender)) return true;
         if (args.length != 2) {
@@ -844,48 +1336,20 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         String action = args[1].toLowerCase(java.util.Locale.ROOT);
-        Path shaderPath = plugin.getDataFolder().getParentFile().toPath()
-                .resolve("ItemsAdder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh");
-
         if (action.equals("reload")) {
-            sender.sendMessage(plugin.color("&6&lHALLOWEEN &8» &7Spouštím nové sestavení resource packu pro shader..."));
-            return rebuildItemsAdderPack(sender);
-        }
-        if (!action.equals("on") && !action.equals("off")) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween shader <on|off|reload>"));
+            sender.sendMessage(plugin.color("&6&lHALLOWEEN &8» &7Iris shader běží pouze na klientovi; server ho nemůže vzdáleně přenačíst."));
+            sender.sendMessage(plugin.color("&7Pokud se změnily textury nebo modely ItemsAdderu, sestav jejich pack samostatně příkazem &f/iazip&7."));
+            sender.sendMessage(plugin.color("&7Na klientovi nahraď ZIP ve složce .minecraft/shaderpacks a shader znovu vyber v nastavení Iris."));
             return true;
         }
-
-        if (!Files.isRegularFile(shaderPath)) {
-            sender.sendMessage(plugin.color("&cShader jsem nenašel na serveru: &7plugins/ItemsAdder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh"));
-            sender.sendMessage(plugin.color("&7Nahraj obsah ItemsAdderu a pak spusť /halloween shader reload."));
+        if (action.equals("on") || action.equals("off")) {
+            sender.sendMessage(plugin.color("&6&lHALLOWEEN &8» &7Server nemůže hráči zapnout ani vypnout Iris shader."));
+            sender.sendMessage(plugin.color("&7Akce &f" + action + "&7 platí jen pro nastavení na tvém klientovi: Video Settings &8» &fShader Packs&7."));
+            sender.sendMessage(plugin.color("&7Event Krvavého měsíce může shader synchronizovat pouze s nainstalovaným klientským modem HalloweenCore."));
             return true;
         }
-
-        try {
-            String source = Files.readString(shaderPath, StandardCharsets.UTF_8);
-            java.util.regex.Pattern tintPattern = java.util.regex.Pattern.compile(
-                    "sky\\.rgb\\s*=\\s*mix\\(sky\\.rgb,\\s*sky\\.rgb\\s*\\*\\s*halloweenTint,\\s*[0-9.]+\\s*\\);");
-            java.util.regex.Matcher matcher = tintPattern.matcher(source);
-            if (!matcher.find()) {
-                sender.sendMessage(plugin.color("&cV souboru sky.fsh jsem nenašel očekávaný Halloween tint."));
-                sender.sendMessage(plugin.color("&7Shader nebyl změněn. Obnov zdrojový Halloween shader a opakuj příkaz."));
-                return true;
-            }
-
-            String weight = action.equals("on") ? "0.55" : "0.0";
-            String replacement = "sky.rgb = mix(sky.rgb, sky.rgb * halloweenTint, " + weight + ");";
-            String updated = matcher.replaceFirst(java.util.regex.Matcher.quoteReplacement(replacement));
-            Files.writeString(shaderPath, updated, StandardCharsets.UTF_8);
-            sender.sendMessage(plugin.color(action.equals("on")
-                    ? "&aHalloween shader je zapnutý."
-                    : "&eHalloween barevný nádech shaderu je vypnutý."));
-            return rebuildItemsAdderPack(sender);
-        } catch (IOException ex) {
-            plugin.getLogger().warning("Could not update Halloween sky shader: " + ex.getMessage());
-            sender.sendMessage(plugin.color("&cShader se nepodařilo změnit: &7" + ex.getMessage()));
-            return true;
-        }
+        sender.sendMessage(plugin.color("&cNeznámá akce. Použij on, off nebo reload."));
+        return true;
     }
 
     private boolean rebuildItemsAdderPack(CommandSender sender) {

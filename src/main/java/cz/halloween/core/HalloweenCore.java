@@ -38,21 +38,31 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenBossManager bossManager;
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
+    private HalloweenRelicAbilityEngine relicAbilityEngine;
     private HalloweenVillageDiscoveryManager villageDiscoveryManager;
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
+    private HalloweenGoblinKingManager goblinKingManager;
+    private HalloweenHeadlessNickManager headlessNickManager;
     private HalloweenWorldDecorator worldDecorator;
+    private HalloweenWorldStructureGenerator worldStructureGenerator;
+    private HalloweenCombatEffectManager combatEffectManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        getServer().getMessenger().registerOutgoingPluginChannel(this, "halloweencore:visual_state");
         migrateAtmosphereVolume();
         migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateWorldStructuresAndCombatDefaults();
+        migrateNewEncounterDefaults();
+        migrateRelicShopDefaults();
+        migrateRelicAbilityDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -68,10 +78,15 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         bossManager = new HalloweenBossManager(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
+        relicAbilityEngine = new HalloweenRelicAbilityEngine(this);
         villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
+        goblinKingManager = new HalloweenGoblinKingManager(this);
+        headlessNickManager = new HalloweenHeadlessNickManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
+        worldStructureGenerator = new HalloweenWorldStructureGenerator(this);
+        combatEffectManager = new HalloweenCombatEffectManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -85,9 +100,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(villageDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
+        getServer().getPluginManager().registerEvents(goblinKingManager, this);
+        getServer().getPluginManager().registerEvents(headlessNickManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
+        getServer().getPluginManager().registerEvents(worldStructureGenerator, this);
+        getServer().getPluginManager().registerEvents(combatEffectManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
@@ -102,7 +121,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
         worldDecorator.start();
+        worldStructureGenerator.start();
         passiveEffectManager.start();
+        relicAbilityEngine.start();
+        headlessNickManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
@@ -118,13 +140,18 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
+        getServer().getMessenger().unregisterOutgoingPluginChannel(this, "halloweencore:visual_state");
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
         }
+        if (goblinKingManager != null) goblinKingManager.shutdown();
+        if (headlessNickManager != null) headlessNickManager.shutdown();
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (worldStructureGenerator != null) worldStructureGenerator.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
+        if (relicAbilityEngine != null) relicAbilityEngine.stop();
         if (dataManager != null) dataManager.save();
     }
 
@@ -132,6 +159,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         if (!eventEnabled) return;
         if (vampireEncounterManager != null && vampireEncounterManager.isTrackedVampireBoss(event.getEntity())) return;
+        if (goblinKingManager != null && goblinKingManager.isManagedCombatEntity(event.getEntity())) return;
+        if (headlessNickManager != null && headlessNickManager.isManagedEntity(event.getEntity())) return;
 
         Player killer = event.getEntity().getKiller();
         if (killer == null) return;
@@ -157,6 +186,9 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateWorldStructuresAndCombatDefaults();
+        migrateRelicShopDefaults();
+        migrateRelicAbilityDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -169,6 +201,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
         if (bossManager != null) bossManager.stopVampireBossBar();
+        if (goblinKingManager != null) goblinKingManager.stopEncounter();
+        if (headlessNickManager != null) headlessNickManager.stopEncounter();
 
         if (atmosphere != null) atmosphere.refreshPlayback();
         if (worldDecorator != null) {
@@ -177,13 +211,20 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 worldDecorator.scanLoadedChunks();
             }
         }
+        if (worldStructureGenerator != null) {
+            worldStructureGenerator.stop();
+            if (eventEnabled && getConfig().getBoolean("world-structures.enabled", true)) {
+                worldStructureGenerator.start();
+            }
+        }
 
         logConfigValidationIssues();
         if (bossManager != null) bossManager.validateConfiguration();
         getLogger().info("HalloweenCore runtime state reloaded. enabled=" + eventEnabled
                 + ", random-events=" + getConfig().getBoolean("random-events.enabled", true)
                 + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", true)
-                + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", true));
+                + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", true)
+                + ", world-structures=" + getConfig().getBoolean("world-structures.enabled", true));
     }
 
     public void setEventEnabled(boolean enabled) {
@@ -203,10 +244,16 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 eventManager.stop();
                 if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
                 if (bossManager != null) bossManager.stopVampireBossBar();
+                if (goblinKingManager != null) goblinKingManager.stopEncounter();
+                if (headlessNickManager != null) headlessNickManager.stopEncounter();
             }
         }
         if (atmosphere != null) atmosphere.refreshPlayback();
         if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
+        if (worldStructureGenerator != null) {
+            if (enabled) worldStructureGenerator.start();
+            else worldStructureGenerator.stop();
+        }
 
         if (changed) {
             Bukkit.broadcastMessage(color(enabled
@@ -274,6 +321,32 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Additional Halloween mob and story-quest defaults applied without overwriting existing settings.");
         } catch (IOException ex) {
             getLogger().warning("Additional mob/quest migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateNewEncounterDefaults() {
+        if (getConfig().getBoolean("migrations.goblin-and-nick-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; Goblin/Nick defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String root : List.of("bosses.goblin", "stalkers.headless-nick")) {
+                ConfigurationSection section = defaults.getConfigurationSection(root);
+                if (section == null) continue;
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = root + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
+                }
+            }
+            getConfig().set("migrations.goblin-and-nick-v1", true);
+            saveConfig();
+            getLogger().info("Goblin King and Headless Nick defaults added without replacing existing server settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Goblin/Nick configuration migration failed: " + ex.getClass().getSimpleName());
         }
     }
 
@@ -476,6 +549,78 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
+    private void migrateWorldStructuresAndCombatDefaults() {
+        if (getConfig().getBoolean("migrations.world-structures-combat-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; world structure/combat defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String sectionPath : List.of("world-structures", "gear-effects")) {
+                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
+                if (section == null) continue;
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, defaults.get(path));
+                }
+            }
+            getConfig().set("migrations.world-structures-combat-v1", true);
+            saveConfig();
+            getLogger().info("Haunted structure generation and Crimson Warden combat settings were added without overwriting server configuration.");
+        } catch (IOException ex) {
+            getLogger().warning("World structure/combat migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateRelicShopDefaults() {
+        if (getConfig().getBoolean("migrations.portable-relic-shop-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) return;
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String id : List.of("batwing-elytra", "nocturne-sovereign-cowl")) {
+                ConfigurationSection source = defaults.getConfigurationSection("rewards.shop." + id);
+                if (source == null) continue;
+                for (String key : source.getKeys(true)) {
+                    if (source.isConfigurationSection(key)) continue;
+                    String path = "rewards.shop." + id + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, source.get(key));
+                }
+            }
+            getConfig().set("migrations.portable-relic-shop-v1", true);
+            saveConfig();
+            getLogger().info("Portable relic shop entries added without replacing existing prices or world settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Portable relic shop migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateRelicAbilityDefaults() {
+        if (getConfig().getBoolean("migrations.portable-relic-abilities-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) return;
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection section = defaults.getConfigurationSection("relics");
+            if (section != null) {
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = "relics." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, defaults.get(path));
+                }
+            }
+            getConfig().set("migrations.portable-relic-abilities-v1", true);
+            saveConfig();
+            getLogger().info("Portable relic ability defaults added without overwriting existing configuration.");
+        } catch (IOException ex) {
+            getLogger().warning("Portable relic ability migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
     private void logConfigValidationIssues() {
         var errors = HalloweenConfigValidator.validate(this);
         Set<String> currentErrors = new HashSet<>(errors);
@@ -525,6 +670,23 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return itemManager;
     }
 
+    public HalloweenRelicAbilityEngine getRelicAbilityEngine() {
+        return relicAbilityEngine;
+    }
+
+    /**
+     * Applies an effect caused by HalloweenCore mobs/bosses. The Cowl may reduce
+     * only these routed effects; unrelated vanilla and third-party effects are untouched.
+     */
+    public void applyHalloweenDebuff(org.bukkit.entity.LivingEntity target, org.bukkit.potion.PotionEffect effect) {
+        if (target == null || effect == null) return;
+        if (target instanceof Player player && relicAbilityEngine != null) {
+            relicAbilityEngine.applyCurseEffect(player, effect);
+        } else {
+            target.addPotionEffect(effect);
+        }
+    }
+
     public HalloweenDataManager getDataManager() {
         return dataManager;
     }
@@ -537,8 +699,20 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return vampireEncounterManager;
     }
 
+    public HalloweenGoblinKingManager getGoblinKingManager() {
+        return goblinKingManager;
+    }
+
+    public HalloweenHeadlessNickManager getHeadlessNickManager() {
+        return headlessNickManager;
+    }
+
     public HalloweenSecretDiscoveryManager getSecretDiscoveryManager() {
         return secretDiscoveryManager;
+    }
+
+    public HalloweenWorldStructureGenerator getWorldStructureGenerator() {
+        return worldStructureGenerator;
     }
 
     public void notifyFragmentGain(UUID playerId, long amount) {
