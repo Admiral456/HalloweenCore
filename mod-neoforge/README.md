@@ -30,6 +30,9 @@ Important limitation: vanilla/NeoForge dimensions do not expose Multiverse-Core'
 - An idempotent full Crimson Warden set bonus (+4 armor toughness and +10% knockback resistance) which is removed when a piece is removed or the player leaves an allowed world.
 - Eleven registered entity identities, individual health/damage/speed values and server-side debuff behavior.
 - Server-authoritative commands for status, starting/stopping events, spawning mobs and giving items.
+- Persistent `SavedData` for player fragments, special-mob kills, boss defeats, ore mining, mature-crop harvesting and the server-wide total of collected fragments.
+- `/halloween progress` reports the persistent progression counters from an allowed world.
+- Fragment reward rules: 1 for a normal special mob, 25 for a named boss, 1 every 4 eligible ore blocks, and 1 every 8 fully grown crops harvested.
 - Six event IDs, an initial automatic event schedule, bounded event waves, a single-point three-times Blood Moon damage multiplier for common and special hostile mobs, and a harvest event that reacts to ripe crops.
 - A time-limited +1-heart Cursed Talisman modifier and generated art/model resources.
 - A native biome-modifier/placed-feature path for rare surface decorations, gated by the explicit world policy.
@@ -45,7 +48,7 @@ This is an initial native foundation, not the complete ultimate prompt implement
 - Nocturne Cowl needs custom wearable geometry and its final Grave Sight, Veilstep and Nocturnal Aegis abilities;
 - Batwing Elytra has the native glider/equipment components but not the articulated wing renderer or all abilities;
 - the timed talisman state is currently memory-only; durable persistence across a server restart is not complete;
-- full story-quest sequencing, global progress, reward persistence and a final Rift/Vampire King unlock are not yet ported;
+- the nine-step story-quest sequence, quest-completion persistence, daily/comeback rewards, curse levels, mining/fishing reward parity and the final Rift/Vampire King unlock are not yet ported;
 - safe terrain-adaptive arena generation and full haunted village/graveyard structures are not yet ported;
 - no dedicated-server launch, multiplayer rendering, hybrid compatibility or in-game Spawn-isolation test has been performed.
 
