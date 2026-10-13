@@ -8,9 +8,11 @@ import net.minecraft.world.entity.EntityType;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 
+@EventBusSubscriber(modid = HalloweenCoreMod.MOD_ID, value = Dist.CLIENT)
 public final class HalloweenClientEvents {
     private HalloweenClientEvents() {}
 
+    @SubscribeEvent
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         // Every registered entity gets a valid renderer and a separate 64x64 texture.
@@ -45,7 +47,7 @@ public final class HalloweenClientEvents {
         }
 
         @Override
-        protected ResourceLocation getTextureLocation(ZombieRenderState state) {
+        public ResourceLocation getTextureLocation(ZombieRenderState state) {
             return texture;
         }
     }

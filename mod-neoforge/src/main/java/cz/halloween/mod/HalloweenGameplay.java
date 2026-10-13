@@ -366,7 +366,7 @@ public final class HalloweenGameplay {
             source.sendFailure(Component.literal("Nebyla nalezena bezpečná spawnovací pozice."));
             return 0;
         }
-        HalloweenMonster mob = type.create(level);
+        HalloweenMonster mob = type.create(level, null, position, EntitySpawnReason.COMMAND, false, false);
         if (mob == null) {
             source.sendFailure(Component.literal("Entitu se nepodařilo vytvořit."));
             return 0;

@@ -25,6 +25,6 @@ public final class CursedTalismanItem extends Item {
             }
             HalloweenGameplay.activateTalisman(serverPlayer);
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.SUCCESS_SERVER;
     }
 }
