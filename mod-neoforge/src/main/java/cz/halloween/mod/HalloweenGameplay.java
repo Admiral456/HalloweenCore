@@ -22,6 +22,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.event.entity.EntityJoinLevelEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.level.BlockEvent;
 import net.neoforged.neoforge.event.tick.PlayerTickEvent;
@@ -112,6 +113,15 @@ public final class HalloweenGameplay {
             List<ServerPlayer> players = eligiblePlayers(server);
             if (!players.isEmpty()) runEventWave(players);
             nextWaveAtTick = tick + 20L * 25L;
+        }
+    }
+
+    @SubscribeEvent
+    public static void preventHalloweenEntitiesInForbiddenWorlds(EntityJoinLevelEvent event) {
+        if (event.getLevel().isClientSide()) return;
+        if (event.getEntity() instanceof HalloweenMonster
+                && !HalloweenWorldPolicy.isAllowed(event.getLevel())) {
+            event.setCanceled(true);
         }
     }
 
@@ -260,8 +270,10 @@ public final class HalloweenGameplay {
 
     private static void spawnWaveAround(ServerLevel level, ServerPlayer player, int count) {
         if (!HalloweenWorldPolicy.isAllowed(level)) return;
-        int existing = level.getEntitiesOfClass(HalloweenMonster.class,
-                player.getBoundingBox().inflate(96.0D)).size();
+        int existing = 0;
+        for (Entity loaded : level.getAllEntities()) {
+            if (loaded instanceof HalloweenMonster) existing++;
+        }
         int limit = HalloweenConfig.MAX_ACTIVE_HALLOWEEN_MOBS.get();
         if (existing >= limit) return;
 

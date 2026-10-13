@@ -20,7 +20,7 @@ public final class HauntedSurfaceFeature extends Feature<NoneFeatureConfiguratio
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
         if (!HalloweenConfig.WORLD_DECORATIONS_ENABLED.get()
-                || !HalloweenWorldPolicy.isAllowedDimension(level.dimension().location())) {
+                || !HalloweenWorldPolicy.isAllowedGeneration(level)) {
             return false;
         }
 
