@@ -47,35 +47,44 @@ public final class HalloweenGameplay {
 
     @SubscribeEvent
     public static void registerCommands(RegisterCommandsEvent event) {
-        event.getDispatcher().register(Commands.literal("halloween")
+        var eventRoot = Commands.literal("event")
+                .then(Commands.literal("start")
+                        .requires(source -> source.hasPermission(2))
+                        .then(Commands.argument("event", StringArgumentType.word())
+                                .executes(context -> startEvent(context.getSource(),
+                                        StringArgumentType.getString(context, "event")))))
+                .then(Commands.literal("stop")
+                        .requires(source -> source.hasPermission(2))
+                        .executes(context -> stopEvent(context.getSource())))
+                .then(Commands.literal("list")
+                        .executes(context -> listEvents(context.getSource())));
+
+        var spawnRoot = Commands.literal("spawn")
+                .requires(source -> source.hasPermission(2))
+                .then(Commands.argument("mob", StringArgumentType.word())
+                        .executes(context -> spawnMob(context.getSource(),
+                                StringArgumentType.getString(context, "mob"), null))
+                        .then(Commands.argument("player", EntityArgument.player())
+                                .executes(context -> spawnMob(context.getSource(),
+                                        StringArgumentType.getString(context, "mob"),
+                                        EntityArgument.getPlayer(context, "player")))));
+
+        var itemForPlayer = Commands.argument("item", StringArgumentType.word())
+                .executes(context -> giveItem(context.getSource(),
+                        EntityArgument.getPlayer(context, "player"),
+                        StringArgumentType.getString(context, "item")));
+        var playerForGive = Commands.argument("player", EntityArgument.player()).then(itemForPlayer);
+        var giveRoot = Commands.literal("give")
+                .requires(source -> source.hasPermission(2))
+                .then(playerForGive);
+
+        var root = Commands.literal("halloween")
                 .executes(context -> showStatus(context.getSource()))
                 .then(Commands.literal("status").executes(context -> showStatus(context.getSource())))
-                .then(Commands.literal("event")
-                        .then(Commands.literal("start")
-                                .requires(source -> source.hasPermission(2))
-                                .then(Commands.argument("event", StringArgumentType.word())
-                                        .executes(context -> startEvent(context.getSource(),
-                                                StringArgumentType.getString(context, "event")))))
-                        .then(Commands.literal("stop")
-                                .requires(source -> source.hasPermission(2))
-                                .executes(context -> stopEvent(context.getSource())))
-                        .then(Commands.literal("list").executes(context -> listEvents(context.getSource()))))
-                .then(Commands.literal("spawn")
-                        .requires(source -> source.hasPermission(2))
-                        .then(Commands.argument("mob", StringArgumentType.word())
-                                .executes(context -> spawnMob(context.getSource(),
-                                        StringArgumentType.getString(context, "mob"), null))
-                                .then(Commands.argument("player", EntityArgument.player())
-                                        .executes(context -> spawnMob(context.getSource(),
-                                                StringArgumentType.getString(context, "mob"),
-                                                EntityArgument.getPlayer(context, "player"))))))
-                .then(Commands.literal("give")
-                        .requires(source -> source.hasPermission(2))
-                        .then(Commands.argument("player", EntityArgument.player())
-                                .then(Commands.argument("item", StringArgumentType.word())
-                                        .executes(context -> giveItem(context.getSource(),
-                                                EntityArgument.getPlayer(context, "player"),
-                                                StringArgumentType.getString(context, "item"))))));
+                .then(eventRoot)
+                .then(spawnRoot)
+                .then(giveRoot);
+        event.getDispatcher().register(root);
     }
 
     @SubscribeEvent
