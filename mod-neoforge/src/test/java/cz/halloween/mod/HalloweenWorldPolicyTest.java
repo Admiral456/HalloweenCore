@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,4 +51,27 @@ final class HalloweenWorldPolicyTest {
         assertTrue(HalloweenProgressRewards.cropFragments(0) == 0);
     }
 
+
+    @Test
+    void storyCatalogPreservesTheNineOriginalChaptersAndRewards() {
+        assertEquals(9, HalloweenStoryQuests.ALL.size());
+        assertEquals("fog-patrol", HalloweenStoryQuests.ALL.get(0).id());
+        assertEquals(10, HalloweenStoryQuests.ALL.get(0).target());
+        assertEquals(150L, HalloweenStoryQuests.ALL.get(0).reward());
+        assertEquals("nightmare", HalloweenStoryQuests.ALL.get(8).id());
+        assertEquals(1, HalloweenStoryQuests.ALL.get(8).target());
+        assertEquals(900L, HalloweenStoryQuests.ALL.get(8).reward());
+    }
+
+    @Test
+    void storyQuestMatchingIsSpecificAndCaseInsensitive() {
+        HalloweenStoryQuests.Quest gravekeepers = HalloweenStoryQuests.ALL.get(1);
+        assertTrue(HalloweenStoryQuests.matchesMobKill(gravekeepers, "gravekeeper", true));
+        assertFalse(HalloweenStoryQuests.matchesMobKill(gravekeepers, "vampire_king", true));
+        assertFalse(HalloweenStoryQuests.matchesMobKill(gravekeepers, "gravekeeper", false));
+        assertTrue(HalloweenStoryQuests.matchesAction(HalloweenStoryQuests.ALL.get(3), "farming"));
+        assertEquals(0, HalloweenStoryQuests.normalizeIndex(-20));
+        assertEquals(9, HalloweenStoryQuests.normalizeIndex(100));
+        assertEquals("blood-spider", HalloweenStoryQuests.normalizeMobId("BLOOD_SPIDER"));
+    }
 }
