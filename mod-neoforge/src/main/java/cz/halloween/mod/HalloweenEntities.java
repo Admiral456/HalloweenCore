@@ -53,6 +53,12 @@ public final class HalloweenEntities {
         };
     }
 
+    public static boolean isBoss(EntityType<?> type) {
+        return type != null && (type == HEADLESS_NICK.get()
+                || type == GOBLIN_KING.get()
+                || type == VAMPIRE_KING.get());
+    }
+
     public static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(CURSED_ZOMBIE.get(), attributes(36.0D, 8.0D, 0.30D));
         event.put(VOID_REAPER.get(), attributes(42.0D, 10.0D, 0.32D));
