@@ -11,8 +11,8 @@ No hybrid runtime has been selected. A plain NeoForge server does not automatica
 | Existing subsystem | Native target | Status in this increment |
 |---|---|---|
 | Paper command/event layer | Brigadier commands and NeoForge events | PARTIAL |
-| Player fragments, curse levels, daily streak, comeback rewards | Server-authoritative saved player state | NOT PORTED |
-| Shared server fragments/milestones | Persistent SavedData service | NOT PORTED |
+| Player fragments, curse levels, daily streak, comeback rewards | Server-authoritative saved player state | PARTIAL: persistent fragment/kills/ore/crop counters; curse levels, streak and comeback logic not ported |
+| Shared server fragments/milestones | Persistent SavedData service | PARTIAL: cumulative fragment counter is persisted; milestone unlocks not ported |
 | Story quest chain/rewards/history | Server-authoritative persistent quest service | NOT PORTED |
 | Six timed event types | Native event scheduling, waves, stop and cleanup | PARTIAL; active state is memory-only |
 | Eight special mobs | Eight native entity IDs and their first-pass debuffs | PARTIAL; shared Zombie AI and renderer |
@@ -44,8 +44,8 @@ These labels refer to compatibility with the proposed native NeoForge runtime, n
 ## Safety and test status
 
 - Production WarriorLand changes: NONE.
-- Native Gradle build: PENDING CI.
-- Automated policy unit tests: PENDING CI.
+- Native Gradle build: PENDING CI after the progression increment.
+- Automated policy/reward unit tests: PENDING CI after the progression increment.
 - Native JAR loading on a dedicated server: NOT TESTED.
 - Client renderer, textures and equipment: NOT TESTED in Minecraft.
 - World generation and Spawn-isolation: NOT TESTED in a running game.
