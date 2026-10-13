@@ -1,0 +1,6 @@
+{
+  "layers": {
+    "humanoid": [{ "texture": "halloweencore:crimson_warden" }],
+    "humanoid_leggings": [{ "texture": "halloweencore:crimson_warden_leggings" }]
+  }
+}

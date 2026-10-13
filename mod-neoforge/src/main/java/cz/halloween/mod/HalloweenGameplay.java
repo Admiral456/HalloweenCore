@@ -10,7 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -20,7 +19,6 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -358,8 +356,9 @@ public final class HalloweenGameplay {
             source.sendFailure(Component.literal("Server odmítl vložit entitu do světa."));
             return 0;
         }
+        final ServerPlayer spawnedFor = target;
         source.sendSuccess(() -> Component.literal(
-                "Spawnuto: " + id + " poblíž " + target.getGameProfile().getName()), true);
+                "Spawnuto: " + id + " poblíž " + spawnedFor.getGameProfile().getName()), true);
         return 1;
     }
 
