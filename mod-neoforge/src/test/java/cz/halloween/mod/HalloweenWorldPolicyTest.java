@@ -38,4 +38,16 @@ final class HalloweenWorldPolicyTest {
         assertTrue(HalloweenWorldIdPolicy.isConfiguredWorldAllowed(
                 "minecraft:overworld", List.of(" minecraft:overworld ")));
     }
+
+    @Test
+    void fragmentRewardsArePredictableAndBounded() {
+        assertTrue(HalloweenProgressRewards.mobKillFragments(false) == 1);
+        assertTrue(HalloweenProgressRewards.mobKillFragments(true) == 25);
+        assertTrue(HalloweenProgressRewards.oreFragments(4) == 1);
+        assertTrue(HalloweenProgressRewards.oreFragments(5) == 0);
+        assertTrue(HalloweenProgressRewards.cropFragments(8) == 1);
+        assertTrue(HalloweenProgressRewards.cropFragments(7) == 0);
+        assertTrue(HalloweenProgressRewards.cropFragments(0) == 0);
+    }
+
 }
