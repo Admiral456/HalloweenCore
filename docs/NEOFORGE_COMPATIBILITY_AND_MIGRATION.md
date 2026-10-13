@@ -13,19 +13,19 @@ No hybrid runtime has been selected. A plain NeoForge server does not automatica
 | Paper command/event layer | Brigadier commands and NeoForge events | PARTIAL |
 | Player fragments, curse levels, daily streak, comeback rewards | Server-authoritative saved player state | PARTIAL: persistent fragment/kills/ore/crop counters; curse levels, streak and comeback logic not ported |
 | Shared server fragments/milestones | Persistent SavedData service | PARTIAL: cumulative fragment counter is persisted; milestone unlocks not ported |
-| Story quest chain/rewards/history | Server-authoritative persistent quest service | NOT PORTED |
-| Six timed event types | Native event scheduling, waves, stop and cleanup | PARTIAL; active state is memory-only |
+| Story quest chain/rewards/history | Server-authoritative persistent quest service | PARTIAL: all nine original chapter objectives/targets/rewards and sequential saved progress are ported; Rift/Vampire King finale gate and old data import remain unported |
+| Six timed event types | Native event scheduling, waves, stop and cleanup | PARTIAL: active event code, wall-clock deadline and next-wave schedule persist in SavedData; restart behavior NOT TESTED in game |
 | Eight special mobs | Eight native entity IDs and their first-pass debuffs | PARTIAL; shared Zombie AI and renderer |
 | Headless Nick and undead horse | Custom rider/horse AI and model | PARTIAL; bespoke behavior not implemented |
 | Goblin King and Vampire King | Unique models, phases, arena, loot and unlock gate | NOT COMPLETE |
 | Crimson Warden armor/weapons/tools/shield | Native item IDs and item components | PARTIAL; generated first-pass visuals; in-game attributes/rendering untested |
-| Cursed Talisman | Right-click activation and temporary +2 max health | PARTIAL; expiration not persisted over restart |
+| Cursed Talisman | Right-click activation and temporary +2 max health | PARTIAL: expiration timestamp is persisted; reconnect/restart behavior NOT TESTED in game |
 | Nocturne Sovereign Cowl | Native equippable and +6 armor attribute | PARTIAL; special abilities and bespoke worn model not complete |
 | Batwing Elytra | Native glider component and wings equipment asset | PARTIAL; animated wing model and abilities incomplete |
 | Natural decorations | Native placed feature, explicit allowed-dimension list | PARTIAL; rare small surface decorations only |
 | Haunted villages and graveyards | Native structures, spacing, loot and idempotent generation | NOT PORTED |
 | 97-block Vampire arena | Terrain simulation, safe edit/rollback, region integration | NOT PORTED |
-| Resource pack/models | Native item/equipment JSON and generated valid PNG files | PARTIAL; initial generator only |
+| Resource pack/models | Native item/equipment JSON and generated valid PNG files | PARTIAL: generated first-pass icons, equipment textures and per-entity textures; bespoke animated geometry remains unimplemented |
 | Existing data migration | Backup/import tool from legacy plugin data | NOT PORTED |
 
 ## Plugin compatibility matrix
@@ -50,6 +50,6 @@ These labels refer to compatibility with the proposed native NeoForge runtime, n
 - Client renderer, textures and equipment: NOT TESTED in Minecraft.
 - World generation and Spawn-isolation: NOT TESTED in a running game.
 - Hybrid/plugin compatibility: NOT TESTED.
-- Multiplayer, persistence across restart, quest completion and boss fights: NOT TESTED.
+- Multiplayer, persistence across a live restart, quest completion during live play and boss fights: NOT TESTED. Unit tests verify quest metadata and objective matching only.
 
 Before any deployment, copy the server and worlds into an isolated test instance, back up all player/world/plugin data, choose the exact server platform, configure the explicit allow-list, verify that the world named Spawn is rejected, and run the integration matrix against the exact JAR builds.
