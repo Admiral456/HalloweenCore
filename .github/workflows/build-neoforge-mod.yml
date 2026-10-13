@@ -39,9 +39,14 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           from zipfile import ZipFile
-          jars = list(Path("mod-neoforge/build/libs").glob("halloweencore-*.jar"))
+          jars = [
+              path for path in Path("mod-neoforge/build/libs").glob("halloweencore-*.jar")
+              if not path.name.endswith(("-sources.jar", "-javadoc.jar"))
+          ]
           if not jars:
-              raise SystemExit("Native NeoForge mod JAR was not produced")
+              raise SystemExit("Native NeoForge binary mod JAR was not produced")
+          if len(jars) != 1:
+              raise SystemExit(f"Expected exactly one native binary mod JAR, found: {[p.name for p in jars]}")
           with ZipFile(jars[0]) as jar:
               names = set(jar.namelist())
               required = (
