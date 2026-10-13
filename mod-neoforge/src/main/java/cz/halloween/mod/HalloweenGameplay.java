@@ -210,7 +210,7 @@ public final class HalloweenGameplay {
                 || !state.hasProperty(net.minecraft.world.level.block.CropBlock.AGE)
                 || state.getValue(net.minecraft.world.level.block.CropBlock.AGE) < crop.getMaxAge()) return;
 
-        HalloweenProgressData progress = HalloweenProgressData.get(player.getServer());
+        HalloweenProgressData progress = progressDataFor(player);
         long harvested = progress.addPlayerValue(player.getUUID(), "mature_crops_harvested", 1L);
         int fragments = HalloweenProgressRewards.cropFragments(harvested);
         if (fragments > 0) {
@@ -236,7 +236,7 @@ public final class HalloweenGameplay {
                 || state.is(BlockTags.REDSTONE_ORES) || state.is(BlockTags.LAPIS_ORES)
                 || state.is(BlockTags.DIAMOND_ORES) || state.is(BlockTags.EMERALD_ORES))) return;
 
-        HalloweenProgressData progress = HalloweenProgressData.get(player.getServer());
+        HalloweenProgressData progress = progressDataFor(player);
         long mined = progress.addPlayerValue(player.getUUID(), "ores_mined", 1L);
         int fragments = HalloweenProgressRewards.oreFragments(mined);
         if (fragments > 0) {
@@ -254,7 +254,7 @@ public final class HalloweenGameplay {
                 || !HalloweenWorldPolicy.isAllowed(mob.level())) return;
 
         boolean boss = HalloweenEntities.isBoss(mob.getType());
-        HalloweenProgressData progress = HalloweenProgressData.get(player.getServer());
+        HalloweenProgressData progress = progressDataFor(player);
         progress.addPlayerValue(player.getUUID(), "special_mob_kills", 1L);
         if (boss) progress.addPlayerValue(player.getUUID(), "bosses_defeated", 1L);
         int reward = HalloweenProgressRewards.mobKillFragments(boss);
@@ -268,7 +268,7 @@ public final class HalloweenGameplay {
     public static void activateTalisman(ServerPlayer player) {
         if (!HalloweenWorldPolicy.isAllowed(player.level())) return;
         long now = System.currentTimeMillis();
-        HalloweenProgressData progress = HalloweenProgressData.get(player.getServer());
+        HalloweenProgressData progress = progressDataFor(player);
         long until = progress.getPlayerValue(player.getUUID(), "talisman_until_epoch_ms");
         if (until > now) {
             player.displayClientMessage(Component.literal(
@@ -290,7 +290,7 @@ public final class HalloweenGameplay {
         boolean allowedWorld = HalloweenWorldPolicy.isAllowed(player.level());
         AttributeInstance maxHealth = player.getAttribute(Attributes.MAX_HEALTH);
         long now = System.currentTimeMillis();
-        HalloweenProgressData progress = allowedWorld ? HalloweenProgressData.get(player.getServer()) : null;
+        HalloweenProgressData progress = allowedWorld ? progressDataFor(player) : null;
         long until = progress == null ? 0L
                 : progress.getPlayerValue(player.getUUID(), "talisman_until_epoch_ms");
         if (until > now && allowedWorld && maxHealth != null) {
@@ -322,6 +322,13 @@ public final class HalloweenGameplay {
         else attribute.removeModifier(modifier.id());
     }
 
+    private static HalloweenProgressData progressDataFor(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel serverLevel)) {
+            throw new IllegalStateException("Halloween progression can only be accessed from a server level.");
+        }
+        return HalloweenProgressData.get(serverLevel.getServer());
+    }
+
     private static void applyTalismanModifier(ServerPlayer player) {
         AttributeInstance attribute = player.getAttribute(Attributes.MAX_HEALTH);
         if (attribute != null) attribute.addOrUpdateTransientModifier(TALISMAN_HEALTH);
@@ -336,7 +343,7 @@ public final class HalloweenGameplay {
             source.sendFailure(Component.literal("HalloweenCore: tento svět není povolen pro Halloween obsah."));
             return 0;
         }
-        HalloweenProgressData data = HalloweenProgressData.get(player.getServer());
+        HalloweenProgressData data = progressDataFor(player);
         source.sendSuccess(() -> Component.literal("HalloweenCore — tvůj trvalý postup"), false);
         source.sendSuccess(() -> Component.literal("Fragmenty: " + data.getPlayerValue(player.getUUID(), "fragments")), false);
         source.sendSuccess(() -> Component.literal("Speciální mobů poraženo: " + data.getPlayerValue(player.getUUID(), "special_mob_kills")), false);
