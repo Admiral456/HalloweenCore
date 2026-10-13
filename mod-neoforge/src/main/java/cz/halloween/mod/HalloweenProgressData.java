@@ -97,6 +97,16 @@ public final class HalloweenProgressData extends SavedData {
         return global.getOrDefault(key, 0L);
     }
 
+    public long setGlobalValue(String key, long value) {
+        if (key == null || key.isBlank()) return getGlobalValue(key);
+        long next = Math.max(0L, value);
+        if (global.getOrDefault(key, 0L) != next) {
+            global.put(key, next);
+            setDirty();
+        }
+        return next;
+    }
+
     public long addGlobalValue(String key, long amount) {
         if (key == null || key.isBlank() || amount <= 0L) return getGlobalValue(key);
         long current = global.getOrDefault(key, 0L);
