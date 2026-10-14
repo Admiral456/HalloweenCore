@@ -191,6 +191,8 @@ public final class HalloweenEventManager {
         if (configured == null || configured.isBlank()) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player)
+                    || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
             try {
                 player.playSound(player.getLocation(), configured.toLowerCase(Locale.ROOT), SoundCategory.AMBIENT, 0.9f, 1.0f);
             } catch (Exception ignored) {
