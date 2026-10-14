@@ -163,6 +163,27 @@ if "setHealth(Math.min(player.getHealth()" not in passives:
 if "completeStoryQuest(playerId, quest.id())" not in quests or "plugin.getDataManager().save();" not in quests:
     fail("Story quest completion must be idempotent and persisted")
 
+# Seasonal schedule and Witching Hour runtime wiring.
+season_manager = read("src/main/java/cz/halloween/core/HalloweenSeasonManager.java")
+join_listener = read("src/main/java/cz/halloween/core/HalloweenJoinListener.java")
+for marker in ("migrateSeasonAndWitchingDefaults()", "seasonManager.start()",
+               "seasonManager.refresh()", "getSeasonManager()"):
+    if marker not in core:
+        fail(f"Season scheduler is not fully wired into HalloweenCore: {marker}")
+for marker in ("season.runtime-last-in-season", "sendCountdownIfNeeded(",
+               "witching-hour.interval-multiplier", "reschedule-on-transition",
+               "ambient-interval-seconds", "isWitchingHourActive(World world)"):
+    if marker not in season_manager:
+        fail(f"Season/Witching Hour behavior is missing: {marker}")
+if "sendCountdownIfNeeded(player)" not in join_listener:
+    fail("Joining players are not shown the pre-season countdown")
+if "getEventIntervalMultiplier()" not in events or "rescheduleForTimeWindow()" not in events:
+    fail("Witching Hour does not affect/reschedule the random event timer")
+if "season:\n  enabled: true" not in config or "witching-hour:\n  enabled: true" not in config:
+    fail("Default config must enable the scheduled Halloween season and Witching Hour")
+if "## Automatická sezóna a Čarodějnická hodina" not in readme:
+    fail("README is missing season/Witching Hour configuration documentation")
+
 for item in (
     "/halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena>",
     "/halloween status",
@@ -181,4 +202,5 @@ print("- command route for all eight admin mob spawns and five manual structures
 print("- persistent nearest-structure locating for all five Halloween structure types")
 print("- single-location Blood Moon damage multiplier and eligible-world filtering")
 print("- one-heart talisman migration and persisted idempotent story quest completion")
+print("- calendar season transitions/countdown and real-time or Minecraft-time Witching Hour")
 print("Note: this is static validation only; actual Paper/Purpur and client rendering still need live tests.")
