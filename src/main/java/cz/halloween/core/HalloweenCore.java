@@ -578,7 +578,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public boolean isEligibleGameplayWorld(World world) {
         if (world == null) return false;
         // Hard safety boundary, independent of configurable world lists.
-        if ("Spawn".equalsIgnoreCase(world.getName())) return false;
+        if (HalloweenWorldPolicy.isReservedWorld(world.getName())) return false;
 
         java.util.List<String> worlds = getConfig().getStringList("gameplay.worlds.names");
         if (worlds.isEmpty()) return true;
