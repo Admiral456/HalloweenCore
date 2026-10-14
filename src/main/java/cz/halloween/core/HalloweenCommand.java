@@ -30,10 +30,16 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "spawn", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("spawn")
+                && sender.hasPermission("halloweencore.structures")) {
+            return List.of("hřbitov", "vesnice", "aréna", "vampirearena", "goblinarena").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
@@ -137,6 +143,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
         if (args[0].equalsIgnoreCase("curse")) return curse(sender);
         if (args[0].equalsIgnoreCase("event")) return event(sender, args);
+        if (args[0].equalsIgnoreCase("spawn")) return spawnStructure(sender, args);
         if (args[0].equalsIgnoreCase("rewards")) return rewards(sender);
         if (args[0].equalsIgnoreCase("claim")) return claim(sender, args);
         if (args[0].equalsIgnoreCase("challenge")) return challenge(sender);
@@ -178,6 +185,26 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
+        return true;
+    }
+
+    private boolean spawnStructure(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cStrukturu musíš vyvolat ve hře, aby se umístila před tebe."));
+            return true;
+        }
+        if (args.length != 2) {
+            sender.sendMessage(plugin.color("&ePoužití: &6/halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena>"));
+            sender.sendMessage(plugin.color("&7Bez souřadnic, výběru středu nebo potvrzování — stavba začne automaticky před tebou."));
+            return true;
+        }
+        HalloweenStructureManager manager = plugin.getStructureManager();
+        if (manager == null) {
+            sender.sendMessage(plugin.color("&cGenerátor struktur není dostupný."));
+            return true;
+        }
+        manager.buildBeforePlayer(player, args[1]);
         return true;
     }
 
