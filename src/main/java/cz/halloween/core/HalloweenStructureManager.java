@@ -115,6 +115,10 @@ public final class HalloweenStructureManager implements Listener {
         this.generatedStructureIndex.addAll(plugin.getConfig().getStringList("world-generation.generated-structure-index"));
     }
 
+    public boolean isBuilding() {
+        return building;
+    }
+
     /**
      * One command, one action. No location setup, centre selection, or confirmation
      * command is required. This path intentionally does not apply the automatic-world
@@ -225,23 +229,21 @@ public final class HalloweenStructureManager implements Listener {
         Random random = new Random(seed);
         if (random.nextInt(oneIn) != 0) return;
 
+        int centerX = (chunk.getX() << 4) + 8;
+        int centerZ = (chunk.getZ() << 4) + 8;
+        int surfaceY = world.getHighestBlockYAt(centerX, centerZ);
+        Biome surfaceBiome = world.getBlockAt(centerX, surfaceY, centerZ).getBiome();
         List<String> allowedBiomes = plugin.getConfig().getStringList("world-generation.allowed-biomes");
         if (!allowedBiomes.isEmpty()) {
-            String biomeName = chunk.getBlock(8, Math.max(world.getMinHeight(), world.getMinHeight() + 1), 8)
-                    .getBiome().name();
-            // Biome on the surface is checked below as well; this quick check avoids
-            // scanning terrain for explicitly disallowed biome names.
             boolean listed = allowedBiomes.stream().anyMatch(name -> name != null
-                    && name.trim().equalsIgnoreCase(biomeName));
+                    && name.trim().equalsIgnoreCase(surfaceBiome.name()));
             if (!listed) return;
-        } else if (!isSuitableBiome(chunk.getBlock(8, world.getMinHeight() + 1, 8).getBiome())) {
+        } else if (!isSuitableBiome(surfaceBiome)) {
             return;
         }
 
         StructureType type = random.nextBoolean() ? StructureType.AUTO_CEMETERY : StructureType.AUTO_VILLAGE;
-        int centerX = (chunk.getX() << 4) + 8;
-        int centerZ = (chunk.getZ() << 4) + 8;
-        int floorY = world.getHighestBlockYAt(centerX, centerZ);
+        int floorY = surfaceY;
         if (!insideBorder(world, centerX, centerZ, type.radius)
                 || floorY - 2 < world.getMinHeight()
                 || floorY + type.clearHeight >= world.getMaxHeight()) return;
@@ -319,9 +321,10 @@ public final class HalloweenStructureManager implements Listener {
                     if (material.isAir() || isReplaceableGroundPlant(material)) continue;
                     return false;
                 }
-                // Never clear inventories, signs, skulls or other block entities,
-                // including block entities concealed just below the surface.
-                for (int y = Math.max(world.getMinHeight(), floorY - 2); y <= Math.min(groundY, floorY); y++) {
+                // Never clear inventories, signs, skulls or other block entities
+                // anywhere in the planned write volume, including hidden containers.
+                for (int y = Math.max(world.getMinHeight(), floorY - 2);
+                     y < Math.min(world.getMaxHeight(), floorY + type.clearHeight); y++) {
                     if (world.getBlockAt(x, y, z).getState() instanceof TileState) return false;
                 }
             }
@@ -550,7 +553,8 @@ public final class HalloweenStructureManager implements Listener {
             for (int z = -r; z <= r; z++) {
                 if (!insideFootprint(type, x, z)) continue;
                 put(plan, type, cx, floorY, cz, rotation, x, floorY - 2, z,
-                        type == StructureType.CEMETERY ? Material.DEEPSLATE_BRICKS : foundation(type));
+                        type == StructureType.CEMETERY || type == StructureType.AUTO_CEMETERY
+                                ? Material.DEEPSLATE_BRICKS : foundation(type));
                 put(plan, type, cx, floorY, cz, rotation, x, floorY - 1, z, foundation(type));
                 for (int dy = 0; dy < type.clearHeight; dy++) {
                     put(plan, type, cx, floorY, cz, rotation, x, floorY + dy, z, Material.AIR);
@@ -576,8 +580,8 @@ public final class HalloweenStructureManager implements Listener {
     }
 
     private Material foundation(StructureType type) {
-        return type == StructureType.VILLAGE ? Material.DIRT
-                : type == StructureType.CEMETERY ? Material.DEEPSLATE_BRICKS
+        return type == StructureType.VILLAGE || type == StructureType.AUTO_VILLAGE ? Material.DIRT
+                : type == StructureType.CEMETERY || type == StructureType.AUTO_CEMETERY ? Material.DEEPSLATE_BRICKS
                 : type == StructureType.GOBLIN_ARENA ? Material.COBBLED_DEEPSLATE
                 : Material.POLISHED_BLACKSTONE;
     }
