@@ -40,6 +40,7 @@ public final class HalloweenStructureManager implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey naturalChunkKey;
     private final Set<BuildJob> activeJobs = new LinkedHashSet<>();
+    private boolean suppressAutomaticGeneration;
 
     private static final class BuildJob {
         final Player player;
@@ -73,7 +74,7 @@ public final class HalloweenStructureManager implements Listener {
     /** Only brand-new chunks in explicitly allowed worlds are candidates for automatic structures. */
     @EventHandler
     public void onNewChunk(ChunkLoadEvent event) {
-        if (!event.isNewChunk() || !plugin.isEventEnabled()
+        if (suppressAutomaticGeneration || !event.isNewChunk() || !plugin.isEventEnabled()
                 || !plugin.getConfig().getBoolean("world-generation.enabled", true)) return;
         Chunk chunk = event.getChunk();
         World world = chunk.getWorld();
@@ -81,6 +82,11 @@ public final class HalloweenStructureManager implements Listener {
                 || !plugin.isEligibleGameplayWorld(world)
                 || !plugin.getConfig().getStringList("world-generation.allowed-worlds").stream()
                     .anyMatch(name -> name.equalsIgnoreCase(world.getName()))) return;
+        List<String> allowedBiomes = plugin.getConfig().getStringList("world-generation.allowed-biomes");
+        if (allowedBiomes.isEmpty()) {
+            allowedBiomes = List.of("PLAINS", "FOREST", "DARK_FOREST", "TAIGA",
+                    "OLD_GROWTH_PINE_TAIGA", "OLD_GROWTH_SPRUCE_TAIGA", "MEADOW");
+        }
         if (chunk.getPersistentDataContainer().has(naturalChunkKey, PersistentDataType.BYTE)) return;
 
         long seed = world.getSeed() ^ ((long) chunk.getX() * 341873128712L)
@@ -89,6 +95,8 @@ public final class HalloweenStructureManager implements Listener {
         int cemeteryDenominator = Math.max(1, Math.min(100000, plugin.getConfig().getInt("world-generation.cemetery-chance-denominator", 256)));
         int villageDenominator = Math.max(1, Math.min(100000, plugin.getConfig().getInt("world-generation.village-chance-denominator", 512)));
         try {
+            String biome = world.getBiome(cx, baseSurfaceY(world, cx, cz), cz).name();
+            if (allowedBiomes.stream().noneMatch(name -> name.equalsIgnoreCase(biome))) return;
             if (random.nextInt(cemeteryDenominator) == 0) {
                 buildNaturalCemetery(chunk, random);
             } else if (random.nextInt(villageDenominator) == 0) {
@@ -150,6 +158,10 @@ public final class HalloweenStructureManager implements Listener {
         plugin.getLogger().info("Generated natural Halloween village in " + world.getName() + " at " + cx + "," + baseY + "," + cz);
     }
 
+    private int baseSurfaceY(World world, int x, int z) {
+        return Math.max(world.getMinHeight(), world.getHighestBlockYAt(x, z));
+    }
+
     private boolean isNaturalFlatFootprint(Chunk chunk, int cx, int cz, int radius, int expectedY) {
         World world = chunk.getWorld();
         for (int x = cx - radius; x <= cx + radius; x++) for (int z = cz - radius; z <= cz + radius; z++) {
@@ -199,10 +211,19 @@ public final class HalloweenStructureManager implements Listener {
         Map<Pos, Material> plan;
         try {
             // Load only chunks covered by this manually requested structure.
-            for (int x = centerX - radius; x <= centerX + radius; x += 16) {
-                for (int z = centerZ - radius; z <= centerZ + radius; z += 16) {
-                    world.getChunkAt(x >> 4, z >> 4);
+            suppressAutomaticGeneration = true;
+            try {
+                int minChunkX = (centerX - radius) >> 4;
+                int maxChunkX = (centerX + radius) >> 4;
+                int minChunkZ = (centerZ - radius) >> 4;
+                int maxChunkZ = (centerZ + radius) >> 4;
+                for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                    for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                        world.getChunkAt(chunkX, chunkZ);
+                    }
                 }
+            } finally {
+                suppressAutomaticGeneration = false;
             }
             baseY = findGroundY(world, centerX, centerZ);
             if (baseY <= world.getMinHeight() + 1 || baseY + clearance(type) >= world.getMaxHeight()) {
