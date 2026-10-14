@@ -576,15 +576,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
      * do not call this method, so an explicit build in Spawn remains possible.
      */
     public boolean isEligibleGameplayWorld(World world) {
-        if (world == null) return false;
-        if ("spawn".equalsIgnoreCase(world.getName().trim())) return false;
-
-        java.util.List<String> worlds = getConfig().getStringList("gameplay.worlds.names");
-        boolean listed = worlds.stream().anyMatch(name -> name != null
-                && name.trim().equalsIgnoreCase(world.getName().trim()));
-        String mode = getConfig().getString("gameplay.worlds.mode", "BLACKLIST");
-        if ("WHITELIST".equalsIgnoreCase(mode)) return listed;
-        return !listed;
+        return world != null && HalloweenWorldPolicy.isGameplayWorldEligible(
+                world.getName(),
+                getConfig().getStringList("gameplay.worlds.names"),
+                getConfig().getString("gameplay.worlds.mode", "BLACKLIST"));
     }
 
     public HalloweenStructureManager getStructureManager() {
@@ -597,11 +592,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
      * This is separate from manual administrator structure commands.
      */
     public boolean isEligibleAutomaticHalloweenWorld(World world) {
-        if (world == null || "spawn".equalsIgnoreCase(world.getName().trim())) return false;
-        java.util.List<String> allowed = getConfig().getStringList("world-generation.allowed-worlds");
-        if (allowed.isEmpty()) return false;
-        return allowed.stream().anyMatch(name -> name != null
-                && name.trim().equalsIgnoreCase(world.getName().trim()));
+        return world != null && HalloweenWorldPolicy.isAutomaticWorldEligible(
+                world.getName(), getConfig().getStringList("world-generation.allowed-worlds"));
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {
