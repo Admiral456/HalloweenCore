@@ -33,7 +33,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "locate", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "locate", "grave", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -41,6 +41,11 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("locate") && plugin.getStructureManager() != null) {
             return plugin.getStructureManager().locateTabComplete(args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("grave")
+                && sender.hasPermission("halloweencore.admin")
+                && plugin.getGraveEncounterManager() != null) {
+            return plugin.getGraveEncounterManager().tabComplete(args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) {
             java.util.stream.Stream<String> structures = plugin.getStructureManager() == null
@@ -200,6 +205,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
             }
             return plugin.getStructureManager() == null ? true : plugin.getStructureManager().handleCommand(sender, args);
         }
+        if (args[0].equalsIgnoreCase("grave")) return grave(sender, args);
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
         if (args[0].equalsIgnoreCase("setsecret")) return setSecret(sender, args);
         if (args[0].equalsIgnoreCase("secrets")) return showSecrets(sender);
@@ -223,6 +229,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
         sender.sendMessage(plugin.color("&6/halloween status &7- stav automatických světů, eventů a generování (admin)"));
         sender.sendMessage(plugin.color("&6/halloween locate <typ|all> &7- najde nejbližší zaznamenanou Halloween strukturu"));
+        sender.sendMessage(plugin.color("&6/halloween grave test &7- spustí tříkolový hřbitovní rituál pro testování (admin)"));
         sender.sendMessage(plugin.color("&6/halloween spawn <struktura|mob> &7- ruční struktura před tebou (FORCE) nebo testovací spawn jednoho z osmi mobů"));
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
@@ -945,6 +952,25 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         }
         sender.sendMessage(plugin.color("&aPřidáno &e" + amount + " &afragmentů hráči &f" + target.getName() + "&a."));
         target.sendMessage(plugin.color("&6Získal jsi &e" + amount + " &6Halloween fragmentů. Celkem: &e" + newBalance));
+        return true;
+    }
+
+    private boolean grave(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (args.length != 2 || !args[1].equalsIgnoreCase("test")) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween grave test"));
+            sender.sendMessage(plugin.color("&7Testovací rituál se spustí kolem tvé aktuální pozice; odměna se neuděluje."));
+            return true;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTestovací hřbitovní rituál musíš spustit přímo ve hře."));
+            return true;
+        }
+        boolean started = plugin.getGraveEncounterManager() != null
+                && plugin.getGraveEncounterManager().startTestEncounter(player);
+        player.sendMessage(plugin.color(started
+                ? "&8Hřbitovní rituál byl zahájen. Připrav se na tři vlny."
+                : "&cRituál se nepodařilo spustit. Ověř, zda je Halloween zapnutý a nejsi ve chráněném světě."));
         return true;
     }
 
