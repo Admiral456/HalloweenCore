@@ -231,6 +231,8 @@ public final class HalloweenStructureManager implements Listener {
 
         int centerX = (chunk.getX() << 4) + 8;
         int centerZ = (chunk.getZ() << 4) + 8;
+        if (!HalloweenStructureGeometry.footprintFitsChunk(
+                chunk.getX(), chunk.getZ(), centerX, centerZ, 7)) return;
         int surfaceY = world.getHighestBlockYAt(centerX, centerZ);
         Biome surfaceBiome = world.getBlockAt(centerX, surfaceY, centerZ).getBiome();
         List<String> allowedBiomes = plugin.getConfig().getStringList("world-generation.allowed-biomes");
@@ -575,8 +577,7 @@ public final class HalloweenStructureManager implements Listener {
     }
 
     private boolean insideFootprint(StructureType type, int x, int z) {
-        return type.circular ? x * x + z * z <= type.radius * type.radius
-                : Math.abs(x) <= type.radius && Math.abs(z) <= type.radius;
+        return HalloweenStructureGeometry.insideFootprint(x, z, type.radius, type.circular);
     }
 
     private Material foundation(StructureType type) {
@@ -849,14 +850,9 @@ public final class HalloweenStructureManager implements Listener {
                      int cx, int floorY, int cz, int rot, int lx, int y, int lz, Material material) {
         // Rotation is snapped to cardinal directions; the entire plan remains in the
         // exact square/circle footprint. No code path writes outside those bounds.
-        int rx;
-        int rz;
-        switch (rot) {
-            case 1 -> { rx = -lz; rz = lx; }
-            case 2 -> { rx = -lx; rz = -lz; }
-            case 3 -> { rx = lz; rz = -lx; }
-            default -> { rx = lx; rz = lz; }
-        }
+        HalloweenStructureGeometry.Offset offset = HalloweenStructureGeometry.rotate(rot, lx, lz);
+        int rx = offset.x();
+        int rz = offset.z();
         if (Math.abs(rx) > type.radius || Math.abs(rz) > type.radius
                 || (type.circular && rx * rx + rz * rz > type.radius * type.radius)) return;
         if (y < floorY - 2 || y >= floorY + type.clearHeight) return;
