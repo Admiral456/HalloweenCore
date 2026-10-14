@@ -71,7 +71,7 @@ Ruční stavby se spouštějí jediným příkazem přímo ve hře:
 
 Není nutné nastavovat souřadnice, stát uprostřed místa ani potvrzovat druhým příkazem. Struktura se umístí přibližně 8 bloků před hráče podle směru pohledu. Ruční FORCE režim může přepsat bloky uvnitř přesně vymezeného půdorysu a výšky; probíhá po dávkách a při výjimce se pokusí o rollback. Příkaz `/spawn` samotný nepřebíráme, protože na serveru může patřit EssentialsX nebo jinému pluginu.
 
-Příkazy vyžadují `hallowencore.admin`, `hallowencore.structure.build` a `hallowencore.structure.force`. Všechny jsou standardně dostupné operátorům.
+Příkazy vyžadují `hallowencore.admin`, `halloweencore.structure.build` a `halloweencore.structure.force`. Všechny jsou standardně dostupné operátorům.
 
 **Ochrana světa `Spawn`:** automatické eventy a jejich speciální mobové nemohou v tomto světě aktivovat herní mechaniky. Automatické struktury a povrchové dekorace se navíc fail-closed řídí výslovným seznamem světů `world-generation.allowed-worlds`. Seznam je záměrně prázdný, dokud nejsou ověřeny skutečné názvy herních světů; automatické úpravy tak nezačnou v neověřeném světě. Přidej jen skutečný název schváleného survival světa — `Spawn` zůstává zakázán i při omylem přidaném názvu.
 
