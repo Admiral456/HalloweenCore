@@ -58,7 +58,6 @@ public final class HalloweenStructureManager {
     }
 
     private record BlockPos(int x, int y, int z) {}
-    private record BlockOp(BlockPos pos, Material material) {}
 
     private static final class BuildJob {
         final Player player;
@@ -68,6 +67,7 @@ public final class HalloweenStructureManager {
         final int floorY;
         final int centerZ;
         final LinkedHashMap<BlockPos, Material> plan;
+        final List<Map.Entry<BlockPos, Material>> operations;
         final LinkedHashMap<BlockPos, BlockState> snapshots = new LinkedHashMap<>();
         List<Map.Entry<BlockPos, BlockState>> rollbackEntries = List.of();
         int cursor;
@@ -85,6 +85,7 @@ public final class HalloweenStructureManager {
             this.floorY = floorY;
             this.centerZ = centerZ;
             this.plan = plan;
+            this.operations = new ArrayList<>(plan.entrySet());
         }
     }
 
@@ -187,23 +188,10 @@ public final class HalloweenStructureManager {
         }
 
         try {
-            List<BlockOp> operations = job.cursor == 0 || job.cursor < job.plan.size()
-                    ? null : List.of();
-            int processed = 0;
-            for (Map.Entry<BlockPos, Material> entry : job.plan.entrySet()) {
-                if (processed >= BLOCKS_PER_TICK) break;
-                // Iterate directly from cursor without copying the entire 200k plan.
-                if (processed == 0 && job.cursor >= job.plan.size()) break;
-                if (job.cursor > 0 && processed < 0) continue;
-                processed++;
-            }
-
             int start = job.cursor;
-            int end = Math.min(job.plan.size(), start + BLOCKS_PER_TICK);
-            int index = 0;
-            for (Map.Entry<BlockPos, Material> entry : job.plan.entrySet()) {
-                if (index++ < start) continue;
-                if (index > end) break;
+            int end = Math.min(job.operations.size(), start + BLOCKS_PER_TICK);
+            for (int index = start; index < end; index++) {
+                Map.Entry<BlockPos, Material> entry = job.operations.get(index);
                 BlockPos pos = entry.getKey();
                 Block block = job.world.getBlockAt(pos.x(), pos.y(), pos.z());
                 Material desired = entry.getValue();
