@@ -68,6 +68,8 @@ public final class HalloweenEventManager {
     public boolean startEventNow(String requestedId) {
         if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)) return false;
         if (activeEventId != null) return false;
+        if (Bukkit.getOnlinePlayers().stream().noneMatch(player ->
+                plugin.isEligibleGameplayPlayer(player) && plugin.isEligibleGameplayWorld(player.getWorld()))) return false;
 
         String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
         if (eventId.isEmpty() || eventId.equals("random")) {
@@ -117,7 +119,8 @@ public final class HalloweenEventManager {
             runActiveEventEffects(now);
         }
 
-        if (activeEventId == null && now >= nextEventAt && !Bukkit.getOnlinePlayers().isEmpty()) {
+        if (activeEventId == null && now >= nextEventAt && Bukkit.getOnlinePlayers().stream().anyMatch(player ->
+                plugin.isEligibleGameplayPlayer(player) && plugin.isEligibleGameplayWorld(player.getWorld()))) {
             startRandomEvent();
         }
     }
@@ -184,6 +187,7 @@ public final class HalloweenEventManager {
         if (configured == null || configured.isBlank()) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
             try {
                 player.playSound(player.getLocation(), configured.toLowerCase(Locale.ROOT), SoundCategory.AMBIENT, 0.9f, 1.0f);
             } catch (Exception ignored) {
