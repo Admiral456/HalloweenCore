@@ -415,14 +415,14 @@ public final class HalloweenMobManager implements Listener {
     }
 
     public boolean spawnEventMob(Player player) {
-        if (target == null || !plugin.isEligibleGameplayWorld(target.getWorld())) return false;
+        if (player == null || !plugin.isEligibleGameplayWorld(player.getWorld())) return false;
         String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
         return spawnEventMob(player, ids[ThreadLocalRandom.current().nextInt(ids.length)]);
     }
 
     /** Spawn a specific special type so every event can choose its own enemy mix. */
     public boolean spawnEventMob(Player player, String mobId) {
-        if (!plugin.isEventEnabled() || player == null
+        if (!plugin.isEventEnabled() || player == null || !plugin.isEligibleGameplayWorld(player.getWorld())
                 || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
         if (!isKnownSpecialMob(mobId)) return false;
 
