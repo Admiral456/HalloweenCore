@@ -139,15 +139,19 @@ public final class HalloweenGraveEncounterManager implements Listener {
         for (int dx = -scan; dx <= scan; dx++) {
             for (int dz = -scan; dz <= scan; dz++) {
                 if (dx * dx + dz * dz > scan * scan) continue;
-                Material type = location.getWorld().getBlockAt(
-                        location.getBlockX() + dx, location.getBlockY(), location.getBlockZ() + dz).getType();
-                if (type == Material.MOSSY_COBBLESTONE_WALL
-                        || type == Material.COBBLESTONE_WALL
-                        || type == Material.MOSSY_STONE_BRICK_WALL
-                        || type == Material.STONE_BRICK_WALL
-                        || type == Material.POLISHED_BLACKSTONE_BRICK_WALL) {
-                    markers++;
-                    if (markers >= 4) return true;
+                for (int dy = -2; dy <= 2; dy++) {
+                    int y = location.getBlockY() + dy;
+                    if (y < location.getWorld().getMinHeight() || y >= location.getWorld().getMaxHeight()) continue;
+                    Material type = location.getWorld().getBlockAt(
+                            location.getBlockX() + dx, y, location.getBlockZ() + dz).getType();
+                    if (type == Material.MOSSY_COBBLESTONE_WALL
+                            || type == Material.COBBLESTONE_WALL
+                            || type == Material.MOSSY_STONE_BRICK_WALL
+                            || type == Material.STONE_BRICK_WALL
+                            || type == Material.POLISHED_BLACKSTONE_BRICK_WALL) {
+                        markers++;
+                        if (markers >= 4) return true;
+                    }
                 }
             }
         }
@@ -217,10 +221,15 @@ public final class HalloweenGraveEncounterManager implements Listener {
             default -> finish(encounter, false, false);
         }
 
+        if (wave == 3 && encounter.boss == null) {
+            // A final wave without its boss is not a successful encounter and must never award loot.
+            finish(encounter, false, false);
+            return;
+        }
         if (encounter.mobs.isEmpty()) {
             Bukkit.getScheduler().runTaskLater(plugin, () -> {
                 if (activeBySite.containsKey(encounter.siteKey) && encounter.mobs.isEmpty()) {
-                    if (encounter.wave >= 3) finish(encounter, true, true);
+                    if (encounter.wave >= 3) finish(encounter, false, false);
                     else startWave(encounter, encounter.wave + 1);
                 }
             }, 40L);
@@ -266,7 +275,9 @@ public final class HalloweenGraveEncounterManager implements Listener {
         Iterator<Encounter> iterator = new ArrayList<>(activeBySite.values()).iterator();
         while (iterator.hasNext()) {
             Encounter encounter = iterator.next();
-            if (!encounter.center.getChunk().isLoaded() || !plugin.isEventEnabled()) {
+            if (!encounter.center.getWorld().isChunkLoaded(
+                    encounter.center.getBlockX() >> 4, encounter.center.getBlockZ() >> 4)
+                    || !plugin.isEventEnabled()) {
                 finish(encounter, false, false);
                 continue;
             }
