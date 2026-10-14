@@ -416,6 +416,19 @@ curse:
       threshold: 12000
       name: "Zasvěcený temnotě"
 
+
+# Headless Nick stalks only eligible players in explicitly allowed natural-generation worlds at night.
+# Final rider/horse appearance requires the matching ModelEngine blueprints and merged resource pack.
+headless-nick:
+  enabled: true
+  check-interval-ticks: 200
+  chance-per-check: 0.10
+  min-spawn-distance-blocks: 18
+  max-spawn-distance-blocks: 28
+  lifetime-seconds: 90
+  attack-damage: 5.0
+  attack-cooldown-ms: 2500
+
 random-events:
   enabled: true
   # /halloween on starts the first event after a short warning.
