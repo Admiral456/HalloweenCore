@@ -29,6 +29,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
     private final NamespacedKey legacyDecoratedKey;
+    private final NamespacedKey autoStructureKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
@@ -39,6 +40,7 @@ public final class HalloweenWorldDecorator implements Listener {
         this.plugin = plugin;
         this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
         this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.autoStructureKey = new NamespacedKey(plugin, "halloween_auto_structure_v1");
     }
 
     public void start() {
@@ -126,6 +128,7 @@ public final class HalloweenWorldDecorator implements Listener {
 
     private void decorateChunk(Chunk chunk) {
         if (!plugin.isAutomaticHalloweenWorld(chunk.getWorld())) return;
+        if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) return;
         // Existing decorated chunks get only the new accent layer. Avoid stacking
         // a second batch of pumpkins/cobwebs when upgrading an already-running world.
         boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE);
