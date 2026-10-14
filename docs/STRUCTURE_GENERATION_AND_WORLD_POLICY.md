@@ -48,6 +48,7 @@ world-generation:
 Nahraď `PRESNY_NAZEV_HERNÍHO_SVETA` skutečným názvem ověřeným na serveru. Tento návod záměrně neodhaduje, zda se svět jmenuje `world`, `survival` nebo jinak. Prázdný `allowed-worlds` znamená, že žádné automatické úpravy světa neproběhnou; plugin při startu vypíše upozornění. Seznam biomů může zůstat prázdný (potom se použije vestavěný výběr vhodných biomů), anebo může obsahovat přesné Bukkit názvy biomů.
 
 Svět pojmenovaný `Spawn` je odmítnut přímo v centrální policy bez ohledu na konfiguraci, režim blacklistu ani omylem přidaný název ve whitelistu. Pravidlo platí pro eventové efekty a moby, přirozené speciální moby, automatické povrchové dekorace a automatické struktury. Staré chunky se automaticky neprocházejí a zpětně neupravují. Dekorace a větší automatické struktury se posuzují jen při načítání nového chunku.
+Když je WorldGuard aktivní, kandidát automatické stavby/dekorace se odmítne v pojmenovaném regionu; pokud volitelná API kontrola selže, generování se na daném místě zastaví (fail-closed). Tato integrace je přidaná bez povinné závislosti, ale **kompatibilita s reálným WorldGuard serverem zatím není runtime-testovaná**. Ruční FORCE příkaz tuto automatickou ochranu regionů záměrně nevolá; používej ho pouze s oprávněním a počítej s přepsáním vymezeného objemu.
 
 ### Automatické hřbitovy a osady
 
