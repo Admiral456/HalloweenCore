@@ -16,7 +16,7 @@ permissions:
     default: true
   halloweencore.admin:
     default: op
-  hallowencore.structure.build:
+  halloweencore.structure.build:
     default: op
-  hallowencore.structure.force:
+  halloweencore.structure.force:
     default: op
