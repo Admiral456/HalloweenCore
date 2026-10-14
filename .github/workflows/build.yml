@@ -24,7 +24,10 @@ jobs:
           fi
       - name: Generate Halloween audio
         run: python3 scripts/generate_halloween_audio.py
-      # Artist-owned PNGs are checked as committed; CI must not regenerate/recolor textures.
+      # Player-owned shop and gear icons are reproducibly generated. Artist-owned mob UV atlases remain untouched.
+      - name: Generate Halloween item textures
+        run: python3 scripts/generate_halloween_item_textures.py
+      # Artist-owned mob PNGs are checked as committed; CI must not regenerate/recolor those textures.
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
       - name: Validate Vampire King model
