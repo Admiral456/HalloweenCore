@@ -459,7 +459,7 @@ public final class HalloweenMobManager implements Listener {
         if (!plugin.isEventEnabled() || player == null || !player.isOnline()) return false;
         if (!plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
         World world = player.getWorld();
-        if (!plugin.isEligibleGameplayWorld(world)) return false;
+        if (!plugin.isAutomaticHalloweenWorld(world)) return false;
 
         int maxEventMobs = Math.max(1, Math.min(80,
                 plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
