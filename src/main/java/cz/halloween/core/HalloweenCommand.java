@@ -546,9 +546,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
     private boolean spawnStructure(CommandSender sender, String type) {
         if (!checkAdmin(sender)) return true;
-        if (!sender.hasPermission("hallowencore.structure.build")
-                || !sender.hasPermission("hallowencore.structure.force")) {
-            sender.sendMessage(plugin.color("&cChybí oprávnění hallowencore.structure.build a hallowencore.structure.force."));
+        if (!sender.hasPermission("halloweencore.structure.build")
+                || !sender.hasPermission("halloweencore.structure.force")) {
+            sender.sendMessage(plugin.color("&cChybí oprávnění halloweencore.structure.build a halloweencore.structure.force."));
             return true;
         }
         if (!(sender instanceof Player player)) {
