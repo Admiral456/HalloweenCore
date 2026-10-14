@@ -37,8 +37,12 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) {
-            return plugin.getStructureManager() == null ? List.of()
-                    : plugin.getStructureManager().tabComplete(args[1]);
+            java.util.stream.Stream<String> structures = plugin.getStructureManager() == null
+                    ? java.util.stream.Stream.empty() : plugin.getStructureManager().tabComplete(args[1]).stream();
+            java.util.stream.Stream<String> mobs = plugin.getMobManager() == null
+                    ? java.util.stream.Stream.empty() : plugin.getMobManager().getManualMobIds().stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)));
+            return java.util.stream.Stream.concat(structures, mobs).distinct().sorted().toList();
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
                 && sender.hasPermission("halloweencore.admin")) {
@@ -149,6 +153,26 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("status")) return status(sender);
         if (args[0].equalsIgnoreCase("spawn")) {
+            if (args.length >= 2 && plugin.getMobManager() != null
+                    && plugin.getMobManager().isManualMobId(args[1])) {
+                if (!sender.hasPermission("halloweencore.admin") && !sender.hasPermission("halloweencore.mob.spawn")) {
+                    sender.sendMessage(plugin.message("messages.no-permission"));
+                    return true;
+                }
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(plugin.color("&cSpawnování mobů musíš spustit přímo ve hře."));
+                    return true;
+                }
+                if (!plugin.isEligibleGameplayWorld(player.getWorld())) {
+                    player.sendMessage(plugin.color("&cRuční spawn mobů je ve světě Spawn zablokovaný. Struktury tam lze vytvářet přes /halloween spawn."));
+                    return true;
+                }
+                boolean spawned = plugin.getMobManager().spawnManualMob(player, args[1]);
+                player.sendMessage(plugin.color(spawned
+                        ? "&aHalloween mob &f" + args[1] + " &aby byl vyvolán před tebou."
+                        : "&cMoba se nepodařilo vyvolat. Zkontroluj místo a integrace MythicMobs/ModelEngine."));
+                return true;
+            }
             return plugin.getStructureManager() == null ? true : plugin.getStructureManager().handleCommand(sender, args);
         }
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
@@ -176,7 +200,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
         sender.sendMessage(plugin.color("&6/halloween status &7- stav automatických světů, eventů a generování (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> &7- okamžitě postaví strukturu před tebou (admin, FORCE)"));
+        sender.sendMessage(plugin.color("&6/halloween spawn <struktura|mob> &7- ruční struktura před tebou (FORCE) nebo testovací spawn jednoho z osmi mobů"));
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
