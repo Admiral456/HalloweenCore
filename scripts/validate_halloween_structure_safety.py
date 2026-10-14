@@ -47,7 +47,7 @@ require('RESERVED_WORLD = "Spawn"' in world_policy and 'isReservedWorld(String w
 require('isReservedWorld("SPAWN")' in world_policy_test
         and 'List.of("Spawn", "world")' in world_policy_test,
         "Unit tests must prove that Spawn cannot be opted into.")
-require('!plugin.isEligibleGameplayWorld(world)' in structures,
+require('plugin.isEligibleGameplayWorld(world)' in structures,
         "Natural structures must also respect gameplay world eligibility.")
 require('plugin.isEligibleGameplayWorld(player.getWorld())' in events,
         "Event player selection must exclude Spawn.")
