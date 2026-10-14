@@ -47,8 +47,8 @@ for marker in (
         fail(f"Automatic world safety guard is missing: {marker}")
 if 'automatic-world-generation:\n  enabled: true\n  allowed-worlds: ["*"]' not in config:
     fail("Default automatic world generation must cover all non-Spawn worlds")
-if "event.isNewChunk()" not in structures:
-    fail("Natural structures must only be attempted on newly generated chunks")
+if "boolean includeExisting = plugin.getConfig().getBoolean(" not in structures or "(!event.isNewChunk() && !includeExisting)" not in structures:
+    fail("Natural structures must respect the existing-chunk setting instead of silently skipping explored chunks")
 if "plugin.isAutomaticHalloweenWorld(event.getWorld())" not in structures:
     fail("Natural structures are missing the explicit world allow-list guard")
 if "plugin.isAutomaticHalloweenWorld(event.getWorld())" not in decorator:
