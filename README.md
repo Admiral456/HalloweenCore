@@ -315,6 +315,8 @@ Nahraď `NazevSkutecnehoHernihoSveta` přesným názvem ověřeného herního sv
 
 Limity ručních staveb se řídí `structures.blocks-per-tick` a `structures.max-block-changes`. Procedurální vanilla geometrie je dočasný herní placeholder, nikoli finální grafický asset.
 
+Příběhová kampaň obsahuje devět navazujících kapitol. Dokončení poslední kapitoly se ukládá jako globální příběhová podmínka pro Krále upírů a staré uložené profily s dokončenými všemi devíti kapitolami se při načtení migrují. K souboji je stále nutná také globální progrese, vytvořená aréna a požadované/ověřené pluginy pro model; dokončení questů samo o sobě nevyvolá bosse v neplatném prostředí.
+
 ### Stav ověření
 
 GitHub Actions sestavení ověřuje překlad pluginu a validace balíčků. To samo o sobě neprokazuje načtení na Purpuru, bezpečné umístění přes strom/na svahu ani kompatibilitu s reálnou konfigurací pluginů WarriorLandu. Tyto serverové testy zůstávají **NOT TESTED**, dokud neproběhnou na odděleném testovacím serveru se zálohou světa.
