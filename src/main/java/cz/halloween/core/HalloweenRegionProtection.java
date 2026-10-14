@@ -4,7 +4,6 @@ import org.bukkit.Location;
 import org.bukkit.plugin.Plugin;
 
 import java.lang.reflect.Method;
-import java.util.Set;
 
 /**
  * Optional, reflection-only WorldGuard protection check. HalloweenCore does not
