@@ -207,8 +207,20 @@ public final class HalloweenEventManager {
                 .filter(player -> plugin.isAutomaticHalloweenWorld(player.getWorld()))
                 .toArray(Player[]::new);
         if (players.length == 0) return;
-        Player target = players[ThreadLocalRandom.current().nextInt(players.length)];
 
+        // Events should feel server-wide rather than repeatedly choosing only one player.
+        // Shuffle to avoid favoring the same online-player ordering on every surge.
+        java.util.List<Player> targets = new java.util.ArrayList<>(java.util.Arrays.asList(players));
+        java.util.Collections.shuffle(targets);
+        int targetCount = Math.max(1, Math.min(targets.size(),
+                plugin.getConfig().getInt("random-events.players-per-surge", 3)));
+        for (int i = 0; i < targetCount; i++) {
+            applySurgeToPlayer(targets.get(i), now);
+        }
+        lastSurgeAt = now;
+    }
+
+    private void applySurgeToPlayer(Player target, long now) {
         switch (activeEventId.toLowerCase(Locale.ROOT)) {
             case "soulstorm" -> {
                 int spawned = spawnWave(target, new String[]{"cursed-zombie", "gravekeeper", "blood-spider"}, 3);
@@ -285,7 +297,6 @@ public final class HalloweenEventManager {
                 // Unknown custom event IDs are ignored safely; known IDs are validated before activation.
             }
         }
-        lastSurgeAt = now;
     }
 
     private int spawnWave(Player target, String[] mobIds, int count) {
