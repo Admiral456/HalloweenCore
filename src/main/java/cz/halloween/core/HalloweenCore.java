@@ -42,6 +42,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
+    private HalloweenStructureManager structureManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -72,6 +73,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
+        structureManager = new HalloweenStructureManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -124,6 +126,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (structureManager != null) structureManager.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -561,18 +564,26 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return color(prefix + config.getString(key, ""));
     }
 
+    /**
+     * Hard safety boundary for all automatic/gameplay Halloween systems.
+     * "Spawn" is denied even if an old config omits it from the blacklist or
+     * accidentally uses a whitelist. Manual admin structure commands intentionally
+     * do not call this method, so an explicit build in Spawn remains possible.
+     */
     public boolean isEligibleGameplayWorld(World world) {
         if (world == null) return false;
+        if ("spawn".equalsIgnoreCase(world.getName().trim())) return false;
 
         java.util.List<String> worlds = getConfig().getStringList("gameplay.worlds.names");
-        if (worlds.isEmpty()) return true;
-
-        boolean listed = worlds.stream().anyMatch(name -> name.equalsIgnoreCase(world.getName()));
+        boolean listed = worlds.stream().anyMatch(name -> name != null
+                && name.trim().equalsIgnoreCase(world.getName().trim()));
         String mode = getConfig().getString("gameplay.worlds.mode", "BLACKLIST");
-        if ("WHITELIST".equalsIgnoreCase(mode)) {
-            return listed;
-        }
+        if ("WHITELIST".equalsIgnoreCase(mode)) return listed;
         return !listed;
+    }
+
+    public HalloweenStructureManager getStructureManager() {
+        return structureManager;
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {
