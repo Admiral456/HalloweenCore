@@ -42,6 +42,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
+    private HalloweenStructureManager structureManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -72,6 +73,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
+        structureManager = new HalloweenStructureManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -88,6 +90,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
+        getServer().getPluginManager().registerEvents(structureManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
@@ -124,6 +127,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (structureManager != null) structureManager.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -541,6 +545,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return secretDiscoveryManager;
     }
 
+    public HalloweenStructureManager getStructureManager() {
+        return structureManager;
+    }
+
     public void notifyFragmentGain(UUID playerId, long amount) {
         Player player = getServer().getPlayer(playerId);
         if (player == null) return;
@@ -561,8 +569,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return color(prefix + config.getString(key, ""));
     }
 
+    /**
+     * General gameplay eligibility. The lobby world is always excluded from automatic
+     * Halloween gameplay; explicit manual structure commands have their own permission
+     * path and intentionally do not call this method.
+     */
     public boolean isEligibleGameplayWorld(World world) {
-        if (world == null) return false;
+        if (world == null || world.getName().equalsIgnoreCase("Spawn")) return false;
 
         java.util.List<String> worlds = getConfig().getStringList("gameplay.worlds.names");
         if (worlds.isEmpty()) return true;
@@ -573,6 +586,17 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             return listed;
         }
         return !listed;
+    }
+
+    /**
+     * Automatic generation must use an explicit world allow-list. An empty list means
+     * fail closed; do not guess that a world named "world" is the survival world.
+     */
+    public boolean isAutomaticHalloweenWorld(World world) {
+        if (world == null || world.getName().equalsIgnoreCase("Spawn")) return false;
+        if (!getConfig().getBoolean("automatic-world-generation.enabled", true)) return false;
+        java.util.List<String> allowed = getConfig().getStringList("automatic-world-generation.allowed-worlds");
+        return allowed.stream().anyMatch(name -> name.equalsIgnoreCase(world.getName()));
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {
