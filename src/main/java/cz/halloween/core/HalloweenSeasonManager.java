@@ -43,6 +43,9 @@ public final class HalloweenSeasonManager {
         if (started) return;
         started = true;
         lastSeasonEnabled = plugin.getConfig().getBoolean("season.enabled", false);
+        if (plugin.getConfig().contains("season.runtime-last-in-season")) {
+            lastInSeason = plugin.getConfig().getBoolean("season.runtime-last-in-season");
+        }
         refresh();
         taskId = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 1200L, 1200L).getTaskId();
     }
