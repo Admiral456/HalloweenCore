@@ -45,7 +45,7 @@ for marker in (
 ):
     if marker not in core:
         fail(f"Automatic world safety guard is missing: {marker}")
-if not re.search(r"(?m)^automatic-world-generation:\\n  enabled: true\\n  allowed-worlds: \\[\\]", config):
+if "automatic-world-generation:\n  enabled: true\n  allowed-worlds: []" not in config:
     fail("Default automatic world allow-list must be empty (fail-closed)")
 if "event.isNewChunk()" not in structures:
     fail("Natural structures must only be attempted on newly generated chunks")
@@ -98,7 +98,7 @@ if mobs.count("event.setDamage(event.getDamage() * multiplier);") != 1:
     fail("Blood Moon must apply its damage multiplier at exactly one central location")
 if "isEligibleGameplayWorld(target.getWorld())" not in mobs:
     fail("Mob damage mechanics are missing gameplay-world filtering")
-if "isEligibleGameplayWorld(target.getWorld())" not in events:
+if "isEligibleGameplayWorld(player.getWorld())" not in events:
     fail("Scheduled event targeting is missing gameplay-world filtering")
 
 # The current spec is one additional heart (+2 max health); old installs migrate once.
