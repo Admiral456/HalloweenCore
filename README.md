@@ -142,7 +142,7 @@ Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/hallow
 
 Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
 
-Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
+Při načítání nových i starších chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny, červené svíčky, hřiby, náhrobky, duševní lucerny a suché keře na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; starší chunky dostanou nové atmosférické vrstvy, aniž by se opakovala celá původní dávka dekorací.
 
 - `/halloween boss test` vyvolá testovacího Krále upírů bez globálního progressu, odemčení finále a model-ready gate. Vyžaduje uložený střed arény a funkční MythicMobs mob `vampire-king`; testovací zabití nedává odměny ani neoznačí finále za splněné.
 
@@ -175,8 +175,9 @@ Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový prog
 - `/halloween spawn hřbitov`, `/halloween spawn vesnice`, `/halloween spawn aréna`, `/halloween spawn vampirearena` a `/halloween spawn goblinarena` jsou ruční admin příkazy. Umístí stavbu před hráče bez výběru středu a bez `confirm`.
 - Přímé ruční stavby používají FORCE uvnitř konečného, ohraničeného footprintu a výšky. Mohou odstranit stromy a bloky uvnitř tohoto prostoru; změny se dávkují po tickách a při chybě se plugin pokusí o rollback. Udělej zálohu, než je použiješ na produkčním světě.
 - Pro testování mobů použij `/halloween spawn <mob-id>`; výčet je v seznamu příkazů. ModelEngine/MythicMobs vizuály jsou volitelné; vanilla fallback zachovává základní hraní.
-- Automatické generování je záměrně „fail closed“. V `plugins/HalloweenCore/config.yml` musíš do `automatic-world-generation.allowed-worlds` doplnit přesný název běžného survival světa, například název z Multiverse, který používá váš server. Výchozí prázdný seznam znamená, že automatické generování není v žádném světě povoleno.
-- Svět pojmenovaný přesně `Spawn` je vždy vyloučen z automatických dekorací, mobů i eventů. Ruční admin stavba zůstává možná. Automatické hřbitovy/vesnice se zkouší stavět jen v nově generovaných chunkech a pouze na čistém přírodním místě; staré chunky se zpětně nepřepisují. Malé automatické struktury jsou konzervativní moduly, nikoli náhrada za větší ruční stavby.
+- Výchozí nastavení používá `automatic-world-generation.allowed-worlds: ["*"]`: Halloween prvky, speciální přirozené moby a eventy se mohou objevovat ve všech světech kromě světa pojmenovaného přesně `Spawn`. Chceš-li obsah omezit, nahraď `*` seznamem konkrétních názvů světů.
+- Generování běží i při načítání již prozkoumaných chunků. Dekorace je pouze přidávací: umísťuje prvky jen do vzduchu nad bezpečným přírodním terénem a nepřepisuje existující bloky. Náhodné malé hřbitovy a vesnice se pokoušejí vznikat v rozestupech; vyžadují vhodný, rovný přírodní povrch, takže ne každý kandidátní chunk strukturu dostane.
+- Každý chunk dostane omezenou směs dýní, pavučin, červených svíček, hřibů, malých náhrobků, duševních luceren a suchých keřů podle terénu. Starší chunky z dřívější verze dostanou nové atmosférické vrstvy bez opakovaného přidávání celé původní dávky dýní a pavučin.
 - `/halloween status` vypíše, které světy jsou povolené pro automatické generování. Po změně konfigurace použij `/halloween reload`.
 
 ## Přenosné relikvie a jejich assety
