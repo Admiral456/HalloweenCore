@@ -39,6 +39,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - Hráči dostávají při připojení odpočet do začátku sezóny, pokud je její začátek do sedmi dnů.
 - Sekce `witching-hour` je ve výchozím nastavení aktivní každý den od 20:00 do 22:00. Během okna se čas do další náhodné události násobí hodnotou `0.5`, takže přicházejí přibližně dvakrát častěji.
 - Čarodějnická hodina může přehrávat vzácné ambientní zvuky. Lze přepnout na herní čas pomocí `mode: minecraft`, změnit interval nebo funkci vypnout nastavením `enabled: false`.
+- Během Čarodějnické hodiny se může s nastavitelnou šancí proměnit mrtvý netopýr v Hexovou čarodějku. Mechanika funguje pouze v povolených Halloween světech a lze ji vypnout pomocí `bat-transformation-enabled: false`.
 - Existující `config.yml` dostane chybějící výchozí položky migrací; uživatelská nastavení se nepřepisují.
 
 ## Hřbitovní rituál
