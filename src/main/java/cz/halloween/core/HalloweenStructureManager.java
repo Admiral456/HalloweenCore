@@ -200,7 +200,7 @@ public final class HalloweenStructureManager implements Listener {
             case "hrbitov", "graveyard", "cemetery" -> Kind.GRAVEYARD;
             case "vesnice", "village", "hauntedvillage" -> Kind.VILLAGE;
             case "arena", "aren" -> Kind.ARENA;
-            case "vampirearena", "upiriarena", "upiriare na" -> Kind.VAMPIRE_ARENA;
+            case "vampirearena", "vampire-arena", "upiriarena" -> Kind.VAMPIRE_ARENA;
             case "goblinarena" -> Kind.GOBLIN_ARENA;
             default -> null;
         };
@@ -429,8 +429,9 @@ public final class HalloweenStructureManager implements Listener {
 
     private void finish(BuildJob job) {
         if (job.task != null) job.task.cancel();
-        if (job.kind == Kind.VAMPIRE_ARENA) saveArenaCenter("bosses.vampire.arena", job);
+        if (job.kind == Kind.VAMPIRE_ARENA || job.kind == Kind.ARENA) saveArenaCenter("bosses.vampire.arena", job);
         if (job.kind == Kind.GOBLIN_ARENA) saveArenaCenter("bosses.goblin.arena", job);
+        if (job.kind == Kind.VILLAGE) saveHauntedVillageLocation(job);
         cleanupChunks(job);
         Player operator = Bukkit.getPlayer(job.operator);
         if (operator != null) {
@@ -442,6 +443,17 @@ public final class HalloweenStructureManager implements Listener {
                 + ", center=" + job.centerX + "," + job.centerY + "," + job.centerZ
                 + ", changedBlocks=" + job.snapshots.size() + ".");
         activeJob = null;
+    }
+
+    private void saveHauntedVillageLocation(BuildJob job) {
+        // Preserve compatibility with the older map/discovery system for the most
+        // recently manually generated village. Natural villages remain independently marked by chunk PDC.
+        plugin.getConfig().set("haunted-village.enabled", true);
+        plugin.getConfig().set("haunted-village.world", job.world.getName());
+        plugin.getConfig().set("haunted-village.x", job.centerX + 0.5D);
+        plugin.getConfig().set("haunted-village.y", job.centerY + 1.0D);
+        plugin.getConfig().set("haunted-village.z", job.centerZ + 0.5D);
+        plugin.saveConfig();
     }
 
     private void saveArenaCenter(String path, BuildJob job) {
