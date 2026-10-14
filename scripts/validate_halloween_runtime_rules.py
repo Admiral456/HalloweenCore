@@ -80,6 +80,17 @@ if re.search(r"(?m)^  spawn:", plugin_yml):
     fail("Do not register a bare /spawn root command that may conflict with another server plugin")
 if "setVampireArena(sender)" in command or "buildVampireArena(sender, args)" in command:
     fail("Legacy center-selection / confirmation arena commands must not be active")
+if "createAdminRewardItems()" not in read("src/main/java/cz/halloween/core/HalloweenRewardManager.java"):
+    fail("Admin give-all must include all configured shop items and portable relics")
+if "args[2].equalsIgnoreCase(\"all\")" not in command:
+    fail("The /halloween give <player> all flow is missing")
+relics = read("src/main/java/cz/halloween/core/HalloweenRelicAbilityManager.java")
+for marker in ("BATWING_COOLDOWN_MS", "COWL_COOLDOWN_MS", "PlayerToggleSneakEvent",
+               "PotionEffectType.NIGHT_VISION", "useBatwingDash", "useCowlPulse"):
+    if marker not in relics:
+        fail(f"Portable relic ability contract is missing: {marker}")
+if "getRelicAbilityManager()" not in core or "relicAbilityManager.start()" not in core:
+    fail("Portable relic ability manager is not wired into the plugin lifecycle")
 
 # All eight requested base mob IDs must support an administrator test-spawn path.
 for mob_id in (
