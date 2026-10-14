@@ -7,6 +7,9 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -18,7 +21,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public final class HalloweenCommand implements CommandExecutor, TabCompleter {
+public final class HalloweenCommand implements CommandExecutor, TabCompleter, Listener {
     private final HalloweenCore plugin;
 
     public HalloweenCommand(HalloweenCore plugin) {
@@ -30,11 +33,14 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "locate", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("locate") && plugin.getStructureManager() != null) {
+            return plugin.getStructureManager().locateTabComplete(args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) {
             java.util.stream.Stream<String> structures = plugin.getStructureManager() == null
@@ -155,6 +161,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("status")) return status(sender);
+        if (args[0].equalsIgnoreCase("locate")) {
+            return plugin.getStructureManager() == null ? true : plugin.getStructureManager().handleLocateCommand(sender, args);
+        }
         if (args[0].equalsIgnoreCase("spawn")) {
             if (args.length >= 2 && args[1].equalsIgnoreCase("headless-nick")) {
                 if (!checkAdmin(sender)) return true;
@@ -213,6 +222,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
         sender.sendMessage(plugin.color("&6/halloween status &7- stav automatických světů, eventů a generování (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween locate <typ|all> &7- najde nejbližší zaznamenanou Halloween strukturu"));
         sender.sendMessage(plugin.color("&6/halloween spawn <struktura|mob> &7- ruční struktura před tebou (FORCE) nebo testovací spawn jednoho z osmi mobů"));
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
@@ -223,6 +233,31 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet|all> &7- přidá fragmenty nebo vydá všechny testovací předměty"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
         return true;
+    }
+
+    /**
+     * Convenience alias for Halloween structures that leaves Minecraft's
+     * native /locate structure command untouched.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onVanillaLocateAlias(PlayerCommandPreprocessEvent event) {
+        String[] parts = event.getMessage().trim().split("\\s+");
+        if (parts.length == 0 || !parts[0].equalsIgnoreCase("/locate")) return;
+        if (plugin.getStructureManager() == null) return;
+
+        if (parts.length == 2 && parts[1].equalsIgnoreCase("halloween")) {
+            event.setCancelled(true);
+            plugin.getStructureManager().handleLocateCommand(event.getPlayer(), new String[]{"locate"});
+            return;
+        }
+
+        int targetIndex = parts.length == 3 && parts[1].equalsIgnoreCase("halloween") ? 2 : 1;
+        if (parts.length != targetIndex + 1 || targetIndex >= parts.length) return;
+        String target = parts[targetIndex];
+        if (!plugin.getStructureManager().isLocateTarget(target)) return;
+
+        event.setCancelled(true);
+        plugin.getStructureManager().handleLocateCommand(event.getPlayer(), new String[]{"locate", target});
     }
 
     private boolean stats(CommandSender sender) {
