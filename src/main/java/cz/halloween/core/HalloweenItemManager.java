@@ -1,6 +1,9 @@
 package cz.halloween.core;
 
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;
@@ -43,6 +46,79 @@ public final class HalloweenItemManager {
         } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
             return null;
         }
+    }
+
+    /**
+     * Portable fallback-backed relics. If the named ItemsAdder IDs exist, their actual
+     * custom models/textures are retained; otherwise a functional vanilla base item is
+     * returned and marked with the same server-side identity.
+     */
+    public ItemStack createBatwingElytra() {
+        return createPortableRelic(
+                "warriorland_halloween:batwing_elytra",
+                "batwing-elytra",
+                Material.ELYTRA,
+                "&5&lBatwing Elytra",
+                List.of("&7Custom bat-wing relic", "&7Sneak while gliding: Bat Dash", "&8Cooldown: 20 seconds"),
+                true
+        );
+    }
+
+    public ItemStack createNocturneSovereignCowl() {
+        return createPortableRelic(
+                "warriorland_halloween:nocturne_sovereign_cowl",
+                "nocturne-sovereign-cowl",
+                Material.CARVED_PUMPKIN,
+                "&8&lNocturne Sovereign Cowl",
+                List.of("&7Wear on your head for night vision", "&7Sneak: reveal and slow nearby hostile mobs", "&8Cooldown: 30 seconds"),
+                false
+        );
+    }
+
+    public ItemStack createHauntedMap() {
+        return createPortableRelic(
+                plugin.getConfig().getString("special-mobs.map-item-id", "warriorland_halloween:haunted_map"),
+                "haunted-map-2026",
+                Material.PAPER,
+                "&5&lProkletá mapa",
+                List.of("&7Ukazuje cestu k Haunted Village."),
+                false
+        );
+    }
+
+    public ItemStack createCursedCandy() {
+        return createPortableRelic(
+                plugin.getConfig().getString("special-mobs.relic-item-id", "warriorland_halloween:cursed_candy"),
+                "cursed-candy-2026",
+                Material.COOKIE,
+                "&6&lProkleté cukroví",
+                List.of("&7Po snědení získáš krátké Halloween efekty."),
+                false
+        );
+    }
+
+    public ItemStack createPortableRelic(String itemsAdderId, String relicIdentity,
+                                         Material fallbackMaterial, String displayName,
+                                         java.util.List<String> lore, boolean elytra) {
+        ItemStack item = itemsAdderId == null || itemsAdderId.isBlank()
+                ? null : getItemsAdderItem(itemsAdderId, 1);
+        if (item == null) item = new ItemStack(fallbackMaterial, 1);
+
+        var meta = item.getItemMeta();
+        if (meta == null) return item;
+        meta.setDisplayName(org.bukkit.ChatColor.translateAlternateColorCodes('&', displayName));
+        meta.setLore(lore.stream()
+                .map(line -> org.bukkit.ChatColor.translateAlternateColorCodes('&', line))
+                .toList());
+        meta.getPersistentDataContainer().set(
+                new NamespacedKey(plugin, "halloween_relic"),
+                PersistentDataType.STRING,
+                relicIdentity
+        );
+        meta.addEnchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 3, true);
+        if (elytra) meta.addEnchant(org.bukkit.enchantments.Enchantment.MENDING, 1, true);
+        item.setItemMeta(meta);
+        return item;
     }
 
     public boolean isSupportedVersion() {
