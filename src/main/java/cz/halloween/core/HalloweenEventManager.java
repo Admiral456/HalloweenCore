@@ -30,7 +30,9 @@ public final class HalloweenEventManager {
         if (started) return;
         started = true;
         if (plugin.getConfig().getBoolean("random-events.enabled", true) && plugin.isEventEnabled()) {
-            scheduleFirstEvent();
+            // Server restarts use the normal interval. /halloween on still schedules
+            // a short first event intentionally; rebooting does not spawn a wave instantly.
+            scheduleNextEvent();
         }
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
     }
