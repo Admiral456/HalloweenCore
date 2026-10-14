@@ -29,6 +29,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
     private final NamespacedKey legacyDecoratedKey;
+    private final HalloweenRegionProtection regionProtection;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
@@ -36,6 +37,7 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
+        this.regionProtection = new HalloweenRegionProtection(plugin);
         this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
         this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
     }
@@ -140,6 +142,8 @@ public final class HalloweenWorldDecorator implements Listener {
             if (!(ground.getRelative(0, 1, 0).getType().isAir())) continue;
             if (ground.getState() instanceof TileState) continue;
             if (!naturalNeighborhood(ground)) continue;
+            if (regionProtection.isProtected(ground.getLocation())
+                    || regionProtection.isProtected(ground.getRelative(0, 1, 0).getLocation())) continue;
 
             Material pumpkin = switch (random.nextInt(5)) {
                 case 0 -> Material.JACK_O_LANTERN;
@@ -160,6 +164,7 @@ public final class HalloweenWorldDecorator implements Listener {
             if (!air.getType().isAir() || air.getY() <= chunk.getWorld().getMinHeight()) continue;
             if (air.getState() instanceof TileState) continue;
             if (countNearbyWebAnchors(surface) < 2) continue;
+            if (regionProtection.isProtected(surface.getLocation()) || regionProtection.isProtected(air.getLocation())) continue;
             air.setType(Material.COBWEB, false);
             webCount++;
         }
@@ -173,6 +178,7 @@ public final class HalloweenWorldDecorator implements Listener {
             if (!naturalNeighborhood(ground) || ground.getState() instanceof TileState) continue;
             Block air = ground.getRelative(0, 1, 0);
             if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
+            if (regionProtection.isProtected(ground.getLocation()) || regionProtection.isProtected(air.getLocation())) continue;
             air.setType(Material.RED_CANDLE, false);
             candleCount++;
         }
