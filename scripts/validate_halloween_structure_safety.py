@@ -45,7 +45,7 @@ require('"Spawn".equalsIgnoreCase(world.getName())' in structures,
         "Natural structure generation must hard-block Spawn.")
 require('!plugin.isEligibleGameplayWorld(world)' in structures,
         "Natural structures must also respect gameplay world eligibility.")
-require('!plugin.isEligibleGameplayWorld(player.getWorld())' in events,
+require('plugin.isEligibleGameplayWorld(player.getWorld())' in events,
         "Event player selection must exclude Spawn.")
 require('!plugin.isEligibleGameplayWorld(player.getWorld())' in atmosphere,
         "Atmosphere must exclude Spawn.")
