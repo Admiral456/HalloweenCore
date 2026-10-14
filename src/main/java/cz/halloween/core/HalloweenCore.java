@@ -61,6 +61,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAdditionalMobAndQuestDefaults();
         migrateAtmosphericWorldGenerationDefaults();
         migrateSeasonAndWitchingDefaults();
+        migrateGraveEncounterDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -182,6 +183,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateAtmosphericWorldGenerationDefaults();
         migrateSeasonAndWitchingDefaults();
+        migrateGraveEncounterDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
@@ -332,6 +334,32 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Season scheduler and Witching Hour defaults migrated without overwriting existing settings.");
         } catch (IOException ex) {
             getLogger().warning("Season/Witching Hour migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateGraveEncounterDefaults() {
+        if (getConfig().getBoolean("migrations.grave-encounters-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; grave encounter defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection section = defaults.getConfigurationSection("grave-encounters");
+            if (section != null) {
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = "grave-encounters." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
+                }
+            }
+            getConfig().set("migrations.grave-encounters-v1", true);
+            saveConfig();
+            getLogger().info("Grave encounter defaults migrated without overwriting existing settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Grave encounter config migration failed: " + ex.getClass().getSimpleName());
         }
     }
 
