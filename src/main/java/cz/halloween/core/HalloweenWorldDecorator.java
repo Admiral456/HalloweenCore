@@ -32,6 +32,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
+    private boolean warnedNoAllowedWorlds;
     private BukkitTask task;
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
@@ -56,17 +57,31 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public void scanLoadedChunks() {
         if (!isEnabled()) return;
-        for (World world : plugin.getServer().getWorlds()) {
-            for (Chunk chunk : world.getLoadedChunks()) enqueue(chunk);
+        // Existing chunks are not silently retrofitted on boot/reload. An operator
+        // must explicitly opt into the conservative add-only legacy scan.
+        if (plugin.getConfig().getBoolean("world-decorations.decorate-existing-chunks", false)) {
+            for (World world : plugin.getServer().getWorlds()) {
+                if (!plugin.isAutomaticHalloweenWorld(world)) continue;
+                for (Chunk chunk : world.getLoadedChunks()) enqueue(chunk);
+            }
         }
-        if (task == null) {
-            task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::processQueue, 1L, 10L);
-        }
+        startQueueTask();
     }
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
-        if (isEnabled()) enqueue(event.getChunk());
+        if (!isEnabled() || !plugin.isAutomaticHalloweenWorld(event.getWorld())) return;
+        boolean scanExisting = plugin.getConfig().getBoolean("world-decorations.decorate-existing-chunks", false);
+        if (event.isNewChunk() || scanExisting) {
+            enqueue(event.getChunk());
+            startQueueTask();
+        }
+    }
+
+    private void startQueueTask() {
+        if (task == null) {
+            task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::processQueue, 1L, 10L);
+        }
     }
 
     private boolean isEnabled() {
@@ -75,7 +90,8 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private void enqueue(Chunk chunk) {
-        if (chunk == null || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) return;
+        if (chunk == null || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())
+                || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) return;
         String id = chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ();
         if (queued.add(id)) pending.offer(chunk);
     }
@@ -91,7 +107,7 @@ public final class HalloweenWorldDecorator implements Listener {
             Chunk chunk = pending.poll();
             if (chunk == null) return;
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
-            if (!chunk.isLoaded()) continue;
+            if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) continue;
             if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
             try {
                 decorateChunk(chunk);
@@ -109,6 +125,7 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private void decorateChunk(Chunk chunk) {
+        if (!plugin.isAutomaticHalloweenWorld(chunk.getWorld())) return;
         // Existing decorated chunks get only the new accent layer. Avoid stacking
         // a second batch of pumpkins/cobwebs when upgrading an already-running world.
         boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE);
