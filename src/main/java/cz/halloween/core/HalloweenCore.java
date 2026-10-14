@@ -44,6 +44,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenWorldDecorator worldDecorator;
     private HalloweenStructureManager structureManager;
     private HalloweenRelicAbilityManager relicAbilityManager;
+    private HalloweenHeadlessNickManager headlessNickManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
