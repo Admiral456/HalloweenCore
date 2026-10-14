@@ -53,6 +53,8 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> (admin, ihned umístí strukturu před hráčem v režimu FORCE; žádné nastavování středu ani confirm)
 - /halloween spawn <cursed-zombie|void-reaper|gravekeeper|frost-stalker|blood-spider|pumpkin-wraith|hex-witch|nightmare> (admin, testovací spawn jednoho mobu; použije ModelEngine/MythicMobs, pokud jsou dostupné, jinak vanilla fallback)
 - /halloween status (diagnostika aktivního eventu, povolených automatických světů a stavby)
+- /halloween locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all> (najde nejbližší uloženou polohu struktury v aktuálním světě)
+- /locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all> (zkrácený příkaz; běžný Minecraft /locate structure ... zůstává dostupný)
 - Batwing Elytra: nasazená na hrudi zachovává standardní elytra glide/rocket chování; při plachtění stiskni sneak pro Bat Dash (20s cooldown).
 - Nocturne Sovereign Cowl: nasaď na hlavu pro noční vidění; stiskni sneak pro zpomalení a odhalení okolních monster (30s cooldown).
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
@@ -179,6 +181,7 @@ Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový prog
 - Generování běží i při načítání již prozkoumaných chunků. Dekorace je pouze přidávací: umísťuje prvky jen do vzduchu nad bezpečným přírodním terénem a nepřepisuje existující bloky. Náhodné malé hřbitovy a vesnice se pokoušejí vznikat v rozestupech; vyžadují vhodný, rovný přírodní povrch, takže ne každý kandidátní chunk strukturu dostane.
 - Každý chunk dostane omezenou směs dýní, pavučin, červených svíček, hřibů, malých náhrobků, duševních luceren a suchých keřů podle terénu. Starší chunky z dřívější verze dostanou nové atmosférické vrstvy bez opakovaného přidávání celé původní dávky dýní a pavučin.
 - `/halloween status` vypíše, které světy jsou povolené pro automatické generování. Po změně konfigurace použij `/halloween reload`.
+- `/halloween locate <typ>` nebo `/locate <typ>` najde nejbližší zaznamenaný hřbitov, vesnici, arénu, upíří arénu nebo gobliní arénu v aktuálním světě. `all` vypíše nejbližší zaznamenanou polohu každého typu. Souřadnice se ukládají po úspěšném ručním nebo přirozeném vygenerování do `plugins/HalloweenCore/structures.yml`; struktury postavené před touto verzí se zpětně neindexují automaticky.
 
 ## Přenosné relikvie a jejich assety
 
