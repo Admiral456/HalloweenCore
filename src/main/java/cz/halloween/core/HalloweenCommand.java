@@ -37,7 +37,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")
-                && sender.hasPermission("hallowencore.admin")) {
+                && sender.hasPermission("halloweencore.admin")
+                && sender.hasPermission("halloweencore.structure.build")
+                && sender.hasPermission("halloweencore.structure.force")) {
             return List.of("hřbitov", "vesnice", "aréna", "vampirearena", "goblinarena").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
