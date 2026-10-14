@@ -21,5 +21,8 @@ permissions:
   halloweencore.admin:
     default: op
   halloweencore.structures:
-    description: Allows bounded FORCE generation of Halloween structures.
+    description: Allows manual Halloween structure generation.
+    default: op
+  halloweencore.structures.force:
+    description: Allows overwriting natural terrain inside a generated structure footprint.
     default: op
