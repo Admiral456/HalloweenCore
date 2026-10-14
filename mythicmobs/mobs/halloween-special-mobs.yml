@@ -92,6 +92,8 @@ halloween_hex_witch:
   - state{mid=halloween_hex_witch;s=idle;} @self ~onSpawn
   - state{mid=halloween_hex_witch;s=attack} @self ~onAttack
 
+# Visual model/texture is intentionally omitted until the asset owner supplies it.
+# The special mob remains fully playable with the vanilla Husk fallback.
 halloween_void_reaper:
   Type: HUSK
   Display: '&5&lŽENEC PRÁZDNOTY'
@@ -106,11 +108,10 @@ halloween_void_reaper:
     MovementSpeed: 0.26
     KnockbackResistance: 0.30
     PreventRenaming: true
-  Skills:
-  - model{mid=halloween_void_reaper;n=false} @self ~onSpawn
-  - state{mid=halloween_void_reaper;s=idle;} @self ~onSpawn
-  - state{mid=halloween_void_reaper;s=attack} @self ~onAttack
+  # Artist-owned ModelEngine atlas/blueprint will be attached when supplied.
 
+# Visual model/texture is intentionally omitted until the asset owner supplies it.
+# The special mob remains fully playable with the vanilla Stray fallback.
 halloween_frost_stalker:
   Type: STRAY
   Display: '&b&lLEDOVÝ STOPAŘ'
@@ -124,11 +125,10 @@ halloween_frost_stalker:
     MovementSpeed: 0.27
     KnockbackResistance: 0.20
     PreventRenaming: true
-  Skills:
-  - model{mid=halloween_frost_stalker;n=false} @self ~onSpawn
-  - state{mid=halloween_frost_stalker;s=idle;} @self ~onSpawn
-  - state{mid=halloween_frost_stalker;s=attack} @self ~onAttack
+  # Artist-owned ModelEngine atlas/blueprint will be attached when supplied.
 
+# Visual model/texture is intentionally omitted until the asset owner supplies it.
+# The special mob remains fully playable with the vanilla Phantom fallback.
 halloween_nightmare:
   Type: PHANTOM
   Display: '&d&lNOČNÍ MŮRA'
@@ -142,7 +142,4 @@ halloween_nightmare:
     MovementSpeed: 0.32
     KnockbackResistance: 0.25
     PreventRenaming: true
-  Skills:
-  - model{mid=halloween_nightmare;n=false} @self ~onSpawn
-  - state{mid=halloween_nightmare;s=idle;} @self ~onSpawn
-  - state{mid=halloween_nightmare;s=attack} @self ~onAttack
+  # Artist-owned ModelEngine atlas/blueprint will be attached when supplied.
