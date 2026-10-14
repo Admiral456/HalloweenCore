@@ -44,8 +44,8 @@ public final class HalloweenActivityListener implements Listener {
         if (isConfiguredBlock(block.getType(), "rewards.mining.blocks")
                 && plugin.getConfig().getBoolean("rewards.mining.enabled", true)) {
             long reward = plugin.getConfig().getLong("rewards.mining.fragments", 1L);
+            if (plugin.getQuestManager() != null) plugin.getQuestManager().recordAction(player, "mining");
             if (allowFragmentReward(player, "mining")) {
-                if (plugin.getQuestManager() != null) plugin.getQuestManager().recordAction(player, "mining");
                 if (reward > 0L) plugin.getService().addFragments(player.getUniqueId(), reward, "mining");
             }
             // Do not allow a block configured for mining to fall through into the farming reward path.
@@ -64,8 +64,9 @@ public final class HalloweenActivityListener implements Listener {
         }
 
         long reward = plugin.getConfig().getLong("rewards.farming.fragments", 2L);
+        // Quest objective progress is independent of the fragment anti-farm limiter.
+        if (plugin.getQuestManager() != null) plugin.getQuestManager().recordAction(player, "farming");
         if (allowFragmentReward(player, "farming")) {
-            if (plugin.getQuestManager() != null) plugin.getQuestManager().recordAction(player, "farming");
             if (reward > 0L) plugin.getService().addFragments(player.getUniqueId(), reward, "farming");
         }
     }
