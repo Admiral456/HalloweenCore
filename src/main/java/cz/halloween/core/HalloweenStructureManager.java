@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.Random;
@@ -206,7 +205,7 @@ public final class HalloweenStructureManager implements Listener {
 
         int centerX = (int) Math.floor(origin.getX() + direction.getX() * (radius + 4) + 0.5D);
         int centerZ = (int) Math.floor(origin.getZ() + direction.getZ() * (radius + 4) + 0.5D);
-        int rotation = Math.floorMod(Math.round(origin.getYaw() / 90.0f), 4);
+        int rotation = HalloweenStructureGeometry.rotationFromYaw(origin.getYaw());
 
         World world = player.getWorld();
         int baseY;
@@ -406,7 +405,7 @@ public final class HalloweenStructureManager implements Listener {
         // Flatten and clear only the exact footprint, with per-column foundations for low spots.
         for (int dx = -radius; dx <= radius; dx++) {
             for (int dz = -radius; dz <= radius; dz++) {
-                if (!square && dx * dx + dz * dz > radius * radius) continue;
+                if (!square && !HalloweenStructureGeometry.withinCircle(dx, dz, radius)) continue;
                 int x = cx + dx;
                 int z = cz + dz;
                 int groundY = findGroundY(world, x, z);
@@ -437,8 +436,7 @@ public final class HalloweenStructureManager implements Listener {
             }
         }
 
-        int variant = Math.floorMod(Long.hashCode(world.getSeed()
-                ^ (((long) cx) << 32) ^ (cz & 0xffffffffL)), 3);
+        int variant = HalloweenStructureGeometry.variant(world.getSeed(), cx, cz);
         switch (type) {
             case "cemetery" -> addCemetery(plan, cx, baseY, cz, radius, rotation, variant);
             case "village" -> addVillage(plan, cx, baseY, cz, radius, rotation, variant);
@@ -686,14 +684,8 @@ public final class HalloweenStructureManager implements Listener {
 
     private void local(Map<Pos, Material> plan, int cx, int y, int cz,
                        int dx, int dz, int rotation, Material material) {
-        int rx;
-        int rz;
-        switch (rotation) {
-            case 1 -> { rx = -dz; rz = dx; }
-            case 2 -> { rx = -dx; rz = -dz; }
-            case 3 -> { rx = dz; rz = -dx; }
-            default -> { rx = dx; rz = dz; }
-        }
+        int rx = HalloweenStructureGeometry.rotateX(dx, dz, rotation);
+        int rz = HalloweenStructureGeometry.rotateZ(dx, dz, rotation);
         put(plan, cx + rx, y, cz + rz, material);
     }
 
@@ -702,37 +694,15 @@ public final class HalloweenStructureManager implements Listener {
     }
 
     private int radius(String type) {
-        return switch (type) {
-            case "cemetery" -> 10;
-            case "village" -> 17;
-            case "arena" -> 20;
-            case "goblinarena" -> 22;
-            case "vampirearena" -> 48;
-            default -> throw new IllegalArgumentException("neznámý typ");
-        };
+        return HalloweenStructureGeometry.radius(type);
     }
 
     private int clearance(String type) {
-        return switch (type) {
-            case "cemetery" -> 14;
-            case "village" -> 20;
-            case "arena" -> 12;
-            case "goblinarena" -> 13;
-            case "vampirearena" -> 15;
-            default -> 12;
-        };
+        return HalloweenStructureGeometry.clearance(type);
     }
 
     private String normalizeType(String requested) {
-        if (requested == null) return null;
-        return switch (requested.trim().toLowerCase(Locale.ROOT)) {
-            case "hřbitov", "hrbitov", "cemetery", "graveyard" -> "cemetery";
-            case "vesnice", "village", "haunted-village" -> "village";
-            case "aréna", "arena" -> "arena";
-            case "vampirearena", "vampire-arena", "vampire" -> "vampirearena";
-            case "goblinarena", "goblin-arena", "goblin" -> "goblinarena";
-            default -> null;
-        };
+        return HalloweenStructureGeometry.normalizeType(requested);
     }
 
     private String displayName(String type) {
