@@ -243,7 +243,7 @@ Výstup:
 
 ## Speciální mobové: modely a resource pack
 
-Zdrojové Blockbench modely a externí atlasy pro speciální moby jsou v `mythicmobs/models/halloween_*.bbmodel` a `mythicmobs/models/halloween_*.png`. Kontroluje je `python3 scripts/validate_special_mob_models.py`; CI zároveň balí definice a blueprinty do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`.
+Dodané Blockbench modely a atlasy pro pět vizuálně dokončených speciálních mobů jsou v `mythicmobs/models/halloween_*.bbmodel` a `mythicmobs/models/halloween_*.png`. Modely a textury pro Žence prázdnoty, Ledového stopaře a Noční můru doplní jejich autor; dokud nejsou obě části dodané, zůstávají tito mobové na vanilla vzhledu. Kontroluje je `python3 scripts/validate_special_mob_models.py`; CI pouze ověřuje a balí přítomné soubory do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip` a assety negeneruje ani nepřebarvuje.
 
 Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj blueprinty přes ModelEngine, spusť `/meg reload models` a `/mm reload`. Do stávajícího seznamu `merge_other_plugins_resourcepacks_folders` v konfiguraci ItemsAdderu přidej cestu `ModelEngine/resource pack`, aby se modelové textury dostaly do stejného klientského packu. Poté spusť `/iazip`, ověř `/iainfo`, přijmi pack na klientovi a znovu se připoj.
 
