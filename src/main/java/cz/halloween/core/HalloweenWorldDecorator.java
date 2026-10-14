@@ -29,6 +29,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
     private final NamespacedKey legacyDecoratedKey;
+    private final NamespacedKey naturalStructurePlacedKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
@@ -38,6 +39,7 @@ public final class HalloweenWorldDecorator implements Listener {
         this.plugin = plugin;
         this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
         this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.naturalStructurePlacedKey = new NamespacedKey(plugin, "halloween_natural_structure_placed_v1");
     }
 
     public void start() {
@@ -92,7 +94,8 @@ public final class HalloweenWorldDecorator implements Listener {
 
     private void enqueue(Chunk chunk) {
         if (chunk == null || !isAllowedWorld(chunk.getWorld())
-                || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) return;
+                || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(naturalStructurePlacedKey, PersistentDataType.BYTE)) return;
         String id = chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ();
         if (queued.add(id)) pending.offer(chunk);
     }
@@ -109,7 +112,8 @@ public final class HalloweenWorldDecorator implements Listener {
             if (chunk == null) return;
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
             if (!chunk.isLoaded() || !isAllowedWorld(chunk.getWorld())) continue;
-            if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
+            if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)
+                    || chunk.getPersistentDataContainer().has(naturalStructurePlacedKey, PersistentDataType.BYTE)) continue;
             try {
                 decorateChunk(chunk);
                 chunk.getPersistentDataContainer().set(decoratedKey, PersistentDataType.BYTE, (byte) 1);
