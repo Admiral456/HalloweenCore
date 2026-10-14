@@ -51,9 +51,26 @@ require('!plugin.isEligibleGameplayWorld(player.getWorld())' in atmosphere,
         "Atmosphere must exclude Spawn.")
 
 # Automatic world edits are fail-closed and must not retroactively decorate old chunks by default.
-require(re.search(r'world-decorations:\s*\n\s+enabled: true\s*\n\s+allowed-worlds:\s*\[\]', config) is not None,
+def yaml_section(section_name: str) -> str:
+    lines = config.splitlines()
+    start = next((i for i, line in enumerate(lines) if line.strip() == section_name + ":"), None)
+    if start is None:
+        return ""
+    collected = [lines[start]]
+    for line in lines[start + 1:]:
+        if line and not line[0].isspace() and line.rstrip().endswith(":"):
+            break
+        collected.append(line)
+    return "\\n".join(collected)
+
+
+decorations_config = yaml_section("world-decorations")
+generation_config = yaml_section("world-generation")
+require("allowed-worlds: []" in decorations_config,
         "world-decorations.allowed-worlds must default to an empty list.")
-require(re.search(r'world-generation:\s*\n\s+enabled: true\s*\n\s+allowed-worlds:\s*\[\]', config) is not None,
+require("allow-existing-chunks: false" in decorations_config,
+        "Existing chunks must not be retroactively decorated by default.")
+require("allowed-worlds: []" in generation_config,
         "world-generation.allowed-worlds must default to an empty list.")
 require('allow-existing-chunks: false' in config,
         "Existing chunks must not be retroactively decorated by default.")
