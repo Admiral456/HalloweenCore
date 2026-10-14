@@ -382,7 +382,10 @@ public final class HalloweenStructureManager implements Listener {
                 if (clearTop >= world.getMaxHeight()) {
                     throw new IllegalArgumentException("půdorys je příliš blízko horní hranici světa");
                 }
-                for (int y = baseY + 1; y <= clearTop; y++) put(plan, x, y, z, Material.AIR);
+                for (int y = baseY + 1; y <= clearTop; y++) {
+                    // Air is the no-op in most of this volume; skip it to bound memory for 97-block arenas.
+                    if (!world.getBlockAt(x, y, z).getType().isAir()) put(plan, x, y, z, Material.AIR);
+                }
                 if (groundY < baseY - 1) {
                     for (int y = groundY + 1; y < baseY; y++) {
                         put(plan, x, y, z, ((x + z + y) & 1) == 0
