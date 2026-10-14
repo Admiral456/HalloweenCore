@@ -1,21 +1,33 @@
 package cz.halloween.core;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Biome;
+import org.bukkit.Chunk;
+import org.bukkit.NamespacedKey;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
+import org.bukkit.block.TileState;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * Manual, administrator-triggered FORCE structure placement.
@@ -25,12 +37,15 @@ import java.util.Map;
  * bounded footprint, performed in tick-sized batches, and have BlockState
  * snapshots for rollback if application fails.
  */
-public final class HalloweenStructureManager {
+public final class HalloweenStructureManager implements Listener {
     private static final int FORWARD_BLOCKS = 8;
     private static final int BLOCKS_PER_TICK = 700;
     private static final int MAX_PLANNED_BLOCKS = 210_000;
 
     private final HalloweenCore plugin;
+    private final NamespacedKey checkedChunkKey;
+    private final NamespacedKey structureChunkKey;
+    private final Set<String> generatedStructureIndex = new HashSet<>();
     private boolean building;
     private BukkitTask activeTask;
     private BuildJob activeJob;
@@ -40,7 +55,9 @@ public final class HalloweenStructureManager {
         VILLAGE("vesnice", 15, 10, false, Material.GRASS_BLOCK),
         ARENA("aréna", 18, 16, true, Material.POLISHED_BLACKSTONE),
         VAMPIRE_ARENA("vampirearena", 48, 24, true, Material.POLISHED_BLACKSTONE_BRICKS),
-        GOBLIN_ARENA("goblinarena", 24, 20, true, Material.MOSSY_STONE_BRICKS);
+        GOBLIN_ARENA("goblinarena", 24, 20, true, Material.MOSSY_STONE_BRICKS),
+        AUTO_CEMETERY("auto-hřbitov", 7, 8, false, Material.MOSSY_COBBLESTONE),
+        AUTO_VILLAGE("auto-vesnice", 7, 10, false, Material.GRASS_BLOCK);
 
         final String displayId;
         final int radius;
@@ -75,9 +92,10 @@ public final class HalloweenStructureManager {
         long lastProgressNotice;
         String failure;
         boolean rollingBack;
+        final boolean automatic;
 
         BuildJob(Player player, World world, StructureType type, int centerX, int floorY,
-                 int centerZ, LinkedHashMap<BlockPos, Material> plan) {
+                 int centerZ, LinkedHashMap<BlockPos, Material> plan, boolean automatic) {
             this.player = player;
             this.world = world;
             this.type = type;
@@ -86,11 +104,15 @@ public final class HalloweenStructureManager {
             this.centerZ = centerZ;
             this.plan = plan;
             this.operations = new ArrayList<>(plan.entrySet());
+            this.automatic = automatic;
         }
     }
 
     public HalloweenStructureManager(HalloweenCore plugin) {
         this.plugin = plugin;
+        this.checkedChunkKey = new NamespacedKey(plugin, "halloween_structure_attempted_v1");
+        this.structureChunkKey = new NamespacedKey(plugin, "halloween_structure_anchor_v1");
+        this.generatedStructureIndex.addAll(plugin.getConfig().getStringList("world-generation.generated-structure-index"));
     }
 
     /**
@@ -158,7 +180,7 @@ public final class HalloweenStructureManager {
                                 + ", plannedBlocks=" + plan.size() + ", limit=" + MAX_PLANNED_BLOCKS);
                         return;
                     }
-                    activeJob = new BuildJob(player, world, type, centerX, floorY, centerZ, plan);
+                    activeJob = new BuildJob(player, world, type, centerX, floorY, centerZ, plan, false);
                     activeTask = Bukkit.getScheduler().runTaskTimer(plugin, this::processBatch, 1L, 1L);
                 } catch (RuntimeException ex) {
                     building = false;
@@ -173,6 +195,158 @@ public final class HalloweenStructureManager {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Automatic, non-FORCE structure generation is allowed only for brand-new chunks
+     * in explicitly listed worlds. Each automatic template is 15x15 and stays inside
+     * its anchor chunk; trees, tile entities, unusual terrain and player-made surfaces
+     * reject the candidate rather than being overwritten.
+     */
+    @EventHandler(priority = EventPriority.MONITOR)
+    public void onNewChunk(ChunkLoadEvent event) {
+        if (!event.isNewChunk() || building || !plugin.isEventEnabled()) return;
+        if (!plugin.getConfig().getBoolean("world-generation.structures.enabled", true)) return;
+        World world = event.getWorld();
+        if (!plugin.isEligibleAutomaticHalloweenWorld(world)) return;
+
+        Chunk chunk = event.getChunk();
+        if (chunk.getPersistentDataContainer().has(checkedChunkKey, PersistentDataType.BYTE)) return;
+        // Mark before sampling: a failed/low-probability attempt is never repeated on
+        // an old chunk later, even after restart or config reload.
+        chunk.getPersistentDataContainer().set(checkedChunkKey, PersistentDataType.BYTE, (byte) 1);
+
+        int oneIn = Math.max(64, Math.min(10_000,
+                plugin.getConfig().getInt("world-generation.structures.one-in-new-chunks", 256)));
+        long seed = world.getSeed()
+                ^ ((long) chunk.getX() * 341873128712L)
+                ^ ((long) chunk.getZ() * 132897987541L)
+                ^ 0x48414C4C53545255L;
+        Random random = new Random(seed);
+        if (random.nextInt(oneIn) != 0) return;
+
+        List<String> allowedBiomes = plugin.getConfig().getStringList("world-generation.allowed-biomes");
+        if (!allowedBiomes.isEmpty()) {
+            String biomeName = chunk.getBlock(8, Math.max(world.getMinHeight(), world.getMinHeight() + 1), 8)
+                    .getBiome().name();
+            // Biome on the surface is checked below as well; this quick check avoids
+            // scanning terrain for explicitly disallowed biome names.
+            boolean listed = allowedBiomes.stream().anyMatch(name -> name != null
+                    && name.trim().equalsIgnoreCase(biomeName));
+            if (!listed) return;
+        } else if (!isSuitableBiome(chunk.getBlock(8, world.getMinHeight() + 1, 8).getBiome())) {
+            return;
+        }
+
+        StructureType type = random.nextBoolean() ? StructureType.AUTO_CEMETERY : StructureType.AUTO_VILLAGE;
+        int centerX = (chunk.getX() << 4) + 8;
+        int centerZ = (chunk.getZ() << 4) + 8;
+        int floorY = world.getHighestBlockYAt(centerX, centerZ);
+        if (!insideBorder(world, centerX, centerZ, type.radius)
+                || floorY - 2 < world.getMinHeight()
+                || floorY + type.clearHeight >= world.getMaxHeight()) return;
+        if (!hasMinimumStructureDistance(world, centerX, centerZ)) return;
+        if (!isSafeNaturalFootprint(world, type, centerX, floorY, centerZ)) return;
+
+        LinkedHashMap<BlockPos, Material> plan;
+        try {
+            plan = createPlan(type, centerX, floorY, centerZ, 0);
+        } catch (RuntimeException ex) {
+            plugin.getLogger().warning("Automatic Halloween structure plan failed in " + world.getName()
+                    + " chunk " + chunk.getX() + "," + chunk.getZ() + ": " + ex.getMessage());
+            return;
+        }
+        if (plan.isEmpty() || plan.size() > 10_000) return;
+
+        building = true;
+        plugin.getLogger().info("Automatic Halloween structure accepted: " + type.displayId
+                + " in " + world.getName() + " at " + centerX + "," + floorY + "," + centerZ);
+        activeJob = new BuildJob(null, world, type, centerX, floorY, centerZ, plan, true);
+        activeTask = Bukkit.getScheduler().runTaskTimer(plugin, this::processBatch, 1L, 1L);
+    }
+
+    private boolean isSuitableBiome(Biome biome) {
+        String name = biome.name();
+        return name.contains("PLAINS") || name.contains("FOREST") || name.contains("TAIGA")
+                || name.contains("SWAMP") || name.contains("MEADOW") || name.contains("GROVE")
+                || name.contains("DARK_FOREST") || name.contains("WINDSWEPT_FOREST");
+    }
+
+    private boolean hasMinimumStructureDistance(World world, int x, int z) {
+        int minDistance = Math.max(64, Math.min(4096,
+                plugin.getConfig().getInt("world-generation.structures.minimum-distance-blocks", 384)));
+        long minDistanceSquared = (long) minDistance * minDistance;
+        String prefix = world.getUID().toString() + ";";
+        for (String saved : generatedStructureIndex) {
+            if (!saved.startsWith(prefix)) continue;
+            String[] parts = saved.split(";");
+            if (parts.length < 4) continue;
+            try {
+                int oldX = Integer.parseInt(parts[1]);
+                int oldZ = Integer.parseInt(parts[2]);
+                long dx = (long) oldX - x;
+                long dz = (long) oldZ - z;
+                if (dx * dx + dz * dz < minDistanceSquared) return false;
+            } catch (NumberFormatException ignored) {
+                plugin.getLogger().warning("Ignoring malformed world-generation structure index entry: " + saved);
+            }
+        }
+        return true;
+    }
+
+    private boolean isSafeNaturalFootprint(World world, StructureType type, int centerX, int floorY, int centerZ) {
+        int minimumGround = Integer.MAX_VALUE;
+        int maximumGround = Integer.MIN_VALUE;
+        int maxSlope = Math.max(0, Math.min(2,
+                plugin.getConfig().getInt("world-generation.structures.maximum-surface-variation", 2)));
+        for (int dx = -type.radius; dx <= type.radius; dx++) {
+            for (int dz = -type.radius; dz <= type.radius; dz++) {
+                int x = centerX + dx;
+                int z = centerZ + dz;
+                int groundY = world.getHighestBlockYAt(x, z);
+                Material groundType = world.getBlockAt(x, groundY, z).getType();
+                if (!isAutomaticNaturalGround(groundType)) return false;
+                Block ground = world.getBlockAt(x, groundY, z);
+                if (ground.getState() instanceof TileState) return false;
+                if (groundY < floorY - 2 || groundY > floorY + maxSlope) return false;
+                minimumGround = Math.min(minimumGround, groundY);
+                maximumGround = Math.max(maximumGround, groundY);
+
+                // Reject trees, buildings, chests, fences and other obstructions above
+                // natural ground. Small ground plants can be replaced safely.
+                for (int y = groundY + 1; y < floorY + type.clearHeight; y++) {
+                    Material material = world.getBlockAt(x, y, z).getType();
+                    if (material.isAir() || isReplaceableGroundPlant(material)) continue;
+                    return false;
+                }
+                // Never clear inventories, signs, skulls or other block entities,
+                // including block entities concealed just below the surface.
+                for (int y = Math.max(world.getMinHeight(), floorY - 2); y <= Math.min(groundY, floorY); y++) {
+                    if (world.getBlockAt(x, y, z).getState() instanceof TileState) return false;
+                }
+            }
+        }
+        return maximumGround - minimumGround <= maxSlope;
+    }
+
+    private boolean isAutomaticNaturalGround(Material material) {
+        return switch (material) {
+            case GRASS_BLOCK, DIRT, COARSE_DIRT, ROOTED_DIRT, PODZOL, MYCELIUM,
+                    MOSS_BLOCK, MUD, CLAY, SAND, RED_SAND, GRAVEL, SNOW_BLOCK -> true;
+            default -> false;
+        };
+    }
+
+    private boolean isReplaceableGroundPlant(Material material) {
+        return material == Material.SHORT_GRASS || material == Material.TALL_GRASS
+                || material == Material.FERN || material == Material.LARGE_FERN
+                || material == Material.DEAD_BUSH || material == Material.DANDELION
+                || material == Material.POPPY || material == Material.BLUE_ORCHID
+                || material == Material.ALLIUM || material == Material.AZURE_BLUET
+                || material == Material.RED_TULIP || material == Material.ORANGE_TULIP
+                || material == Material.WHITE_TULIP || material == Material.PINK_TULIP
+                || material == Material.OXEYE_DAISY || material == Material.CORNFLOWER
+                || material == Material.LILY_OF_THE_VALLEY || material == Material.SNOW;
     }
 
     private void processBatch() {
@@ -202,7 +376,7 @@ public final class HalloweenStructureManager {
 
             job.cursor = end;
             long now = System.currentTimeMillis();
-            if (job.player.isOnline() && now - job.lastProgressNotice >= 5_000L && job.cursor < job.plan.size()) {
+            if (job.player != null && job.player.isOnline() && now - job.lastProgressNotice >= 5_000L && job.cursor < job.plan.size()) {
                 job.lastProgressNotice = now;
                 int percent = (int) ((long) job.cursor * 100L / job.plan.size());
                 job.player.sendMessage(plugin.color("&7Stavba " + job.type.displayId + ": &e" + percent + "%"));
@@ -231,7 +405,7 @@ public final class HalloweenStructureManager {
             job.rollbackCursor = end;
         }
         if (job.rollbackCursor >= job.rollbackEntries.size()) {
-            if (job.player.isOnline()) {
+            if (job.player != null && job.player.isOnline()) {
                 job.player.sendMessage(plugin.color("&cStavba " + job.type.displayId
                         + " selhala a rollback byl dokončen. Důvod: " + job.failure));
             }
@@ -248,14 +422,20 @@ public final class HalloweenStructureManager {
         Collections.reverse(job.rollbackEntries);
         job.rollbackCursor = 0;
         if (job.rollbackEntries.isEmpty()) {
-            if (job.player.isOnline()) job.player.sendMessage(plugin.color("&cStavba se zastavila ještě před změnou bloků: " + reason));
+            if (job.player != null && job.player.isOnline()) job.player.sendMessage(plugin.color("&cStavba se zastavila ještě před změnou bloků: " + reason));
             finishTask();
         }
     }
 
     private void completeBuild(BuildJob job) {
         try {
-            if (job.type == StructureType.VILLAGE) {
+            if (job.automatic) {
+                String indexEntry = job.world.getUID() + ";" + job.centerX + ";" + job.centerZ + ";" + job.type.name();
+                generatedStructureIndex.add(indexEntry);
+                plugin.getConfig().set("world-generation.generated-structure-index", new ArrayList<>(generatedStructureIndex));
+                Chunk anchor = job.world.getChunkAt(job.centerX >> 4, job.centerZ >> 4);
+                anchor.getPersistentDataContainer().set(structureChunkKey, PersistentDataType.STRING, job.type.name());
+            } else if (job.type == StructureType.VILLAGE) {
                 plugin.getConfig().set("haunted-village.enabled", true);
                 plugin.getConfig().set("haunted-village.world", job.world.getName());
                 plugin.getConfig().set("haunted-village.x", job.centerX + 0.5D);
@@ -277,9 +457,10 @@ public final class HalloweenStructureManager {
                 plugin.getConfig().set("bosses.goblin.arena.z", job.centerZ + 0.5D);
             }
             plugin.saveConfig();
-            plugin.getLogger().info("Halloween structure build completed: " + job.type.displayId
+            plugin.getLogger().info((job.automatic ? "Automatic" : "Manual")
+                    + " Halloween structure build completed: " + job.type.displayId
                     + ", world=" + job.world.getName() + ", changedBlocks=" + job.snapshots.size());
-            if (job.player.isOnline()) {
+            if (job.player != null && job.player.isOnline()) {
                 job.player.sendMessage(plugin.color("&aHotovo! &e" + job.type.displayId + " &aje skutečně postaven."));
                 job.player.sendMessage(plugin.color("&7Svět: &f" + job.world.getName() + " &8• &7Střed: &f"
                         + job.centerX + " " + (job.floorY + 1) + " " + job.centerZ
@@ -380,8 +561,10 @@ public final class HalloweenStructureManager {
         }
 
         switch (type) {
-            case CEMETERY -> buildCemetery(plan, cx, floorY, cz, rotation);
-            case VILLAGE -> buildVillage(plan, cx, floorY, cz, rotation);
+            case CEMETERY -> buildCemetery(plan, type, cx, floorY, cz, rotation);
+            case AUTO_CEMETERY -> buildCemetery(plan, type, cx, floorY, cz, rotation);
+            case VILLAGE -> buildVillage(plan, type, cx, floorY, cz, rotation);
+            case AUTO_VILLAGE -> buildAutoVillage(plan, type, cx, floorY, cz, rotation);
             case ARENA, VAMPIRE_ARENA, GOBLIN_ARENA -> buildArena(plan, type, cx, floorY, cz, rotation);
         }
         return plan;
@@ -400,12 +583,12 @@ public final class HalloweenStructureManager {
     }
 
     private Material floorAt(StructureType type, int x, int z) {
-        if (type == StructureType.VILLAGE) {
+        if (type == StructureType.VILLAGE || type == StructureType.AUTO_VILLAGE) {
             if (Math.abs(x) <= 1 || Math.abs(z) <= 1) return Material.COARSE_DIRT;
             if (Math.abs(x) <= 2 && Math.abs(z) <= 2) return Material.PODZOL;
             return Material.GRASS_BLOCK;
         }
-        if (type == StructureType.CEMETERY) {
+        if (type == StructureType.CEMETERY || type == StructureType.AUTO_CEMETERY) {
             if (Math.abs(x) == type.radius || Math.abs(z) == type.radius) return Material.MOSSY_STONE_BRICKS;
             if ((x * 3 + z * 5) % 11 == 0) return Material.CRACKED_STONE_BRICKS;
             return Material.MOSSY_COBBLESTONE;
@@ -420,26 +603,26 @@ public final class HalloweenStructureManager {
         return type == StructureType.VAMPIRE_ARENA ? Material.DEEPSLATE_TILES : Material.POLISHED_BLACKSTONE;
     }
 
-    private void buildCemetery(LinkedHashMap<BlockPos, Material> plan, int cx, int y, int cz, int rot) {
-        int r = StructureType.CEMETERY.radius;
+    private void buildCemetery(LinkedHashMap<BlockPos, Material> plan, StructureType type, int cx, int y, int cz, int rot) {
+        int r = type.radius;
         for (int p = -r; p <= r; p++) {
-            put(plan, StructureType.CEMETERY, cx, y, cz, rot, p, y + 1, -r, Material.MOSSY_STONE_BRICK_WALL);
-            put(plan, StructureType.CEMETERY, cx, y, cz, rot, p, y + 1, r, Material.MOSSY_STONE_BRICK_WALL);
-            put(plan, StructureType.CEMETERY, cx, y, cz, rot, -r, y + 1, p, Material.MOSSY_STONE_BRICK_WALL);
-            put(plan, StructureType.CEMETERY, cx, y, cz, rot, r, y + 1, p, Material.MOSSY_STONE_BRICK_WALL);
+            put(plan, type, cx, y, cz, rot, p, y + 1, -r, Material.MOSSY_STONE_BRICK_WALL);
+            put(plan, type, cx, y, cz, rot, p, y + 1, r, Material.MOSSY_STONE_BRICK_WALL);
+            put(plan, type, cx, y, cz, rot, -r, y + 1, p, Material.MOSSY_STONE_BRICK_WALL);
+            put(plan, type, cx, y, cz, rot, r, y + 1, p, Material.MOSSY_STONE_BRICK_WALL);
         }
         // Open front gate.
         for (int x = -1; x <= 1; x++) {
-            put(plan, StructureType.CEMETERY, cx, y, cz, rot, x, y + 1, -r, Material.AIR);
+            put(plan, type, cx, y, cz, rot, x, y + 1, -r, Material.AIR);
         }
 
         // Grave rows with headstones and candles.
         for (int x : new int[]{-6, -3, 0, 3, 6}) {
             for (int z : new int[]{-5, 0, 5}) {
                 if (x == 0 && z == 0) continue;
-                put(plan, StructureType.CEMETERY, cx, y, cz, rot, x, y + 1, z, Material.COBBLESTONE_WALL);
-                put(plan, StructureType.CEMETERY, cx, y, cz, rot, x, y + 2, z, Material.COBBLESTONE_WALL);
-                put(plan, StructureType.CEMETERY, cx, y, cz, rot, x, y + 1, z + 1, Material.SOUL_LANTERN);
+                put(plan, type, cx, y, cz, rot, x, y + 1, z, Material.COBBLESTONE_WALL);
+                put(plan, type, cx, y, cz, rot, x, y + 2, z, Material.COBBLESTONE_WALL);
+                put(plan, type, cx, y, cz, rot, x, y + 1, z + 1, Material.SOUL_LANTERN);
             }
         }
         // Compact crypt/mausoleum at the rear.
@@ -448,70 +631,136 @@ public final class HalloweenStructureManager {
                 if (Math.abs(x) == 3 || z == 4 || z == 8) {
                     for (int dy = 1; dy <= 3; dy++) {
                         if (z == 4 && x == 0 && dy <= 2) continue;
-                        put(plan, StructureType.CEMETERY, cx, y, cz, rot, x, y + dy, z, Material.DEEPSLATE_BRICKS);
+                        put(plan, type, cx, y, cz, rot, x, y + dy, z, Material.DEEPSLATE_BRICKS);
                     }
                 }
                 if (Math.abs(x) <= 3 && z >= 4 && z <= 8) {
-                    put(plan, StructureType.CEMETERY, cx, y, cz, rot, x, y + 4, z, Material.DEEPSLATE_TILES);
+                    put(plan, type, cx, y, cz, rot, x, y + 4, z, Material.DEEPSLATE_TILES);
                 }
             }
         }
-        put(plan, StructureType.CEMETERY, cx, y, cz, rot, 0, y + 1, -9, Material.SOUL_LANTERN);
+        put(plan, type, cx, y, cz, rot, 0, y + 1, -9, Material.SOUL_LANTERN);
     }
 
-    private void buildVillage(LinkedHashMap<BlockPos, Material> plan, int cx, int y, int cz, int rot) {
+    private void buildVillage(LinkedHashMap<BlockPos, Material> plan, StructureType type, int cx, int y, int cz, int rot) {
         // A central well and four distinct cottages; village paths and small props
         // are part of the deterministic template, not random scattered blocks.
         for (int x = -2; x <= 2; x++) {
             for (int z = -2; z <= 2; z++) {
                 if (Math.abs(x) == 2 || Math.abs(z) == 2) {
-                    put(plan, StructureType.VILLAGE, cx, y, cz, rot, x, y + 1, z, Material.STONE_BRICKS);
+                    put(plan, type, cx, y, cz, rot, x, y + 1, z, Material.STONE_BRICKS);
                 } else {
-                    put(plan, StructureType.VILLAGE, cx, y, cz, rot, x, y + 1, z, Material.WATER);
+                    put(plan, type, cx, y, cz, rot, x, y + 1, z, Material.WATER);
                 }
             }
         }
         for (int x : new int[]{-8, 8}) {
             for (int z : new int[]{-8, 8}) {
                 int variant = Math.abs(x + z) % 3;
-                buildCottage(plan, cx, y, cz, rot, x, z, variant);
+                buildCottage(plan, type, cx, y, cz, rot, x, z, variant);
             }
         }
         for (int x = -13; x <= 13; x += 2) {
-            put(plan, StructureType.VILLAGE, cx, y, cz, rot, x, y + 1, -13, Material.SPRUCE_FENCE);
-            put(plan, StructureType.VILLAGE, cx, y, cz, rot, x, y + 1, 13, Material.SPRUCE_FENCE);
+            put(plan, type, cx, y, cz, rot, x, y + 1, -13, Material.SPRUCE_FENCE);
+            put(plan, type, cx, y, cz, rot, x, y + 1, 13, Material.SPRUCE_FENCE);
         }
         for (int z = -13; z <= 13; z += 2) {
-            put(plan, StructureType.VILLAGE, cx, y, cz, rot, -13, y + 1, z, Material.SPRUCE_FENCE);
-            put(plan, StructureType.VILLAGE, cx, y, cz, rot, 13, y + 1, z, Material.SPRUCE_FENCE);
+            put(plan, type, cx, y, cz, rot, -13, y + 1, z, Material.SPRUCE_FENCE);
+            put(plan, type, cx, y, cz, rot, 13, y + 1, z, Material.SPRUCE_FENCE);
         }
         for (int x : new int[]{-12, -4, 4, 12}) {
-            put(plan, StructureType.VILLAGE, cx, y, cz, rot, x, y + 1, 0, Material.JACK_O_LANTERN);
+            put(plan, type, cx, y, cz, rot, x, y + 1, 0, Material.JACK_O_LANTERN);
         }
-        put(plan, StructureType.VILLAGE, cx, y, cz, rot, -11, y + 1, -11, Material.PUMPKIN);
-        put(plan, StructureType.VILLAGE, cx, y, cz, rot, 11, y + 1, 11, Material.PUMPKIN);
-        put(plan, StructureType.VILLAGE, cx, y, cz, rot, -11, y + 1, 11, Material.HAY_BLOCK);
-        put(plan, StructureType.VILLAGE, cx, y, cz, rot, 11, y + 1, -11, Material.HAY_BLOCK);
+        put(plan, type, cx, y, cz, rot, -11, y + 1, -11, Material.PUMPKIN);
+        put(plan, type, cx, y, cz, rot, 11, y + 1, 11, Material.PUMPKIN);
+        put(plan, type, cx, y, cz, rot, -11, y + 1, 11, Material.HAY_BLOCK);
+        put(plan, type, cx, y, cz, rot, 11, y + 1, -11, Material.HAY_BLOCK);
     }
 
-    private void buildCottage(LinkedHashMap<BlockPos, Material> plan, int cx, int y, int cz,
+    private void buildAutoVillage(LinkedHashMap<BlockPos, Material> plan, StructureType type,
+                                  int cx, int y, int cz, int rot) {
+        // Compact two-house hamlet that fits completely inside its brand-new 16x16 chunk.
+        for (int x = -6; x <= 6; x++) {
+            put(plan, type, cx, y, cz, rot, x, y + 1, 0, Material.COARSE_DIRT);
+            put(plan, type, cx, y, cz, rot, 0, y + 1, x, Material.COARSE_DIRT);
+        }
+        for (int x = -1; x <= 1; x++) {
+            for (int z = -1; z <= 1; z++) {
+                put(plan, type, cx, y, cz, rot, x, y + 1, z,
+                        Math.abs(x) == 1 || Math.abs(z) == 1 ? Material.STONE_BRICKS : Material.WATER);
+            }
+        }
+        buildAutoCottage(plan, type, cx, y, cz, rot, -3, -3, Material.SPRUCE_PLANKS);
+        buildAutoCottage(plan, type, cx, y, cz, rot, 3, 3, Material.DARK_OAK_PLANKS);
+        put(plan, type, cx, y, cz, rot, -6, y + 1, 6, Material.JACK_O_LANTERN);
+        put(plan, type, cx, y, cz, rot, 6, y + 1, -6, Material.PUMPKIN);
+        put(plan, type, cx, y, cz, rot, -6, y + 1, -6, Material.HAY_BLOCK);
+        put(plan, type, cx, y, cz, rot, 6, y + 1, 6, Material.HAY_BLOCK);
+        for (int x = -6; x <= 6; x++) {
+            if (Math.abs(x) > 1) {
+                put(plan, type, cx, y, cz, rot, x, y + 1, -7, Material.SPRUCE_FENCE);
+                put(plan, type, cx, y, cz, rot, x, y + 1, 7, Material.SPRUCE_FENCE);
+            }
+        }
+        for (int z = -6; z <= 6; z++) {
+            if (Math.abs(z) > 1) {
+                put(plan, type, cx, y, cz, rot, -7, y + 1, z, Material.SPRUCE_FENCE);
+                put(plan, type, cx, y, cz, rot, 7, y + 1, z, Material.SPRUCE_FENCE);
+            }
+        }
+    }
+
+    private void buildAutoCottage(LinkedHashMap<BlockPos, Material> plan, StructureType type,
+                                  int cx, int y, int cz, int rot, int ox, int oz, Material planks) {
+        for (int dx = -2; dx <= 2; dx++) {
+            for (int dz = -2; dz <= 2; dz++) {
+                if (Math.abs(dx) == 2 && Math.abs(dz) == 2) {
+                    for (int dy = 1; dy <= 3; dy++) {
+                        put(plan, type, cx, y, cz, rot, ox + dx, y + dy, oz + dz, Material.SPRUCE_LOG);
+                    }
+                }
+                if (Math.abs(dx) == 2 || Math.abs(dz) == 2) {
+                    for (int dy = 1; dy <= 3; dy++) {
+                        if (dy == 2 && (dx == 0 || dz == 0)) continue;
+                        put(plan, type, cx, y, cz, rot, ox + dx, y + dy, oz + dz, planks);
+                    }
+                }
+                if (Math.abs(dx) <= 1 && Math.abs(dz) <= 1) {
+                    put(plan, type, cx, y, cz, rot, ox + dx, y + 1, oz + dz, Material.SPRUCE_PLANKS);
+                }
+            }
+        }
+        for (int layer = 0; layer <= 1; layer++) {
+            int span = 2 - layer;
+            for (int dx = -span; dx <= span; dx++) {
+                for (int dz = -span; dz <= span; dz++) {
+                    if (Math.abs(dx) == span || Math.abs(dz) == span || layer == 1) {
+                        put(plan, type, cx, y, cz, rot, ox + dx, y + 4 + layer, oz + dz, planks);
+                    }
+                }
+            }
+        }
+        put(plan, type, cx, y, cz, rot, ox, y + 1, oz - 2, Material.LANTERN);
+    }
+
+    private void buildCottage(LinkedHashMap<BlockPos, Material> plan, StructureType type, int cx, int y, int cz,
                               int rot, int ox, int oz, int variant) {
         Material log = variant == 0 ? Material.SPRUCE_LOG : variant == 1 ? Material.DARK_OAK_LOG : Material.STRIPPED_SPRUCE_LOG;
         Material planks = variant == 0 ? Material.SPRUCE_PLANKS : variant == 1 ? Material.DARK_OAK_PLANKS : Material.OAK_PLANKS;
         for (int dx = -3; dx <= 3; dx++) {
             for (int dz = -3; dz <= 3; dz++) {
                 if (Math.abs(dx) == 3 && Math.abs(dz) == 3) {
-                    for (int dy = 1; dy <= 3; dy++) put(plan, StructureType.VILLAGE, cx, y, cz, rot, ox + dx, y + dy, oz + dz, log);
+                    for (int dy = 1; dy <= 3; dy++) put(plan, type, cx, y, cz, rot, ox + dx, y + dy, oz + dz, log);
                 }
                 if (Math.abs(dx) == 3 || Math.abs(dz) == 3) {
                     for (int dy = 1; dy <= 3; dy++) {
                         if (dz == -3 && dx == 0) continue; // open entrance, no door state mismatch
                         if (dy == 2 && (Math.abs(dx) == 3 && dz == 0 || Math.abs(dz) == 3 && dx == 0)) continue;
-                        put(plan, StructureType.VILLAGE, cx, y, cz, rot, ox + dx, y + dy, oz + dz, planks);
+                        put(plan, type, cx, y, cz, rot, ox + dx, y + dy, oz + dz, planks);
                     }
                 }
                 if (Math.abs(dx) <= 2 && Math.abs(dz) <= 2) {
-                    put(plan, StructureType.VILLAGE, cx, y, cz, rot, ox + dx, y + 1, oz + dz, Material.SPRUCE_PLANKS);
+                    put(plan, type, cx, y, cz, rot, ox + dx, y + 1, oz + dz, Material.SPRUCE_PLANKS);
                 }
             }
         }
@@ -522,7 +771,7 @@ public final class HalloweenStructureManager {
             for (int dx = -span; dx <= span; dx++) {
                 for (int dz = -span; dz <= span; dz++) {
                     if (Math.abs(dx) == span || Math.abs(dz) == span || layer == 2) {
-                        put(plan, StructureType.VILLAGE, cx, y, cz, rot, ox + dx, yy, oz + dz, planks);
+                        put(plan, type, cx, y, cz, rot, ox + dx, yy, oz + dz, planks);
                     }
                 }
             }
