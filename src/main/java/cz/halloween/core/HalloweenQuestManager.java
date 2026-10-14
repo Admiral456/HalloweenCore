@@ -73,6 +73,7 @@ public final class HalloweenQuestManager implements Listener {
         if (!plugin.isEventEnabled()) return;
         Player killer = event.getEntity().getKiller();
         if (!isEligible(killer)) return;
+        if (!plugin.isEligibleGameplayWorld(killer.getWorld())) return;
 
         String specialMob = event.getEntity().getPersistentDataContainer()
                 .get(cursedMobKey, PersistentDataType.STRING);
