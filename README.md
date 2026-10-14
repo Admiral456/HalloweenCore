@@ -50,11 +50,9 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
-- /halloween setvillage (admin)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
-- /halloween setvampirearena (admin)
-- /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
+- /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> (admin, jedna akce bez zadávání souřadnic nebo potvrzení)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>
 - /halloween on|off
@@ -146,8 +144,9 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 
 ## Návod: aréna, obchod a resource pack
 
-- Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
-- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
+- Královskou arénu vygeneruje admin jedním příkazem `/halloween spawn vampirearena`. Plugin zvolí bod před hráčem podle směru pohledu; není třeba stát uprostřed ani předem nastavovat souřadnice nebo potvrzovat stavbu.
+- Pro ostatní stavby použij `/halloween spawn hřbitov`, `/halloween spawn vesnice`, `/halloween spawn aréna` nebo `/halloween spawn goblinarena`. Kořenový příkaz `/spawn <typ>` je pouze best-effort, protože ho může vlastnit Essentials nebo jiný plugin.
+- Ruční stavba přepisuje bloky pouze uvnitř předem spočítaného půdorysu, provádí se v dávkách a při chybě se pokusí rollback. Před produkčním použitím proveď zálohu světa; živé testy ještě nejsou hotové.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
 - `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
 - `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
@@ -248,7 +247,7 @@ Repozitář obsahuje editovatelný Blockbench blueprint `mythicmobs/models/vampi
 
 ## Generování upíří arény
 
-Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 97 bloků, šest soustředných runových kruhů, obvodové cimbuří, osm gotických věží, čtyři monumentální brány a osm vnitřních obelisků. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, načtené chunky, volný prostor nad podlahou a terén bez hlubokých proláklin. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Po potvrzení se v kruhu o poloměru 48 bloků upraví povrch terénu a vytvoří nová podlaha. Před spuštěním si udělej zálohu světa.
+Aréna Krále upírů se staví příkazem `/halloween spawn vampirearena` bez nastavování středu a bez potvrzovacího kroku. Příkaz umístí arénu o průměru 97 bloků před hráče, vytvoří kamennou podlahu, runové kruhy, obvodové cimbuří, věže a brány. Upravuje jen předem spočítaný footprint, má limit změn a staví po tickových dávkách. Bloky s uloženými daty v prostoru zásahu způsobí bezpečné odmítnutí před první změnou. Při chybě se plugin pokusí vrátit snapshot. To je nejlepší dostupná ochrana, ne záruka proti pádu JVM nebo chybě při rollbacku; před produkční stavbou udělej zálohu světa. Aréna vytvořená ve světě `Spawn` se nestane platnou boss arénou.
 
 
 ## Krvavý měsíc — invaze
