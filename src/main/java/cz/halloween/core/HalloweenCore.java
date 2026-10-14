@@ -217,9 +217,12 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
 
         if (changed) {
-            Bukkit.broadcastMessage(color(enabled
+            String message = color(enabled
                     ? "&6&lHALLOWEEN &8» &eHalloween je zapnutý. První událost dorazí za chvíli!"
-                    : "&8[HALLOWEEN] &7Halloween event byl vypnut."));
+                    : "&8[HALLOWEEN] &7Halloween event byl vypnut.");
+            for (Player player : getServer().getOnlinePlayers()) {
+                if (isEligibleGameplayWorld(player.getWorld())) player.sendMessage(message);
+            }
         } else if (enabled) {
             getLogger().info("Halloween event is already enabled; next event scheduled shortly.");
         }
