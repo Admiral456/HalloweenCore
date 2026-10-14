@@ -57,6 +57,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateAtmosphericWorldGenerationDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -168,6 +169,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void reloadEventConfig() {
         reloadConfig();
         migrateAtmosphereVolume();
+        migrateAtmosphericWorldGenerationDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
@@ -622,14 +624,32 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     }
 
     /**
-     * Automatic generation must use an explicit world allow-list. An empty list means
-     * fail closed; do not guess that a world named "world" is the survival world.
+     * One-time migration for the atmospheric world-generation release. The user's
+     * explicit request is to make Halloween content appear throughout the playable map.
+     * Wildcard generation is still fail-safe for the lobby: the world named Spawn is
+     * always excluded, and automatic decoration only adds blocks in safe natural spots.
+     */
+    private void migrateAtmosphericWorldGenerationDefaults() {
+        if (getConfig().getBoolean("migrations.atmospheric-world-generation-v1", false)) return;
+        if (getConfig().getStringList("automatic-world-generation.allowed-worlds").isEmpty()) {
+            getConfig().set("automatic-world-generation.allowed-worlds", List.of("*"));
+        }
+        getConfig().set("world-decorations.decorate-existing-chunks", true);
+        getConfig().set("automatic-world-generation.structures-on-existing-chunks", true);
+        getConfig().set("migrations.atmospheric-world-generation-v1", true);
+        saveConfig();
+        getLogger().info("Atmospheric Halloween generation migration complete; all non-Spawn worlds are eligible.");
+    }
+
+    /**
+     * Automatic generation is limited to the configured allow-list. The wildcard
+     * means all worlds except the protected Spawn world; an empty list remains fail-closed.
      */
     public boolean isAutomaticHalloweenWorld(World world) {
         if (world == null || world.getName().equalsIgnoreCase("Spawn")) return false;
         if (!getConfig().getBoolean("automatic-world-generation.enabled", true)) return false;
         java.util.List<String> allowed = getConfig().getStringList("automatic-world-generation.allowed-worlds");
-        return allowed.stream().anyMatch(name -> name.equalsIgnoreCase(world.getName()));
+        return allowed.stream().anyMatch(name -> name.equals("*") || name.equalsIgnoreCase(world.getName()));
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {
