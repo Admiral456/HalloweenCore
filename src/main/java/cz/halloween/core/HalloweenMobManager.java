@@ -54,7 +54,8 @@ public final class HalloweenMobManager implements Listener {
                 && event.getSpawnReason() != CreatureSpawnEvent.SpawnReason.PATROL) return;
 
         LivingEntity entity = event.getEntity();
-        if (!plugin.isEligibleGameplayWorld(entity.getWorld())) return;
+        if (!plugin.isEligibleGameplayWorld(entity.getWorld())
+                || !plugin.isEligibleAutomaticHalloweenWorld(entity.getWorld())) return;
         String mobId = switch (entity.getType()) {
             case ZOMBIE -> "cursed-zombie";
             case HUSK -> "void-reaper";
