@@ -111,6 +111,11 @@ public final class HalloweenWorldDecorator implements Listener {
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
             if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) continue;
             if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
+            if (plugin.getStructureManager() != null && plugin.getStructureManager().isReservedForNaturalGeneration(chunk)) {
+                queued.add(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
+                pending.offer(chunk);
+                continue;
+            }
             try {
                 decorateChunk(chunk);
                 chunk.getPersistentDataContainer().set(decoratedKey, PersistentDataType.BYTE, (byte) 1);
@@ -129,6 +134,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private void decorateChunk(Chunk chunk) {
         if (!plugin.isAutomaticHalloweenWorld(chunk.getWorld())) return;
         if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) return;
+        if (plugin.getStructureManager() != null && plugin.getStructureManager().isReservedForNaturalGeneration(chunk)) return;
         // Existing decorated chunks get only the new accent layer. Avoid stacking
         // a second batch of pumpkins/cobwebs when upgrading an already-running world.
         boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE);
