@@ -53,6 +53,7 @@ VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "te
 EXPECTED_SEASONAL_BLOCK_TEXTURES = {
     "pumpkin_side.png", "pumpkin_top.png", "pumpkin_face.png",
     "jack_o_lantern.png", "cobweb.png", "red_candle.png", "red_candle_lit.png",
+    "red_mushroom.png", "brown_mushroom.png", "dead_bush.png", "soul_lantern.png",
 }
 
 
