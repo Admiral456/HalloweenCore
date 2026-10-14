@@ -580,7 +580,7 @@ public final class HalloweenStructureManager implements Listener {
 
         switch (type) {
             case CEMETERY -> buildCemetery(plan, type, cx, floorY, cz, rotation);
-            case AUTO_CEMETERY -> buildCemetery(plan, type, cx, floorY, cz, rotation);
+            case AUTO_CEMETERY -> buildAutoCemetery(plan, type, cx, floorY, cz, rotation);
             case VILLAGE -> buildVillage(plan, type, cx, floorY, cz, rotation);
             case AUTO_VILLAGE -> buildAutoVillage(plan, type, cx, floorY, cz, rotation);
             case ARENA, VAMPIRE_ARENA, GOBLIN_ARENA -> buildArena(plan, type, cx, floorY, cz, rotation);
@@ -657,6 +657,42 @@ public final class HalloweenStructureManager implements Listener {
             }
         }
         put(plan, type, cx, y, cz, rot, 0, y + 1, -9, Material.SOUL_LANTERN);
+    }
+
+    private void buildAutoCemetery(LinkedHashMap<BlockPos, Material> plan, StructureType type,
+                                   int cx, int y, int cz, int rot) {
+        int r = type.radius;
+        for (int p = -r; p <= r; p++) {
+            put(plan, type, cx, y, cz, rot, p, y + 1, -r, Material.MOSSY_STONE_BRICK_WALL);
+            put(plan, type, cx, y, cz, rot, p, y + 1, r, Material.MOSSY_STONE_BRICK_WALL);
+            put(plan, type, cx, y, cz, rot, -r, y + 1, p, Material.MOSSY_STONE_BRICK_WALL);
+            put(plan, type, cx, y, cz, rot, r, y + 1, p, Material.MOSSY_STONE_BRICK_WALL);
+        }
+        for (int x = -1; x <= 1; x++) {
+            put(plan, type, cx, y, cz, rot, x, y + 1, -r, Material.AIR);
+        }
+        // Compact 15x15 variant: all graves and the crypt stay inside its footprint.
+        for (int x : new int[]{-4, -1, 2, 5}) {
+            for (int z : new int[]{-3, 1, 5}) {
+                put(plan, type, cx, y, cz, rot, x, y + 1, z, Material.COBBLESTONE_WALL);
+                put(plan, type, cx, y, cz, rot, x, y + 2, z, Material.COBBLESTONE_WALL);
+                put(plan, type, cx, y, cz, rot, x, y + 1, z + 1, Material.SOUL_LANTERN);
+            }
+        }
+        for (int x = -2; x <= 2; x++) {
+            for (int z = 3; z <= 6; z++) {
+                if (Math.abs(x) == 2 || z == 3 || z == 6) {
+                    for (int dy = 1; dy <= 2; dy++) {
+                        if (z == 3 && x == 0) continue;
+                        put(plan, type, cx, y, cz, rot, x, y + dy, z, Material.DEEPSLATE_BRICKS);
+                    }
+                }
+                if (Math.abs(x) <= 2) {
+                    put(plan, type, cx, y, cz, rot, x, y + 3, z, Material.DEEPSLATE_TILES);
+                }
+            }
+        }
+        put(plan, type, cx, y, cz, rot, 0, y + 1, -6, Material.SOUL_LANTERN);
     }
 
     private void buildVillage(LinkedHashMap<BlockPos, Material> plan, StructureType type, int cx, int y, int cz, int rot) {
