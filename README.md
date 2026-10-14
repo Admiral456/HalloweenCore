@@ -143,7 +143,7 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 
 ## Eventy, speciální mobové a dekorace světa
 
-Náhodné eventy se spouštějí přibližně 15–24 minut od začátku předchozí události. Základní doba trvání je 5 minut a s postupem serveru se může prodlužovat. Po zapnutí Halloween systému přijde první event po krátké prodlevě.
+Náhodné eventy mají základní interval 15–24 minut mezi začátky. Serverové milníky jej postupně zkracují, ale nikdy pod 12 minut; běžný event trvá 5 minut a s postupem se může prodloužit nejvýše na 8 minut. Po zapnutí Halloween systému přijde první event po krátké prodlevě. Po restartu se použije běžný interval, ne okamžitý event.
 
 | Event | Co se během něj děje |
 |---|---|
