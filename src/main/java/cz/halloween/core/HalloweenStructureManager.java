@@ -79,10 +79,9 @@ public final class HalloweenStructureManager implements Listener {
                 || !plugin.getConfig().getBoolean("world-generation.enabled", true)) return;
         Chunk chunk = event.getChunk();
         World world = chunk.getWorld();
-        if (world == null || "Spawn".equalsIgnoreCase(world.getName())
-                || !plugin.isEligibleGameplayWorld(world)
-                || !plugin.getConfig().getStringList("world-generation.allowed-worlds").stream()
-                    .anyMatch(name -> name.equalsIgnoreCase(world.getName()))) return;
+        if (world == null || !HalloweenWorldPolicy.isExplicitlyAllowedForAutomaticGeneration(
+                world.getName(), plugin.getConfig().getStringList("world-generation.allowed-worlds"),
+                plugin.isEligibleGameplayWorld(world))) return;
         List<String> allowedBiomes = plugin.getConfig().getStringList("world-generation.allowed-biomes");
         if (allowedBiomes.isEmpty()) {
             allowedBiomes = List.of("PLAINS", "FOREST", "DARK_FOREST", "TAIGA",
