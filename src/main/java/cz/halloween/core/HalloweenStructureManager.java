@@ -217,6 +217,7 @@ public final class HalloweenStructureManager implements Listener {
         try {
             // Load only chunks covered by this manually requested structure.
             suppressAutomaticGeneration = true;
+            plugin.beginManualStructureChunkLoad();
             try {
                 int minChunkX = (centerX - radius) >> 4;
                 int maxChunkX = (centerX + radius) >> 4;
@@ -228,6 +229,7 @@ public final class HalloweenStructureManager implements Listener {
                     }
                 }
             } finally {
+                plugin.endManualStructureChunkLoad();
                 suppressAutomaticGeneration = false;
             }
             int centerSurfaceY = world.getHighestBlockYAt(centerX, centerZ);
@@ -366,6 +368,20 @@ public final class HalloweenStructureManager implements Listener {
             plugin.getConfig().set("haunted-village.y", job.centerY + 1.0D);
             plugin.getConfig().set("haunted-village.z", job.centerZ + 0.5D);
             plugin.saveConfig();
+        }
+
+        // Mark every touched chunk so the separate automatic ground decorator cannot
+        // litter a hand-built structure while its chunks stay loaded.
+        int radius = radius(job.type);
+        int minChunkX = (job.centerX - radius) >> 4;
+        int maxChunkX = (job.centerX + radius) >> 4;
+        int minChunkZ = (job.centerZ - radius) >> 4;
+        int maxChunkZ = (job.centerZ + radius) >> 4;
+        for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+            for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                Chunk chunk = job.world.getChunkAt(chunkX, chunkZ);
+                chunk.getPersistentDataContainer().set(naturalStructurePlacedKey, PersistentDataType.BYTE, (byte) 1);
+            }
         }
 
         plugin.getLogger().info("Halloween structure completed: " + job.type + " world=" + job.world.getName()
