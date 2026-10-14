@@ -4,8 +4,12 @@ main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
 description: Halloween event core for Purpur/Paper 1.21.10.
-softdepend: [ItemsAdder, MythicMobs, ModelEngine, BattlePass, WorldGuard, PlaceholderAPI]
+softdepend: [Essentials, ItemsAdder, MythicMobs, ModelEngine, BattlePass, WorldGuard, PlaceholderAPI]
 commands:
+  spawn:
+    description: Generate a Halloween structure directly in front of an administrator.
+    usage: /spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena>
+    permission: halloweencore.structures
   halloween:
     description: Halloween event statistics and administration.
     usage: /halloween [stats|progress|curse|event|challenge|quests [reset <hráč>]|rewards|claim|top|reload|debug|shader|setvillage|setvampirearena|buildvampirearena|setsecret|secrets|boss|bosseffects|modelpreview|give|on|off]
@@ -15,4 +19,7 @@ permissions:
   halloweencore.use:
     default: true
   halloweencore.admin:
+    default: op
+  halloweencore.structures:
+    description: Allows bounded FORCE generation of Halloween structures.
     default: op
