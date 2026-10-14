@@ -195,6 +195,58 @@ public final class HalloweenRewardManager {
         return rewardId.equalsIgnoreCase(stored);
     }
 
+    /**
+     * Admin test package. This intentionally bypasses shop prices and one-time claim
+     * flags, but uses the same item IDs, fallbacks and PDC markers as regular rewards.
+     */
+    public List<ItemStack> createAdminRewardItems() {
+        List<ItemStack> items = new ArrayList<>();
+        var section = plugin.getConfig().getConfigurationSection("rewards.shop");
+        if (section != null) {
+            for (String id : section.getKeys(false)) {
+                ItemStack item = createAdminRewardItem(id);
+                if (item != null && !item.getType().isAir()) items.add(item);
+            }
+        }
+        items.add(plugin.getItemManager().createBatwingElytra());
+        items.add(plugin.getItemManager().createNocturneSovereignCowl());
+        items.add(plugin.getItemManager().createHauntedMap());
+        items.add(plugin.getItemManager().createCursedCandy());
+        return items;
+    }
+
+    public ItemStack createAdminRewardItem(String id) {
+        if (id == null || id.isBlank()) return null;
+        var section = plugin.getConfig().getConfigurationSection("rewards.shop." + id);
+        if (section == null) return null;
+
+        int amount = Math.max(1, section.getInt("amount", 1));
+        String itemsAdderId = section.getString("itemsadder-id", "");
+        ItemStack item = itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount);
+        if (item == null) {
+            Material material;
+            try {
+                material = Material.valueOf(section.getString("material", "PAPER").toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ex) {
+                plugin.getLogger().warning("Skipped admin give-all item '" + id + "' because its fallback material is invalid.");
+                return null;
+            }
+            item = new ItemStack(material, amount);
+        }
+
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(plugin.color(section.getString("name", id)));
+            List<String> lore = new ArrayList<>();
+            for (String line : section.getStringList("lore")) lore.add(plugin.color(line));
+            lore.add(plugin.color("&8Admin test item • bez odečtení fragmentů"));
+            meta.setLore(lore);
+            meta.getPersistentDataContainer().set(rewardKey, PersistentDataType.STRING, id.toLowerCase(Locale.ROOT));
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
     public boolean claim(Player player, String id) {
         if (id == null || id.isBlank()) {
             player.sendMessage(plugin.color("&cPoužij /halloween claim <id>."));
