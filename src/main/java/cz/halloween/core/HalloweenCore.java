@@ -42,6 +42,11 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
+    private HalloweenStructureManager structureManager;
+    private HalloweenRelicAbilityManager relicAbilityManager;
+    private HalloweenHeadlessNickManager headlessNickManager;
+    private HalloweenSeasonManager seasonManager;
+    private HalloweenGraveEncounterManager graveEncounterManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -51,8 +56,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
+        migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
+        migrateAtmosphericWorldGenerationDefaults();
+        migrateSeasonAndWitchingDefaults();
+        migrateWitchingBatDefaults();
+        migrateGraveEncounterDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -72,6 +82,11 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
+        structureManager = new HalloweenStructureManager(this);
+        relicAbilityManager = new HalloweenRelicAbilityManager(this);
+        headlessNickManager = new HalloweenHeadlessNickManager(this);
+        seasonManager = new HalloweenSeasonManager(this);
+        graveEncounterManager = new HalloweenGraveEncounterManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -88,21 +103,30 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
+        getServer().getPluginManager().registerEvents(structureManager, this);
+        getServer().getPluginManager().registerEvents(relicAbilityManager, this);
+        getServer().getPluginManager().registerEvents(headlessNickManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
+        getServer().getPluginManager().registerEvents(graveEncounterManager, this);
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
             getCommand("halloween").setExecutor(halloweenCommand);
             getCommand("halloween").setTabCompleter(halloweenCommand);
+            getServer().getPluginManager().registerEvents(halloweenCommand, this);
         }
 
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
+        seasonManager.start();
         vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
         worldDecorator.start();
+        relicAbilityManager.start();
+        headlessNickManager.start();
         passiveEffectManager.start();
+        graveEncounterManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
@@ -118,12 +142,17 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
+        if (seasonManager != null) seasonManager.stop();
+        if (graveEncounterManager != null) graveEncounterManager.stop();
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (structureManager != null) structureManager.stop();
+        if (relicAbilityManager != null) relicAbilityManager.stop();
+        if (headlessNickManager != null) headlessNickManager.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -153,8 +182,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void reloadEventConfig() {
         reloadConfig();
         migrateAtmosphereVolume();
+        migrateAtmosphericWorldGenerationDefaults();
+        migrateSeasonAndWitchingDefaults();
+        migrateWitchingBatDefaults();
+        migrateGraveEncounterDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
+        migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
@@ -167,6 +201,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 eventManager.stop();
             }
         }
+        if (seasonManager != null) seasonManager.refresh();
         if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
         if (bossManager != null) bossManager.stopVampireBossBar();
 
@@ -277,6 +312,85 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
+    private void migrateSeasonAndWitchingDefaults() {
+        if (getConfig().getBoolean("migrations.season-witching-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; season/Witching Hour defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String sectionPath : List.of("season", "witching-hour")) {
+                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
+                if (section == null) continue;
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
+                }
+            }
+            getConfig().set("migrations.season-witching-v1", true);
+            saveConfig();
+            getLogger().info("Season scheduler and Witching Hour defaults migrated without overwriting existing settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Season/Witching Hour migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateWitchingBatDefaults() {
+        if (getConfig().getBoolean("migrations.witching-bat-transform-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; Witching Hour bat defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection section = defaults.getConfigurationSection("witching-hour");
+            if (section != null) {
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = "witching-hour." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
+                }
+            }
+            getConfig().set("migrations.witching-bat-transform-v1", true);
+            saveConfig();
+            getLogger().info("Witching Hour bat transformation defaults migrated without overwriting existing settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Witching Hour bat migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateGraveEncounterDefaults() {
+        if (getConfig().getBoolean("migrations.grave-encounters-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; grave encounter defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection section = defaults.getConfigurationSection("grave-encounters");
+            if (section != null) {
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = "grave-encounters." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
+                }
+            }
+            getConfig().set("migrations.grave-encounters-v1", true);
+            saveConfig();
+            getLogger().info("Grave encounter defaults migrated without overwriting existing settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Grave encounter config migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
     private void migrateAtmosphereVolume() {
         // One-time migration for servers that already have the older 0.35/1.0 settings.
         // Do not overwrite an administrator's deliberate custom value above 1.0.
@@ -362,6 +476,19 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
+
+    /**
+     * The current specification defines the talisman as one extra heart (+2 max health),
+     * not the older +20 HP implementation. Apply this migration once to existing installs
+     * without repeatedly overriding an administrator's later balance changes.
+     */
+    private void migrateCursedTalismanHealth() {
+        if (getConfig().getBoolean("migrations.cursed-talisman-single-heart-v1", false)) return;
+        getConfig().set("rewards.shop.cursed-talisman.bonus-health", 2.0D);
+        getConfig().set("migrations.cursed-talisman-single-heart-v1", true);
+        saveConfig();
+        getLogger().info("Cursed talisman health migrated to +2 max health (+1 heart).");
+    }
 
     private void migrateCrimsonWardenArmorStats() {
         if (getConfig().getBoolean("migrations.crimson-warden-armor-stats-v3", false)) return;
@@ -497,6 +624,14 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return eventManager;
     }
 
+    public HalloweenSeasonManager getSeasonManager() {
+        return seasonManager;
+    }
+
+    public HalloweenGraveEncounterManager getGraveEncounterManager() {
+        return graveEncounterManager;
+    }
+
     public HalloweenRewardManager getRewardManager() {
         return rewardManager;
     }
@@ -541,6 +676,18 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return secretDiscoveryManager;
     }
 
+    public HalloweenStructureManager getStructureManager() {
+        return structureManager;
+    }
+
+    public HalloweenRelicAbilityManager getRelicAbilityManager() {
+        return relicAbilityManager;
+    }
+
+    public HalloweenHeadlessNickManager getHeadlessNickManager() {
+        return headlessNickManager;
+    }
+
     public void notifyFragmentGain(UUID playerId, long amount) {
         Player player = getServer().getPlayer(playerId);
         if (player == null) return;
@@ -561,8 +708,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return color(prefix + config.getString(key, ""));
     }
 
+    /**
+     * General gameplay eligibility. The lobby world is always excluded from automatic
+     * Halloween gameplay; explicit manual structure commands have their own permission
+     * path and intentionally do not call this method.
+     */
     public boolean isEligibleGameplayWorld(World world) {
-        if (world == null) return false;
+        if (world == null || world.getName().equalsIgnoreCase("Spawn")) return false;
 
         java.util.List<String> worlds = getConfig().getStringList("gameplay.worlds.names");
         if (worlds.isEmpty()) return true;
@@ -573,6 +725,35 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             return listed;
         }
         return !listed;
+    }
+
+    /**
+     * One-time migration for the atmospheric world-generation release. The user's
+     * explicit request is to make Halloween content appear throughout the playable map.
+     * Wildcard generation is still fail-safe for the lobby: the world named Spawn is
+     * always excluded, and automatic decoration only adds blocks in safe natural spots.
+     */
+    private void migrateAtmosphericWorldGenerationDefaults() {
+        if (getConfig().getBoolean("migrations.atmospheric-world-generation-v1", false)) return;
+        if (getConfig().getStringList("automatic-world-generation.allowed-worlds").isEmpty()) {
+            getConfig().set("automatic-world-generation.allowed-worlds", List.of("*"));
+        }
+        getConfig().set("world-decorations.decorate-existing-chunks", true);
+        getConfig().set("automatic-world-generation.structures-on-existing-chunks", true);
+        getConfig().set("migrations.atmospheric-world-generation-v1", true);
+        saveConfig();
+        getLogger().info("Atmospheric Halloween generation migration complete; all non-Spawn worlds are eligible.");
+    }
+
+    /**
+     * Automatic generation is limited to the configured allow-list. The wildcard
+     * means all worlds except the protected Spawn world; an empty list remains fail-closed.
+     */
+    public boolean isAutomaticHalloweenWorld(World world) {
+        if (world == null || world.getName().equalsIgnoreCase("Spawn")) return false;
+        if (!getConfig().getBoolean("automatic-world-generation.enabled", true)) return false;
+        java.util.List<String> allowed = getConfig().getStringList("automatic-world-generation.allowed-worlds");
+        return allowed.stream().anyMatch(name -> name.equals("*") || name.equalsIgnoreCase(world.getName()));
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {

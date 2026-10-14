@@ -15,16 +15,19 @@ import zlib
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 MODEL_DIR = ROOT / "mythicmobs" / "models"
 MOB_CONFIG = ROOT / "mythicmobs" / "mobs" / "halloween-special-mobs.yml"
-MOB_IDS = (
+REQUIRED_MODEL_IDS = (
     "halloween_cursed_zombie",
-    "halloween_void_reaper",
     "halloween_gravekeeper",
-    "halloween_frost_stalker",
     "halloween_blood_spider",
     "halloween_pumpkin_wraith",
     "halloween_hex_witch",
+)
+OPTIONAL_ARTIST_MODEL_IDS = (
+    "halloween_void_reaper",
+    "halloween_frost_stalker",
     "halloween_nightmare",
 )
+MOB_IDS = REQUIRED_MODEL_IDS + OPTIONAL_ARTIST_MODEL_IDS
 
 
 def fail(message: str) -> None:
@@ -194,7 +197,7 @@ def validate_model(mob_id: str) -> None:
 
 
 def main() -> None:
-    for mob_id in MOB_IDS:
+    for mob_id in REQUIRED_MODEL_IDS:
         validate_model(mob_id)
     if not MOB_CONFIG.is_file():
         fail("Missing MythicMobs custom enemy definitions")
@@ -202,11 +205,28 @@ def main() -> None:
     for mob_id in MOB_IDS:
         if not re.search(rf"(?m)^{re.escape(mob_id)}:\s*$", yaml_text):
             fail(f"MythicMobs config is missing {mob_id}")
+
+    for mob_id in REQUIRED_MODEL_IDS:
         if f"model{{mid={mob_id};n=false}}" not in yaml_text:
-            fail(f"MythicMobs config does not attach the ModelEngine model {mob_id}")
+            fail(f"MythicMobs config does not attach the required ModelEngine model {mob_id}")
+
+    for mob_id in OPTIONAL_ARTIST_MODEL_IDS:
+        model_path = MODEL_DIR / f"{mob_id}.bbmodel"
+        texture_path = MODEL_DIR / f"{mob_id}.png"
+        model_skill = f"model{{mid={mob_id};n=false}}"
+        if model_path.is_file() != texture_path.is_file():
+            fail(f"{mob_id} has only one of its artist-owned model/texture files")
+        if model_path.is_file():
+            validate_model(mob_id)
+            if model_skill not in yaml_text:
+                fail(f"Supplied artist model {mob_id} is not attached in MythicMobs config")
+        elif model_skill in yaml_text:
+            fail(f"MythicMobs references missing artist-owned model {mob_id}; use vanilla fallback until both files are supplied")
+
     if "prevent_other_drops" in yaml_text.lower():
         fail("Use the proper MythicMobs option spelling PreventOtherDrops")
-    print(f"PASS all {len(MOB_IDS)} custom MythicMobs definitions reference matching ModelEngine models")
+    print(f"PASS {len(REQUIRED_MODEL_IDS)} committed custom models; optional artist-owned models validate when supplied")
+    print(f"PASS all {len(MOB_IDS)} special mob definitions exist; missing optional models use playable vanilla fallbacks")
 
 
 if __name__ == "__main__":

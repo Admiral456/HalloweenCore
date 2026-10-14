@@ -22,6 +22,9 @@ PALETTE = {
     "7": (43, 77, 35, 255), "8": (73, 112, 44, 255),
     "9": (119, 145, 57, 255), "A": (28, 17, 24, 255),
     "B": (255, 216, 105, 255), "C": (242, 132, 25, 255),
+    "D": (232, 204, 193, 255), "E": (65, 157, 153, 255),
+    "F": (18, 12, 20, 255), "G": (180, 203, 188, 255),
+    "H": (103, 151, 137, 255),
     ".": (0, 0, 0, 0),
 }
 
@@ -167,6 +170,144 @@ def cobweb() -> None:
     save_pixels("cobweb.png", pixels)
 
 
+def red_mushroom() -> None:
+    clear = PALETTE["."]
+    pixels = [[clear for _ in range(W)] for _ in range(H)]
+
+    def put(x: int, y: int, code: str) -> None:
+        if 0 <= x < W and 0 <= y < H:
+            pixels[y][x] = PALETTE[code]
+
+    # Rounded crimson cap with deep red rim and pale, slightly mottled spots.
+    profile = {2: (7, 8), 3: (5, 10), 4: (3, 12), 5: (2, 13),
+               6: (1, 14), 7: (1, 14), 8: (2, 13), 9: (4, 11)}
+    for y, (lo, hi) in profile.items():
+        for x in range(lo, hi + 1):
+            edge = x in (lo, hi) or y in (2, 9)
+            put(x, y, "1" if edge else "2" if (x + y) % 5 else "3")
+    for x, y, code in ((5, 4, "D"), (6, 4, "D"), (10, 5, "D"), (11, 5, "D"),
+                       (4, 7, "D"), (5, 7, "D"), (9, 6, "D"), (10, 6, "D"),
+                       (7, 3, "4"), (8, 3, "4")):
+        put(x, y, code)
+
+    # Short ivory stalk, shaded in muted sage so it reads against dark ground.
+    for y in range(9, 15):
+        for x in range(6, 10):
+            put(x, y, "F" if x == 6 else "G" if x in (7, 8) else "H")
+    for x in range(5, 11):
+        put(x, 14, "1" if x in (5, 10) else "H")
+    put(7, 10, "D")
+    put(8, 11, "D")
+    save_pixels("red_mushroom.png", pixels)
+
+
+def brown_mushroom() -> None:
+    clear = PALETTE["."]
+    pixels = [[clear for _ in range(W)] for _ in range(H)]
+
+    def put(x: int, y: int, code: str) -> None:
+        if 0 <= x < W and 0 <= y < H:
+            pixels[y][x] = PALETTE[code]
+
+    profile = {3: (7, 8), 4: (4, 11), 5: (2, 13), 6: (1, 14),
+               7: (1, 14), 8: (2, 13), 9: (4, 11)}
+    for y, (lo, hi) in profile.items():
+        for x in range(lo, hi + 1):
+            if x in (lo, hi) or y == 9:
+                code = "1"
+            elif (x + y) % 4 == 0:
+                code = "3"
+            else:
+                code = "2"
+            put(x, y, code)
+    for x, y, code in ((5, 5, "D"), (6, 5, "D"), (10, 5, "D"), (11, 5, "D"),
+                       (4, 7, "C"), (5, 7, "D"), (9, 7, "D"), (10, 7, "C"),
+                       (7, 4, "4"), (8, 4, "4")):
+        put(x, y, code)
+    for y in range(9, 15):
+        for x in range(6, 10):
+            put(x, y, "F" if x == 6 else "G" if x in (7, 8) else "H")
+    for x in range(5, 11):
+        put(x, 14, "1" if x in (5, 10) else "H")
+    put(7, 10, "D")
+    save_pixels("brown_mushroom.png", pixels)
+
+
+def dead_bush() -> None:
+    clear = PALETTE["."]
+    pixels = [[clear for _ in range(W)] for _ in range(H)]
+
+    def line(x1: int, y1: int, x2: int, y2: int, code: str) -> None:
+        dx, dy = abs(x2 - x1), abs(y2 - y1)
+        sx, sy = (1 if x1 < x2 else -1), (1 if y1 < y2 else -1)
+        error, x, y = dx - dy, x1, y1
+        while True:
+            if 0 <= x < W and 0 <= y < H:
+                pixels[y][x] = PALETTE[code]
+            if x == x2 and y == y2:
+                break
+            twice = error * 2
+            if twice > -dy:
+                error -= dy
+                x += sx
+            if twice < dx:
+                error += dx
+                y += sy
+
+    # Twisted dark burgundy branches, tiny amber thorns and dry bone tips.
+    line(8, 15, 8, 7, "1")
+    line(8, 10, 4, 6, "2")
+    line(6, 8, 3, 9, "1")
+    line(8, 12, 12, 7, "2")
+    line(10, 9, 14, 9, "1")
+    line(8, 13, 4, 12, "2")
+    line(8, 11, 6, 4, "1")
+    line(8, 7, 10, 3, "2")
+    line(8, 14, 12, 13, "1")
+    line(4, 6, 2, 5, "C")
+    line(3, 9, 1, 10, "B")
+    line(14, 9, 15, 7, "C")
+    line(4, 12, 2, 14, "C")
+    line(10, 3, 11, 2, "B")
+    for x, y in ((7, 10), (9, 12), (5, 7), (11, 8)):
+        pixels[y][x] = PALETTE["C"]
+    save_pixels("dead_bush.png", pixels)
+
+
+def soul_lantern() -> None:
+    clear = PALETTE["."]
+    pixels = [[clear for _ in range(W)] for _ in range(H)]
+
+    def rect(x1: int, y1: int, x2: int, y2: int, code: str) -> None:
+        for y in range(max(0, y1), min(H, y2 + 1)):
+            for x in range(max(0, x1), min(W, x2 + 1)):
+                pixels[y][x] = PALETTE[code]
+
+    # Hanging loop, dark iron frame, pale silver edges and a teal spectral flame.
+    rect(7, 1, 8, 2, "1")
+    rect(6, 2, 9, 2, "2")
+    rect(5, 3, 10, 4, "1")
+    rect(4, 5, 11, 12, "1")
+    rect(5, 5, 10, 11, "H")
+    rect(6, 6, 9, 10, "E")
+    rect(7, 6, 8, 8, "G")
+    pixels[5][7] = PALETTE["D"]
+    pixels[5][8] = PALETTE["D"]
+    pixels[6][7] = PALETTE["D"]
+    rect(3, 6, 4, 10, "2")
+    rect(11, 6, 12, 10, "2")
+    rect(4, 12, 11, 13, "1")
+    rect(5, 12, 10, 12, "2")
+    rect(6, 14, 9, 14, "1")
+    rect(7, 15, 8, 15, "2")
+    # Bright runic rivets around the glass.
+    pixels[4][5] = PALETTE["B"]
+    pixels[4][10] = PALETTE["B"]
+    pixels[11][5] = PALETTE["B"]
+    pixels[11][10] = PALETTE["B"]
+    save_pixels("soul_lantern.png", pixels)
+
+
 def main() -> None:
     pumpkin_side()
     pumpkin_top()
@@ -175,6 +316,10 @@ def main() -> None:
     candle(lit=False)
     candle(lit=True)
     cobweb()
+    red_mushroom()
+    brown_mushroom()
+    dead_bush()
+    soul_lantern()
     for path in sorted(OUT.glob("*.png")):
         print(f"Generated {path.relative_to(ROOT)} ({path.stat().st_size} bytes)")
 

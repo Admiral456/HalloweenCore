@@ -14,9 +14,11 @@ public final class HalloweenJoinListener implements Listener {
 
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
-        if (!plugin.isEventEnabled()) return;
-
         Player player = event.getPlayer();
+        if (plugin.getSeasonManager() != null) {
+            plugin.getSeasonManager().sendCountdownIfNeeded(player);
+        }
+        if (!plugin.isEventEnabled()) return;
         if (plugin.getAtmosphere() != null) {
             plugin.getAtmosphere().onJoin(player);
         }

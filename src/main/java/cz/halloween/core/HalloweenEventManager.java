@@ -21,6 +21,7 @@ public final class HalloweenEventManager {
     private boolean started;
     private long lastSurgeAt;
     private boolean invasionCaptainSpawned;
+    private final java.util.Set<String> warnedSurgeErrors = new java.util.HashSet<>();
 
     public HalloweenEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -68,6 +69,8 @@ public final class HalloweenEventManager {
     public boolean startEventNow(String requestedId) {
         if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)) return false;
         if (activeEventId != null) return false;
+        if (Bukkit.getOnlinePlayers().stream().noneMatch(player ->
+                plugin.isEligibleGameplayPlayer(player) && plugin.isAutomaticHalloweenWorld(player.getWorld()))) return false;
 
         String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
         if (eventId.isEmpty() || eventId.equals("random")) {
@@ -117,7 +120,8 @@ public final class HalloweenEventManager {
             runActiveEventEffects(now);
         }
 
-        if (activeEventId == null && now >= nextEventAt && !Bukkit.getOnlinePlayers().isEmpty()) {
+        if (activeEventId == null && now >= nextEventAt && Bukkit.getOnlinePlayers().stream().anyMatch(player ->
+                plugin.isEligibleGameplayPlayer(player) && plugin.isAutomaticHalloweenWorld(player.getWorld()))) {
             startRandomEvent();
         }
     }
@@ -132,8 +136,17 @@ public final class HalloweenEventManager {
         int baseMax = Math.max(baseMin, plugin.getConfig().getInt("random-events.interval-minutes.max", 24));
         int min = Math.max(8, baseMin - phase * 2);
         int max = Math.max(min, baseMax - phase * 2);
+        double intervalMultiplier = plugin.getSeasonManager() == null
+                ? 1.0D : plugin.getSeasonManager().getEventIntervalMultiplier();
+        min = Math.max(1, (int) Math.round(min * intervalMultiplier));
+        max = Math.max(min, (int) Math.round(max * intervalMultiplier));
         int minutes = ThreadLocalRandom.current().nextInt(min, max + 1);
         nextEventAt = System.currentTimeMillis() + minutes * 60_000L;
+    }
+
+    /** Recalculate the pending timer when Witching Hour begins or ends. */
+    public void rescheduleForTimeWindow() {
+        if (activeEventId == null) scheduleNextEvent();
     }
 
     private void startRandomEvent() {
@@ -184,6 +197,7 @@ public final class HalloweenEventManager {
         if (configured == null || configured.isBlank()) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isAutomaticHalloweenWorld(player.getWorld())) continue;
             try {
                 player.playSound(player.getLocation(), configured.toLowerCase(Locale.ROOT), SoundCategory.AMBIENT, 0.9f, 1.0f);
             } catch (Exception ignored) {
@@ -200,11 +214,34 @@ public final class HalloweenEventManager {
 
         Player[] players = Bukkit.getOnlinePlayers().stream()
                 .filter(plugin::isEligibleGameplayPlayer)
-                .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
+                .filter(player -> plugin.isAutomaticHalloweenWorld(player.getWorld()))
                 .toArray(Player[]::new);
         if (players.length == 0) return;
-        Player target = players[ThreadLocalRandom.current().nextInt(players.length)];
 
+        // Events should feel server-wide rather than repeatedly choosing only one player.
+        // Shuffle to avoid favoring the same online-player ordering on every surge.
+        java.util.List<Player> targets = new java.util.ArrayList<>(java.util.Arrays.asList(players));
+        java.util.Collections.shuffle(targets);
+        int targetCount = Math.max(1, Math.min(targets.size(),
+                plugin.getConfig().getInt("random-events.players-per-surge", 3)));
+        for (int i = 0; i < targetCount; i++) {
+            Player target = targets.get(i);
+            try {
+                applySurgeToPlayer(target, now);
+            } catch (RuntimeException ex) {
+                String warningKey = activeEventId + ":" + ex.getClass().getName();
+                if (warnedSurgeErrors.add(warningKey)) {
+                    plugin.getLogger().warning("Halloween event surge '" + activeEventId
+                            + "' failed for a player (" + ex.getClass().getSimpleName()
+                            + "). Further errors of this type for this event are suppressed.");
+                }
+            }
+        }
+        // Always advance the surge timer, even if one target had a bad location or API failure.
+        lastSurgeAt = now;
+    }
+
+    private void applySurgeToPlayer(Player target, long now) {
         switch (activeEventId.toLowerCase(Locale.ROOT)) {
             case "soulstorm" -> {
                 int spawned = spawnWave(target, new String[]{"cursed-zombie", "gravekeeper", "blood-spider"}, 3);
@@ -281,7 +318,6 @@ public final class HalloweenEventManager {
                 // Unknown custom event IDs are ignored safely; known IDs are validated before activation.
             }
         }
-        lastSurgeAt = now;
     }
 
     private int spawnWave(Player target, String[] mobIds, int count) {

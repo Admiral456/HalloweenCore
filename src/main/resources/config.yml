@@ -1,5 +1,46 @@
 enabled: true
 
+# Automatic Halloween activation by calendar date. Manual /halloween on|off
+# remains available between season-boundary crossings.
+season:
+  enabled: true
+  start: "10-01"          # MM-DD, inclusive
+  end: "11-05"             # MM-DD, inclusive; may wrap across New Year's Day
+  countdown-days: 7
+  timezone: "Europe/Prague"
+  countdown-message: "&6&lHALLOWEEN &8» &eHalloween sezóna začíná za &c%days% &ední."
+
+# A daily time window that makes random events more frequent and can add rare ambient cues.
+# mode: real uses the configured timezone; minecraft uses the in-game clock for loaded worlds.
+witching-hour:
+  enabled: true
+  mode: real
+  start: "20:00"
+  end: "22:00"
+  minecraft-start-tick: 18000
+  minecraft-end-tick: 22000
+  interval-multiplier: 0.5
+  announce: true
+  ambient-sounds: true
+  ambient-interval-seconds: 180
+  reschedule-on-transition: true
+  bat-transformation-enabled: true
+  bat-transformation-chance: 0.08
+
+# Light a candle near a generated/recorded graveyard to start a three-wave encounter.
+grave-encounters:
+  enabled: true
+  max-active: 3
+  max-mobs-per-world: 18
+  graveyard-radius-blocks: 28
+  allow-decorated-graves: true
+  marker-scan-radius: 7
+  wave-timeout-seconds: 90
+  participant-radius-blocks: 40
+  boss-health: 160
+  boss-bar-radius-blocks: 48
+  reward-fragments: 250
+
 global-goal: 100000
 
 # Milníky odemykají další intenzitu eventu a dávají serveru společný cíl.
@@ -23,6 +64,17 @@ gameplay:
   worlds:
     mode: BLACKLIST
     names: []
+
+# Seasonal content is enabled in all worlds except the protected world named "Spawn".
+# Set allowed-worlds to an explicit list to restrict it; [] disables automatic content.
+# Generation is add-only in natural spots, including older chunks as they are loaded.
+automatic-world-generation:
+  enabled: true
+  allowed-worlds: ["*"]
+  structures-enabled: true
+  structures-on-existing-chunks: true
+  min-structure-chunk-distance: 3
+  structure-chance-per-anchor: 0.45
 
 rewards:
   mob-kill:
@@ -98,7 +150,7 @@ rewards:
       min-curse: 5
       itemsadder-id: "warriorland_halloween:cursed_talisman"
       bonus-multiplier: 0.10
-      bonus-health: 20.0
+      bonus-health: 2.0
       material: NETHER_STAR
       amount: 1
       name: "&5&lProkletý talisman &8[2026]"
@@ -406,6 +458,19 @@ curse:
       threshold: 12000
       name: "Zasvěcený temnotě"
 
+
+# Headless Nick stalks only eligible players in explicitly allowed natural-generation worlds at night.
+# Final rider/horse appearance requires the matching ModelEngine blueprints and merged resource pack.
+headless-nick:
+  enabled: true
+  check-interval-ticks: 200
+  chance-per-check: 0.10
+  min-spawn-distance-blocks: 18
+  max-spawn-distance-blocks: 28
+  lifetime-seconds: 90
+  attack-damage: 5.0
+  attack-cooldown-ms: 2500
+
 random-events:
   enabled: true
   # /halloween on starts the first event after a short warning.
@@ -415,6 +480,8 @@ random-events:
     max: 24
   duration-minutes: 6
   surge-interval-seconds: 25
+  # Each surge affects up to this many eligible players in different locations.
+  players-per-surge: 3
   max-event-mobs: 48
   event-mobs-enabled: true
   # Blood Moon is intentionally more intense, but bounded to avoid runaway entity counts.
@@ -550,13 +617,26 @@ bosses:
         phase-4-radius: 10
         phase-4-damage: 7.0
 
+structures:
+  # Manual /halloween spawn uses FORCE only inside the declared structure footprint.
+  placement-distance-blocks: 12
+  blocks-per-tick: 1200
+  max-block-changes: 220000
+  max-support-depth: 32
+
 world-decorations:
   enabled: true
-  # Add-only decoration: safe natural ground only; never replaces a solid block or tile entity.
-  pumpkins-per-chunk: 5
-  cobwebs-per-chunk: 2
-  red-candles-per-chunk: 1
-  attempts-per-placement: 32
+  # Safe, add-only decoration also gradually improves older chunks as players explore.
+  decorate-existing-chunks: true
+  # Density is bounded per chunk; occupied blocks and tile entities are never replaced.
+  pumpkins-per-chunk: 7
+  cobwebs-per-chunk: 4
+  red-candles-per-chunk: 2
+  mushrooms-per-chunk: 3
+  graves-per-chunk: 1
+  soul-lanterns-per-chunk: 1
+  dead-bushes-per-chunk: 2
+  attempts-per-placement: 60
   chunks-per-tick: 2
 
 atmosphere:

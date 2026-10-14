@@ -24,18 +24,22 @@ jobs:
           fi
       - name: Generate Halloween audio
         run: python3 scripts/generate_halloween_audio.py
+      # Project-owned world-decoration textures are deterministic 16x16 Minecraft pixel art.
       - name: Generate Halloween block textures
         run: python3 scripts/generate_halloween_block_textures.py
+      # Player-owned shop and gear icons are reproducibly generated. Artist-owned mob UV atlases remain untouched.
+      - name: Generate Halloween item textures
+        run: python3 scripts/generate_halloween_item_textures.py
+      # Artist-owned mob PNGs are checked as committed; CI must not regenerate/recolor those textures.
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
       - name: Validate Vampire King model
         run: python3 scripts/validate_vampire_model.py
-      - name: Install Blockbench texture generator dependency
-        run: python3 -m pip install --user Pillow
-      - name: Generate additional Halloween mob models
-        run: python3 scripts/generate_additional_halloween_mobs.py
+      # Optional artist-owned mob atlases/models are packaged only when present; no recoloring/generation here.
       - name: Validate custom Halloween mob models
         run: python3 scripts/validate_special_mob_models.py
+      - name: Validate Halloween runtime rules
+        run: python3 scripts/validate_halloween_runtime_rules.py
       - name: Build
         run: mvn -B clean package
       - name: Package ItemsAdder content

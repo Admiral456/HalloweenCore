@@ -15,7 +15,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - události dávají různé násobiče podle aktivity
 - serverové milníky zkracují interval mezi náhodnými událostmi a postupně je zesilují
 - speciální Halloween mobové se mohou přirozeně objevit a dávají bonusové fragmenty
-- osm typů custom mobů s vlastními ModelEngine modely: Prokletý zombie, Ženec prázdnoty, Hrobník, Ledový stopař, Krvavý pavouk, Dýňový přízrak, Hexová čarodějka a Noční můra
+- osm typů custom mobů (pět s dodanými ModelEngine modely a texturami; Ženec prázdnoty, Ledový stopař a Noční můra zatím používají vanilla vzhled, dokud jejich autor nedodá vlastní assety): Prokletý zombie, Ženec prázdnoty, Hrobník, Ledový stopař, Krvavý pavouk, Dýňový přízrak, Hexová čarodějka a Noční můra
 - každý elitní mob má vlastní efekt nebo útok: Zombie vysává sílu, Hrobník označuje zem pod hráčem, Krvavý pavouk ho zachytí do krvavé sítě, Dýňový přízrak odpálí oslepující popel, Hexová čarodějka sesílá náhodnou kletbu, Ženec prázdnoty vyvolá temnotu, Ledový stopař zpomalí cíle a Noční můra způsobí děsivé vidiny
 - útoky mají vlastní cooldowny a varování; značce Hrobníka lze uhnout a výbuch Dýňového přízraku neničí stavby
 - speciální mobové mohou dropnout limitované „Prokleté cukroví“
@@ -27,10 +27,29 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
 - Maska nočního lovce dává při nošení +5 % k zisku fragmentů; stojí 4 000 fragmentů a vyžaduje prokletí 3
-- Prokletý talisman stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +20 maximálního zdraví (jeden řádek srdcí navíc) a zachovává +10 % k zisku fragmentů
+- Prokletý talisman stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +2 maximálního zdraví (jedno srdce navíc) a zachovává +10 % k zisku fragmentů
 - limitovaný token Halloween 2026 stojí 30 000 fragmentů a vyžaduje prokletí 5
 - po dosažení globálního cíle se natrvalo odemkne serverové finále
 - hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
+
+## Automatická sezóna a Čarodějnická hodina
+
+- Sekce `season` automaticky zapíná Halloween mezi 1. říjnem a 5. listopadem v časové zóně `Europe/Prague`. Obě hranice jsou včetně uvedeného dne a podporují i sezónu přes Nový rok.
+- Příkazové `/halloween on` a `/halloween off` zůstávají funkční. Ruční změna platí až do další hranice sezóny.
+- Hráči dostávají při připojení odpočet do začátku sezóny, pokud je její začátek do sedmi dnů.
+- Sekce `witching-hour` je ve výchozím nastavení aktivní každý den od 20:00 do 22:00. Během okna se čas do další náhodné události násobí hodnotou `0.5`, takže přicházejí přibližně dvakrát častěji.
+- Čarodějnická hodina může přehrávat vzácné ambientní zvuky. Lze přepnout na herní čas pomocí `mode: minecraft`, změnit interval nebo funkci vypnout nastavením `enabled: false`.
+- Během Čarodějnické hodiny se může s nastavitelnou šancí proměnit mrtvý netopýr v Hexovou čarodějku. Mechanika funguje pouze v povolených Halloween světech a lze ji vypnout pomocí `bat-transformation-enabled: false`.
+- Existující `config.yml` dostane chybějící výchozí položky migrací; uživatelská nastavení se nepřepisují.
+
+## Hřbitovní rituál
+
+- Zapálení svíčky u zaznamenaného Halloween hřbitova může zahájit tři vlny nepřátel. Rituál lze aktivovat také u starších rozptýlených hrobů, pokud je v okolí dost náhrobních značek.
+- První dvě vlny mají rostoucí sestavy speciálních mobů; třetí vlna vyvolá Strážce hrobu se 160 HP a boss barem.
+- Hráči, kteří zůstávají poblíž, se započítají mezi účastníky. Po poražení všech tří vln dostanou účastníci nastavenou odměnu v Halloween fragmentech.
+- Rituál má limit souběžných encounterů, limit mobů i časový limit jednotlivých vln. Nedokončená nebo neúplně vyvolaná závěrečná vlna odměnu nevydá.
+- /halloween grave test spustí testovací rituál kolem administrátora; test nedává odměny.
+- Nastavení je v grave-encounters v config.yml. Nové hodnoty se při aktualizaci doplní migrací, aniž by přepsaly stávající nastavení serveru.
 
 ## Příkazy
 
@@ -39,7 +58,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween progress
 - /halloween curse
 - /halloween event
-- /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin, testovací okamžité spuštění)
+- /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion|pumpkin-apocalypse|graveyard-rising> (admin, testovací okamžité spuštění)
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
 - /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
@@ -50,13 +69,18 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
-- /halloween setvillage (admin)
+- /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> (admin, ihned umístí strukturu před hráčem v režimu FORCE; žádné nastavování středu ani confirm)
+- /halloween spawn <cursed-zombie|void-reaper|gravekeeper|frost-stalker|blood-spider|pumpkin-wraith|hex-witch|nightmare> (admin, testovací spawn jednoho mobu; použije ModelEngine/MythicMobs, pokud jsou dostupné, jinak vanilla fallback)
+- /halloween status (diagnostika aktivního eventu, povolených automatických světů a stavby)
+- /halloween locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all> (najde nejbližší uloženou polohu struktury v aktuálním světě)
+- /halloween grave test (admin, testovací třívlnový hřbitovní rituál bez odměny)
+- /locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all> (zkrácený příkaz; běžný Minecraft /locate structure ... zůstává dostupný)
+- Batwing Elytra: nasazená na hrudi zachovává standardní elytra glide/rocket chování; při plachtění stiskni sneak pro Bat Dash (20s cooldown).
+- Nocturne Sovereign Cowl: nasaď na hlavu pro noční vidění; stiskni sneak pro zpomalení a odhalení okolních monster (30s cooldown).
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
-- /halloween setvampirearena (admin)
-- /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
-- /halloween give <hráč> <počet>
+- /halloween give <hráč> <počet|all> (admin; all vydá všechny nakonfigurované odměny, gear a přenosné relikvie pro testování)
 - /halloween on|off
 
 ## Boss bar
@@ -132,26 +156,27 @@ Náhodné eventy se spouštějí přibližně 15–24 minut od sebe a trvají 6 
 | **Duševní bouře** | Vlny prokletých zombie, hrobníků a krvavých pavouků; duševní částice; 2× odměna za lov a 1,5× za rybaření. |
 | **Čarodějnická hodina** | Hexové čarodějky a pavouci útočí ze stínů; může se objevit efekt Darkness; zvýšené odměny za těžbu, lov a rybaření. |
 | **Prokletá sklizeň** | Temná magie urychlí několik okolních plodin a ze záhonů vyrazí speciální mobové; 3× odměna za sklizeň. |
-| **Krvavý měsíc – invaze** | Silnější vlny až 4 nepřátel každých 25 sekund, nejvýše 48 eventových mobů na svět, unikátní varovné částice, Kapitán invaze v závěrečné části a **3× poškození od nepřátelských monster**. |
+| **Krvavý měsíc – invaze** | Vlny nepřátel až u 3 hráčů každých 25 sekund, nejvýše 48 eventových mobů na svět, unikátní varovné částice, Kapitán invaze v závěrečné části a **3× poškození od nepřátelských monster**. |
 | **Dýňová apokalypsa** | Husté vlny dýňových přízraků, plameny, popel a lávové částice; 2,5× odměna za lov. |
 | **Hřbitov vstává** | Hrobníci, prokleté zombie a pavouci se objevují ve vlnách z duševní mlhy; 2,25× odměna za lov. |
 
 Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/halloween event`, `/halloween event start <id>` a `/halloween event stop` umožňují správcům ověřit jednotlivé eventy. Dostupné ID jsou `soulstorm`, `witching-hour`, `cursed-harvest`, `blood-moon-invasion`, `pumpkin-apocalypse` a `graveyard-rising`.
 
-Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
+Přirozené moby se mohou změnit v osm typů speciálních nepřátel. Pět typů má v repozitáři již dodané ModelEngine modely a textury; Ženec prázdnoty, Ledový stopař a Noční můra zatím používají plně hratelný vanilla vzhled, dokud jejich modely a textury nedodá jejich autor. CI tyto assety nevytváří ani nepřebarvuje. Existující ModelEngine + MythicMobs soubory se balí do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
 
-Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny a červené svíčky na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; staré chunky se při aktualizaci nedekorují znovu celou dávkou.
+Při načítání nových i starších chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny, červené svíčky, hřiby, náhrobky, duševní lucerny a suché keře na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; starší chunky dostanou nové atmosférické vrstvy, aniž by se opakovala celá původní dávka dekorací.
 
 - `/halloween boss test` vyvolá testovacího Krále upírů bez globálního progressu, odemčení finále a model-ready gate. Vyžaduje uložený střed arény a funkční MythicMobs mob `vampire-king`; testovací zabití nedává odměny ani neoznačí finále za splněné.
 
 ## Návod: aréna, obchod a resource pack
 
-- Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
-- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
+- Spusť příkaz `/halloween spawn vampirearena` pro automatické umístění upíří arény před sebou. Střed arény se uloží po dokončení stavby; není potřeba používat `setvampirearena` ani `confirm`.
+- `/halloween spawn goblinarena` vytvoří samostatnou arénu Goblin Kinga a nezasahuje do identity upíří arény.
+- Ruční stavby používají FORCE uvnitř jasně omezeného footprintu a mohou smazat přírodní bloky nebo stavby v tomto prostoru. Před použitím na produkčním světě udělej zálohu.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
 - `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
 - `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
-- Prokletý talisman stojí 1 000 000 fragmentů. Při držení v hlavní nebo vedlejší ruce přidá +20 k maximálnímu zdraví (jeden celý řádek srdcí) a zachovává 10% bonus k fragmentům.
+- Prokletý talisman stojí 1 000 000 fragmentů. Při držení v hlavní nebo vedlejší ruce přidá +2 k maximálnímu zdraví (jedno srdce navíc) a zachovává 10% bonus k fragmentům.
 - Po nahrání obsahu do `plugins/ItemsAdder/contents/warriorland_halloween` restartuj server, spusť `/iazip` a ověř `/iainfo`. Pokud není URL resource packu dosažitelná nebo se žádná výzva neobjeví, je nutné opravit hosting resource packu v ItemsAdder, ne plugin HalloweenCore.
 
 ## Směr dalšího vývoje
@@ -167,9 +192,27 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 
 Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový progres, milníky a eventový systém. Rozměrové minimum je už zamčené v konfiguraci i v dokumentu `VAMPIRE_BOSS.md`: minimálně 10 bloků výšky a 8 bloků šířky včetně křídel. Mechaniky a finální vzhled zatím nejsou předčasně uzamčené.
 
+## Generování struktur a pravidla světů
+
+- `/halloween spawn hřbitov`, `/halloween spawn vesnice`, `/halloween spawn aréna`, `/halloween spawn vampirearena` a `/halloween spawn goblinarena` jsou ruční admin příkazy. Umístí stavbu před hráče bez výběru středu a bez `confirm`.
+- Přímé ruční stavby používají FORCE uvnitř konečného, ohraničeného footprintu a výšky. Mohou odstranit stromy a bloky uvnitř tohoto prostoru; změny se dávkují po tickách a při chybě se plugin pokusí o rollback. Udělej zálohu, než je použiješ na produkčním světě.
+- Pro testování mobů použij `/halloween spawn <mob-id>`; výčet je v seznamu příkazů. ModelEngine/MythicMobs vizuály jsou volitelné; vanilla fallback zachovává základní hraní.
+- Výchozí nastavení používá `automatic-world-generation.allowed-worlds: ["*"]`: Halloween prvky, speciální přirozené moby a eventy se mohou objevovat ve všech světech kromě světa pojmenovaného přesně `Spawn`. Chceš-li obsah omezit, nahraď `*` seznamem konkrétních názvů světů.
+- Generování běží i při načítání již prozkoumaných chunků. Dekorace je pouze přidávací: umísťuje prvky jen do vzduchu nad bezpečným přírodním terénem a nepřepisuje existující bloky. Náhodné malé hřbitovy a vesnice se pokoušejí vznikat v rozestupech; vyžadují vhodný, rovný přírodní povrch, takže ne každý kandidátní chunk strukturu dostane.
+- Každý chunk dostane omezenou směs dýní, pavučin, červených svíček, hřibů, malých náhrobků, duševních luceren a suchých keřů podle terénu. Starší chunky z dřívější verze dostanou nové atmosférické vrstvy bez opakovaného přidávání celé původní dávky dýní a pavučin.
+- `/halloween status` vypíše, které světy jsou povolené pro automatické generování. Po změně konfigurace použij `/halloween reload`.
+- `/halloween locate <typ>` nebo `/locate <typ>` najde nejbližší zaznamenaný hřbitov, vesnici, arénu, upíří arénu nebo gobliní arénu v aktuálním světě. `all` vypíše nejbližší zaznamenanou polohu každého typu. Souřadnice se ukládají po úspěšném ručním nebo přirozeném vygenerování do `plugins/HalloweenCore/structures.yml`; struktury postavené před touto verzí se zpětně neindexují automaticky.
+
+## Přenosné relikvie a jejich assety
+
+Serverová logika Batwing Elytra a Nocturne Sovereign Cowl funguje přes stabilní PDC identity. Pokud ItemsAdder obsahuje ID `warriorland_halloween:batwing_elytra` a `warriorland_halloween:nocturne_sovereign_cowl`, použije se jejich skutečný vlastní item; jinak plugin dá funkční vanilla fallback (elytra / carved pumpkin). **Vizuál vlastních křídel a kapuce zůstává neověřený a vyžaduje dodání modelů/textur a jejich kontrolu v ModelEngine/ItemsAdder resource packu.**
+
 ## ItemsAdder assety
 
 Vlastní PNG jsou v `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/`.
+
+Čtrnáct ikon gearu a předmětů se nyní vytváří deterministicky skriptem `scripts/generate_halloween_item_textures.py` jako vlastní 32×32 pixel art v černo-karmínové, ocelové, zlaté a fialové paletě. Build je vygeneruje před kontrolou assetů a vloží do ItemsAdder ZIPu; mob atlasy patřící externímu autorovi se negenerují ani nepřebarvují. Stávající armor atlasy zatím zůstávají ve své UV struktuře a čekají na samostatné vizuální ověření při nasazené zbroji.
+Skript `scripts/generate_halloween_block_textures.py` navíc vytváří tematické 16×16 textury dýní, svíček, pavučin, červených/hnědých hub, uschlého keře a duševní lucerny, které používají už existující vrstvy dekorací světa.
 
 V repozitáři je připravený namespace `warriorland_halloween`:
 
@@ -197,7 +240,7 @@ Všechny kusy mají vlastní původní černo-karmínové PNG ikony; zbroj naví
 | Lopatka | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 10.0 / 14 / 4 500 |
 | Motyka | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 7.0 / 14 / 4 500 |
 
-Krvavý strážce má nastavené brnění 6/12/9/6 podle kusu; celá sada tedy dává 33 bodů brnění místo 20 u běžného Netheritu. Meč má attack-damage modifier 15.0 (nad požadovanými 12); přesný výsledný údaj v tooltipu/hit závisí na aplikaci komponent ItemsAdderem, základním atributu hráče a attack cooldownu. Zbroj, meč a nástroje používají moderní item component JSON s enchantability 25; krumpáč, sekera, lopatka a motyka mají navíc tool komponent rychlosti 14 pro správné blokové tagy. Talisman stojí 1 000 000 fragmentů a při držení v ruce nebo offhandu přidává +20 max HP (jeden celý řádek srdcí).
+Krvavý strážce má nastavené brnění 6/12/9/6 podle kusu; celá sada tedy dává 33 bodů brnění místo 20 u běžného Netheritu. Meč má attack-damage modifier 15.0 (nad požadovanými 12); přesný výsledný údaj v tooltipu/hit závisí na aplikaci komponent ItemsAdderem, základním atributu hráče a attack cooldownu. Zbroj, meč a nástroje používají moderní item component JSON s enchantability 25; krumpáč, sekera, lopatka a motyka mají navíc tool komponent rychlosti 14 pro správné blokové tagy. Talisman stojí 1 000 000 fragmentů a při držení v ruce nebo offhandu přidává +2 max HP (jedno srdce navíc).
 
 ## Boss placeholders
 
@@ -226,7 +269,7 @@ Výstup:
 
 ## Speciální mobové: modely a resource pack
 
-Zdrojové Blockbench modely a externí atlasy pro speciální moby jsou v `mythicmobs/models/halloween_*.bbmodel` a `mythicmobs/models/halloween_*.png`. Kontroluje je `python3 scripts/validate_special_mob_models.py`; CI zároveň balí definice a blueprinty do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`.
+Dodané Blockbench modely a atlasy pro pět vizuálně dokončených speciálních mobů jsou v `mythicmobs/models/halloween_*.bbmodel` a `mythicmobs/models/halloween_*.png`. Modely a textury pro Žence prázdnoty, Ledového stopaře a Noční můru doplní jejich autor; dokud nejsou obě části dodané, zůstávají tito mobové na vanilla vzhledu. Kontroluje je `python3 scripts/validate_special_mob_models.py`; CI pouze ověřuje a balí přítomné soubory do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip` a assety negeneruje ani nepřebarvuje.
 
 Po instalaci na server rozbal tento balíček do složky `plugins/`, naimportuj blueprinty přes ModelEngine, spusť `/meg reload models` a `/mm reload`. Do stávajícího seznamu `merge_other_plugins_resourcepacks_folders` v konfiguraci ItemsAdderu přidej cestu `ModelEngine/resource pack`, aby se modelové textury dostaly do stejného klientského packu. Poté spusť `/iazip`, ověř `/iainfo`, přijmi pack na klientovi a znovu se připoj.
 
@@ -248,7 +291,7 @@ Repozitář obsahuje editovatelný Blockbench blueprint `mythicmobs/models/vampi
 
 ## Generování upíří arény
 
-Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 97 bloků, šest soustředných runových kruhů, obvodové cimbuří, osm gotických věží, čtyři monumentální brány a osm vnitřních obelisků. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, načtené chunky, volný prostor nad podlahou a terén bez hlubokých proláklin. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Po potvrzení se v kruhu o poloměru 48 bloků upraví povrch terénu a vytvoří nová podlaha. Před spuštěním si udělej zálohu světa.
+Přímá stavba arén se spouští příkazem `/halloween spawn vampirearena` nebo `/halloween spawn goblinarena`. Obě struktury se umisťují před hráče bez nastavování středu a bez potvrzovacího kroku. Režim FORCE může přepsat bloky pouze uvnitř footprintu stavby; přesto před použitím na produkčním světě vytvoř zálohu.
 
 
 ## Krvavý měsíc — invaze

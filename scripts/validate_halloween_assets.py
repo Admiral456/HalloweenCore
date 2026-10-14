@@ -53,6 +53,7 @@ VANILLA_BLOCK_TEXTURES = CONTENT / "resourcepack" / "assets" / "minecraft" / "te
 EXPECTED_SEASONAL_BLOCK_TEXTURES = {
     "pumpkin_side.png", "pumpkin_top.png", "pumpkin_face.png",
     "jack_o_lantern.png", "cobweb.png", "red_candle.png", "red_candle_lit.png",
+    "red_mushroom.png", "brown_mushroom.png", "dead_bush.png", "soul_lantern.png",
 }
 
 
@@ -122,7 +123,10 @@ if missing:
     fail("Missing item textures: " + ", ".join(missing))
 
 for name in sorted(EXPECTED):
-    width, height = png_size(TEXTURES / name)
+    try:
+        width, height = strict_png_size(TEXTURES / name)
+    except (OSError, ValueError) as exc:
+        fail(f"Invalid item texture {name}: {exc}")
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
 
@@ -137,9 +141,25 @@ for layer in ("layer_1.png", "layer_2.png"):
 if not SHADER.is_file():
     fail("Missing Halloween sky shader: " + str(SHADER.relative_to(ROOT)))
 shader_text = SHADER.read_text(encoding="utf-8")
-for marker in ("#version 330", "#moj_import <minecraft:fog.glsl>", "halloweenTint", "fragColor = sky;"):
+# This is the Minecraft 1.21.10 core sky shader entry point. Check the shader's
+# vanilla fog inputs and output contract, not merely that a file with the right name exists.
+for marker in (
+    "#version 330",
+    "#moj_import <minecraft:fog.glsl>",
+    "#moj_import <minecraft:dynamictransforms.glsl>",
+    "in float sphericalVertexDistance;",
+    "in float cylindricalVertexDistance;",
+    "apply_fog(",
+    "ColorModulator",
+    "FogColor",
+    "halloweenTint = vec3(",
+    "sky.rgb = mix(",
+    "fragColor = sky;",
+):
     if marker not in shader_text:
-        fail(f"Sky shader is missing required Minecraft 1.21.10 marker: {marker}")
+        fail(f"Sky shader is missing required Minecraft 1.21.10 contract marker: {marker}")
+if not shader_text.lstrip().startswith("#version 330"):
+    fail("Sky shader must start with the supported GLSL version declaration")
 
 # Explicit vanilla texture overrides give physical Halloween decoration its
 # seasonal appearance while keeping the server-side blocks present with or
@@ -314,8 +334,8 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
 
 shop_config = (ROOT / "src" / "main" / "resources" / "config.yml").read_text(encoding="utf-8")
-if "      cost: 1000000" not in shop_config or "      bonus-health: 20.0" not in shop_config:
-    fail("Cursed talisman must cost 1,000,000 fragments and grant +20 max health")
+if "      cost: 1000000" not in shop_config or "      bonus-health: 2.0" not in shop_config:
+    fail("Cursed talisman must cost 1,000,000 fragments and grant +2 max health (one heart)")
 for item_id in ("crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
                 "crimson_warden_shovel", "crimson_warden_hoe"):
     start = config.find(f"  {item_id}:")
