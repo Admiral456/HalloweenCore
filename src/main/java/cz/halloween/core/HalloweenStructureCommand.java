@@ -18,8 +18,12 @@ public final class HalloweenStructureCommand implements CommandExecutor, TabComp
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (!sender.hasPermission("halloweencore.structures") && !sender.hasPermission("halloweencore.admin")) {
-            sender.sendMessage(plugin.color("&cNa stavbu Halloween struktur nemáš oprávnění."));
+        boolean canBuild = sender.hasPermission("halloweencore.structures")
+                || sender.hasPermission("halloweencore.admin");
+        boolean canForce = sender.hasPermission("halloweencore.structures.force")
+                || sender.hasPermission("halloweencore.admin");
+        if (!canBuild || !canForce) {
+            sender.sendMessage(plugin.color("&cNa stavbu v režimu FORCE nemáš potřebná oprávnění."));
             return true;
         }
         if (!(sender instanceof Player player)) {
@@ -43,8 +47,11 @@ public final class HalloweenStructureCommand implements CommandExecutor, TabComp
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length != 1 || (!sender.hasPermission("halloweencore.structures")
-                && !sender.hasPermission("halloweencore.admin"))) return List.of();
+        boolean canBuild = sender.hasPermission("halloweencore.structures")
+                || sender.hasPermission("halloweencore.admin");
+        boolean canForce = sender.hasPermission("halloweencore.structures.force")
+                || sender.hasPermission("halloweencore.admin");
+        if (args.length != 1 || !canBuild || !canForce) return List.of();
         String prefix = args[0].toLowerCase(Locale.ROOT);
         return List.of("hřbitov", "vesnice", "aréna", "vampirearena", "goblinarena").stream()
                 .filter(value -> value.startsWith(prefix)).toList();
