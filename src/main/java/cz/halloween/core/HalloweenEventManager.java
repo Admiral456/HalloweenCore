@@ -21,6 +21,7 @@ public final class HalloweenEventManager {
     private boolean started;
     private long lastSurgeAt;
     private boolean invasionCaptainSpawned;
+    private final java.util.Set<String> warnedSurgeErrors = new java.util.HashSet<>();
 
     public HalloweenEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -215,8 +216,19 @@ public final class HalloweenEventManager {
         int targetCount = Math.max(1, Math.min(targets.size(),
                 plugin.getConfig().getInt("random-events.players-per-surge", 3)));
         for (int i = 0; i < targetCount; i++) {
-            applySurgeToPlayer(targets.get(i), now);
+            Player target = targets.get(i);
+            try {
+                applySurgeToPlayer(target, now);
+            } catch (RuntimeException ex) {
+                String warningKey = activeEventId + ":" + ex.getClass().getName();
+                if (warnedSurgeErrors.add(warningKey)) {
+                    plugin.getLogger().warning("Halloween event surge '" + activeEventId
+                            + "' failed for a player (" + ex.getClass().getSimpleName()
+                            + "). Further errors of this type for this event are suppressed.");
+                }
+            }
         }
+        // Always advance the surge timer, even if one target had a bad location or API failure.
         lastSurgeAt = now;
     }
 
