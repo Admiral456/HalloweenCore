@@ -552,12 +552,20 @@ bosses:
 
 world-decorations:
   enabled: true
+  # Fail-closed allow-list. Spawn is blocked in code even if listed here.
+  allowed-worlds: []
+  # Existing chunks are not changed unless explicitly opted in.
+  allow-existing-chunks: false
   # Add-only decoration: safe natural ground only; never replaces a solid block or tile entity.
   pumpkins-per-chunk: 5
   cobwebs-per-chunk: 2
   red-candles-per-chunk: 1
   attempts-per-placement: 32
   chunks-per-tick: 2
+
+structures:
+  blocks-per-tick: 800
+  max-block-changes: 150000
 
 atmosphere:
   enabled: true
