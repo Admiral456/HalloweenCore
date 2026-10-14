@@ -170,8 +170,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         if (eventManager != null) {
             if (eventEnabled && getConfig().getBoolean("random-events.enabled", true)) {
-                // Make the refreshed state visible shortly after /halloween reload.
-                eventManager.scheduleFirstEvent();
+                // Reload config without restarting a running event or forcing a surprise event 30s later.
+                eventManager.scheduleNormalNextEventIfIdle();
             } else {
                 eventManager.stop();
             }
