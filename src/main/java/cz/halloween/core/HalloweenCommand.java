@@ -37,7 +37,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("spawn")
-                && sender.hasPermission("halloweencore.structures")) {
+                && (sender.hasPermission("halloweencore.structures") || sender.hasPermission("halloweencore.admin"))
+                && (sender.hasPermission("halloweencore.structures.force") || sender.hasPermission("halloweencore.admin"))) {
             return List.of("hřbitov", "vesnice", "aréna", "vampirearena", "goblinarena").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
@@ -179,7 +180,14 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean spawnStructure(CommandSender sender, String[] args) {
-        if (!checkAdmin(sender)) return true;
+        boolean canBuild = sender.hasPermission("halloweencore.structures")
+                || sender.hasPermission("halloweencore.admin");
+        boolean canForce = sender.hasPermission("halloweencore.structures.force")
+                || sender.hasPermission("halloweencore.admin");
+        if (!canBuild || !canForce) {
+            sender.sendMessage(plugin.color("&cNa stavbu v režimu FORCE nemáš potřebná oprávnění."));
+            return true;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.color("&cStrukturu musíš vyvolat ve hře, aby se umístila před tebe."));
             return true;
