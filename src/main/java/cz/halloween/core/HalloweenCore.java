@@ -97,6 +97,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(worldDecorator, this);
         getServer().getPluginManager().registerEvents(structureManager, this);
         getServer().getPluginManager().registerEvents(relicAbilityManager, this);
+        getServer().getPluginManager().registerEvents(headlessNickManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
