@@ -83,7 +83,10 @@ public final class HalloweenStructureManager implements Listener {
                 .filter(name -> name != null && !HalloweenWorldPolicy.isReservedWorld(name))
                 .map(String::trim).filter(name -> !name.isEmpty()).distinct().toList();
         if (safeWorlds.isEmpty()) {
-            plugin.getLogger().warning("Natural Halloween cemeteries/villages are fail-closed: world-generation.allowed-worlds is empty or contains only reserved names. Set exact gameplay world names; world 'Spawn' will always be ignored.");
+            String loadedWorlds = plugin.getServer().getWorlds().stream()
+                    .map(World::getName).collect(java.util.stream.Collectors.joining(", "));
+            plugin.getLogger().warning("Natural Halloween cemeteries/villages are fail-closed: world-generation.allowed-worlds is empty or contains only reserved names. Loaded worlds: ["
+                    + loadedWorlds + "]. Set exact gameplay world names; world 'Spawn' will always be ignored.");
         } else {
             plugin.getLogger().info("Natural Halloween structures enabled only for configured gameplay worlds: " + String.join(", ", safeWorlds)
                     + ". New chunks only; 'Spawn' is always excluded.");
