@@ -15,6 +15,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.List;
 import java.util.Locale;
@@ -26,6 +27,7 @@ public final class HalloweenQuestManager implements Listener {
 
     private final HalloweenCore plugin;
     private final NamespacedKey cursedMobKey;
+    private BukkitTask pendingProgressSave;
     private final List<Quest> quests = List.of(
             new Quest("fog-patrol", "Znamení v mlze",
                     "Zabij 10 nepřátelských tvorů a zjisti, co se děje po setmění.",
@@ -159,8 +161,15 @@ public final class HalloweenQuestManager implements Listener {
         int oldProgress = plugin.getDataManager().getStoryQuestProgress(playerId);
         int updated = Math.min(quest.target(), oldProgress + Math.max(0, amount));
         plugin.getDataManager().setStoryQuestProgress(playerId, updated);
-        if (updated < quest.target()) return;
+        if (updated < quest.target()) {
+            scheduleProgressSave();
+            return;
+        }
 
+        if (pendingProgressSave != null) {
+            pendingProgressSave.cancel();
+            pendingProgressSave = null;
+        }
         if (!plugin.getDataManager().completeStoryQuest(playerId, quest.id())) return;
         plugin.getDataManager().setStoryQuest(playerId, "");
         plugin.getService().addFragments(playerId, quest.reward(), "story-quest");
@@ -182,6 +191,18 @@ public final class HalloweenQuestManager implements Listener {
         } else {
             player.sendMessage(plugin.color("&6&lPŘÍBĚH DOKONČEN &8» &eDěkujeme, že jsi zachránil svět."));
         }
+    }
+
+    /**
+     * Persist partial chapter progress shortly after activity rather than waiting for
+     * the global five-minute save. A single delayed task coalesces rapid mob/crop events.
+     */
+    private void scheduleProgressSave() {
+        if (pendingProgressSave != null) return;
+        pendingProgressSave = plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            pendingProgressSave = null;
+            if (plugin.isEnabled()) plugin.getDataManager().save();
+        }, 100L);
     }
 
     private boolean isEligible(Player player) {
