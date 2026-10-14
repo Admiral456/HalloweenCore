@@ -75,13 +75,16 @@ public final class HalloweenStructureManager implements Listener {
     }
 
     /**
-     * Natural generation runs only once for a freshly generated chunk, in an
-     * explicitly allow-listed world. The small site is constrained to that single
-     * new chunk and is additive over flat natural ground; it never force-clears.
+     * Natural generation is attempted once per eligible anchor chunk, including
+     * previously explored chunks when the migration setting is enabled. Candidate
+     * sites are constrained to one chunk and only use safe natural ground.
      */
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
-        if (!event.isNewChunk() || !plugin.isAutomaticHalloweenWorld(event.getWorld())
+        boolean includeExisting = plugin.getConfig().getBoolean(
+                "automatic-world-generation.structures-on-existing-chunks", true);
+        if ((!event.isNewChunk() && !includeExisting)
+                || !plugin.isAutomaticHalloweenWorld(event.getWorld())
                 || !plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) return;
 
         Chunk chunk = event.getChunk();
@@ -104,6 +107,9 @@ public final class HalloweenStructureManager implements Listener {
         chunk.getPersistentDataContainer().set(autoReservedKey, PersistentDataType.BYTE, (byte) 1);
         Bukkit.getScheduler().runTask(plugin, () -> {
             if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) {
+                // If the chunk unloads before the scheduled placement, permit a later
+                // load to retry rather than permanently consuming its one-time attempt.
+                chunk.getPersistentDataContainer().remove(autoCheckedKey);
                 chunk.getPersistentDataContainer().remove(autoReservedKey);
                 return;
             }
