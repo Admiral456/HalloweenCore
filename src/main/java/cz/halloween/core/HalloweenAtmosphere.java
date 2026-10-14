@@ -34,6 +34,7 @@ public final class HalloweenAtmosphere {
     }
 
     public void onJoin(Player player) {
+        if (player == null || !plugin.isEligibleGameplayWorld(player.getWorld())) return;
         if (isAtmosphereEnabled()) {
             startLoop(player);
         }
@@ -52,7 +53,7 @@ public final class HalloweenAtmosphere {
 
         startVanillaMusicMute();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            startLoop(player);
+            if (plugin.isEligibleGameplayWorld(player.getWorld())) startLoop(player);
         }
     }
 
@@ -66,6 +67,7 @@ public final class HalloweenAtmosphere {
         vanillaMusicMuteTask = plugin.getServer().getScheduler().runTaskTimer(plugin, () -> {
             if (!isAtmosphereEnabled()) return;
             for (Player player : Bukkit.getOnlinePlayers()) {
+                if (!plugin.isEligibleGameplayWorld(player.getWorld())) continue;
                 try {
                     player.stopSound(SoundCategory.MUSIC);
                 } catch (Exception ignored) {
@@ -104,7 +106,8 @@ public final class HalloweenAtmosphere {
     }
 
     private void startLoop(Player player) {
-        if (player == null || !player.isOnline() || !isAtmosphereEnabled()) return;
+        if (player == null || !player.isOnline() || !isAtmosphereEnabled()
+                || !plugin.isEligibleGameplayWorld(player.getWorld())) return;
 
         UUID playerId = player.getUniqueId();
         BukkitTask oldTask = playbackTasks.remove(playerId);
@@ -122,6 +125,11 @@ public final class HalloweenAtmosphere {
                     BukkitTask current = playbackTasks.remove(playerId);
                     if (current != null) current.cancel();
                     if (online != null) stopConfiguredSounds(online);
+                    clearPlayerState(playerId);
+                    return;
+                }
+                if (!plugin.isEligibleGameplayWorld(online.getWorld())) {
+                    stopConfiguredSounds(online);
                     clearPlayerState(playerId);
                     return;
                 }
@@ -144,6 +152,10 @@ public final class HalloweenAtmosphere {
                 BukkitTask current = playbackTasks.remove(playerId);
                 if (current != null) current.cancel();
                 if (online != null) stopConfiguredSounds(online);
+                return;
+            }
+            if (!plugin.isEligibleGameplayWorld(online.getWorld())) {
+                stopConfiguredSounds(online);
                 return;
             }
             stopConfiguredSounds(online);
