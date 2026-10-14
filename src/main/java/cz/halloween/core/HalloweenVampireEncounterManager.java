@@ -1217,7 +1217,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private Location getArenaLocation() {
         String worldName = plugin.getConfig().getString("bosses.vampire.arena.world", "");
         World world = Bukkit.getWorld(worldName);
-        if (world == null) return null;
+        if (world == null || !plugin.isEligibleGameplayWorld(world)) return null;
         return new Location(
                 world,
                 plugin.getConfig().getDouble("bosses.vampire.arena.x", 0.0D),
