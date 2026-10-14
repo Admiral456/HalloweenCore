@@ -161,7 +161,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
                     plugin.getConfig().getLong("bosses.vampire.summoning.delay-after-readiness-seconds", 300L));
             summoningDueAt = now + delaySeconds * 1000L;
             summoningWarningStage = 0;
-            Bukkit.broadcastMessage(plugin.color(plugin.getConfig().getString(
+            broadcastToEligibleWorlds(plugin.color(plugin.getConfig().getString(
                     "messages.vampire-omen",
                     "&5&lHALLOWEEN &8» &7Vzduch ztěžkl. Z hlubin arény se ozývá tlukot, který nepatří živým..."
             )));
@@ -206,8 +206,16 @@ public final class HalloweenVampireEncounterManager implements Listener {
         }
     }
 
+    private void broadcastToEligibleWorlds(String message) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (plugin.isEligibleGameplayPlayer(player) && plugin.isEligibleGameplayWorld(player.getWorld())) {
+                player.sendMessage(message);
+            }
+        }
+    }
+
     private void announceSummoningWarning(String path, String fallback) {
-        Bukkit.broadcastMessage(plugin.color(plugin.getConfig().getString(path, fallback)));
+        broadcastToEligibleWorlds(plugin.color(plugin.getConfig().getString(path, fallback)));
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
             player.sendTitle(
