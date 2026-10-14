@@ -132,7 +132,7 @@ for event_id in ("soulstorm", "witching-hour", "cursed-harvest",
         fail(f"Event manager is missing known event ID: {event_id}")
     if f"    {event_id}:" not in config:
         fail(f"Config is missing event type: {event_id}")
-for marker in ("applySurgeToPlayer(targets.get(i), now)",
+for marker in ("applySurgeToPlayer(target, now)",
                'getInt("random-events.players-per-surge", 3)',
                "cleanupEventMobs()", "scheduleNextEvent()"):
     if marker not in events:
