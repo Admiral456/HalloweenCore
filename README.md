@@ -274,3 +274,47 @@ Model nyní obsahuje vlastní jednorázové animace false_sigil, blood_pulse, mi
 ## Bezpečný náhled modelu
 
 Administrátor může použít `/halloween modelpreview <idle|walk|attack|fly|false_sigil|blood_pulse|mirror_strike|nightfall>`. Příkaz vytvoří čtyři bloky před hráčem dočasný, nezranitelný model přes MythicMobs a ModelEngine, vypne jeho AI a odstraní ho po 10 sekundách. Náhled nespustí encounter, nepočítá účast a neuděluje odměny. Pořád je nutné ověřit render v klientovi s přijatým resource packem.
+
+
+## Ruční struktury a přirozený Halloween svět
+
+Příkazy pro administrátora nevyžadují souřadnice, nastavení středu ani potvrzovací krok. Zadej pouze typ stavby:
+
+- `/halloween spawn hřbitov`
+- `/halloween spawn vesnice`
+- `/halloween spawn aréna`
+- `/halloween spawn vampirearena`
+- `/halloween spawn goblinarena`
+
+Struktura se umístí před hráče podle směru pohledu. Stavba přepisuje terén jen ve vlastním půdorysu a zpracovává bloky po dávkách. Pokud v půdorysu najde blok s uloženými daty (například truhlu nebo ceduli), přípravu zastaví ještě před první změnou, aby nedošlo k tichému zničení obsahu. Při chybě během stavby se pokusí vrátit bloky podle předběžného snapshotu. Administrátor musí mít oprávnění `halloweencore.structures` nebo `halloweencore.admin`.
+
+Zkrácený příkaz `/spawn <typ>` je zaregistrován jako pohodlný alias. Protože jej může poskytovat jiný serverový plugin, spolehlivou alternativou je vždy `/halloween spawn <typ>`. V produkci zatím nebyl konflikt se skutečnou instalací WarriorLandu ověřen.
+
+### Automatický obsah a svět `Spawn`
+
+Svět pojmenovaný `Spawn` je v kódu bezpodmínečně vyřazen z herních světů HalloweenCore. Neprobíhají v něm speciální Halloween spawny, eventové vlny, Halloween pozemní dekorace ani atmosférická hudba / uvítací title. Ruční příkaz oprávněného administrátora je samostatná výjimka a smí strukturu na jeho výslovný pokyn postavit i tam.
+
+Automatické dekorace a přirozené stavby mají nezávislé explicitní seznamy povolených světů. V novém `config.yml` jsou záměrně prázdné, protože název skutečného herního světa WarriorLandu se nesmí odhadovat:
+
+```yaml
+world-decorations:
+  enabled: true
+  allowed-worlds:
+    - NazevSkutecnehoHernihoSveta
+  allow-existing-chunks: false
+
+world-generation:
+  enabled: true
+  allowed-worlds:
+    - NazevSkutecnehoHernihoSveta
+  cemetery-chance-denominator: 256
+  village-chance-denominator: 512
+```
+
+Nahraď `NazevSkutecnehoHernihoSveta` přesným názvem ověřeného herního světa. Svět `Spawn` zůstává zakázán i v případě, že by byl do seznamu omylem přidán. `allow-existing-chunks: false` zabraňuje zpětné dekoraci načtených starých chunků; automatické struktury se vyhodnocují jen při načtení nově generovaného chunku. Přirozená varianta stavby je záměrně řídká a pouze na bezpečném, rovném přirozeném terénu; pokud místo nevyhovuje, nic nepřepisuje.
+
+Limity ručních staveb se řídí `structures.blocks-per-tick` a `structures.max-block-changes`. Procedurální vanilla geometrie je dočasný herní placeholder, nikoli finální grafický asset.
+
+### Stav ověření
+
+GitHub Actions sestavení ověřuje překlad pluginu a validace balíčků. To samo o sobě neprokazuje načtení na Purpuru, bezpečné umístění přes strom/na svahu ani kompatibilitu s reálnou konfigurací pluginů WarriorLandu. Tyto serverové testy zůstávají **NOT TESTED**, dokud neproběhnou na odděleném testovacím serveru se zálohou světa.
