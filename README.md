@@ -211,6 +211,8 @@ Serverová logika Batwing Elytra a Nocturne Sovereign Cowl funguje přes stabiln
 
 Vlastní PNG jsou v `itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/`.
 
+Čtrnáct ikon gearu a předmětů se nyní vytváří deterministicky skriptem `scripts/generate_halloween_item_textures.py` jako vlastní 32×32 pixel art v černo-karmínové, ocelové, zlaté a fialové paletě. Build je vygeneruje před kontrolou assetů a vloží do ItemsAdder ZIPu; mob atlasy patřící externímu autorovi se negenerují ani nepřebarvují. Stávající armor atlasy zatím zůstávají ve své UV struktuře a čekají na samostatné vizuální ověření při nasazené zbroji.
+
 V repozitáři je připravený namespace `warriorland_halloween`:
 
 - `itemsadder/contents/warriorland_halloween/configs/items.yml`
