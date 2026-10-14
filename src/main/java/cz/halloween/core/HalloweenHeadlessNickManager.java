@@ -106,7 +106,7 @@ public final class HalloweenHeadlessNickManager implements Listener {
         if (now < nextSpawnCheck) return;
         nextSpawnCheck = now + interval;
 
-        List<Player> targets = Bukkit.getOnlinePlayers().stream()
+        List<? extends Player> targets = Bukkit.getOnlinePlayers().stream()
                 .filter(Player::isOnline)
                 .filter(plugin::isEligibleGameplayPlayer)
                 .filter(player -> plugin.isAutomaticHalloweenWorld(player.getWorld()))
