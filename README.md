@@ -15,7 +15,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - události dávají různé násobiče podle aktivity
 - serverové milníky zkracují interval mezi náhodnými událostmi a postupně je zesilují
 - speciální Halloween mobové se mohou přirozeně objevit a dávají bonusové fragmenty
-- osm typů custom mobů s vlastními ModelEngine modely: Prokletý zombie, Ženec prázdnoty, Hrobník, Ledový stopař, Krvavý pavouk, Dýňový přízrak, Hexová čarodějka a Noční můra
+- osm typů custom mobů (pět s dodanými ModelEngine modely a texturami; Ženec prázdnoty, Ledový stopař a Noční můra zatím používají vanilla vzhled, dokud jejich autor nedodá vlastní assety): Prokletý zombie, Ženec prázdnoty, Hrobník, Ledový stopař, Krvavý pavouk, Dýňový přízrak, Hexová čarodějka a Noční můra
 - každý elitní mob má vlastní efekt nebo útok: Zombie vysává sílu, Hrobník označuje zem pod hráčem, Krvavý pavouk ho zachytí do krvavé sítě, Dýňový přízrak odpálí oslepující popel, Hexová čarodějka sesílá náhodnou kletbu, Ženec prázdnoty vyvolá temnotu, Ledový stopař zpomalí cíle a Noční můra způsobí děsivé vidiny
 - útoky mají vlastní cooldowny a varování; značce Hrobníka lze uhnout a výbuch Dýňového přízraku neničí stavby
 - speciální mobové mohou dropnout limitované „Prokleté cukroví“
@@ -39,7 +39,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween progress
 - /halloween curse
 - /halloween event
-- /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion> (admin, testovací okamžité spuštění)
+- /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion|pumpkin-apocalypse|graveyard-rising> (admin, testovací okamžité spuštění)
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
 - /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
