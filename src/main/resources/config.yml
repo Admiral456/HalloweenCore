@@ -571,6 +571,14 @@ world-generation:
   enabled: true
   # Fail-closed: list only approved gameplay world names; the world Spawn is always rejected.
   allowed-worlds: []
+  allowed-biomes:
+    - PLAINS
+    - FOREST
+    - DARK_FOREST
+    - TAIGA
+    - OLD_GROWTH_PINE_TAIGA
+    - OLD_GROWTH_SPRUCE_TAIGA
+    - MEADOW
   # Sparse, deterministic chances evaluated only when a brand-new chunk loads.
   cemetery-chance-denominator: 256
   village-chance-denominator: 512
