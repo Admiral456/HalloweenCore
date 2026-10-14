@@ -92,8 +92,11 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private void enqueue(Chunk chunk) {
-        if (chunk == null || !isAllowedWorld(chunk.getWorld())
-                || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)
+        if (chunk == null || !isAllowedWorld(chunk.getWorld())) return;
+        if (plugin.getStructureManager() != null
+                && plugin.getStructureManager().isChunkProtectedFromAutomaticDecoration(
+                        chunk.getWorld(), chunk.getX(), chunk.getZ())) return;
+        if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)
                 || chunk.getPersistentDataContainer().has(naturalStructurePlacedKey, PersistentDataType.BYTE)) return;
         String id = chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ();
         if (queued.add(id)) pending.offer(chunk);
@@ -111,6 +114,9 @@ public final class HalloweenWorldDecorator implements Listener {
             if (chunk == null) return;
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
             if (!chunk.isLoaded() || !isAllowedWorld(chunk.getWorld())) continue;
+            if (plugin.getStructureManager() != null
+                    && plugin.getStructureManager().isChunkProtectedFromAutomaticDecoration(
+                            chunk.getWorld(), chunk.getX(), chunk.getZ())) continue;
             if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)
                     || chunk.getPersistentDataContainer().has(naturalStructurePlacedKey, PersistentDataType.BYTE)) continue;
             try {
