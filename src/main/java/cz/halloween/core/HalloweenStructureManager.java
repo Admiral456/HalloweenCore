@@ -539,7 +539,7 @@ public final class HalloweenStructureManager implements Listener {
             // Three-house hamlet with a cemetery garden on the open side.
             addHouse(plan, cx, y, cz, rotation, -10, -8, Material.DARK_OAK_PLANKS);
             addHouse(plan, cx, y, cz, rotation, 10, -8, Material.SPRUCE_PLANKS);
-            addHouse(plan, cx, y, cz, rotation, 0, 10, Material.DARK_OAK_PLANKS);
+            addHouse(plan, cx, y, cz, rotation, 12, 5, Material.DARK_OAK_PLANKS);
         } else if (variant == 2) {
             // Four offset houses around the square, leaving the main cross-path clear.
             addHouse(plan, cx, y, cz, rotation, -10, -9, Material.SPRUCE_PLANKS);
@@ -553,9 +553,16 @@ public final class HalloweenStructureManager implements Listener {
             addHouse(plan, cx, y, cz, rotation, 9, 9, Material.DARK_OAK_PLANKS);
         }
 
-        for (int x : new int[]{-13, -11, 11, 13}) {
-            local(plan, cx, y + 1, cz, x, 4, rotation, Material.MOSSY_COBBLESTONE_WALL);
-            local(plan, cx, y + 2, cz, x, 4, rotation, Material.COBBLESTONE_WALL);
+        if (variant != 1) {
+            for (int x : new int[]{-13, -11, 11, 13}) {
+                local(plan, cx, y + 1, cz, x, 4, rotation, Material.MOSSY_COBBLESTONE_WALL);
+                local(plan, cx, y + 2, cz, x, 4, rotation, Material.COBBLESTONE_WALL);
+            }
+        } else {
+            for (int x : new int[]{-13, -11, -9}) {
+                local(plan, cx, y + 1, cz, x, 4, rotation, Material.MOSSY_COBBLESTONE_WALL);
+                local(plan, cx, y + 2, cz, x, 4, rotation, Material.COBBLESTONE_WALL);
+            }
         }
         for (int dx : new int[]{-14, 14}) {
             local(plan, cx, y + 1, cz, dx, 0, rotation, Material.OAK_FENCE);
