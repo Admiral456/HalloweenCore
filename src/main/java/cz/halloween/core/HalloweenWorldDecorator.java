@@ -29,6 +29,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
     private final NamespacedKey legacyDecoratedKey;
+    private final NamespacedKey previousDecoratedKey;
     private final NamespacedKey autoStructureKey;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
@@ -38,8 +39,9 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
+        this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v3");
         this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
+        this.previousDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
         this.autoStructureKey = new NamespacedKey(plugin, "halloween_auto_structure_v1");
     }
 
@@ -137,13 +139,18 @@ public final class HalloweenWorldDecorator implements Listener {
         if (plugin.getStructureManager() != null && plugin.getStructureManager().isReservedForNaturalGeneration(chunk)) return;
         // Existing decorated chunks get only the new accent layer. Avoid stacking
         // a second batch of pumpkins/cobwebs when upgrading an already-running world.
-        boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE);
-        int pumpkins = legacyDecorated ? 0 : Math.max(0, Math.min(6,
-                plugin.getConfig().getInt("world-decorations.pumpkins-per-chunk", 5)));
-        int webs = legacyDecorated ? 0 : Math.max(0, Math.min(3,
-                plugin.getConfig().getInt("world-decorations.cobwebs-per-chunk", 2)));
-        int candles = Math.max(0, Math.min(3, plugin.getConfig().getInt("world-decorations.red-candles-per-chunk", 1)));
-        int attempts = Math.max(8, Math.min(80, plugin.getConfig().getInt("world-decorations.attempts-per-placement", 32)));
+        boolean legacyDecorated = chunk.getPersistentDataContainer().has(legacyDecoratedKey, PersistentDataType.BYTE)
+                || chunk.getPersistentDataContainer().has(previousDecoratedKey, PersistentDataType.BYTE);
+        int pumpkins = legacyDecorated ? 0 : Math.max(0, Math.min(10,
+                plugin.getConfig().getInt("world-decorations.pumpkins-per-chunk", 7)));
+        int webs = legacyDecorated ? 0 : Math.max(0, Math.min(6,
+                plugin.getConfig().getInt("world-decorations.cobwebs-per-chunk", 4)));
+        int candles = Math.max(0, Math.min(4, plugin.getConfig().getInt("world-decorations.red-candles-per-chunk", 2)));
+        int mushrooms = Math.max(0, Math.min(8, plugin.getConfig().getInt("world-decorations.mushrooms-per-chunk", 3)));
+        int graves = Math.max(0, Math.min(4, plugin.getConfig().getInt("world-decorations.graves-per-chunk", 1)));
+        int soulLanterns = Math.max(0, Math.min(4, plugin.getConfig().getInt("world-decorations.soul-lanterns-per-chunk", 1)));
+        int deadBushes = Math.max(0, Math.min(6, plugin.getConfig().getInt("world-decorations.dead-bushes-per-chunk", 2)));
+        int attempts = Math.max(8, Math.min(100, plugin.getConfig().getInt("world-decorations.attempts-per-placement", 60)));
         long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C4F574545L;
         Random random = new Random(seed);
@@ -191,6 +198,87 @@ public final class HalloweenWorldDecorator implements Listener {
             if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
             air.setType(Material.RED_CANDLE, false);
             candleCount++;
+        }
+
+        // New accent layers are additive: they only occupy air above safe natural ground.
+        // Existing v1/v2-decorated chunks skip repeated pumpkins and webs, but still receive
+        // the new mushrooms, gravestones, lanterns and dead brush once during this migration.
+        placeMushrooms(chunk, random, attempts, mushrooms);
+        placeGraves(chunk, random, attempts, graves);
+        placeSoulLanterns(chunk, random, attempts, soulLanterns);
+        placeDeadBushes(chunk, random, attempts, deadBushes);
+    }
+
+    private void placeMushrooms(Chunk chunk, Random random, int attempts, int target) {
+        int placed = 0;
+        for (int i = 0; i < attempts && placed < target; i++) {
+            int x = (chunk.getX() << 4) + random.nextInt(16);
+            int z = (chunk.getZ() << 4) + random.nextInt(16);
+            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
+            Material base = ground.getType();
+            if (!(base == Material.GRASS_BLOCK || base == Material.DIRT || base == Material.COARSE_DIRT
+                    || base == Material.ROOTED_DIRT || base == Material.PODZOL || base == Material.MYCELIUM
+                    || base == Material.MOSS_BLOCK)) continue;
+            if (!naturalNeighborhood(ground)) continue;
+            Block air = ground.getRelative(0, 1, 0);
+            if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
+            air.setType(random.nextBoolean() ? Material.BROWN_MUSHROOM : Material.RED_MUSHROOM, false);
+            placed++;
+        }
+    }
+
+    private void placeGraves(Chunk chunk, Random random, int attempts, int target) {
+        int placed = 0;
+        for (int i = 0; i < attempts && placed < target; i++) {
+            int x = (chunk.getX() << 4) + 1 + random.nextInt(14);
+            int z = (chunk.getZ() << 4) + 1 + random.nextInt(14);
+            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
+            if (!isNaturalGround(ground.getType()) || !naturalNeighborhood(ground)
+                    || ground.getState() instanceof TileState) continue;
+            Block lower = ground.getRelative(0, 1, 0);
+            Block upper = ground.getRelative(0, 2, 0);
+            Block cross = ground.getRelative(1, 1, 0);
+            Block crossGround = ground.getRelative(1, 0, 0);
+            if (!lower.getType().isAir() || !upper.getType().isAir() || !cross.getType().isAir()
+                    || !isNaturalGround(crossGround.getType())) continue;
+            if (lower.getState() instanceof TileState || upper.getState() instanceof TileState
+                    || cross.getState() instanceof TileState) continue;
+            Material stone = random.nextBoolean() ? Material.MOSSY_STONE_BRICKS : Material.CRACKED_STONE_BRICKS;
+            lower.setType(stone, false);
+            upper.setType(Material.STONE_BRICK_WALL, false);
+            cross.setType(Material.STONE_BRICK_WALL, false);
+            placed++;
+        }
+    }
+
+    private void placeSoulLanterns(Chunk chunk, Random random, int attempts, int target) {
+        int placed = 0;
+        for (int i = 0; i < attempts && placed < target; i++) {
+            int x = (chunk.getX() << 4) + random.nextInt(16);
+            int z = (chunk.getZ() << 4) + random.nextInt(16);
+            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
+            if (!isNaturalGround(ground.getType()) || !naturalNeighborhood(ground)
+                    || ground.getState() instanceof TileState) continue;
+            Block air = ground.getRelative(0, 1, 0);
+            if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
+            air.setType(Material.SOUL_LANTERN, false);
+            placed++;
+        }
+    }
+
+    private void placeDeadBushes(Chunk chunk, Random random, int attempts, int target) {
+        int placed = 0;
+        for (int i = 0; i < attempts && placed < target; i++) {
+            int x = (chunk.getX() << 4) + random.nextInt(16);
+            int z = (chunk.getZ() << 4) + random.nextInt(16);
+            Block ground = chunk.getWorld().getHighestBlockAt(x, z);
+            Material base = ground.getType();
+            if (!(base == Material.SAND || base == Material.RED_SAND || base == Material.COARSE_DIRT
+                    || base == Material.SOUL_SAND || base == Material.SOUL_SOIL)) continue;
+            Block air = ground.getRelative(0, 1, 0);
+            if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
+            air.setType(Material.DEAD_BUSH, false);
+            placed++;
         }
     }
 
