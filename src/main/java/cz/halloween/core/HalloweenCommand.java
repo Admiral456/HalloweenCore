@@ -456,6 +456,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7Automaticky povolené světy: &f" + (allowed.isEmpty() ? "žádné — bezpečný režim" : String.join(", ", allowed))));
         sender.sendMessage(plugin.color("&7Svět Spawn: &cautomatický Halloween obsah je zakázán"));
         sender.sendMessage(plugin.color("&7Generování staveb: &f" + (plugin.getStructureManager() == null ? "není dostupné" : plugin.getStructureManager().statusLine())));
+        sender.sendMessage(plugin.color("&7" + (plugin.getHeadlessNickManager() == null ? "Headless Nick: nedostupný" : plugin.getHeadlessNickManager().statusLine())));
         sender.sendMessage(plugin.color("&7Poznámka: shader/resource pack se musí ověřit v klientu a přes /iainfo."));
         return true;
     }
