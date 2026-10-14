@@ -1,5 +1,30 @@
 enabled: true
 
+# Automatic Halloween activation by calendar date. Manual /halloween on|off
+# remains available between season-boundary crossings.
+season:
+  enabled: true
+  start: "10-01"          # MM-DD, inclusive
+  end: "11-05"             # MM-DD, inclusive; may wrap across New Year's Day
+  countdown-days: 7
+  timezone: "Europe/Prague"
+  countdown-message: "&6&lHALLOWEEN &8» &eHalloween sezóna začíná za &c%days% &ední."
+
+# A daily time window that makes random events more frequent and can add rare ambient cues.
+# mode: real uses the configured timezone; minecraft uses the in-game clock for loaded worlds.
+witching-hour:
+  enabled: true
+  mode: real
+  start: "20:00"
+  end: "22:00"
+  minecraft-start-tick: 18000
+  minecraft-end-tick: 22000
+  interval-multiplier: 0.5
+  announce: true
+  ambient-sounds: true
+  ambient-interval-seconds: 180
+  reschedule-on-transition: true
+
 global-goal: 100000
 
 # Milníky odemykají další intenzitu eventu a dávají serveru společný cíl.
