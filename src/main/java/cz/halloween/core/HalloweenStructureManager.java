@@ -303,6 +303,22 @@ public final class HalloweenStructureManager implements Listener {
         return true;
     }
 
+    /** Returns true while a manual structure owns this chunk footprint. */
+    public boolean isChunkProtectedFromAutomaticDecoration(World world, int chunkX, int chunkZ) {
+        if (world == null) return false;
+        for (BuildJob job : activeJobs) {
+            if (!job.world.getUID().equals(world.getUID())) continue;
+            int radius = radius(job.type);
+            int minChunkX = (job.centerX - radius) >> 4;
+            int maxChunkX = (job.centerX + radius) >> 4;
+            int minChunkZ = (job.centerZ - radius) >> 4;
+            int maxChunkZ = (job.centerZ + radius) >> 4;
+            if (chunkX >= minChunkX && chunkX <= maxChunkX
+                    && chunkZ >= minChunkZ && chunkZ <= maxChunkZ) return true;
+        }
+        return false;
+    }
+
     public void stopAndRollback() {
         for (BuildJob job : new ArrayList<>(activeJobs)) {
             if (job.task != null) job.task.cancel();
