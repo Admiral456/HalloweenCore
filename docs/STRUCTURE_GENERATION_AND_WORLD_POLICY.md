@@ -17,8 +17,8 @@ Nepřesměrováváme samotný `/spawn`, protože na serveru může patřit Essen
 ### Oprávnění
 
 - `hallowencore.admin`
-- `hallowencore.structure.build`
-- `hallowencore.structure.force`
+- `halloweencore.structure.build`
+- `halloweencore.structure.force`
 
 Všechny tři uzly musí být povolené. V základním `plugin.yml` mají výchozí hodnotu `op`.
 
