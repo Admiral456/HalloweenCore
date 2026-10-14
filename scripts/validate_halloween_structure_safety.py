@@ -28,6 +28,7 @@ commands = read("src/main/java/cz/halloween/core/HalloweenStructureCommand.java"
 halloween_command = read("src/main/java/cz/halloween/core/HalloweenCommand.java")
 events = read("src/main/java/cz/halloween/core/HalloweenEventManager.java")
 quests = read("src/main/java/cz/halloween/core/HalloweenQuestManager.java")
+boss = read("src/main/java/cz/halloween/core/HalloweenBossManager.java")
 atmosphere = read("src/main/java/cz/halloween/core/HalloweenAtmosphere.java")
 config = read("src/main/resources/config.yml")
 plugin_yml = read("src/main/resources/plugin.yml")
@@ -107,6 +108,10 @@ require('pendingProgressSave' in quests and '}, 100L);' in quests,
         "Partial quest progress must be saved via a coalesced delayed save.")
 require('completeStoryQuest(playerId, quest.id())' in quests,
         "Quest completion must have an idempotency guard.")
+require('markStoryCampaignCompleted()' in quests and 'server.story-campaign-completed' in read("src/main/java/cz/halloween/core/HalloweenDataManager.java"),
+        "The last story chapter must persist completion.")
+require('isStoryCampaignCompleted()' in boss,
+        "The Vampire King encounter must require story completion.")
 
-print("PASS: Halloween Spawn safety, allowlists, direct structure commands, FORCE bounds, rollback, event eligibility and quest persistence static checks.")
+print("PASS: Halloween Spawn safety, allowlists, direct structure commands, FORCE bounds, rollback, event eligibility, quest persistence and story-to-boss gating checks.")
 print("NOTE: This script is not a substitute for launching the plugin on a test Paper/Purpur server.")
