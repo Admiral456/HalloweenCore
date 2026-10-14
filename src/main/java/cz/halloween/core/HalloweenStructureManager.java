@@ -63,12 +63,14 @@ public final class HalloweenStructureManager implements Listener {
 
     private final HalloweenCore plugin;
     private final NamespacedKey autoCheckedKey;
+    private final NamespacedKey autoReservedKey;
     private final NamespacedKey autoStructureKey;
     private BuildJob activeJob;
 
     public HalloweenStructureManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.autoCheckedKey = new NamespacedKey(plugin, "halloween_auto_structure_checked_v1");
+        this.autoReservedKey = new NamespacedKey(plugin, "halloween_auto_structure_reserved_v1");
         this.autoStructureKey = new NamespacedKey(plugin, "halloween_auto_structure_v1");
     }
 
@@ -97,9 +99,18 @@ public final class HalloweenStructureManager implements Listener {
                 plugin.getConfig().getDouble("automatic-world-generation.structure-chance-per-anchor", 0.30D)));
         if (random.nextDouble() >= chance) return;
         Kind kind = random.nextBoolean() ? Kind.GRAVEYARD : Kind.VILLAGE;
+        // Reserve only actual candidate chunks so the simple decorator does not race
+        // the structure job on the next tick. Chunks that fail preflight are released.
+        chunk.getPersistentDataContainer().set(autoReservedKey, PersistentDataType.BYTE, (byte) 1);
         Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) return;
-            if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) return;
+            if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) {
+                chunk.getPersistentDataContainer().remove(autoReservedKey);
+                return;
+            }
+            if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) {
+                chunk.getPersistentDataContainer().remove(autoReservedKey);
+                return;
+            }
             try {
                 if (generateSafeNaturalFeature(chunk, kind)) {
                     chunk.getPersistentDataContainer().set(autoStructureKey, PersistentDataType.BYTE, (byte) 1);
@@ -109,8 +120,15 @@ public final class HalloweenStructureManager implements Listener {
             } catch (RuntimeException ex) {
                 plugin.getLogger().warning("Skipped natural Halloween structure in chunk " + chunk.getX() + ","
                         + chunk.getZ() + " because safe placement failed: " + ex.getClass().getSimpleName());
+            } finally {
+                chunk.getPersistentDataContainer().remove(autoReservedKey);
             }
         });
+    }
+
+    public boolean isReservedForNaturalGeneration(Chunk chunk) {
+        return chunk != null
+                && chunk.getPersistentDataContainer().has(autoReservedKey, PersistentDataType.BYTE);
     }
 
     public boolean handleCommand(org.bukkit.command.CommandSender sender, String[] args) {
