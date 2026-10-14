@@ -50,6 +50,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
+- /halloween status (admin, stav eventů a automatického generování)
 - /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> — okamžitě postaví vybranou strukturu před hráčem bez nastavování středu či druhého potvrzovacího příkazu (admin)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
