@@ -148,6 +148,20 @@ public final class HalloweenStructureManager implements Listener {
         return input != null && (input.equalsIgnoreCase("all") || parseKind(input) != null);
     }
 
+    /** Returns true if a location lies within the configured horizontal radius of a recorded graveyard. */
+    public boolean isNearRecordedGraveyard(Location location, double radiusBlocks) {
+        if (location == null || location.getWorld() == null || radiusBlocks < 0.0D) return false;
+        double radiusSquared = radiusBlocks * radiusBlocks;
+        for (Map<?, ?> entry : locations.getMapList("locations")) {
+            if (!"GRAVEYARD".equalsIgnoreCase(String.valueOf(entry.get("type")))) continue;
+            if (!location.getWorld().getName().equals(String.valueOf(entry.get("world")))) continue;
+            double dx = location.getX() - number(entry.get("x"));
+            double dz = location.getZ() - number(entry.get("z"));
+            if (dx * dx + dz * dz <= radiusSquared) return true;
+        }
+        return false;
+    }
+
     public List<String> locateTabComplete(String prefix) {
         String normalized = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
         return List.of("hřbitov", "vesnice", "aréna", "vampirearena", "goblinarena", "all", "graveyard", "village", "arena")
