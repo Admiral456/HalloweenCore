@@ -24,6 +24,8 @@ witching-hour:
   ambient-sounds: true
   ambient-interval-seconds: 180
   reschedule-on-transition: true
+  bat-transformation-enabled: true
+  bat-transformation-chance: 0.08
 
 # Light a candle near a generated/recorded graveyard to start a three-wave encounter.
 grave-encounters:
