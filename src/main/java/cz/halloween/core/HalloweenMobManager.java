@@ -99,7 +99,7 @@ public final class HalloweenMobManager implements Listener {
                 || !plugin.getEventManager().isActive("blood-moon-invasion")) return;
         if (!(event.getEntity() instanceof Player target)
                 || !plugin.isEligibleGameplayPlayer(target)
-                || !plugin.isEligibleGameplayWorld(target.getWorld())) return;
+                || !plugin.isAutomaticHalloweenWorld(target.getWorld())) return;
 
         LivingEntity attacker = resolveLivingAttacker(event.getDamager());
         if (!isHostileDamageSource(attacker)) return;
@@ -428,7 +428,7 @@ public final class HalloweenMobManager implements Listener {
         if (!isKnownSpecialMob(mobId)) return false;
 
         World world = player.getWorld();
-        if (!plugin.isEligibleGameplayWorld(world)) return false;
+        if (!plugin.isAutomaticHalloweenWorld(world)) return false;
         int maxEventMobs = Math.max(1, Math.min(80,
                 plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
         if (countEventMobs(world) >= maxEventMobs) return false;
