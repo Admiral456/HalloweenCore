@@ -230,7 +230,11 @@ public final class HalloweenStructureManager implements Listener {
             } finally {
                 suppressAutomaticGeneration = false;
             }
-            baseY = findGroundY(world, centerX, centerZ);
+            int centerSurfaceY = world.getHighestBlockYAt(centerX, centerZ);
+            Block centerSurface = world.getBlockAt(centerX, centerSurfaceY, centerZ);
+            // If the command points into shallow water/lava, build at the surface and add
+            // foundations inside the footprint rather than accidentally placing the arena underground.
+            baseY = centerSurface.isLiquid() ? centerSurfaceY : findGroundY(world, centerX, centerZ);
             if (baseY <= world.getMinHeight() + 1 || baseY + clearance(type) >= world.getMaxHeight()) {
                 player.sendMessage(plugin.color("&cTady není dost místa ve výšce světa pro tuto stavbu. Zkus se postavit na běžný terén a znovu zadat příkaz."));
                 return false;
