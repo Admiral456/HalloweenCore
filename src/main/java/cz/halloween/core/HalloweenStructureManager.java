@@ -118,7 +118,7 @@ public final class HalloweenStructureManager implements Listener {
                 return;
             }
             try {
-                if (generateSafeNaturalFeature(chunk, kind)) {
+                if (generateSafeNaturalFeature(chunk, kind, random)) {
                     chunk.getPersistentDataContainer().set(autoStructureKey, PersistentDataType.BYTE, (byte) 1);
                     plugin.getLogger().info("Generated natural Halloween " + kind.displayName + " in "
                             + chunk.getWorld().getName() + " chunk " + chunk.getX() + "," + chunk.getZ() + ".");
@@ -808,10 +808,23 @@ public final class HalloweenStructureManager implements Listener {
         }
     }
 
-    private boolean generateSafeNaturalFeature(Chunk chunk, Kind kind) {
+    private boolean generateSafeNaturalFeature(Chunk chunk, Kind kind, Random random) {
+        // A single fixed center misses too many otherwise suitable clearings. Try a
+        // bounded set of five central offsets in shuffled order, never crossing chunk bounds.
+        List<int[]> candidates = new ArrayList<>(List.of(
+                new int[]{7, 8}, new int[]{8, 7}, new int[]{8, 8},
+                new int[]{8, 9}, new int[]{9, 8}));
+        Collections.shuffle(candidates, random);
+        for (int[] candidate : candidates) {
+            if (generateSafeNaturalFeatureAt(chunk, kind, candidate[0], candidate[1])) return true;
+        }
+        return false;
+    }
+
+    private boolean generateSafeNaturalFeatureAt(Chunk chunk, Kind kind, int offsetX, int offsetZ) {
         World world = chunk.getWorld();
-        int centerX = (chunk.getX() << 4) + 8;
-        int centerZ = (chunk.getZ() << 4) + 8;
+        int centerX = (chunk.getX() << 4) + offsetX;
+        int centerZ = (chunk.getZ() << 4) + offsetZ;
         int centerY = findGroundY(world, centerX, centerZ);
         int radius = 6;
         if (centerY + 10 >= world.getMaxHeight() || centerY < world.getMinHeight() + 2) return false;
