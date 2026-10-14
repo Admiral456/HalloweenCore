@@ -67,7 +67,7 @@ public final class HalloweenEventManager {
 
     public boolean startEventNow(String requestedId) {
         if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)) return false;
-        if (activeEventId != null) return false;
+        if (activeEventId != null || !hasEligibleGameplayPlayers()) return false;
 
         String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
         if (eventId.isEmpty() || eventId.equals("random")) {
@@ -117,7 +117,7 @@ public final class HalloweenEventManager {
             runActiveEventEffects(now);
         }
 
-        if (activeEventId == null && now >= nextEventAt && !Bukkit.getOnlinePlayers().isEmpty()) {
+        if (activeEventId == null && now >= nextEventAt && hasEligibleGameplayPlayers()) {
             startRandomEvent();
         }
     }
@@ -157,7 +157,7 @@ public final class HalloweenEventManager {
         String message = plugin.getConfig().getString(path + ".start-message",
                 "&6&lHALLOWEEN &8» &f" + name + " začíná!");
         String announcement = plugin.color(message.replace("%duration%", Integer.toString(duration)));
-        Bukkit.broadcastMessage(announcement);
+        announceEligiblePlayers(announcement);
         plugin.getLogger().info("Halloween event started: " + activeEventId + " (duration=" + duration + "m)");
         playEventSound();
     }
@@ -166,7 +166,7 @@ public final class HalloweenEventManager {
         String path = "random-events.types." + activeEventId;
         String message = plugin.getConfig().getString(path + ".end-message",
                 "&6&lHALLOWEEN &8» &7Halloween událost skončila.");
-        Bukkit.broadcastMessage(plugin.color(message));
+        announceEligiblePlayers(plugin.color(message));
         if (plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
@@ -184,10 +184,25 @@ public final class HalloweenEventManager {
         if (configured == null || configured.isBlank()) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
             try {
                 player.playSound(player.getLocation(), configured.toLowerCase(Locale.ROOT), SoundCategory.AMBIENT, 0.9f, 1.0f);
             } catch (Exception ignored) {
                 player.playSound(player.getLocation(), Sound.ENTITY_WITCH_AMBIENT, 1.0f, 0.7f);
+            }
+        }
+    }
+
+    private boolean hasEligibleGameplayPlayers() {
+        return Bukkit.getOnlinePlayers().stream()
+                .anyMatch(player -> plugin.isEligibleGameplayPlayer(player)
+                        && plugin.isEligibleGameplayWorld(player.getWorld()));
+    }
+
+    private void announceEligiblePlayers(String message) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (plugin.isEligibleGameplayPlayer(player) && plugin.isEligibleGameplayWorld(player.getWorld())) {
+                player.sendMessage(message);
             }
         }
     }
@@ -245,7 +260,7 @@ public final class HalloweenEventManager {
                             target.getLocation().clone().add(0, 1.0D, 0), 70, 1.8D, 1.2D, 1.8D, 0.045D);
                     target.playSound(target.getLocation(), org.bukkit.Sound.ENTITY_WARDEN_ROAR,
                             SoundCategory.AMBIENT, 0.85f, 0.55f);
-                    Bukkit.broadcastMessage(plugin.color("&4&lKRVAVÝ MĚSÍC &8» &cKapitán invaze se probudil! Silný nepřítel se objevil poblíž jednoho z hráčů."));
+                    announceEligiblePlayers(plugin.color("&4&lKRVAVÝ MĚSÍC &8» &cKapitán invaze se probudil! Silný nepřítel se objevil poblíž jednoho z hráčů."));
                 }
 
                 int waveSize = Math.max(1, Math.min(8,
