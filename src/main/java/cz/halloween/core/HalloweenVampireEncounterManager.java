@@ -152,7 +152,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
                     plugin.getConfig().getLong("bosses.vampire.summoning.delay-after-readiness-seconds", 300L));
             summoningDueAt = now + delaySeconds * 1000L;
             summoningWarningStage = 0;
-            Bukkit.broadcastMessage(plugin.color(plugin.getConfig().getString(
+            plugin.broadcastGameplayMessage(plugin.color(plugin.getConfig().getString(
                     "messages.vampire-omen",
                     "&5&lHALLOWEEN &8» &7Vzduch ztěžkl. Z hlubin arény se ozývá tlukot, který nepatří živým..."
             )));
@@ -198,7 +198,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     }
 
     private void announceSummoningWarning(String path, String fallback) {
-        Bukkit.broadcastMessage(plugin.color(plugin.getConfig().getString(path, fallback)));
+        plugin.broadcastGameplayMessage(plugin.color(plugin.getConfig().getString(path, fallback)));
         for (Player player : Bukkit.getOnlinePlayers()) {
             if (!plugin.isEligibleGameplayPlayer(player)) continue;
             player.sendTitle(
@@ -333,11 +333,11 @@ public final class HalloweenVampireEncounterManager implements Listener {
         summoningWarningStage = 0;
         plugin.getBossManager().trackVampireBoss(boss);
         if (testMode) {
-            Bukkit.broadcastMessage(plugin.color(fallbackTestBoss
+            plugin.broadcastGameplayMessage(plugin.color(fallbackTestBoss
                     ? "&c&lTEST BOSSE &8» &fVyvolán zkušební zombie boss, protože MythicMobs definice nebyla dostupná. &7Bez modelu, progressu a odměn."
                     : "&c&lTEST BOSSE &8» &fKrál upírů byl vyvolán bez progresu. &7Test neodemkne finále a nedává odměny."));
         } else {
-            Bukkit.broadcastMessage(plugin.color(
+            plugin.broadcastGameplayMessage(plugin.color(
                     plugin.getConfig().getString("messages.vampire-start",
                             "&4&lHALLOWEEN &8» &fKrál upírů sestoupil do středu arény. &7Poražte ho společně.")
             ));
@@ -385,9 +385,9 @@ public final class HalloweenVampireEncounterManager implements Listener {
         int maxMinutes = Math.max(1, plugin.getConfig().getInt("bosses.vampire.encounter.max-duration-minutes", 20));
         if (System.currentTimeMillis() - startedAt >= maxMinutes * 60_000L) {
             if (testEncounter) {
-                Bukkit.broadcastMessage(plugin.color("&c&lTEST BOSSE &8» &7Testovací souboj skončil časovým limitem; progress ani odměny se nemění."));
+                plugin.broadcastGameplayMessage(plugin.color("&c&lTEST BOSSE &8» &7Testovací souboj skončil časovým limitem; progress ani odměny se nemění."));
             } else {
-                Bukkit.broadcastMessage(plugin.color(
+                plugin.broadcastGameplayMessage(plugin.color(
                         plugin.getConfig().getString("messages.vampire-timeout",
                                 "&4&lHALLOWEEN &8» &cKrál upírů zmizel v temnotě. Aréna je zticha.")
                 ));
@@ -980,7 +980,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
             case 4 -> "&4&lKRÁL UPÍRŮ &8» &4FÁZE IV &7— poslední odpor.";
             default -> "&5&lKRÁL UPÍRŮ &8» &7FÁZE I — lov začíná.";
         };
-        Bukkit.broadcastMessage(plugin.color(message));
+        plugin.broadcastGameplayMessage(plugin.color(message));
         if (boss != null) {
             String barLabel = switch (currentPhase) {
                 case 2 -> "&5&lKRÁL UPÍRŮ &8• &dFÁZE II";
@@ -1039,7 +1039,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
         double maximumHealth = boss == null ? 1.0D : Math.max(1.0D, boss.getMaxHealth());
         double minimumDamage = maximumHealth * minimumDamagePercent / 100.0D;
 
-        Bukkit.broadcastMessage(plugin.color(
+        plugin.broadcastGameplayMessage(plugin.color(
                 plugin.getConfig().getString("messages.vampire-victory",
                         "&4&lHALLOWEEN &8» &6Král upírů byl poražen! Temnota ustupuje.")
         ));
@@ -1266,7 +1266,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     public void onBossDeath(EntityDeathEvent event) {
         if (!isTrackedVampireBoss(event.getEntity())) return;
         if (testEncounter) {
-            Bukkit.broadcastMessage(plugin.color("&a&lTEST BOSSE &8» &7Testovací Král upírů byl poražen. Progress, odměny a finále zůstaly beze změny."));
+            plugin.broadcastGameplayMessage(plugin.color("&a&lTEST BOSSE &8» &7Testovací Král upírů byl poražen. Progress, odměny a finále zůstaly beze změny."));
             finishNoReward();
             return;
         }
