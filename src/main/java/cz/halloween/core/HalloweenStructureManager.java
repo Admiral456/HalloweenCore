@@ -437,9 +437,11 @@ public final class HalloweenStructureManager implements Listener {
             }
         }
 
+        int variant = Math.floorMod(Long.hashCode(world.getSeed()
+                ^ (((long) cx) << 32) ^ (cz & 0xffffffffL)), 3);
         switch (type) {
-            case "cemetery" -> addCemetery(plan, cx, baseY, cz, radius, rotation);
-            case "village" -> addVillage(plan, cx, baseY, cz, radius, rotation);
+            case "cemetery" -> addCemetery(plan, cx, baseY, cz, radius, rotation, variant);
+            case "village" -> addVillage(plan, cx, baseY, cz, radius, rotation, variant);
             case "arena", "goblinarena" -> addArena(plan, cx, baseY, cz, radius, rotation, false);
             case "vampirearena" -> addArena(plan, cx, baseY, cz, radius, rotation, true);
             default -> throw new IllegalArgumentException("neznámý typ");
@@ -447,7 +449,7 @@ public final class HalloweenStructureManager implements Listener {
         return plan;
     }
 
-    private void addCemetery(Map<Pos, Material> plan, int cx, int y, int cz, int r, int rotation) {
+    private void addCemetery(Map<Pos, Material> plan, int cx, int y, int cz, int r, int rotation, int variant) {
         for (int dx = -r; dx <= r; dx++) {
             for (int dz = -r; dz <= r; dz++) {
                 if (dx * dx + dz * dz > r * r) continue;
@@ -465,8 +467,11 @@ public final class HalloweenStructureManager implements Listener {
             local(plan, cx, y + 2, cz, side, -r + 1, rotation, Material.SOUL_LANTERN);
         }
         // Grave rows with alternating stone markers and candles.
-        for (int gx : new int[]{-5, -2, 2, 5}) {
-            for (int gz : new int[]{-4, 0, 4}) {
+        int[] graveXs = variant == 1 ? new int[]{-6, -3, 0, 3, 6}
+                : variant == 2 ? new int[]{-4, 0, 4} : new int[]{-5, -2, 2, 5};
+        int[] graveZs = variant == 1 ? new int[]{-3, 1, 5} : new int[]{-4, 0, 4};
+        for (int gx : graveXs) {
+            for (int gz : graveZs) {
                 local(plan, cx, y, cz, gx, gz, rotation, Material.MOSSY_COBBLESTONE);
                 local(plan, cx, y + 1, cz, gx, gz, rotation, Material.COBBLESTONE_WALL);
                 local(plan, cx, y + 2, cz, gx, gz, rotation,
@@ -474,22 +479,41 @@ public final class HalloweenStructureManager implements Listener {
                 if (((gx + gz) & 1) == 0) local(plan, cx, y + 1, cz, gx + 1, gz, rotation, Material.RED_CANDLE);
             }
         }
-        // Compact crypt at the rear of the graveyard.
-        for (int dx = -3; dx <= 3; dx++) {
-            for (int dz = 4; dz <= 8; dz++) {
-                boolean wall = Math.abs(dx) == 3 || dz == 4 || dz == 8;
-                local(plan, cx, y, cz, dx, dz, rotation, Material.POLISHED_DEEPSLATE);
-                for (int dy = 1; dy <= 3; dy++) {
-                    if (wall) local(plan, cx, y + dy, cz, dx, dz, rotation, Material.MOSSY_STONE_BRICKS);
+        if (variant == 2) {
+            // Ritual variant: a central stepped dais and four rune stones instead of a crypt.
+            for (int dx = -2; dx <= 2; dx++) {
+                for (int dz = -2; dz <= 2; dz++) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) <= 2)
+                        local(plan, cx, y, cz, dx, dz, rotation, Material.POLISHED_BLACKSTONE_BRICKS);
                 }
-                if (wall && dz == 8 && Math.abs(dx) <= 1) local(plan, cx, y + 1, cz, dx, dz, rotation, Material.AIR);
             }
+            local(plan, cx, y + 1, cz, 0, 0, rotation, Material.POLISHED_BLACKSTONE_BRICK_WALL);
+            local(plan, cx, y + 2, cz, 0, 0, rotation, Material.SOUL_LANTERN);
+            for (int[] rune : new int[][]{{-4,-4},{4,-4},{-4,4},{4,4}}) {
+                local(plan, cx, y + 1, cz, rune[0], rune[1], rotation, Material.CRYING_OBSIDIAN);
+                local(plan, cx, y + 2, cz, rune[0], rune[1], rotation, Material.RED_CANDLE);
+            }
+        } else {
+            // Two crypt variants: keep the familiar crypt, but make one less regular.
+            for (int dx = -3; dx <= 3; dx++) {
+                for (int dz = 4; dz <= 8; dz++) {
+                    boolean wall = Math.abs(dx) == 3 || dz == 4 || dz == 8
+                            || (variant == 1 && Math.abs(dx) == 2 && dz == 6);
+                    local(plan, cx, y, cz, dx, dz, rotation, Material.POLISHED_DEEPSLATE);
+                    for (int dy = 1; dy <= (variant == 1 ? 4 : 3); dy++) {
+                        if (wall) local(plan, cx, y + dy, cz, dx, dz, rotation,
+                                variant == 1 ? Material.DEEPSLATE_BRICKS : Material.MOSSY_STONE_BRICKS);
+                    }
+                    if (wall && dz == 8 && Math.abs(dx) <= 1)
+                        local(plan, cx, y + 1, cz, dx, dz, rotation, Material.AIR);
+                }
+            }
+            local(plan, cx, y + (variant == 1 ? 5 : 4), cz, 0, 6, rotation, Material.DEEPSLATE_BRICK_SLAB);
+            local(plan, cx, y + (variant == 1 ? 6 : 5), cz, 0, 6, rotation, Material.SOUL_LANTERN);
         }
-        local(plan, cx, y + 4, cz, 0, 6, rotation, Material.DEEPSLATE_BRICK_SLAB);
-        local(plan, cx, y + 5, cz, 0, 6, rotation, Material.SOUL_LANTERN);
     }
 
-    private void addVillage(Map<Pos, Material> plan, int cx, int y, int cz, int r, int rotation) {
+    private void addVillage(Map<Pos, Material> plan, int cx, int y, int cz, int r, int rotation, int variant) {
         for (int i = -r + 2; i <= r - 2; i++) {
             local(plan, cx, y, cz, i, 0, rotation, Material.DIRT_PATH);
             local(plan, cx, y, cz, 0, i, rotation, Material.DIRT_PATH);
@@ -511,10 +535,23 @@ public final class HalloweenStructureManager implements Listener {
         local(plan, cx, y + 1, cz, 0, -1, rotation, Material.WATER);
         local(plan, cx, y + 2, cz, 0, 0, rotation, Material.SOUL_LANTERN);
 
-        addHouse(plan, cx, y, cz, rotation, -9, -9, Material.DARK_OAK_PLANKS);
-        addHouse(plan, cx, y, cz, rotation, 9, -9, Material.SPRUCE_PLANKS);
-        addHouse(plan, cx, y, cz, rotation, -9, 9, Material.SPRUCE_PLANKS);
-        addHouse(plan, cx, y, cz, rotation, 9, 9, Material.DARK_OAK_PLANKS);
+        if (variant == 1) {
+            // Three-house hamlet with a cemetery garden on the open side.
+            addHouse(plan, cx, y, cz, rotation, -10, -8, Material.DARK_OAK_PLANKS);
+            addHouse(plan, cx, y, cz, rotation, 10, -8, Material.SPRUCE_PLANKS);
+            addHouse(plan, cx, y, cz, rotation, 0, 10, Material.DARK_OAK_PLANKS);
+        } else if (variant == 2) {
+            // Four offset houses around the square, leaving the main cross-path clear.
+            addHouse(plan, cx, y, cz, rotation, -10, -9, Material.SPRUCE_PLANKS);
+            addHouse(plan, cx, y, cz, rotation, 10, -9, Material.DARK_OAK_PLANKS);
+            addHouse(plan, cx, y, cz, rotation, -10, 9, Material.DARK_OAK_PLANKS);
+            addHouse(plan, cx, y, cz, rotation, 10, 9, Material.SPRUCE_PLANKS);
+        } else {
+            addHouse(plan, cx, y, cz, rotation, -9, -9, Material.DARK_OAK_PLANKS);
+            addHouse(plan, cx, y, cz, rotation, 9, -9, Material.SPRUCE_PLANKS);
+            addHouse(plan, cx, y, cz, rotation, -9, 9, Material.SPRUCE_PLANKS);
+            addHouse(plan, cx, y, cz, rotation, 9, 9, Material.DARK_OAK_PLANKS);
+        }
 
         for (int x : new int[]{-13, -11, 11, 13}) {
             local(plan, cx, y + 1, cz, x, 4, rotation, Material.MOSSY_COBBLESTONE_WALL);
