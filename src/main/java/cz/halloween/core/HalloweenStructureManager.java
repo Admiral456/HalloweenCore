@@ -501,7 +501,7 @@ public final class HalloweenStructureManager implements Listener {
                     break;
                 }
             }
-            if (!hasPlayer && chunk.getEntities().length == 0) job.world.unloadChunk(pos.x, pos.z, false);
+            if (!hasPlayer && chunk.getEntities().length == 0) job.world.unloadChunk(pos.x, pos.z, true);
         }
     }
 
