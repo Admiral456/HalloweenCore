@@ -72,6 +72,28 @@ public final class HalloweenStructureManager implements Listener {
         this.naturalStructurePlacedKey = new NamespacedKey(plugin, "halloween_natural_structure_placed_v1");
     }
 
+    /** Log effective auto-generation policy so an empty allow-list is never a silent no-op. */
+    public void logAutomaticGenerationStatus() {
+        if (!plugin.getConfig().getBoolean("world-generation.enabled", true)) {
+            plugin.getLogger().info("Natural Halloween structures are disabled by world-generation.enabled=false.");
+            return;
+        }
+        List<String> configured = plugin.getConfig().getStringList("world-generation.allowed-worlds");
+        List<String> safeWorlds = configured.stream()
+                .filter(name -> name != null && !HalloweenWorldPolicy.isReservedWorld(name))
+                .map(String::trim).filter(name -> !name.isEmpty()).distinct().toList();
+        if (safeWorlds.isEmpty()) {
+            plugin.getLogger().warning("Natural Halloween cemeteries/villages are fail-closed: world-generation.allowed-worlds is empty or contains only reserved names. Set exact gameplay world names; world 'Spawn' will always be ignored.");
+        } else {
+            plugin.getLogger().info("Natural Halloween structures enabled only for configured gameplay worlds: " + String.join(", ", safeWorlds)
+                    + ". New chunks only; 'Spawn' is always excluded.");
+        }
+    }
+
+    public int getActiveBuildCount() {
+        return activeJobs.size();
+    }
+
     /** Only brand-new chunks in explicitly allowed worlds are candidates for automatic structures. */
     @EventHandler
     public void onNewChunk(ChunkLoadEvent event) {
