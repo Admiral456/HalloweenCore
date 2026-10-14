@@ -13,16 +13,23 @@ import java.lang.reflect.Method;
  */
 public final class HalloweenRegionProtection {
     private final HalloweenCore plugin;
+    private final Plugin worldGuard;
     private boolean warnedApiUnavailable;
+    private boolean apiUnavailable;
 
     public HalloweenRegionProtection(HalloweenCore plugin) {
         this.plugin = plugin;
+        this.worldGuard = plugin.getServer().getPluginManager().getPlugin("WorldGuard");
+    }
+
+    public boolean isWorldGuardEnabled() {
+        return worldGuard != null && worldGuard.isEnabled();
     }
 
     public boolean isProtected(Location location) {
         if (location == null || location.getWorld() == null) return true;
-        Plugin worldGuard = plugin.getServer().getPluginManager().getPlugin("WorldGuard");
-        if (worldGuard == null || !worldGuard.isEnabled()) return false;
+        if (!isWorldGuardEnabled()) return false;
+        if (apiUnavailable) return true;
 
         try {
             Class<?> worldGuardClass = Class.forName("com.sk89q.worldguard.WorldGuard");
@@ -72,6 +79,7 @@ public final class HalloweenRegionProtection {
             }
             return false;
         } catch (ReflectiveOperationException | RuntimeException ex) {
+            apiUnavailable = true;
             if (!warnedApiUnavailable) {
                 warnedApiUnavailable = true;
                 plugin.getLogger().warning("WorldGuard is present but its region API could not be safely checked; "
