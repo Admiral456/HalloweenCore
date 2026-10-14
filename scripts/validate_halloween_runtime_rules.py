@@ -198,6 +198,16 @@ if "isNearRecordedGraveyard(Location location, double radiusBlocks)" not in stru
     fail("Candle-triggered rituals are missing recorded-graveyard proximity checks")
 if "migrateGraveEncounterDefaults()" not in core or "graveEncounterManager.start()" not in core:
     fail("Grave encounter manager is not fully wired into startup/config migration")
+if "migrateWitchingBatDefaults()" not in core:
+    fail("Witching Hour bat settings are missing the one-time migration")
+if "onBatDeath(EntityDeathEvent event)" not in mobs:
+    fail("The Witching Hour bat-to-witch surprise is missing")
+for marker in ('"witching-hour.bat-transformation-enabled"', '"witching-hour.bat-transformation-chance"',
+               'isWitchingHourActive(bat.getWorld())', 'spawnMythicModelMob(origin, "hex-witch")'):
+    if marker not in mobs:
+        fail(f"Bat-to-witch transformation is missing required guard or fallback: {marker}")
+if "bat-transformation-chance: 0.08" not in config:
+    fail("Config must define the guarded Witching Hour bat transformation chance")
 if 'args[0].equalsIgnoreCase("grave")' not in command or "startTestEncounter(player)" not in command:
     fail("The admin grave encounter test command is not routed")
 if "grave-encounters:\n  enabled: true" not in config:
@@ -225,4 +235,5 @@ print("- single-location Blood Moon damage multiplier and eligible-world filteri
 print("- one-heart talisman migration and persisted idempotent story quest completion")
 print("- calendar season transitions/countdown and real-time or Minecraft-time Witching Hour")
 print("- candle-triggered three-wave grave ritual, final boss bar, separate mob tracking and gated rewards")
+print("- rare Hex Witch transformation during the configured Witching Hour")
 print("Note: this is static validation only; actual Paper/Purpur and client rendering still need live tests.")
