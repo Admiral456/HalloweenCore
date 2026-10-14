@@ -614,6 +614,14 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text);
     }
 
+    /** Sends Halloween gameplay announcements only to players in eligible gameplay worlds. */
+    public void broadcastGameplayMessage(String message) {
+        if (message == null || message.isBlank()) return;
+        for (Player player : getServer().getOnlinePlayers()) {
+            if (isEligibleGameplayPlayer(player)) player.sendMessage(message);
+        }
+    }
+
     public HalloweenStructureManager getStructureManager() {
         return structureManager;
     }
