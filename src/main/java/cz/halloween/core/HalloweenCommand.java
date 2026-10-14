@@ -76,11 +76,6 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("buildvampirearena") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("confirm").stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
         if (args.length == 2 && args[0].equalsIgnoreCase("setsecret") && sender.hasPermission("halloweencore.admin")) {
             var secrets = plugin.getConfig().getConfigurationSection("secret-discoveries.locations");
             if (secrets == null) return List.of();
