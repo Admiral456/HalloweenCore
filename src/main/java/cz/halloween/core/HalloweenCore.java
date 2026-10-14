@@ -61,6 +61,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAdditionalMobAndQuestDefaults();
         migrateAtmosphericWorldGenerationDefaults();
         migrateSeasonAndWitchingDefaults();
+        migrateWitchingBatDefaults();
         migrateGraveEncounterDefaults();
 
         dataManager = new HalloweenDataManager(this);
@@ -183,6 +184,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateAtmosphericWorldGenerationDefaults();
         migrateSeasonAndWitchingDefaults();
+        migrateWitchingBatDefaults();
         migrateGraveEncounterDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
@@ -334,6 +336,32 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Season scheduler and Witching Hour defaults migrated without overwriting existing settings.");
         } catch (IOException ex) {
             getLogger().warning("Season/Witching Hour migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateWitchingBatDefaults() {
+        if (getConfig().getBoolean("migrations.witching-bat-transform-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; Witching Hour bat defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection section = defaults.getConfigurationSection("witching-hour");
+            if (section != null) {
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = "witching-hour." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
+                }
+            }
+            getConfig().set("migrations.witching-bat-transform-v1", true);
+            saveConfig();
+            getLogger().info("Witching Hour bat transformation defaults migrated without overwriting existing settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Witching Hour bat migration failed: " + ex.getClass().getSimpleName());
         }
     }
 
