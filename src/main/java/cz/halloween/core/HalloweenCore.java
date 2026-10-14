@@ -222,7 +222,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
 
         if (changed) {
-            Bukkit.broadcastMessage(color(enabled
+            broadcastGameplayMessage(color(enabled
                     ? "&6&lHALLOWEEN &8» &eHalloween je zapnutý. První událost dorazí za chvíli!"
                     : "&8[HALLOWEEN] &7Halloween event byl vypnut."));
         } else if (enabled) {
@@ -565,7 +565,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public void broadcastGlobalGoalReached() {
         String message = getConfig().getString("messages.global-goal-reached",
                 "&6&lHALLOWEEN &8» &fServer společně dosáhl Halloween cíle! Něco se probouzí...");
-        getServer().broadcastMessage(color(message));
+        broadcastGameplayMessage(color(message));
     }
 
     public String message(String key) {
