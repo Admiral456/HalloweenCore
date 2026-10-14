@@ -567,6 +567,14 @@ structures:
   blocks-per-tick: 800
   max-block-changes: 150000
 
+world-generation:
+  enabled: true
+  # Fail-closed: list only approved gameplay world names; the world Spawn is always rejected.
+  allowed-worlds: []
+  # Sparse, deterministic chances evaluated only when a brand-new chunk loads.
+  cemetery-chance-denominator: 256
+  village-chance-denominator: 512
+
 atmosphere:
   enabled: true
   sound: "warriorland_halloween:haunted_theme"
