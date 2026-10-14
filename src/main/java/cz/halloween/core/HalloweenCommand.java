@@ -130,6 +130,11 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .sorted()
                     .toList();
         }
+        if (args.length == 3 && args[0].equalsIgnoreCase("give") && sender.hasPermission("halloweencore.admin")) {
+            return List.of("all").stream()
+                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
         return List.of();
     }
 
@@ -199,7 +204,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween boss <status|start|test|stop> &7- finále nebo bezpečný test bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
+        sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet|all> &7- přidá fragmenty nebo vydá všechny testovací předměty"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
         return true;
     }
@@ -837,14 +842,32 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
     private boolean give(CommandSender sender, String[] args) {
         if (!checkAdmin(sender)) return true;
-        if (args.length < 3) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween give <hráč> <počet>"));
+        if (args.length != 3) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween give <hráč> <počet|all>"));
             return true;
         }
 
         Player target = Bukkit.getPlayerExact(args[1]);
         if (target == null) {
             sender.sendMessage(plugin.color("&cHráč není online."));
+            return true;
+        }
+
+        if (args[2].equalsIgnoreCase("all")) {
+            List<org.bukkit.inventory.ItemStack> items = plugin.getRewardManager().createAdminRewardItems();
+            int issued = 0;
+            for (org.bukkit.inventory.ItemStack item : items) {
+                if (item == null || item.getType().isAir()) continue;
+                var overflow = target.getInventory().addItem(item);
+                issued++;
+                for (org.bukkit.inventory.ItemStack leftover : overflow.values()) {
+                    if (leftover != null && !leftover.getType().isAir() && leftover.getAmount() > 0) {
+                        target.getWorld().dropItemNaturally(target.getLocation(), leftover);
+                    }
+                }
+            }
+            sender.sendMessage(plugin.color("&aVydal jsem &e" + issued + " &atestovacích Halloween předmětů hráči &f" + target.getName() + "&a."));
+            target.sendMessage(plugin.color("&6HALLOWEEN &8» &eAdministrátor ti vydal všechna dostupná Halloween gear a relikvie pro testování."));
             return true;
         }
 
