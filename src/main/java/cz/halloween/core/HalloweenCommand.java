@@ -30,7 +30,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -176,9 +176,6 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return plugin.getStructureManager() == null ? true : plugin.getStructureManager().handleCommand(sender, args);
         }
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
-        if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
-        if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
-        if (args[0].equalsIgnoreCase("buildvampirearena")) return buildVampireArena(sender, args);
         if (args[0].equalsIgnoreCase("setsecret")) return setSecret(sender, args);
         if (args[0].equalsIgnoreCase("secrets")) return showSecrets(sender);
         if (args[0].equalsIgnoreCase("boss")) return boss(sender, args);
@@ -202,11 +199,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween status &7- stav automatických světů, eventů a generování (admin)"));
         sender.sendMessage(plugin.color("&6/halloween spawn <struktura|mob> &7- ruční struktura před tebou (FORCE) nebo testovací spawn jednoho z osmi mobů"));
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
-        sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
-        sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween buildvampirearena [confirm] &7- náhled a bezpečná stavba arény (admin)"));
         sender.sendMessage(plugin.color("&6/halloween boss <status|start|test|stop> &7- finále nebo bezpečný test bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
