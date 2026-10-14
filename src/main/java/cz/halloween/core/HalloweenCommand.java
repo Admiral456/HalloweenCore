@@ -30,11 +30,15 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("spawn")) {
+            return plugin.getStructureManager() == null ? List.of()
+                    : plugin.getStructureManager().tabComplete(args[1]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
                 && sender.hasPermission("halloweencore.admin")) {
@@ -143,6 +147,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest")) return quests(sender, args);
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
+        if (args[0].equalsIgnoreCase("status")) return status(sender);
+        if (args[0].equalsIgnoreCase("spawn")) {
+            return plugin.getStructureManager() == null ? true : plugin.getStructureManager().handleCommand(sender, args);
+        }
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
         if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
         if (args[0].equalsIgnoreCase("setvampirearena")) return setVampireArena(sender);
@@ -167,6 +175,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
         sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween status &7- stav automatických světů, eventů a generování (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> &7- okamžitě postaví strukturu před tebou (admin, FORCE)"));
         sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
         sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
@@ -399,6 +409,20 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         if (position == 1) sender.sendMessage(plugin.color("&7Leaderboard je zatím prázdný."));
+        return true;
+    }
+
+    private boolean status(CommandSender sender) {
+        if (!checkAdmin(sender)) return true;
+        sender.sendMessage(plugin.color("&6&lHALLOWEENCORE — STAV"));
+        sender.sendMessage(plugin.color("&7Halloween: " + (plugin.isEventEnabled() ? "&aON" : "&cOFF")));
+        sender.sendMessage(plugin.color("&7Event: &f" + (plugin.getEventManager() == null || plugin.getEventManager().getActiveEventId() == null
+                ? "žádný" : plugin.getEventManager().getActiveEventId())));
+        java.util.List<String> allowed = plugin.getConfig().getStringList("automatic-world-generation.allowed-worlds");
+        sender.sendMessage(plugin.color("&7Automaticky povolené světy: &f" + (allowed.isEmpty() ? "žádné — bezpečný režim" : String.join(", ", allowed))));
+        sender.sendMessage(plugin.color("&7Svět Spawn: &cautomatický Halloween obsah je zakázán"));
+        sender.sendMessage(plugin.color("&7Generování staveb: &f" + (plugin.getStructureManager() == null ? "není dostupné" : plugin.getStructureManager().statusLine())));
+        sender.sendMessage(plugin.color("&7Poznámka: shader/resource pack se musí ověřit v klientu a přes /iainfo."));
         return true;
     }
 
