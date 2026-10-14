@@ -558,9 +558,11 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     }
 
     public void broadcastGlobalGoalReached() {
-        String message = getConfig().getString("messages.global-goal-reached",
-                "&6&lHALLOWEEN &8» &fServer společně dosáhl Halloween cíle! Něco se probouzí...");
-        getServer().broadcastMessage(color(message));
+        String message = color(getConfig().getString("messages.global-goal-reached",
+                "&6&lHALLOWEEN &8» &fServer společně dosáhl Halloween cíle! Něco se probouzí..."));
+        for (Player player : getServer().getOnlinePlayers()) {
+            if (isEligibleGameplayWorld(player.getWorld())) player.sendMessage(message);
+        }
     }
 
     public String message(String key) {
