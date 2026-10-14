@@ -37,6 +37,32 @@ passives = read("src/main/java/cz/halloween/core/HalloweenPassiveEffectManager.j
 config = read("src/main/resources/config.yml")
 plugin_yml = read("src/main/resources/plugin.yml")
 readme = read("README.md")
+item_texture_generator = read("scripts/generate_halloween_item_textures.py")
+block_texture_generator = read("scripts/generate_halloween_block_textures.py")
+build_workflow = read(".github/workflows/build.yml")
+
+# Texture generators must run before validators and before ItemsAdder packaging.
+for filename in (
+    "hunter_mask.png", "cursed_talisman.png", "halloween_token.png", "cursed_candy.png",
+    "haunted_map.png", "crimson_warden_helmet.png", "crimson_warden_chestplate.png",
+    "crimson_warden_leggings.png", "crimson_warden_boots.png", "crimson_warden_sword.png",
+    "crimson_warden_pickaxe.png", "crimson_warden_axe.png", "crimson_warden_shovel.png",
+    "crimson_warden_hoe.png",
+):
+    if filename not in item_texture_generator:
+        fail(f"Project-owned item texture generator is missing output: {filename}")
+for filename in ("red_mushroom.png", "brown_mushroom.png", "dead_bush.png", "soul_lantern.png"):
+    if filename not in block_texture_generator:
+        fail(f"World-decoration texture generator is missing output: {filename}")
+for marker in ("run: python3 scripts/generate_halloween_block_textures.py",
+               "run: python3 scripts/generate_halloween_item_textures.py",
+               "name: Validate Halloween assets"):
+    if marker not in build_workflow:
+        fail(f"Build workflow is missing texture build step: {marker}")
+if build_workflow.index("scripts/generate_halloween_block_textures.py") > build_workflow.index("Validate Halloween assets"):
+    fail("Block textures must be generated before resource-pack validation")
+if build_workflow.index("scripts/generate_halloween_item_textures.py") > build_workflow.index("Validate Halloween assets"):
+    fail("Item textures must be generated before resource-pack validation")
 
 # Automatic world generation must fail closed and never touch the named lobby.
 for marker in (
@@ -236,4 +262,5 @@ print("- one-heart talisman migration and persisted idempotent story quest compl
 print("- calendar season transitions/countdown and real-time or Minecraft-time Witching Hour")
 print("- candle-triggered three-wave grave ritual, final boss bar, separate mob tracking and gated rewards")
 print("- rare Hex Witch transformation during the configured Witching Hour")
+print("- reproducible project-owned pixel-art icons and themed mushroom/dead-bush/soul-lantern textures")
 print("Note: this is static validation only; actual Paper/Purpur and client rendering still need live tests.")
