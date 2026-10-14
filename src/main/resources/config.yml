@@ -1,5 +1,20 @@
 enabled: true
 
+# Fail-closed allow-list for any automatic terrain edits (structures and surface
+# decorations). Leave empty until the exact gameplay world names are confirmed.
+# The world named "Spawn" is blocked in code regardless of this setting.
+world-generation:
+  allowed-worlds: []
+  allowed-biomes: []
+  structures:
+    enabled: true
+    # One candidate for every N newly-generated chunks; candidates still need safe natural terrain.
+    one-in-new-chunks: 256
+    minimum-distance-blocks: 384
+    maximum-surface-variation: 2
+  generated-structure-index: []
+
+
 global-goal: 100000
 
 # Milníky odemykají další intenzitu eventu a dávají serveru společný cíl.
