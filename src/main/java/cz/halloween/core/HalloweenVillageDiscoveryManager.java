@@ -9,6 +9,10 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerMoveEvent;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
 public final class HalloweenVillageDiscoveryManager implements Listener {
     private final HalloweenCore plugin;
 
@@ -19,8 +23,6 @@ public final class HalloweenVillageDiscoveryManager implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onMove(PlayerMoveEvent event) {
         if (!plugin.isEventEnabled()) return;
-        if (!plugin.getConfig().getBoolean("haunted-village.enabled", false)) return;
-
         Location from = event.getFrom();
         Location to = event.getTo();
         if (to == null) return;
@@ -35,18 +37,43 @@ public final class HalloweenVillageDiscoveryManager implements Listener {
         if (!plugin.isEligibleGameplayWorld(player.getWorld())) return;
         if (plugin.getDataManager().hasDiscoveredVillage(player.getUniqueId())) return;
 
-        String worldName = plugin.getConfig().getString("haunted-village.world", "");
-        World villageWorld = Bukkit.getWorld(worldName);
-        if (villageWorld == null || !player.getWorld().getUID().equals(villageWorld.getUID())) return;
-
-        double x = plugin.getConfig().getDouble("haunted-village.x", 0.0D);
-        double y = plugin.getConfig().getDouble("haunted-village.y", 100.0D);
-        double z = plugin.getConfig().getDouble("haunted-village.z", 0.0D);
         double radius = Math.max(2.0D,
                 plugin.getConfig().getDouble("haunted-village.discovery-radius", 12.0D));
+        List<Location> villageLocations = new ArrayList<>();
 
-        Location target = new Location(villageWorld, x, y, z);
-        if (player.getLocation().distanceSquared(target) > radius * radius) return;
+        if (plugin.getConfig().getBoolean("haunted-village.enabled", false)) {
+            String worldName = plugin.getConfig().getString("haunted-village.world", "");
+            World villageWorld = Bukkit.getWorld(worldName);
+            if (villageWorld != null && player.getWorld().getUID().equals(villageWorld.getUID())) {
+                villageLocations.add(new Location(villageWorld,
+                        plugin.getConfig().getDouble("haunted-village.x", 0.0D),
+                        plugin.getConfig().getDouble("haunted-village.y", 100.0D),
+                        plugin.getConfig().getDouble("haunted-village.z", 0.0D)));
+            }
+        }
+
+        // Automatically generated hamlets are indexed only after their build completes.
+        // New-format index: world UUID;center X;player-level Y;center Z;structure ID.
+        for (String entry : plugin.getConfig().getStringList("world-generation.generated-structure-index")) {
+            String[] parts = entry.split(";");
+            if (parts.length != 5 || !parts[4].equalsIgnoreCase("AUTO_VILLAGE")) continue;
+            try {
+                UUID worldId = UUID.fromString(parts[0]);
+                if (!player.getWorld().getUID().equals(worldId)) continue;
+                World world = Bukkit.getWorld(worldId);
+                if (world == null) continue;
+                double x = Double.parseDouble(parts[1]) + 0.5D;
+                double y = Double.parseDouble(parts[2]);
+                double z = Double.parseDouble(parts[3]) + 0.5D;
+                villageLocations.add(new Location(world, x, y, z));
+            } catch (IllegalArgumentException ex) {
+                plugin.getLogger().warning("Ignoring malformed automatic village index entry: " + entry);
+            }
+        }
+
+        boolean isNearVillage = villageLocations.stream()
+                .anyMatch(location -> player.getLocation().distanceSquared(location) <= radius * radius);
+        if (!isNearVillage) return;
 
         plugin.getDataManager().markVillageDiscovered(player.getUniqueId());
 

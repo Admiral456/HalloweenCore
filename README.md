@@ -50,14 +50,33 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
-- /halloween setvillage (admin)
+- /halloween status (admin, stav eventů a automatického generování)
+- /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> — okamžitě postaví vybranou strukturu před hráčem bez nastavování středu či druhého potvrzovacího příkazu (admin)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
-- /halloween setvampirearena (admin)
-- /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
+- /halloween setvillage — zpětně kompatibilní příkaz, který rovnou postaví Haunted Village před hráčem (admin)
+- /halloween setvampirearena a /halloween buildvampirearena — zpětně kompatibilní příkazy, které rovnou postaví upíří arénu před hráčem (admin)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>
 - /halloween on|off
+
+## Generování staveb a ochrana světa Spawn
+
+Ruční stavby se spouštějí jediným příkazem přímo ve hře:
+
+- `/halloween spawn hřbitov`
+- `/halloween spawn vesnice`
+- `/halloween spawn aréna`
+- `/halloween spawn vampirearena`
+- `/halloween spawn goblinarena`
+
+Není nutné nastavovat souřadnice, stát uprostřed místa ani potvrzovat druhým příkazem. Struktura se umístí přibližně 8 bloků před hráče podle směru pohledu. Ruční FORCE režim může přepsat bloky uvnitř přesně vymezeného půdorysu a výšky; probíhá po dávkách a při výjimce se pokusí o rollback. Příkaz `/spawn` samotný nepřebíráme, protože na serveru může patřit EssentialsX nebo jinému pluginu.
+
+Příkazy vyžadují `hallowencore.admin`, `halloweencore.structure.build` a `halloweencore.structure.force`. Všechny jsou standardně dostupné operátorům.
+
+**Ochrana světa `Spawn`:** automatické eventy a jejich speciální mobové nemohou v tomto světě aktivovat herní mechaniky. Automatické struktury a povrchové dekorace se navíc fail-closed řídí výslovným seznamem světů `world-generation.allowed-worlds`. Seznam je záměrně prázdný, dokud nejsou ověřeny skutečné názvy herních světů; automatické úpravy tak nezačnou v neověřeném světě. Přidej jen skutečný název schváleného survival světa — `Spawn` zůstává zakázán i při omylem přidaném názvu.
+
+Automatické hřbitovy a malé strašidelné osady se zvažují jen při generování nového chunku. Používají footprint 15×15 uvnitř jednoho chunku, dodržují minimální vzdálenost a odmítnou kandidáta, pokud terén není přírodní, je příliš svažitý nebo obsahuje překážky či block entities. Pokusy se ukládají do chunk PDC; výsledné pozice se evidují v konfiguraci. Staré chunky se zpětně neupravují. Ověření na testovacím světě je nutné před zapnutím automatické generace na produkci.
 
 ## Boss bar
 
@@ -125,7 +144,7 @@ Projekt je navržený tak, aby se dal dál napojovat na pluginy, které už Warr
 
 ## Eventy, speciální mobové a dekorace světa
 
-Náhodné eventy se spouštějí přibližně 15–24 minut od sebe a trvají 6 minut. Po zapnutí Halloween systému přijde první event po krátké prodlevě.
+Náhodné eventy mají základní interval 15–24 minut mezi začátky. Serverové milníky jej postupně zkracují, ale nikdy pod 12 minut; běžný event trvá 5 minut a s postupem se může prodloužit nejvýše na 8 minut. Po zapnutí Halloween systému přijde první event po krátké prodlevě. Po restartu se použije běžný interval, ne okamžitý event.
 
 | Event | Co se během něj děje |
 |---|---|
@@ -146,8 +165,8 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 
 ## Návod: aréna, obchod a resource pack
 
-- Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
-- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
+- Upíří aréna se postaví jedním příkazem `/halloween spawn vampirearena`, přibližně 8 bloků před hráčem. Není třeba nastavovat střed, vybírat místo ani potvrzovat druhým příkazem. Stavba má průměr 97 bloků a může přepsat bloky uvnitř svého půdorysu a vymezeného objemu; před prvním testem ji vyzkoušej na kopii světa.
+- `/halloween spawn hřbitov`, `/halloween spawn vesnice`, `/halloween spawn aréna` a `/halloween spawn goblinarena` fungují stejným jednorázovým způsobem.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
 - `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
 - `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.

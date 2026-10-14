@@ -30,7 +30,9 @@ public final class HalloweenEventManager {
         if (started) return;
         started = true;
         if (plugin.getConfig().getBoolean("random-events.enabled", true) && plugin.isEventEnabled()) {
-            scheduleFirstEvent();
+            // Server restarts use the normal interval. /halloween on still schedules
+            // a short first event intentionally; rebooting does not spawn a wave instantly.
+            scheduleNextEvent();
         }
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
     }
@@ -66,7 +68,8 @@ public final class HalloweenEventManager {
     }
 
     public boolean startEventNow(String requestedId) {
-        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)) return false;
+        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)
+                || !hasEligiblePlayers()) return false;
         if (activeEventId != null) return false;
 
         String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
@@ -117,8 +120,14 @@ public final class HalloweenEventManager {
             runActiveEventEffects(now);
         }
 
-        if (activeEventId == null && now >= nextEventAt && !Bukkit.getOnlinePlayers().isEmpty()) {
-            startRandomEvent();
+        if (activeEventId == null && now >= nextEventAt) {
+            if (hasEligiblePlayers()) {
+                startRandomEvent();
+            } else {
+                // Do not start/broadcast server-wide events while the only players
+                // online are in protected or otherwise excluded worlds.
+                nextEventAt = now + 60_000L;
+            }
         }
     }
 
@@ -128,11 +137,12 @@ public final class HalloweenEventManager {
             return;
         }
         int phase = getGlobalPhase();
-        int baseMin = Math.max(1, plugin.getConfig().getInt("random-events.interval-minutes.min", 15));
-        int baseMax = Math.max(baseMin, plugin.getConfig().getInt("random-events.interval-minutes.max", 24));
-        int min = Math.max(8, baseMin - phase * 2);
-        int max = Math.max(min, baseMax - phase * 2);
-        int minutes = ThreadLocalRandom.current().nextInt(min, max + 1);
+        int baseMin = plugin.getConfig().getInt("random-events.interval-minutes.min", 15);
+        int baseMax = plugin.getConfig().getInt("random-events.interval-minutes.max", 24);
+        HalloweenEventTiming.Interval interval =
+                HalloweenEventTiming.intervalForPhase(phase, baseMin, baseMax);
+        int minutes = ThreadLocalRandom.current().nextInt(
+                interval.minimumMinutes(), interval.maximumMinutes() + 1);
         nextEventAt = System.currentTimeMillis() + minutes * 60_000L;
     }
 
@@ -146,8 +156,8 @@ public final class HalloweenEventManager {
         if (eventId == null || eventId.isBlank() || activeEventId != null) return;
         activeEventId = eventId;
         int phase = getGlobalPhase();
-        int duration = Math.max(1, plugin.getConfig().getInt("random-events.duration-minutes", 5)
-                + Math.min(3, phase / 2));
+        int duration = HalloweenEventTiming.durationMinutes(
+                phase, plugin.getConfig().getInt("random-events.duration-minutes", 5));
         activeUntil = System.currentTimeMillis() + duration * 60_000L;
         lastSurgeAt = 0L;
         invasionCaptainSpawned = false;
@@ -157,24 +167,26 @@ public final class HalloweenEventManager {
         String message = plugin.getConfig().getString(path + ".start-message",
                 "&6&lHALLOWEEN &8» &f" + name + " začíná!");
         String announcement = plugin.color(message.replace("%duration%", Integer.toString(duration)));
-        Bukkit.broadcastMessage(announcement);
+        broadcastToEligibleWorlds(announcement);
         plugin.getLogger().info("Halloween event started: " + activeEventId + " (duration=" + duration + "m)");
         playEventSound();
+        // Intervals are measured start-to-start, matching the documented cadence.
+        scheduleNextEvent();
     }
 
     private void endEvent() {
         String path = "random-events.types." + activeEventId;
         String message = plugin.getConfig().getString(path + ".end-message",
                 "&6&lHALLOWEEN &8» &7Halloween událost skončila.");
-        Bukkit.broadcastMessage(plugin.color(message));
+        broadcastToEligibleWorlds(plugin.color(message));
         if (plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
 
         activeEventId = null;
         activeUntil = 0L;
+        lastSurgeAt = 0L;
         invasionCaptainSpawned = false;
-        scheduleNextEvent();
     }
 
     private void playEventSound() {
@@ -184,6 +196,8 @@ public final class HalloweenEventManager {
         if (configured == null || configured.isBlank()) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
+            if (!plugin.isEligibleGameplayPlayer(player)
+                    || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
             try {
                 player.playSound(player.getLocation(), configured.toLowerCase(Locale.ROOT), SoundCategory.AMBIENT, 0.9f, 1.0f);
             } catch (Exception ignored) {
@@ -245,7 +259,7 @@ public final class HalloweenEventManager {
                             target.getLocation().clone().add(0, 1.0D, 0), 70, 1.8D, 1.2D, 1.8D, 0.045D);
                     target.playSound(target.getLocation(), org.bukkit.Sound.ENTITY_WARDEN_ROAR,
                             SoundCategory.AMBIENT, 0.85f, 0.55f);
-                    Bukkit.broadcastMessage(plugin.color("&4&lKRVAVÝ MĚSÍC &8» &cKapitán invaze se probudil! Silný nepřítel se objevil poblíž jednoho z hráčů."));
+                    broadcastToEligibleWorlds(plugin.color("&4&lKRVAVÝ MĚSÍC &8» &cKapitán invaze se probudil! Silný nepřítel se objevil poblíž jednoho z hráčů."));
                 }
 
                 int waveSize = Math.max(1, Math.min(8,
@@ -335,6 +349,21 @@ public final class HalloweenEventManager {
         if (activeEventId == null) return 1.0D;
         String path = "random-events.types." + activeEventId + ".multipliers." + source;
         return Math.max(1.0D, plugin.getConfig().getDouble(path, 1.0D));
+    }
+
+    private boolean hasEligiblePlayers() {
+        return Bukkit.getOnlinePlayers().stream()
+                .anyMatch(player -> plugin.isEligibleGameplayPlayer(player)
+                        && plugin.isEligibleGameplayWorld(player.getWorld()));
+    }
+
+    private void broadcastToEligibleWorlds(String message) {
+        for (Player player : Bukkit.getOnlinePlayers()) {
+            if (plugin.isEligibleGameplayPlayer(player)
+                    && plugin.isEligibleGameplayWorld(player.getWorld())) {
+                player.sendMessage(message);
+            }
+        }
     }
 
     public String getActiveEventId() {

@@ -42,6 +42,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
+    private HalloweenStructureManager structureManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -72,8 +73,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
+        structureManager = new HalloweenStructureManager(this);
 
         logConfigValidationIssues();
+        if (getConfig().getStringList("world-generation.allowed-worlds").isEmpty()) {
+            getLogger().warning("Automatic Halloween terrain generation is fail-closed: world-generation.allowed-worlds is empty. "
+                    + "Add only approved gameplay world names there; world 'Spawn' is always excluded.");
+        }
         bossManager.validateConfiguration();
 
         getServer().getPluginManager().registerEvents(this, this);
@@ -88,6 +94,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
+        getServer().getPluginManager().registerEvents(structureManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
@@ -124,6 +131,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (structureManager != null) structureManager.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -209,9 +217,12 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
 
         if (changed) {
-            Bukkit.broadcastMessage(color(enabled
+            String message = color(enabled
                     ? "&6&lHALLOWEEN &8» &eHalloween je zapnutý. První událost dorazí za chvíli!"
-                    : "&8[HALLOWEEN] &7Halloween event byl vypnut."));
+                    : "&8[HALLOWEEN] &7Halloween event byl vypnut.");
+            for (Player player : getServer().getOnlinePlayers()) {
+                if (isEligibleGameplayWorld(player.getWorld())) player.sendMessage(message);
+            }
         } else if (enabled) {
             getLogger().info("Halloween event is already enabled; next event scheduled shortly.");
         }
@@ -550,9 +561,11 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     }
 
     public void broadcastGlobalGoalReached() {
-        String message = getConfig().getString("messages.global-goal-reached",
-                "&6&lHALLOWEEN &8» &fServer společně dosáhl Halloween cíle! Něco se probouzí...");
-        getServer().broadcastMessage(color(message));
+        String message = color(getConfig().getString("messages.global-goal-reached",
+                "&6&lHALLOWEEN &8» &fServer společně dosáhl Halloween cíle! Něco se probouzí..."));
+        for (Player player : getServer().getOnlinePlayers()) {
+            if (isEligibleGameplayWorld(player.getWorld())) player.sendMessage(message);
+        }
     }
 
     public String message(String key) {
@@ -561,18 +574,31 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return color(prefix + config.getString(key, ""));
     }
 
+    /**
+     * Hard safety boundary for all automatic/gameplay Halloween systems.
+     * "Spawn" is denied even if an old config omits it from the blacklist or
+     * accidentally uses a whitelist. Manual admin structure commands intentionally
+     * do not call this method, so an explicit build in Spawn remains possible.
+     */
     public boolean isEligibleGameplayWorld(World world) {
-        if (world == null) return false;
+        return world != null && HalloweenWorldPolicy.isGameplayWorldEligible(
+                world.getName(),
+                getConfig().getStringList("gameplay.worlds.names"),
+                getConfig().getString("gameplay.worlds.mode", "BLACKLIST"));
+    }
 
-        java.util.List<String> worlds = getConfig().getStringList("gameplay.worlds.names");
-        if (worlds.isEmpty()) return true;
+    public HalloweenStructureManager getStructureManager() {
+        return structureManager;
+    }
 
-        boolean listed = worlds.stream().anyMatch(name -> name.equalsIgnoreCase(world.getName()));
-        String mode = getConfig().getString("gameplay.worlds.mode", "BLACKLIST");
-        if ("WHITELIST".equalsIgnoreCase(mode)) {
-            return listed;
-        }
-        return !listed;
+    /**
+     * Automatic world modification is fail-closed. Only worlds explicitly named in
+     * world-generation.allowed-worlds are eligible; Spawn is denied unconditionally.
+     * This is separate from manual administrator structure commands.
+     */
+    public boolean isEligibleAutomaticHalloweenWorld(World world) {
+        return world != null && HalloweenWorldPolicy.isAutomaticWorldEligible(
+                world.getName(), getConfig().getStringList("world-generation.allowed-worlds"));
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {

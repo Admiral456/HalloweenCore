@@ -29,6 +29,7 @@ public final class HalloweenWorldDecorator implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey decoratedKey;
     private final NamespacedKey legacyDecoratedKey;
+    private final HalloweenRegionProtection regionProtection;
     private final Queue<Chunk> pending = new ArrayDeque<>();
     private final Set<String> queued = new HashSet<>();
     private final Set<String> warnedErrors = new HashSet<>();
@@ -36,13 +37,15 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public HalloweenWorldDecorator(HalloweenCore plugin) {
         this.plugin = plugin;
+        this.regionProtection = new HalloweenRegionProtection(plugin);
         this.decoratedKey = new NamespacedKey(plugin, "halloween_decorated_v2");
         this.legacyDecoratedKey = new NamespacedKey(plugin, "halloween_decorated_v1");
     }
 
     public void start() {
         if (task != null || !isEnabled()) return;
-        scanLoadedChunks();
+        // Existing chunks are intentionally not scanned or retroactively decorated.
+        ensureTaskRunning();
     }
 
     public void stop() {
@@ -55,27 +58,34 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     public void scanLoadedChunks() {
-        if (!isEnabled()) return;
-        for (World world : plugin.getServer().getWorlds()) {
-            for (Chunk chunk : world.getLoadedChunks()) enqueue(chunk);
-        }
-        if (task == null) {
-            task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::processQueue, 1L, 10L);
-        }
+        // Retained as a compatibility entry point for /halloween reload, but never
+        // enqueue already-generated chunks. Decorations are only considered for new chunks.
+        ensureTaskRunning();
+    }
+
+    private void ensureTaskRunning() {
+        if (!isEnabled() || task != null) return;
+        task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::processQueue, 1L, 10L);
     }
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
-        if (isEnabled()) enqueue(event.getChunk());
+        if (!isEnabled() || !event.isNewChunk()) return;
+        if (!plugin.isEligibleAutomaticHalloweenWorld(event.getWorld())) return;
+        if (plugin.getStructureManager() != null && plugin.getStructureManager().isBuilding()) return;
+        enqueue(event.getChunk());
     }
 
     private boolean isEnabled() {
         return plugin.isEventEnabled()
-                && plugin.getConfig().getBoolean("world-decorations.enabled", true);
+                && plugin.getConfig().getBoolean("world-decorations.enabled", true)
+                && !plugin.getConfig().getStringList("world-generation.allowed-worlds").isEmpty();
     }
 
     private void enqueue(Chunk chunk) {
-        if (chunk == null || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) return;
+        if (chunk == null || !plugin.isEligibleAutomaticHalloweenWorld(chunk.getWorld())
+                || (plugin.getStructureManager() != null && plugin.getStructureManager().isBuilding())
+                || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) return;
         String id = chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ();
         if (queued.add(id)) pending.offer(chunk);
     }
@@ -92,6 +102,8 @@ public final class HalloweenWorldDecorator implements Listener {
             if (chunk == null) return;
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
             if (!chunk.isLoaded()) continue;
+            if (!plugin.isEligibleAutomaticHalloweenWorld(chunk.getWorld())) continue;
+            if (plugin.getStructureManager() != null && plugin.getStructureManager().isBuilding()) continue;
             if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
             try {
                 decorateChunk(chunk);
@@ -130,6 +142,8 @@ public final class HalloweenWorldDecorator implements Listener {
             if (!(ground.getRelative(0, 1, 0).getType().isAir())) continue;
             if (ground.getState() instanceof TileState) continue;
             if (!naturalNeighborhood(ground)) continue;
+            if (regionProtection.isProtected(ground.getLocation())
+                    || regionProtection.isProtected(ground.getRelative(0, 1, 0).getLocation())) continue;
 
             Material pumpkin = switch (random.nextInt(5)) {
                 case 0 -> Material.JACK_O_LANTERN;
@@ -150,6 +164,7 @@ public final class HalloweenWorldDecorator implements Listener {
             if (!air.getType().isAir() || air.getY() <= chunk.getWorld().getMinHeight()) continue;
             if (air.getState() instanceof TileState) continue;
             if (countNearbyWebAnchors(surface) < 2) continue;
+            if (regionProtection.isProtected(surface.getLocation()) || regionProtection.isProtected(air.getLocation())) continue;
             air.setType(Material.COBWEB, false);
             webCount++;
         }
@@ -163,6 +178,7 @@ public final class HalloweenWorldDecorator implements Listener {
             if (!naturalNeighborhood(ground) || ground.getState() instanceof TileState) continue;
             Block air = ground.getRelative(0, 1, 0);
             if (!air.getType().isAir() || air.getState() instanceof TileState) continue;
+            if (regionProtection.isProtected(ground.getLocation()) || regionProtection.isProtected(air.getLocation())) continue;
             air.setType(Material.RED_CANDLE, false);
             candleCount++;
         }
