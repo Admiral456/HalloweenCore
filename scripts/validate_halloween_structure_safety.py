@@ -5,7 +5,6 @@ These checks complement, but do not replace, in-game Paper/Purpur testing.
 """
 from pathlib import Path
 import re
-import sys
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -61,7 +60,7 @@ def yaml_section(section_name: str) -> str:
         if line and not line[0].isspace() and line.rstrip().endswith(":"):
             break
         collected.append(line)
-    return "\\n".join(collected)
+    return "\n".join(collected)
 
 
 decorations_config = yaml_section("world-decorations")
