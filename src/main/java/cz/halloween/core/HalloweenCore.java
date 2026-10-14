@@ -43,6 +43,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
     private HalloweenStructureManager structureManager;
+    private HalloweenRelicAbilityManager relicAbilityManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -75,6 +76,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
         structureManager = new HalloweenStructureManager(this);
+        relicAbilityManager = new HalloweenRelicAbilityManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -92,6 +94,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
         getServer().getPluginManager().registerEvents(structureManager, this);
+        getServer().getPluginManager().registerEvents(relicAbilityManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
@@ -106,6 +109,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
         worldDecorator.start();
+        relicAbilityManager.start();
         passiveEffectManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -129,6 +133,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
         if (structureManager != null) structureManager.stop();
+        if (relicAbilityManager != null) relicAbilityManager.stop();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -562,6 +567,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenStructureManager getStructureManager() {
         return structureManager;
+    }
+
+    public HalloweenRelicAbilityManager getRelicAbilityManager() {
+        return relicAbilityManager;
     }
 
     public void notifyFragmentGain(UUID playerId, long amount) {
