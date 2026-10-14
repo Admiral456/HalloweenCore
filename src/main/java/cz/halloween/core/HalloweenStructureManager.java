@@ -94,6 +94,8 @@ public final class HalloweenStructureManager implements Listener {
         Random random = new Random(seed);
         int cemeteryDenominator = Math.max(1, Math.min(100000, plugin.getConfig().getInt("world-generation.cemetery-chance-denominator", 256)));
         int villageDenominator = Math.max(1, Math.min(100000, plugin.getConfig().getInt("world-generation.village-chance-denominator", 512)));
+        int cx = (chunk.getX() << 4) + 8;
+        int cz = (chunk.getZ() << 4) + 8;
         try {
             String biome = world.getBiome(cx, baseSurfaceY(world, cx, cz), cz).name();
             if (allowedBiomes.stream().noneMatch(name -> name.equalsIgnoreCase(biome))) return;
