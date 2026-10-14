@@ -51,9 +51,13 @@ public final class HalloweenBossManager {
         double progress = plugin.getService().getGlobalProgressPercent();
         boolean progressReady = goal <= 0L || progress >= Math.max(0, Math.min(100, requiredProgress));
         String arenaWorld = plugin.getConfig().getString("bosses.vampire.arena.world", "");
-        boolean arenaReady = !arenaWorld.isBlank()
-                && plugin.getServer().getWorlds().stream().anyMatch(world -> world.getName().equalsIgnoreCase(arenaWorld))
+        World resolvedArenaWorld = arenaWorld.isBlank() ? null : Bukkit.getWorld(arenaWorld);
+        boolean arenaReady = resolvedArenaWorld != null
+                && plugin.isEligibleGameplayWorld(resolvedArenaWorld)
                 && plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false);
+        if (resolvedArenaWorld != null && !plugin.isEligibleGameplayWorld(resolvedArenaWorld)) {
+            warnIfConfiguredSpawnArena(arenaWorld);
+        }
         ConfigurationSection model = plugin.getConfig().getConfigurationSection("bosses.vampire.model");
         boolean mythicMobsReady = plugin.getServer().getPluginManager().getPlugin("MythicMobs") != null
                 && plugin.getServer().getPluginManager().getPlugin("MythicMobs").isEnabled();
@@ -81,6 +85,16 @@ public final class HalloweenBossManager {
                 && mythicMobsReady
                 && modelReady
                 && modelPluginReady;
+    }
+
+    private void warnIfConfiguredSpawnArena(String arenaWorld) {
+        String normalized = arenaWorld == null ? "" : arenaWorld.trim();
+        if (!"Spawn".equalsIgnoreCase(normalized)) return;
+        String warningKey = "bosses.vampire.spawn-world-warning";
+        if (plugin.getConfig().getBoolean("runtime-warnings.vampire-spawn-world", false)) return;
+        plugin.getConfig().set("runtime-warnings.vampire-spawn-world", true);
+        plugin.getLogger().warning("Vampire King arena is configured in reserved world 'Spawn'. The boss will remain disabled there; generate its arena in an explicitly allowed gameplay world.");
+        plugin.saveConfig();
     }
 
     public boolean isVampireSpecificationValid() {
