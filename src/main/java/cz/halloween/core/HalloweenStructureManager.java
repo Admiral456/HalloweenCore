@@ -311,9 +311,16 @@ public final class HalloweenStructureManager implements Listener {
         try {
             int end = Math.min(job.changes.size(), job.cursor + perTick);
             while (job.cursor < end) {
-                Change change = job.changes.get(job.cursor++);
+                Change change = job.changes.get(job.cursor);
                 Block block = job.world.getBlockAt(change.pos().x(), change.pos().y(), change.pos().z());
+                // Re-check immediately before each write: players/plugins may have changed the area
+                // while the build was being applied over several ticks.
+                if (block.getState() instanceof TileState) {
+                    throw new IllegalStateException("A block entity appeared during generation at "
+                            + change.pos().x() + " " + change.pos().y() + " " + change.pos().z());
+                }
                 block.setBlockData(change.after(), false);
+                job.cursor++;
                 job.applied++;
             }
             if (job.cursor >= job.changes.size()) finish(job);
@@ -372,8 +379,15 @@ public final class HalloweenStructureManager implements Listener {
         for (int i = Math.min(job.cursor, job.changes.size()) - 1; i >= 0; i--) {
             Change change = job.changes.get(i);
             try {
-                job.world.getBlockAt(change.pos().x(), change.pos().y(), change.pos().z())
-                        .setBlockData(change.before(), false);
+                Block block = job.world.getBlockAt(change.pos().x(), change.pos().y(), change.pos().z());
+                // Do not erase a newer player/plugin edit while restoring the old snapshot.
+                if (block.getState() instanceof TileState || !block.getBlockData().equals(change.after())) {
+                    plugin.getLogger().warning("Rollback skipped a changed block at " + job.world.getName()
+                            + " " + change.pos().x() + " " + change.pos().y() + " " + change.pos().z()
+                            + " because its current state no longer matches this build.");
+                    continue;
+                }
+                block.setBlockData(change.before(), false);
             } catch (RuntimeException rollbackError) {
                 plugin.getLogger().severe("Rollback failed at " + job.world.getName() + " "
                         + change.pos().x() + " " + change.pos().y() + " " + change.pos().z()
