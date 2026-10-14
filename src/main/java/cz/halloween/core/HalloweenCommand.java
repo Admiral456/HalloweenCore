@@ -29,7 +29,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = List.of(
-                    "stats", "progress", "curse", "event", "challenge", "quests",
+                    "stats", "status", "progress", "curse", "event", "challenge", "quests",
                     "rewards", "claim", "top", "reload", "debug", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "spawn", "on", "off"
             );
             return subcommands.stream()
@@ -136,6 +136,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("stats")) return stats(sender);
         if (args[0].equalsIgnoreCase("top")) return top(sender);
+        if (args[0].equalsIgnoreCase("status")) return status(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
         if (args[0].equalsIgnoreCase("curse")) return curse(sender);
         if (args[0].equalsIgnoreCase("event")) return event(sender, args);
@@ -156,6 +157,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
+        sender.sendMessage(plugin.color("&6/halloween status &7- stav eventů, generování, questů a staveb (admin)"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
         sender.sendMessage(plugin.color("&6/halloween event [start|stop] &7- stav a testovací spuštění eventu (admin)"));
@@ -203,6 +205,52 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return true;
         }
         manager.buildBeforePlayer(player, args[1]);
+        return true;
+    }
+
+    private boolean status(CommandSender sender) {
+        if (!checkAdmin(sender)) return true;
+
+        HalloweenEventManager events = plugin.getEventManager();
+        String eventText;
+        if (events != null && events.getActiveEventId() != null) {
+            String id = events.getActiveEventId();
+            String name = plugin.getConfig().getString("random-events.types." + id + ".name", id);
+            eventText = "&a" + name + " &7(" + events.getRemainingSeconds() + " s zbývá)";
+        } else if (events != null && events.getNextEventSeconds() >= 0L) {
+            eventText = "&eDalší za " + events.getNextEventSeconds() + " s";
+        } else {
+            eventText = "&cnenaplánováno";
+        }
+
+        List<String> generationWorlds = plugin.getConfig().getStringList("world-generation.allowed-worlds");
+        List<String> decorationWorlds = plugin.getConfig().getStringList("world-decorations.allowed-worlds");
+        String generation = !plugin.getConfig().getBoolean("world-generation.enabled", true)
+                ? "&cVYPNUTO"
+                : generationWorlds.isEmpty() ? "&cFAIL-CLOSED — seznam světů je prázdný"
+                : "&a" + String.join(", ", generationWorlds);
+        String decoration = !plugin.getConfig().getBoolean("world-decorations.enabled", true)
+                ? "&cVYPNUTO"
+                : decorationWorlds.isEmpty() ? "&cFAIL-CLOSED — seznam světů je prázdný"
+                : "&a" + String.join(", ", decorationWorlds);
+
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        sender.sendMessage(plugin.color("&6&lHALLOWEENCORE — STAV"));
+        sender.sendMessage(plugin.color("&7Halloween: " + (plugin.isEventEnabled() ? "&aZAPNUTÝ" : "&cVYPNUTÝ")));
+        sender.sendMessage(plugin.color("&7Náhodné eventy: "
+                + (plugin.getConfig().getBoolean("random-events.enabled", true) ? "&aPovoleny" : "&cVypnuty")
+                + " &8• &7" + eventText));
+        sender.sendMessage(plugin.color("&7Automatické hřbitovy/vesnice: " + generation));
+        sender.sendMessage(plugin.color("&7Automatické pozemní dekorace: " + decoration));
+        sender.sendMessage(plugin.color("&7Svět &fSpawn &7je vždy vyloučen z automatického obsahu."));
+        sender.sendMessage(plugin.color("&7Příběh dokončen: "
+                + (plugin.getDataManager().isStoryCampaignCompleted() ? "&aANO" : "&eNE")));
+        sender.sendMessage(plugin.color("&7Globální progress: &e" + plugin.getService().getServerFragments()
+                + "&7/&e" + plugin.getService().getGlobalGoal()));
+        sender.sendMessage(plugin.color("&7Aktivní ruční stavby: &e"
+                + (plugin.getStructureManager() == null ? 0 : plugin.getStructureManager().getActiveBuildCount())));
+        sender.sendMessage(plugin.color("&7Poznámka: výčet povolených světů neodemyká svět Spawn."));
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
         return true;
     }
 
