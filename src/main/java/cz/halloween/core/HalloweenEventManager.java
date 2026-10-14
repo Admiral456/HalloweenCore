@@ -136,8 +136,17 @@ public final class HalloweenEventManager {
         int baseMax = Math.max(baseMin, plugin.getConfig().getInt("random-events.interval-minutes.max", 24));
         int min = Math.max(8, baseMin - phase * 2);
         int max = Math.max(min, baseMax - phase * 2);
+        double intervalMultiplier = plugin.getSeasonManager() == null
+                ? 1.0D : plugin.getSeasonManager().getEventIntervalMultiplier();
+        min = Math.max(1, (int) Math.round(min * intervalMultiplier));
+        max = Math.max(min, (int) Math.round(max * intervalMultiplier));
         int minutes = ThreadLocalRandom.current().nextInt(min, max + 1);
         nextEventAt = System.currentTimeMillis() + minutes * 60_000L;
+    }
+
+    /** Recalculate the pending timer when Witching Hour begins or ends. */
+    public void rescheduleForTimeWindow() {
+        if (activeEventId == null) scheduleNextEvent();
     }
 
     private void startRandomEvent() {
