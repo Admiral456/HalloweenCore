@@ -8,6 +8,12 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
+import org.bukkit.Chunk;
+import org.bukkit.NamespacedKey;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
@@ -19,18 +25,20 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.Random;
 
 /**
  * Procedural, deterministic structures for explicit administrator commands.
  * Automatic world decoration is handled separately with a strict world allow-list.
  */
-public final class HalloweenStructureManager {
+public final class HalloweenStructureManager implements Listener {
     private record Pos(int x, int y, int z) {}
     private record Change(Pos pos, BlockData before, BlockData after) {}
 
     private static final int MAX_TERRAIN_DELTA = 32;
 
     private final HalloweenCore plugin;
+    private final NamespacedKey naturalChunkKey;
     private final Set<BuildJob> activeJobs = new LinkedHashSet<>();
 
     private static final class BuildJob {
@@ -59,6 +67,102 @@ public final class HalloweenStructureManager {
 
     public HalloweenStructureManager(HalloweenCore plugin) {
         this.plugin = plugin;
+        this.naturalChunkKey = new NamespacedKey(plugin, "halloween_natural_structure_checked_v1");
+    }
+
+    /** Only brand-new chunks in explicitly allowed worlds are candidates for automatic structures. */
+    @EventHandler
+    public void onNewChunk(ChunkLoadEvent event) {
+        if (!event.isNewChunk() || !plugin.isEventEnabled()
+                || !plugin.getConfig().getBoolean("world-generation.enabled", true)) return;
+        Chunk chunk = event.getChunk();
+        World world = chunk.getWorld();
+        if (world == null || "Spawn".equalsIgnoreCase(world.getName())
+                || !plugin.isEligibleGameplayWorld(world)
+                || !plugin.getConfig().getStringList("world-generation.allowed-worlds").stream()
+                    .anyMatch(name -> name.equalsIgnoreCase(world.getName()))) return;
+        if (chunk.getPersistentDataContainer().has(naturalChunkKey, PersistentDataType.BYTE)) return;
+
+        long seed = world.getSeed() ^ ((long) chunk.getX() * 341873128712L)
+                ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C53545255L;
+        Random random = new Random(seed);
+        int cemeteryDenominator = Math.max(1, Math.min(100000, plugin.getConfig().getInt("world-generation.cemetery-chance-denominator", 256)));
+        int villageDenominator = Math.max(1, Math.min(100000, plugin.getConfig().getInt("world-generation.village-chance-denominator", 512)));
+        try {
+            if (random.nextInt(cemeteryDenominator) == 0) {
+                buildNaturalCemetery(chunk, random);
+            } else if (random.nextInt(villageDenominator) == 0) {
+                buildNaturalVillage(chunk, random);
+            }
+        } catch (RuntimeException ex) {
+            plugin.getLogger().warning("Natural Halloween structure skipped in " + world.getName() + " chunk "
+                    + chunk.getX() + "," + chunk.getZ() + ": " + ex.getClass().getSimpleName() + ": " + ex.getMessage());
+        } finally {
+            chunk.getPersistentDataContainer().set(naturalChunkKey, PersistentDataType.BYTE, (byte) 1);
+        }
+    }
+
+    private void buildNaturalCemetery(Chunk chunk, Random random) {
+        int cx = (chunk.getX() << 4) + 8;
+        int cz = (chunk.getZ() << 4) + 8;
+        int baseY = findGroundY(chunk.getWorld(), cx, cz);
+        if (!isNaturalFlatFootprint(chunk, cx, cz, 5, baseY)) return;
+        World world = chunk.getWorld();
+        for (int dx = -5; dx <= 5; dx++) for (int dz = -5; dz <= 5; dz++) {
+            Block ground = world.getBlockAt(cx + dx, baseY, cz + dz);
+            ground.setType((Math.max(Math.abs(dx), Math.abs(dz)) == 5) ? Material.MOSSY_COBBLESTONE : Material.POLISHED_DEEPSLATE, false);
+            if (Math.max(Math.abs(dx), Math.abs(dz)) == 5 && !(Math.abs(dx) <= 1 && dz == -5)) {
+                world.getBlockAt(cx + dx, baseY + 1, cz + dz).setType(Material.MOSSY_COBBLESTONE_WALL, false);
+            }
+        }
+        for (int gx : new int[]{-3, 0, 3}) for (int gz : new int[]{-2, 2}) {
+            world.getBlockAt(cx + gx, baseY + 1, cz + gz).setType(Material.COBBLESTONE_WALL, false);
+            if (random.nextBoolean()) world.getBlockAt(cx + gx, baseY + 2, cz + gz).setType(Material.POLISHED_BLACKSTONE_BRICK_WALL, false);
+        }
+        world.getBlockAt(cx, baseY + 1, cz - 5).setType(Material.SOUL_LANTERN, false);
+        plugin.getLogger().info("Generated natural Halloween cemetery in " + world.getName() + " at " + cx + "," + baseY + "," + cz);
+    }
+
+    private void buildNaturalVillage(Chunk chunk, Random random) {
+        int cx = (chunk.getX() << 4) + 8;
+        int cz = (chunk.getZ() << 4) + 8;
+        int baseY = findGroundY(chunk.getWorld(), cx, cz);
+        if (!isNaturalFlatFootprint(chunk, cx, cz, 7, baseY)) return;
+        World world = chunk.getWorld();
+        for (int dx = -7; dx <= 7; dx++) for (int dz = -7; dz <= 7; dz++) {
+            Material floor = (Math.abs(dx) <= 1 || Math.abs(dz) <= 1) ? Material.DIRT_PATH : Material.MUD_BRICKS;
+            world.getBlockAt(cx + dx, baseY, cz + dz).setType(floor, false);
+        }
+        // Four tiny cabins around a central lantern well; the manual command creates the full-size version.
+        for (int hx : new int[]{-4, 4}) for (int hz : new int[]{-4, 4}) {
+            Material plank = random.nextBoolean() ? Material.SPRUCE_PLANKS : Material.DARK_OAK_PLANKS;
+            for (int dx = -1; dx <= 1; dx++) for (int dz = -1; dz <= 1; dz++) {
+                world.getBlockAt(cx + hx + dx, baseY, cz + hz + dz).setType(plank, false);
+                world.getBlockAt(cx + hx + dx, baseY + 1, cz + hz + dz).setType(
+                        (Math.abs(dx) == 1 || Math.abs(dz) == 1) ? Material.MOSSY_COBBLESTONE : Material.AIR, false);
+                world.getBlockAt(cx + hx + dx, baseY + 2, cz + hz + dz).setType(
+                        (Math.abs(dx) == 1 || Math.abs(dz) == 1) ? Material.MOSSY_COBBLESTONE : Material.AIR, false);
+                world.getBlockAt(cx + hx + dx, baseY + 3, cz + hz + dz).setType(Material.DEEPSLATE_BRICKS, false);
+            }
+        }
+        world.getBlockAt(cx, baseY + 1, cz).setType(Material.POLISHED_BLACKSTONE_BRICKS, false);
+        world.getBlockAt(cx, baseY + 2, cz).setType(Material.SOUL_LANTERN, false);
+        plugin.getLogger().info("Generated natural Halloween village in " + world.getName() + " at " + cx + "," + baseY + "," + cz);
+    }
+
+    private boolean isNaturalFlatFootprint(Chunk chunk, int cx, int cz, int radius, int expectedY) {
+        World world = chunk.getWorld();
+        for (int x = cx - radius; x <= cx + radius; x++) for (int z = cz - radius; z <= cz + radius; z++) {
+            if ((x >> 4) != chunk.getX() || (z >> 4) != chunk.getZ()) return false;
+            int groundY = findGroundY(world, x, z);
+            if (groundY != expectedY || world.getHighestBlockYAt(x, z) != groundY) return false;
+            Material ground = world.getBlockAt(x, groundY, z).getType();
+            if (!(ground == Material.GRASS_BLOCK || ground == Material.DIRT || ground == Material.COARSE_DIRT
+                    || ground == Material.PODZOL || ground == Material.MYCELIUM || ground == Material.MOSS_BLOCK)) return false;
+            if (world.getBlockAt(x, groundY + 1, z).getType() != Material.AIR
+                    || world.getBlockAt(x, groundY + 2, z).getType() != Material.AIR) return false;
+        }
+        return expectedY + 5 < world.getMaxHeight();
     }
 
     /**
