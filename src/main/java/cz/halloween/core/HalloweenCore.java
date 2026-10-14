@@ -78,6 +78,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         worldDecorator = new HalloweenWorldDecorator(this);
         structureManager = new HalloweenStructureManager(this);
         relicAbilityManager = new HalloweenRelicAbilityManager(this);
+        headlessNickManager = new HalloweenHeadlessNickManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
