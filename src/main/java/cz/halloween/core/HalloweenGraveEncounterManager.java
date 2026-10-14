@@ -139,11 +139,13 @@ public final class HalloweenGraveEncounterManager implements Listener {
         for (int dx = -scan; dx <= scan; dx++) {
             for (int dz = -scan; dz <= scan; dz++) {
                 if (dx * dx + dz * dz > scan * scan) continue;
+                int x = location.getBlockX() + dx;
+                int z = location.getBlockZ() + dz;
+                if (!location.getWorld().isChunkLoaded(x >> 4, z >> 4)) continue;
                 for (int dy = -2; dy <= 2; dy++) {
                     int y = location.getBlockY() + dy;
                     if (y < location.getWorld().getMinHeight() || y >= location.getWorld().getMaxHeight()) continue;
-                    Material type = location.getWorld().getBlockAt(
-                            location.getBlockX() + dx, y, location.getBlockZ() + dz).getType();
+                    Material type = location.getWorld().getBlockAt(x, y, z).getType();
                     if (type == Material.MOSSY_COBBLESTONE_WALL
                             || type == Material.COBBLESTONE_WALL
                             || type == Material.MOSSY_STONE_BRICK_WALL
