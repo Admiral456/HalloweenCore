@@ -27,7 +27,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - při připojení se zobrazí Halloween title/subtitle
 - custom odměny a relikvie mají připravené ItemsAdder ID, skutečné PNG textury a bezpečný vanilla fallback
 - Maska nočního lovce dává při nošení +5 % k zisku fragmentů; stojí 4 000 fragmentů a vyžaduje prokletí 3
-- Prokletý talisman stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +20 maximálního zdraví (jeden řádek srdcí navíc) a zachovává +10 % k zisku fragmentů
+- Prokletý talisman stojí 1 000 000 fragmentů a vyžaduje prokletí 5; při držení v hlavní nebo vedlejší ruce přidá +2 maximálního zdraví (jedno srdce navíc) a zachovává +10 % k zisku fragmentů
 - limitovaný token Halloween 2026 stojí 30 000 fragmentů a vyžaduje prokletí 5
 - po dosažení globálního cíle se natrvalo odemkne serverové finále
 - hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
@@ -50,11 +50,11 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
-- /halloween setvillage (admin)
+- /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> (admin, ihned umístí strukturu před hráčem v režimu FORCE; žádné nastavování středu ani confirm)
+- /halloween spawn <cursed-zombie|void-reaper|gravekeeper|frost-stalker|blood-spider|pumpkin-wraith|hex-witch|nightmare> (admin, testovací spawn jednoho mobu; použije ModelEngine/MythicMobs, pokud jsou dostupné, jinak vanilla fallback)
+- /halloween status (diagnostika aktivního eventu, povolených automatických světů a stavby)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
-- /halloween setvampirearena (admin)
-- /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>
 - /halloween on|off
@@ -151,7 +151,7 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
 - `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
 - `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
-- Prokletý talisman stojí 1 000 000 fragmentů. Při držení v hlavní nebo vedlejší ruce přidá +20 k maximálnímu zdraví (jeden celý řádek srdcí) a zachovává 10% bonus k fragmentům.
+- Prokletý talisman stojí 1 000 000 fragmentů. Při držení v hlavní nebo vedlejší ruce přidá +2 k maximálnímu zdraví (jedno srdce navíc) a zachovává 10% bonus k fragmentům.
 - Po nahrání obsahu do `plugins/ItemsAdder/contents/warriorland_halloween` restartuj server, spusť `/iazip` a ověř `/iainfo`. Pokud není URL resource packu dosažitelná nebo se žádná výzva neobjeví, je nutné opravit hosting resource packu v ItemsAdder, ne plugin HalloweenCore.
 
 ## Směr dalšího vývoje
@@ -166,6 +166,15 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 - upíří boss má už nyní pevnou minimální specifikaci: 10 bloků výšky a 8 bloků šířky včetně křídel
 
 Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový progres, milníky a eventový systém. Rozměrové minimum je už zamčené v konfiguraci i v dokumentu `VAMPIRE_BOSS.md`: minimálně 10 bloků výšky a 8 bloků šířky včetně křídel. Mechaniky a finální vzhled zatím nejsou předčasně uzamčené.
+
+## Generování struktur a pravidla světů
+
+- `/halloween spawn hřbitov`, `/halloween spawn vesnice`, `/halloween spawn aréna`, `/halloween spawn vampirearena` a `/halloween spawn goblinarena` jsou ruční admin příkazy. Umístí stavbu před hráče bez výběru středu a bez `confirm`.
+- Přímé ruční stavby používají FORCE uvnitř konečného, ohraničeného footprintu a výšky. Mohou odstranit stromy a bloky uvnitř tohoto prostoru; změny se dávkují po tickách a při chybě se plugin pokusí o rollback. Udělej zálohu, než je použiješ na produkčním světě.
+- Pro testování mobů použij `/halloween spawn <mob-id>`; výčet je v seznamu příkazů. ModelEngine/MythicMobs vizuály jsou volitelné; vanilla fallback zachovává základní hraní.
+- Automatické generování je záměrně „fail closed“. V `plugins/HalloweenCore/config.yml` musíš do `automatic-world-generation.allowed-worlds` doplnit přesný název běžného survival světa, například název z Multiverse, který používá váš server. Výchozí prázdný seznam znamená, že automatické generování není v žádném světě povoleno.
+- Svět pojmenovaný přesně `Spawn` je vždy vyloučen z automatických dekorací, mobů i eventů. Ruční admin stavba zůstává možná. Automatické hřbitovy/vesnice se zkouší stavět jen v nově generovaných chunkech a pouze na čistém přírodním místě; staré chunky se zpětně nepřepisují. Malé automatické struktury jsou konzervativní moduly, nikoli náhrada za větší ruční stavby.
+- `/halloween status` vypíše, které světy jsou povolené pro automatické generování. Po změně konfigurace použij `/halloween reload`.
 
 ## ItemsAdder assety
 
@@ -197,7 +206,7 @@ Všechny kusy mají vlastní původní černo-karmínové PNG ikony; zbroj naví
 | Lopatka | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 10.0 / 14 / 4 500 |
 | Motyka | Modifier útoku / těžba / výdrž | vanilla Netherite / rychlost 9 / 2 031 | 7.0 / 14 / 4 500 |
 
-Krvavý strážce má nastavené brnění 6/12/9/6 podle kusu; celá sada tedy dává 33 bodů brnění místo 20 u běžného Netheritu. Meč má attack-damage modifier 15.0 (nad požadovanými 12); přesný výsledný údaj v tooltipu/hit závisí na aplikaci komponent ItemsAdderem, základním atributu hráče a attack cooldownu. Zbroj, meč a nástroje používají moderní item component JSON s enchantability 25; krumpáč, sekera, lopatka a motyka mají navíc tool komponent rychlosti 14 pro správné blokové tagy. Talisman stojí 1 000 000 fragmentů a při držení v ruce nebo offhandu přidává +20 max HP (jeden celý řádek srdcí).
+Krvavý strážce má nastavené brnění 6/12/9/6 podle kusu; celá sada tedy dává 33 bodů brnění místo 20 u běžného Netheritu. Meč má attack-damage modifier 15.0 (nad požadovanými 12); přesný výsledný údaj v tooltipu/hit závisí na aplikaci komponent ItemsAdderem, základním atributu hráče a attack cooldownu. Zbroj, meč a nástroje používají moderní item component JSON s enchantability 25; krumpáč, sekera, lopatka a motyka mají navíc tool komponent rychlosti 14 pro správné blokové tagy. Talisman stojí 1 000 000 fragmentů a při držení v ruce nebo offhandu přidává +2 max HP (jedno srdce navíc).
 
 ## Boss placeholders
 
@@ -248,7 +257,7 @@ Repozitář obsahuje editovatelný Blockbench blueprint `mythicmobs/models/vampi
 
 ## Generování upíří arény
 
-Příkaz `/halloween buildvampirearena` nejprve provede kontrolu volného prostoru a nic nemění. Pokud kontrola projde, ukáže rozsah a vyžádá si výslovné potvrzení příkazem `/halloween buildvampirearena confirm`. Potvrzená stavba vytvoří kruhovou kamennou arénu o průměru 97 bloků, šest soustředných runových kruhů, obvodové cimbuří, osm gotických věží, čtyři monumentální brány a osm vnitřních obelisků. Příkaz vyžaduje nastavený střed přes `/halloween setvampirearena`, načtené chunky, volný prostor nad podlahou a terén bez hlubokých proláklin. Neničí překážky nad budoucí podlahou; pokud tam jsou stromy nebo stavby, stavbu odmítne. Po potvrzení se v kruhu o poloměru 48 bloků upraví povrch terénu a vytvoří nová podlaha. Před spuštěním si udělej zálohu světa.
+Přímá stavba arén se spouští příkazem `/halloween spawn vampirearena` nebo `/halloween spawn goblinarena`. Obě struktury se umisťují před hráče bez nastavování středu a bez potvrzovacího kroku. Režim FORCE může přepsat bloky pouze uvnitř footprintu stavby; přesto před použitím na produkčním světě vytvoř zálohu.
 
 
 ## Krvavý měsíc — invaze
