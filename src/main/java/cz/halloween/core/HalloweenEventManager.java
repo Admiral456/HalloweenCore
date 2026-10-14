@@ -69,7 +69,7 @@ public final class HalloweenEventManager {
         if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("random-events.enabled", true)) return false;
         if (activeEventId != null) return false;
         if (Bukkit.getOnlinePlayers().stream().noneMatch(player ->
-                plugin.isEligibleGameplayPlayer(player) && plugin.isEligibleGameplayWorld(player.getWorld()))) return false;
+                plugin.isEligibleGameplayPlayer(player) && plugin.isAutomaticHalloweenWorld(player.getWorld()))) return false;
 
         String eventId = requestedId == null ? "" : requestedId.trim().toLowerCase(Locale.ROOT);
         if (eventId.isEmpty() || eventId.equals("random")) {
@@ -120,7 +120,7 @@ public final class HalloweenEventManager {
         }
 
         if (activeEventId == null && now >= nextEventAt && Bukkit.getOnlinePlayers().stream().anyMatch(player ->
-                plugin.isEligibleGameplayPlayer(player) && plugin.isEligibleGameplayWorld(player.getWorld()))) {
+                plugin.isEligibleGameplayPlayer(player) && plugin.isAutomaticHalloweenWorld(player.getWorld()))) {
             startRandomEvent();
         }
     }
@@ -187,7 +187,7 @@ public final class HalloweenEventManager {
         if (configured == null || configured.isBlank()) return;
 
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
+            if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isAutomaticHalloweenWorld(player.getWorld())) continue;
             try {
                 player.playSound(player.getLocation(), configured.toLowerCase(Locale.ROOT), SoundCategory.AMBIENT, 0.9f, 1.0f);
             } catch (Exception ignored) {
@@ -204,7 +204,7 @@ public final class HalloweenEventManager {
 
         Player[] players = Bukkit.getOnlinePlayers().stream()
                 .filter(plugin::isEligibleGameplayPlayer)
-                .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
+                .filter(player -> plugin.isAutomaticHalloweenWorld(player.getWorld()))
                 .toArray(Player[]::new);
         if (players.length == 0) return;
         Player target = players[ThreadLocalRandom.current().nextInt(players.length)];
