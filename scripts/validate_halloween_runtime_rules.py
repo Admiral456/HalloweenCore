@@ -83,6 +83,17 @@ for alias in ("hřbitov", "vesnice", "aréna", "vampirearena", "goblinarena"):
         fail(f"Missing requested structure command: {alias}")
 if 'args[0].equalsIgnoreCase("spawn")' not in command:
     fail("The /halloween spawn command is not routed")
+if 'args[0].equalsIgnoreCase("locate")' not in command:
+    fail("The /halloween locate command is not routed")
+for marker in ("PlayerCommandPreprocessEvent", 'equalsIgnoreCase("/locate")',
+               "isLocateTarget(target)", "locateTabComplete(args[1])"):
+    if marker not in command:
+        fail(f"Custom /locate shortcut/tab completion is missing: {marker}")
+for marker in ("handleLocateCommand(", "locations.getMapList(\"locations\")",
+               "locations.save(locationsFile)", "recordLocation(job.kind",
+               "recordLocation(kind, world, centerX + 0.5D"):
+    if marker not in structures:
+        fail(f"Persistent structure locating contract is missing: {marker}")
 if re.search(r"(?m)^  spawn:", plugin_yml):
     fail("Do not register a bare /spawn root command that may conflict with another server plugin")
 if "setVampireArena(sender)" in command or "buildVampireArena(sender, args)" in command:
@@ -155,6 +166,7 @@ if "completeStoryQuest(playerId, quest.id())" not in quests or "plugin.getDataMa
 for item in (
     "/halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena>",
     "/halloween status",
+    "/halloween locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all>",
     "automatic-world-generation.allowed-worlds",
 ):
     if item not in readme:
@@ -166,6 +178,7 @@ print("- mushrooms, grave markers, soul lanterns, dead brush, pumpkins and cobwe
 print("- event IDs/config parity, multi-player surges, cleanup and allowed-world damage filtering")
 print("- manual structure footprint, tick batching, rollback and world-border checks")
 print("- command route for all eight admin mob spawns and five manual structures")
+print("- persistent nearest-structure locating for all five Halloween structure types")
 print("- single-location Blood Moon damage multiplier and eligible-world filtering")
 print("- one-heart talisman migration and persisted idempotent story quest completion")
 print("Note: this is static validation only; actual Paper/Purpur and client rendering still need live tests.")
