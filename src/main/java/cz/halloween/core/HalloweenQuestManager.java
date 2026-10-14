@@ -173,6 +173,9 @@ public final class HalloweenQuestManager implements Listener {
         if (!plugin.getDataManager().completeStoryQuest(playerId, quest.id())) return;
         plugin.getDataManager().setStoryQuest(playerId, "");
         plugin.getService().addFragments(playerId, quest.reward(), "story-quest");
+        if ("nightmare".equals(quest.id())) {
+            plugin.getDataManager().markStoryCampaignCompleted();
+        }
         plugin.getDataManager().save();
 
         player.sendTitle(plugin.color("&6&lKAPITOLA DOKONČENA"),
@@ -190,6 +193,7 @@ public final class HalloweenQuestManager implements Listener {
                     + "&7. Použij &f/halloween quests &7pro podrobnosti."));
         } else {
             player.sendMessage(plugin.color("&6&lPŘÍBĚH DOKONČEN &8» &eDěkujeme, že jsi zachránil svět."));
+            player.sendMessage(plugin.color("&7Příběhová podmínka pro Krále upírů je splněna. Jeho střet se připraví po dosažení globálního cíle a ověření arény i modelu."));
         }
     }
 
