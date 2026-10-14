@@ -73,6 +73,7 @@ public final class HalloweenBossManager {
         return spec.enabled()
                 && !plugin.getDataManager().isVampireDefeated()
                 && plugin.getDataManager().isFinaleUnlocked()
+                && plugin.getDataManager().isStoryCampaignCompleted()
                 && progressReady
                 && spec.finalBoss()
                 && spec.arenaRequired()
