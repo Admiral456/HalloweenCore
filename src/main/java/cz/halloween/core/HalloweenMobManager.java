@@ -415,6 +415,7 @@ public final class HalloweenMobManager implements Listener {
     }
 
     public boolean spawnEventMob(Player player) {
+        if (target == null || !plugin.isEligibleGameplayWorld(target.getWorld())) return false;
         String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
         return spawnEventMob(player, ids[ThreadLocalRandom.current().nextInt(ids.length)]);
     }
