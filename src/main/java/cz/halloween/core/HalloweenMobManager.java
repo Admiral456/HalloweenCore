@@ -569,6 +569,8 @@ public final class HalloweenMobManager implements Listener {
             case "pumpkin-wraith" -> EntityType.CREEPER;
             case "hex-witch" -> EntityType.WITCH;
             case "nightmare" -> EntityType.PHANTOM;
+            case "headless-nick" -> EntityType.SKELETON;
+            case "headless-nick-horse" -> EntityType.SKELETON_HORSE;
             default -> EntityType.ZOMBIE;
         };
     }
@@ -577,7 +579,7 @@ public final class HalloweenMobManager implements Listener {
      * The ModelEngine texture/model layer is used only when its dependencies and the
      * matching MythicMobs definition are present. If not, callers safely use vanilla.
      */
-    private LivingEntity spawnMythicModelMob(Location location, String mobId) {
+    public LivingEntity spawnMythicModelMob(Location location, String mobId) {
         if (!plugin.getConfig().getBoolean("special-mobs.custom-models.enabled", true)) return null;
         var mythicPlugin = plugin.getServer().getPluginManager().getPlugin("MythicMobs");
         var modelPlugin = plugin.getServer().getPluginManager().getPlugin("ModelEngine");
@@ -592,6 +594,8 @@ public final class HalloweenMobManager implements Listener {
             case "pumpkin-wraith" -> "halloween_pumpkin_wraith";
             case "hex-witch" -> "halloween_hex_witch";
             case "nightmare" -> "halloween_nightmare";
+            case "headless-nick" -> "halloween_headless_nick";
+            case "headless-nick-horse" -> "halloween_headless_nick_horse";
             default -> null;
         };
         if (customId == null) return null;
