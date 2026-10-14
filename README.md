@@ -53,10 +53,12 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> (admin, ihned umístí strukturu před hráčem v režimu FORCE; žádné nastavování středu ani confirm)
 - /halloween spawn <cursed-zombie|void-reaper|gravekeeper|frost-stalker|blood-spider|pumpkin-wraith|hex-witch|nightmare> (admin, testovací spawn jednoho mobu; použije ModelEngine/MythicMobs, pokud jsou dostupné, jinak vanilla fallback)
 - /halloween status (diagnostika aktivního eventu, povolených automatických světů a stavby)
+- Batwing Elytra: nasazená na hrudi zachovává standardní elytra glide/rocket chování; při plachtění stiskni sneak pro Bat Dash (20s cooldown).
+- Nocturne Sovereign Cowl: nasaď na hlavu pro noční vidění; stiskni sneak pro zpomalení a odhalení okolních monster (30s cooldown).
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
-- /halloween give <hráč> <počet>
+- /halloween give <hráč> <počet|all> (admin; all vydá všechny nakonfigurované odměny, gear a přenosné relikvie pro testování)
 - /halloween on|off
 
 ## Boss bar
@@ -176,6 +178,10 @@ Boss je záměrně až pozdější fáze vývoje, aby se napojil na hotový prog
 - Automatické generování je záměrně „fail closed“. V `plugins/HalloweenCore/config.yml` musíš do `automatic-world-generation.allowed-worlds` doplnit přesný název běžného survival světa, například název z Multiverse, který používá váš server. Výchozí prázdný seznam znamená, že automatické generování není v žádném světě povoleno.
 - Svět pojmenovaný přesně `Spawn` je vždy vyloučen z automatických dekorací, mobů i eventů. Ruční admin stavba zůstává možná. Automatické hřbitovy/vesnice se zkouší stavět jen v nově generovaných chunkech a pouze na čistém přírodním místě; staré chunky se zpětně nepřepisují. Malé automatické struktury jsou konzervativní moduly, nikoli náhrada za větší ruční stavby.
 - `/halloween status` vypíše, které světy jsou povolené pro automatické generování. Po změně konfigurace použij `/halloween reload`.
+
+## Přenosné relikvie a jejich assety
+
+Serverová logika Batwing Elytra a Nocturne Sovereign Cowl funguje přes stabilní PDC identity. Pokud ItemsAdder obsahuje ID `warriorland_halloween:batwing_elytra` a `warriorland_halloween:nocturne_sovereign_cowl`, použije se jejich skutečný vlastní item; jinak plugin dá funkční vanilla fallback (elytra / carved pumpkin). **Vizuál vlastních křídel a kapuce zůstává neověřený a vyžaduje dodání modelů/textur a jejich kontrolu v ModelEngine/ItemsAdder resource packu.**
 
 ## ItemsAdder assety
 
