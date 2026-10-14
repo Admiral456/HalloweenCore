@@ -45,16 +45,23 @@ for marker in (
 ):
     if marker not in core:
         fail(f"Automatic world safety guard is missing: {marker}")
-if "automatic-world-generation:\n  enabled: true\n  allowed-worlds: []" not in config:
-    fail("Default automatic world allow-list must be empty (fail-closed)")
+if 'automatic-world-generation:\n  enabled: true\n  allowed-worlds: ["*"]' not in config:
+    fail("Default automatic world generation must cover all non-Spawn worlds")
 if "event.isNewChunk()" not in structures:
     fail("Natural structures must only be attempted on newly generated chunks")
 if "plugin.isAutomaticHalloweenWorld(event.getWorld())" not in structures:
     fail("Natural structures are missing the explicit world allow-list guard")
 if "plugin.isAutomaticHalloweenWorld(event.getWorld())" not in decorator:
     fail("Chunk decorations are missing the explicit world allow-list guard")
-if "world-decorations.decorate-existing-chunks" not in decorator or "decorate-existing-chunks: false" not in config:
-    fail("Existing chunks must not be retrofitted by default")
+if "world-decorations.decorate-existing-chunks" not in decorator or "decorate-existing-chunks: true" not in config:
+    fail("Safe add-only decoration must also run in explored chunks")
+if "halloween_decorated_v3" not in decorator:
+    fail("Decoration version must allow older chunks to receive the new atmospheric accent layer")
+for feature in ("placeMushrooms(", "placeGraves(", "placeSoulLanterns(", "placeDeadBushes("):
+    if feature not in decorator:
+        fail(f"Atmospheric world generation is missing feature layer: {feature}")
+if "structures-on-existing-chunks: true" not in config or "automatic-world-generation.structures-on-existing-chunks" not in structures:
+    fail("Natural graveyard/village generation must also run on eligible explored chunks")
 if "halloween_auto_structure_reserved_v1" not in structures or "isReservedForNaturalGeneration" not in decorator:
     fail("Candidate structures and chunk decoration need race protection")
 
@@ -112,7 +119,24 @@ if "isEligibleGameplayWorld(target.getWorld())" not in mobs:
 if "isAutomaticHalloweenWorld(player.getWorld())" not in events:
     fail("Scheduled event targeting must use the explicit automatic-world allow-list")
 if "isAutomaticHalloweenWorld(entity.getWorld())" not in mobs:
-    fail("Natural special-mob conversion must use the explicit automatic-world allow-list")
+    fail("Natural special-mob conversion must use the automatic-world allow-list")
+if mobs.count("isAutomaticHalloweenWorld(world)") < 2:
+    fail("Event mobs and Blood Moon captain must stay inside enabled Halloween worlds")
+if "isAutomaticHalloweenWorld(target.getWorld())" not in mobs:
+    fail("Blood Moon damage must stay inside enabled Halloween worlds")
+
+# Every configured event must be selectable and each surge must reach multiple players.
+for event_id in ("soulstorm", "witching-hour", "cursed-harvest",
+                 "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising"):
+    if f'"{event_id}"' not in events:
+        fail(f"Event manager is missing known event ID: {event_id}")
+    if f"    {event_id}:" not in config:
+        fail(f"Config is missing event type: {event_id}")
+for marker in ("applySurgeToPlayer(targets.get(i), now)",
+               'getInt("random-events.players-per-surge", 3)',
+               "cleanupEventMobs()", "scheduleNextEvent()"):
+    if marker not in events:
+        fail(f"Event lifecycle/surge contract is missing: {marker}")
 
 # The current spec is one additional heart (+2 max health); old installs migrate once.
 if "bonus-health: 2.0" not in config:
@@ -137,7 +161,9 @@ for item in (
         fail(f"README missing operational instructions: {item}")
 
 print("Runtime-rule static validation passed:")
-print("- fail-closed automatic world allow-list for structures, events and natural special mobs; Spawn exclusions; no old-chunk retrofit by default")
+print("- all non-Spawn worlds by default; safe add-only atmosphere and random graveyards/villages in explored and new chunks")
+print("- mushrooms, grave markers, soul lanterns, dead brush, pumpkins and cobwebs")
+print("- event IDs/config parity, multi-player surges, cleanup and allowed-world damage filtering")
 print("- manual structure footprint, tick batching, rollback and world-border checks")
 print("- command route for all eight admin mob spawns and five manual structures")
 print("- single-location Blood Moon damage multiplier and eligible-world filtering")
