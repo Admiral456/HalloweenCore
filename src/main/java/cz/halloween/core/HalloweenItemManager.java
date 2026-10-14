@@ -7,6 +7,7 @@ import org.bukkit.persistence.PersistentDataType;
 
 import java.lang.reflect.Method;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public final class HalloweenItemManager {
