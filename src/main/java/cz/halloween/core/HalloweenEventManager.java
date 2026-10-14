@@ -139,8 +139,10 @@ public final class HalloweenEventManager {
         int phase = getGlobalPhase();
         int baseMin = Math.max(1, plugin.getConfig().getInt("random-events.interval-minutes.min", 15));
         int baseMax = Math.max(baseMin, plugin.getConfig().getInt("random-events.interval-minutes.max", 24));
-        int min = Math.max(8, baseMin - phase * 2);
-        int max = Math.max(min, baseMax - phase * 2);
+        // Milestones shorten the start-to-start interval gradually, but keep at
+        // least four minutes of downtime even at high phases (duration caps at 8m).
+        int min = Math.max(12, baseMin - phase);
+        int max = Math.max(min, baseMax - phase);
         int minutes = ThreadLocalRandom.current().nextInt(min, max + 1);
         nextEventAt = System.currentTimeMillis() + minutes * 60_000L;
     }
