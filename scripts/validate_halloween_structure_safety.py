@@ -32,17 +32,21 @@ boss = read("src/main/java/cz/halloween/core/HalloweenBossManager.java")
 atmosphere = read("src/main/java/cz/halloween/core/HalloweenAtmosphere.java")
 config = read("src/main/resources/config.yml")
 plugin_yml = read("src/main/resources/plugin.yml")
+world_policy = read("src/main/java/cz/halloween/core/HalloweenWorldPolicy.java")
+world_policy_test = read("src/test/java/cz/halloween/core/HalloweenWorldPolicyTest.java")
 
-# Hard safety boundary: configurable world lists cannot allow the Spawn world.
-require(
-    re.search(r'equalsIgnoreCase\(world\.getName\(\)\).*?return false;', core, re.S)
-    is not None and '"Spawn".equalsIgnoreCase(world.getName())' in core,
-    "HalloweenCore must hard-block the world named Spawn."
-)
-require('"Spawn".equalsIgnoreCase(world.getName())' in decorator,
-        "Automatic ground decoration must hard-block Spawn.")
-require('"Spawn".equalsIgnoreCase(world.getName())' in structures,
-        "Natural structure generation must hard-block Spawn.")
+# Hard safety boundary is centralized so every path uses the same case-insensitive policy.
+require('HalloweenWorldPolicy.isReservedWorld(world.getName())' in core,
+        "Gameplay must use the shared hard-reserved world policy.")
+require('HalloweenWorldPolicy.isExplicitlyAllowedForAutomaticGeneration(' in decorator,
+        "Automatic ground decoration must use the fail-closed shared world policy.")
+require('HalloweenWorldPolicy.isExplicitlyAllowedForAutomaticGeneration(' in structures,
+        "Natural structure generation must use the fail-closed shared world policy.")
+require('RESERVED_WORLD = "Spawn"' in world_policy and 'isReservedWorld(String worldName)' in world_policy,
+        "The shared world policy must reserve the world named Spawn.")
+require('isReservedWorld("SPAWN")' in world_policy_test
+        and 'List.of("Spawn", "world")' in world_policy_test,
+        "Unit tests must prove that Spawn cannot be opted into.")
 require('!plugin.isEligibleGameplayWorld(world)' in structures,
         "Natural structures must also respect gameplay world eligibility.")
 require('plugin.isEligibleGameplayWorld(player.getWorld())' in events,
