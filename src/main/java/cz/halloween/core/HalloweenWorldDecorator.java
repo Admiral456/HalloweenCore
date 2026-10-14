@@ -56,8 +56,15 @@ public final class HalloweenWorldDecorator implements Listener {
 
     public void scanLoadedChunks() {
         if (!isEnabled()) return;
-        for (World world : plugin.getServer().getWorlds()) {
-            for (Chunk chunk : world.getLoadedChunks()) enqueue(chunk);
+        // Existing terrain is not retroactively modified unless explicitly opted in.
+        if (plugin.getConfig().getBoolean("world-decorations.allow-existing-chunks", false)) {
+            for (World world : plugin.getServer().getWorlds()) {
+                if (!isAllowedWorld(world)) continue;
+                for (Chunk chunk : world.getLoadedChunks()) enqueue(chunk);
+            }
+        }
+        if (plugin.getConfig().getStringList("world-decorations.allowed-worlds").isEmpty()) {
+            plugin.getLogger().warning("Natural Halloween decoration is fail-closed: set world-decorations.allowed-worlds to explicit world names. 'Spawn' is always excluded.");
         }
         if (task == null) {
             task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::processQueue, 1L, 10L);
@@ -66,7 +73,9 @@ public final class HalloweenWorldDecorator implements Listener {
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
-        if (isEnabled()) enqueue(event.getChunk());
+        if (!isEnabled()) return;
+        if (!event.isNewChunk() && !plugin.getConfig().getBoolean("world-decorations.allow-existing-chunks", false)) return;
+        enqueue(event.getChunk());
     }
 
     private boolean isEnabled() {
@@ -74,8 +83,16 @@ public final class HalloweenWorldDecorator implements Listener {
                 && plugin.getConfig().getBoolean("world-decorations.enabled", true);
     }
 
+    private boolean isAllowedWorld(World world) {
+        if (world == null || "Spawn".equalsIgnoreCase(world.getName())) return false;
+        if (!plugin.isEligibleGameplayWorld(world)) return false;
+        return plugin.getConfig().getStringList("world-decorations.allowed-worlds").stream()
+                .anyMatch(name -> name.equalsIgnoreCase(world.getName()));
+    }
+
     private void enqueue(Chunk chunk) {
-        if (chunk == null || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) return;
+        if (chunk == null || !isAllowedWorld(chunk.getWorld())
+                || chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) return;
         String id = chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ();
         if (queued.add(id)) pending.offer(chunk);
     }
@@ -91,7 +108,7 @@ public final class HalloweenWorldDecorator implements Listener {
             Chunk chunk = pending.poll();
             if (chunk == null) return;
             queued.remove(chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ());
-            if (!chunk.isLoaded()) continue;
+            if (!chunk.isLoaded() || !isAllowedWorld(chunk.getWorld())) continue;
             if (chunk.getPersistentDataContainer().has(decoratedKey, PersistentDataType.BYTE)) continue;
             try {
                 decorateChunk(chunk);
