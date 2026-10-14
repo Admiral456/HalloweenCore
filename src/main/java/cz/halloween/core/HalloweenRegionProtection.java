@@ -34,26 +34,17 @@ public final class HalloweenRegionProtection {
             Class<?> adapterClass = Class.forName("com.sk89q.worldedit.bukkit.BukkitAdapter");
             Object adaptedLocation = adapterClass.getMethod("adapt", Location.class).invoke(null, location);
 
-            Method applicableMethod = null;
-            for (Method method : query.getClass().getMethods()) {
-                if (method.getName().equals("getApplicableRegions")
-                        && method.getParameterCount() == 1
-                        && method.getParameterTypes()[0].isInstance(adaptedLocation)) {
-                    applicableMethod = method;
-                    break;
-                }
-            }
-            if (applicableMethod == null) throw new NoSuchMethodException("RegionQuery.getApplicableRegions");
+            Class<?> regionQueryClass = Class.forName(
+                    "com.sk89q.worldguard.protection.regions.RegionQuery");
+            Class<?> worldEditLocationClass = Class.forName(
+                    "com.sk89q.worldedit.util.Location");
+            Method applicableMethod = regionQueryClass.getMethod(
+                    "getApplicableRegions", worldEditLocationClass);
             Object applicable = applicableMethod.invoke(query, adaptedLocation);
 
-            Method regionsMethod = null;
-            for (Method method : applicable.getClass().getMethods()) {
-                if (method.getName().equals("getRegions") && method.getParameterCount() == 0) {
-                    regionsMethod = method;
-                    break;
-                }
-            }
-            if (regionsMethod == null) throw new NoSuchMethodException("ApplicableRegionSet.getRegions");
+            Class<?> applicableSetClass = Class.forName(
+                    "com.sk89q.worldguard.protection.regions.ApplicableRegionSet");
+            Method regionsMethod = applicableSetClass.getMethod("getRegions");
             Object rawRegions = regionsMethod.invoke(applicable);
             if (!(rawRegions instanceof Iterable<?> regions)) {
                 throw new IllegalStateException("WorldGuard applicable regions is not iterable");
@@ -68,17 +59,16 @@ public final class HalloweenRegionProtection {
             }
 
             for (Object region : regions) {
-                String id = String.valueOf(region.getClass().getMethod("getId").invoke(region));
+                Class<?> protectedRegionClass = Class.forName(
+                        "com.sk89q.worldguard.protection.regions.ProtectedRegion");
+                String id = String.valueOf(protectedRegionClass.getMethod("getId").invoke(region));
                 if (!"__global__".equalsIgnoreCase(id)) return true;
 
                 if (buildFlag != null) {
-                    for (Method method : region.getClass().getMethods()) {
-                        if (!method.getName().equals("getFlag") || method.getParameterCount() != 1
-                                || !method.getParameterTypes()[0].isInstance(buildFlag)) continue;
-                        Object state = method.invoke(region, buildFlag);
-                        if (state != null && "DENY".equalsIgnoreCase(state.toString())) return true;
-                        break;
-                    }
+                    Class<?> flagClass = Class.forName("com.sk89q.worldguard.protection.flags.Flag");
+                    Method getFlag = protectedRegionClass.getMethod("getFlag", flagClass);
+                    Object state = getFlag.invoke(region, buildFlag);
+                    if (state != null && "DENY".equalsIgnoreCase(state.toString())) return true;
                 }
             }
             return false;
