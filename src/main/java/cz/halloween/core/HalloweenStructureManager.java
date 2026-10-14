@@ -1,13 +1,19 @@
 package cz.halloween.core;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
@@ -20,6 +26,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.Random;
 
 /**
  * Bounded, tick-batched procedural structures for manual administrator commands.
@@ -27,7 +34,7 @@ import java.util.UUID;
  * Manual structures intentionally use FORCE inside a computed, finite footprint.
  * Automatic world decoration never calls this class and has separate world rules.
  */
-public final class HalloweenStructureManager {
+public final class HalloweenStructureManager implements Listener {
     private enum Kind {
         GRAVEYARD("hřbitov", 15, 12, false),
         VILLAGE("vesnice", 20, 14, false),
@@ -55,10 +62,55 @@ public final class HalloweenStructureManager {
     private record Cell(Pos position, Material material) {}
 
     private final HalloweenCore plugin;
+    private final NamespacedKey autoCheckedKey;
+    private final NamespacedKey autoStructureKey;
     private BuildJob activeJob;
 
     public HalloweenStructureManager(HalloweenCore plugin) {
         this.plugin = plugin;
+        this.autoCheckedKey = new NamespacedKey(plugin, "halloween_auto_structure_checked_v1");
+        this.autoStructureKey = new NamespacedKey(plugin, "halloween_auto_structure_v1");
+    }
+
+    /**
+     * Natural generation runs only once for a freshly generated chunk, in an
+     * explicitly allow-listed world. The small site is constrained to that single
+     * new chunk and is additive over flat natural ground; it never force-clears.
+     */
+    @EventHandler
+    public void onChunkLoad(ChunkLoadEvent event) {
+        if (!event.isNewChunk() || !plugin.isAutomaticHalloweenWorld(event.getWorld())
+                || !plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) return;
+
+        Chunk chunk = event.getChunk();
+        if (chunk.getPersistentDataContainer().has(autoCheckedKey, PersistentDataType.BYTE)) return;
+        chunk.getPersistentDataContainer().set(autoCheckedKey, PersistentDataType.BYTE, (byte) 1);
+
+        int spacing = Math.max(2, Math.min(64,
+                plugin.getConfig().getInt("automatic-world-generation.min-structure-chunk-distance", 4)));
+        if (Math.floorMod(chunk.getX(), spacing) != 0 || Math.floorMod(chunk.getZ(), spacing) != 0) return;
+
+        long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
+                ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C53545255L;
+        Random random = new Random(seed);
+        double chance = Math.max(0.0D, Math.min(1.0D,
+                plugin.getConfig().getDouble("automatic-world-generation.structure-chance-per-anchor", 0.30D)));
+        if (random.nextDouble() >= chance) return;
+        Kind kind = random.nextBoolean() ? Kind.GRAVEYARD : Kind.VILLAGE;
+        Bukkit.getScheduler().runTask(plugin, () -> {
+            if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) return;
+            if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) return;
+            try {
+                if (generateSafeNaturalFeature(chunk, kind)) {
+                    chunk.getPersistentDataContainer().set(autoStructureKey, PersistentDataType.BYTE, (byte) 1);
+                    plugin.getLogger().info("Generated natural Halloween " + kind.displayName + " in "
+                            + chunk.getWorld().getName() + " chunk " + chunk.getX() + "," + chunk.getZ() + ".");
+                }
+            } catch (RuntimeException ex) {
+                plugin.getLogger().warning("Skipped natural Halloween structure in chunk " + chunk.getX() + ","
+                        + chunk.getZ() + " because safe placement failed: " + ex.getClass().getSimpleName());
+            }
+        });
     }
 
     public boolean handleCommand(org.bukkit.command.CommandSender sender, String[] args) {
@@ -685,6 +737,138 @@ public final class HalloweenStructureManager {
         }
     }
 
+    private boolean generateSafeNaturalFeature(Chunk chunk, Kind kind) {
+        World world = chunk.getWorld();
+        int centerX = (chunk.getX() << 4) + 8;
+        int centerZ = (chunk.getZ() << 4) + 8;
+        int centerY = findGroundY(world, centerX, centerZ);
+        int radius = 6;
+        if (centerY + 10 >= world.getMaxHeight() || centerY < world.getMinHeight() + 2) return false;
+
+        // Require a level patch with natural ground and completely clear space above it.
+        // This deliberately skips woods, slopes, vanilla structures and prior builds.
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                int groundY = findGroundY(world, centerX + x, centerZ + z);
+                if (groundY > centerY || centerY - groundY > 2) return false;
+                Material ground = world.getBlockAt(centerX + x, groundY, centerZ + z).getType();
+                if (!isAutomaticNaturalGround(ground)) return false;
+                for (int y = groundY + 1; y <= centerY + 9; y++) {
+                    if (!world.getBlockAt(centerX + x, y, centerZ + z).getType().isAir()) return false;
+                }
+            }
+        }
+
+        Map<Pos, Material> feature = new LinkedHashMap<>();
+        for (int x = -radius; x <= radius; x++) {
+            for (int z = -radius; z <= radius; z++) {
+                Material floor = kind == Kind.GRAVEYARD
+                        ? ((Math.abs(x) <= 1 || Math.abs(z) <= 1) ? Material.MOSSY_COBBLESTONE : Material.PODZOL)
+                        : ((Math.abs(x) <= 1 || Math.abs(z) <= 1) ? Material.COBBLESTONE : Material.GRASS_BLOCK);
+                putAuto(feature, centerX, centerY, centerZ, x, 0, z, floor);
+                int groundY = findGroundY(world, centerX + x, centerZ + z);
+                for (int y = groundY + 1; y < centerY; y++) {
+                    putAuto(feature, centerX, centerY, centerZ, x, y - centerY, z,
+                            kind == Kind.VILLAGE ? Material.COBBLESTONE : Material.DEEPSLATE_BRICKS);
+                }
+            }
+        }
+
+        if (kind == Kind.GRAVEYARD) {
+            for (int y = 1; y <= 2; y++) {
+                for (int p = -radius; p <= radius; p++) {
+                    if (p < -1 || p > 1) {
+                        putAuto(feature, centerX, centerY, centerZ, p, y, -radius, Material.MOSSY_STONE_BRICKS);
+                        putAuto(feature, centerX, centerY, centerZ, p, y, radius, Material.MOSSY_STONE_BRICKS);
+                        putAuto(feature, centerX, centerY, centerZ, -radius, y, p, Material.MOSSY_STONE_BRICKS);
+                        putAuto(feature, centerX, centerY, centerZ, radius, y, p, Material.MOSSY_STONE_BRICKS);
+                    }
+                }
+            }
+            for (int x = -1; x <= 1; x++) {
+                putAuto(feature, centerX, centerY, centerZ, x, 1, -radius, Material.AIR);
+                putAuto(feature, centerX, centerY, centerZ, x, 2, -radius, Material.AIR);
+            }
+            int n = 0;
+            for (int z : new int[]{-3, 0, 3}) for (int x : new int[]{-3, 0, 3}) {
+                if (Math.abs(x) <= 1 && z < 1) continue;
+                Material stone = n++ % 2 == 0 ? Material.MOSSY_COBBLESTONE : Material.STONE_BRICKS;
+                putAuto(feature, centerX, centerY, centerZ, x, 1, z, stone);
+                putAuto(feature, centerX, centerY, centerZ, x, 1, z + 1, stone);
+                putAuto(feature, centerX, centerY, centerZ, x, 2, z, stone);
+                putAuto(feature, centerX, centerY, centerZ, x, 3, z, Material.STONE_BRICK_WALL);
+            }
+        } else {
+            autoHouse(feature, centerX, centerY, centerZ, -3, -3, Material.SPRUCE_PLANKS, Material.DARK_OAK_PLANKS);
+            autoHouse(feature, centerX, centerY, centerZ, 3, -3, Material.DARK_OAK_PLANKS, Material.COBBLED_DEEPSLATE);
+            autoHouse(feature, centerX, centerY, centerZ, -3, 3, Material.OAK_PLANKS, Material.MOSSY_STONE_BRICKS);
+            for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
+                if (x * x + z * z <= 1) putAuto(feature, centerX, centerY, centerZ, x, 1, z, Material.WATER);
+            }
+            for (int[] corner : new int[][]{{-2,-2},{-2,2},{2,-2},{2,2}}) {
+                putAuto(feature, centerX, centerY, centerZ, corner[0], 1, corner[1], Material.MOSSY_COBBLESTONE);
+                putAuto(feature, centerX, centerY, centerZ, corner[0], 2, corner[1], Material.COBBLESTONE_WALL);
+                putAuto(feature, centerX, centerY, centerZ, corner[0], 3, corner[1], Material.SOUL_LANTERN);
+            }
+        }
+
+        // Every write stays inside the newly generated chunk, with no clearing and no
+        // writes over non-air cells except natural surface blocks at floor level.
+        for (Map.Entry<Pos, Material> entry : feature.entrySet()) {
+            Pos p = entry.getKey();
+            if (p.x < (chunk.getX() << 4) || p.x > ((chunk.getX() << 4) + 15)
+                    || p.z < (chunk.getZ() << 4) || p.z > ((chunk.getZ() << 4) + 15)) return false;
+            Block block = world.getBlockAt(p.x, p.y, p.z);
+            if (p.y > centerY && !block.getType().isAir()) return false;
+            if (p.y == centerY && !block.getType().isAir() && !isAutomaticNaturalGround(block.getType())) return false;
+        }
+
+        for (Map.Entry<Pos, Material> entry : feature.entrySet()) {
+            Pos p = entry.getKey();
+            Block block = world.getBlockAt(p.x, p.y, p.z);
+            Material wanted = entry.getValue();
+            if (wanted == Material.AIR || wanted == block.getType()) continue;
+            if (p.y == centerY && !isAutomaticNaturalGround(block.getType()) && !block.getType().isAir()) {
+                return false;
+            }
+            block.setType(wanted, false);
+        }
+        return true;
+    }
+
+    private void autoHouse(Map<Pos, Material> feature, int centerX, int centerY, int centerZ,
+                           int cx, int cz, Material wall, Material roof) {
+        for (int x = -2; x <= 2; x++) for (int z = -2; z <= 2; z++) {
+            boolean edge = Math.abs(x) == 2 || Math.abs(z) == 2;
+            if (!edge) continue;
+            for (int y = 1; y <= 3; y++) {
+                boolean door = z == -2 && x == 0 && y <= 2;
+                boolean window = y == 2 && ((Math.abs(x) == 2 && z == 0) || (Math.abs(z) == 2 && x == 1));
+                if (!door && !window) putAuto(feature, centerX, centerY, centerZ, cx + x, y, cz + z, wall);
+            }
+        }
+        for (int x = -3; x <= 3; x++) for (int z = -3; z <= 3; z++) {
+            putAuto(feature, centerX, centerY, centerZ, cx + x, 4, cz + z, roof);
+        }
+        for (int y = 1; y <= 4; y++) {
+            putAuto(feature, centerX, centerY, centerZ, cx - 2, y, cz - 2, Material.STRIPPED_SPRUCE_LOG);
+            putAuto(feature, centerX, centerY, centerZ, cx + 2, y, cz + 2, Material.STRIPPED_SPRUCE_LOG);
+        }
+    }
+
+    private void putAuto(Map<Pos, Material> cells, int centerX, int centerY, int centerZ,
+                         int x, int relativeY, int z, Material material) {
+        cells.put(new Pos(centerX + x, centerY + relativeY, centerZ + z), material);
+    }
+
+    private boolean isAutomaticNaturalGround(Material material) {
+        return switch (material) {
+            case GRASS_BLOCK, DIRT, COARSE_DIRT, ROOTED_DIRT, PODZOL, MYCELIUM, MOSS_BLOCK,
+                    MUD, CLAY, SAND, RED_SAND, GRAVEL, SNOW_BLOCK, MUDDY_MANGROVE_ROOTS -> true;
+            default -> false;
+        };
+    }
+
     private void put(BuildJob job, Map<Pos, Material> cells, int localX, int relativeY, int localZ, Material material) {
         Pos p = transform(job, localX, relativeY, localZ);
         // Generated writes are kept within their transformed footprint and height.
@@ -711,8 +895,8 @@ public final class HalloweenStructureManager {
         private final List<Cell> placement = new ArrayList<>();
         private final List<Cell> support = new ArrayList<>();
         private Phase phase = Phase.CLEAR;
-        private int clearX = -kindRadiusPlaceholder();
-        private int clearZ = -kindRadiusPlaceholder();
+        private int clearX;
+        private int clearZ;
         private int clearY;
         private int supportIndex;
         private int placementIndex;
@@ -739,6 +923,5 @@ public final class HalloweenStructureManager {
             this.clearY = centerY + 1;
         }
 
-        private int kindRadiusPlaceholder() { return 0; }
     }
 }
