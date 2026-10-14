@@ -25,6 +25,20 @@ witching-hour:
   ambient-interval-seconds: 180
   reschedule-on-transition: true
 
+# Light a candle near a generated/recorded graveyard to start a three-wave encounter.
+grave-encounters:
+  enabled: true
+  max-active: 3
+  max-mobs-per-world: 18
+  graveyard-radius-blocks: 28
+  allow-decorated-graves: true
+  marker-scan-radius: 7
+  wave-timeout-seconds: 90
+  participant-radius-blocks: 40
+  boss-health: 160
+  boss-bar-radius-blocks: 48
+  reward-fragments: 250
+
 global-goal: 100000
 
 # Milníky odemykají další intenzitu eventu a dávají serveru společný cíl.
