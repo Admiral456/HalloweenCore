@@ -33,6 +33,7 @@ public final class HalloweenDataManager {
     private final Map<UUID, Set<String>> completedStoryQuests = new HashMap<>();
     private long serverFragments;
     private boolean finaleUnlocked;
+    private boolean storyCampaignCompleted;
     private boolean vampireDefeated;
 
     public HalloweenDataManager(HalloweenCore plugin) {
@@ -57,12 +58,14 @@ public final class HalloweenDataManager {
         completedStoryQuests.clear();
         serverFragments = 0L;
         finaleUnlocked = false;
+        storyCampaignCompleted = false;
         vampireDefeated = false;
         if (!file.exists()) return;
 
         YamlConfiguration data = YamlConfiguration.loadConfiguration(file);
         serverFragments = Math.max(0L, data.getLong("server.total-fragments", 0L));
         finaleUnlocked = data.getBoolean("server.finale-unlocked", false);
+        storyCampaignCompleted = data.getBoolean("server.story-campaign-completed", false);
         vampireDefeated = data.getBoolean("server.vampire-defeated", false);
 
         if (data.isConfigurationSection("players")) {
@@ -110,6 +113,13 @@ public final class HalloweenDataManager {
                     java.util.List<String> completedQuests = data.getStringList(base + ".story-quest.completed");
                     if (!completedQuests.isEmpty()) {
                         completedStoryQuests.put(uuid, new HashSet<>(completedQuests));
+                        // Migrate old saves that already completed the complete nine-chapter campaign.
+                        if (java.util.Set.of("fog-patrol", "gravekeepers-debt", "blood-silk",
+                                "cursed-harvest", "witching-hour", "pumpkin-wraith",
+                                "void-reaper", "frost-stalker", "nightmare").stream()
+                                .allMatch(completedQuests::contains)) {
+                            storyCampaignCompleted = true;
+                        }
                     }
                 } catch (IllegalArgumentException ignored) {
                     plugin.getLogger().warning("Ignoring invalid player UUID in data.yml: " + key);
@@ -122,6 +132,7 @@ public final class HalloweenDataManager {
         YamlConfiguration data = new YamlConfiguration();
         data.set("server.total-fragments", serverFragments);
         data.set("server.finale-unlocked", finaleUnlocked);
+        data.set("server.story-campaign-completed", storyCampaignCompleted);
         data.set("server.vampire-defeated", vampireDefeated);
 
         Set<UUID> players = new HashSet<>();
@@ -263,6 +274,14 @@ public final class HalloweenDataManager {
 
     public void unlockFinale() {
         finaleUnlocked = true;
+    }
+
+    public boolean isStoryCampaignCompleted() {
+        return storyCampaignCompleted;
+    }
+
+    public void markStoryCampaignCompleted() {
+        storyCampaignCompleted = true;
     }
 
     public boolean isVampireDefeated() {
