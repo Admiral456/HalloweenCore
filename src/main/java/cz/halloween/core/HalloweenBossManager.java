@@ -21,6 +21,7 @@ public final class HalloweenBossManager {
     private LivingEntity trackedVampireBoss;
     private BukkitTask vampireBossBarTask;
     private String vampireBossBarLabel;
+    private boolean warnedVampireSpawnArena;
 
     public HalloweenBossManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -89,12 +90,9 @@ public final class HalloweenBossManager {
 
     private void warnIfConfiguredSpawnArena(String arenaWorld) {
         String normalized = arenaWorld == null ? "" : arenaWorld.trim();
-        if (!"Spawn".equalsIgnoreCase(normalized)) return;
-        String warningKey = "bosses.vampire.spawn-world-warning";
-        if (plugin.getConfig().getBoolean("runtime-warnings.vampire-spawn-world", false)) return;
-        plugin.getConfig().set("runtime-warnings.vampire-spawn-world", true);
+        if (!"Spawn".equalsIgnoreCase(normalized) || warnedVampireSpawnArena) return;
+        warnedVampireSpawnArena = true;
         plugin.getLogger().warning("Vampire King arena is configured in reserved world 'Spawn'. The boss will remain disabled there; generate its arena in an explicitly allowed gameplay world.");
-        plugin.saveConfig();
     }
 
     public boolean isVampireSpecificationValid() {
