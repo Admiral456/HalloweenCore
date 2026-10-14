@@ -76,6 +76,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         structureManager = new HalloweenStructureManager(this);
 
         logConfigValidationIssues();
+        if (getConfig().getStringList("world-generation.allowed-worlds").isEmpty()) {
+            getLogger().warning("Automatic Halloween terrain generation is fail-closed: world-generation.allowed-worlds is empty. "
+                    + "Add only approved gameplay world names there; world 'Spawn' is always excluded.");
+        }
         bossManager.validateConfiguration();
 
         getServer().getPluginManager().registerEvents(this, this);
@@ -90,6 +94,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(worldDecorator, this);
+        getServer().getPluginManager().registerEvents(structureManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
 
         if (getCommand("halloween") != null) {
@@ -584,6 +589,19 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenStructureManager getStructureManager() {
         return structureManager;
+    }
+
+    /**
+     * Automatic world modification is fail-closed. Only worlds explicitly named in
+     * world-generation.allowed-worlds are eligible; Spawn is denied unconditionally.
+     * This is separate from manual administrator structure commands.
+     */
+    public boolean isEligibleAutomaticHalloweenWorld(World world) {
+        if (world == null || "spawn".equalsIgnoreCase(world.getName().trim())) return false;
+        java.util.List<String> allowed = getConfig().getStringList("world-generation.allowed-worlds");
+        if (allowed.isEmpty()) return false;
+        return allowed.stream().anyMatch(name -> name != null
+                && name.trim().equalsIgnoreCase(world.getName().trim()));
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {
