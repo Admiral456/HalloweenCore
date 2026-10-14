@@ -50,14 +50,32 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween top
 - /halloween reload
 - /halloween debug
-- /halloween setvillage (admin)
+- /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> — okamžitě postaví vybranou strukturu před hráčem bez nastavování středu či druhého potvrzovacího příkazu (admin)
 - /halloween setsecret <id> (admin, nastaví polohu tajného místa)
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
-- /halloween setvampirearena (admin)
-- /halloween buildvampirearena [confirm] (admin, bezpečně postaví kruhovou arénu do volného prostoru uloženého středu)
+- /halloween setvillage — zpětně kompatibilní příkaz, který rovnou postaví Haunted Village před hráčem (admin)
+- /halloween setvampirearena a /halloween buildvampirearena — zpětně kompatibilní příkazy, které rovnou postaví upíří arénu před hráčem (admin)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet>
 - /halloween on|off
+
+## Generování staveb a ochrana světa Spawn
+
+Ruční stavby se spouštějí jediným příkazem přímo ve hře:
+
+- `/halloween spawn hřbitov`
+- `/halloween spawn vesnice`
+- `/halloween spawn aréna`
+- `/halloween spawn vampirearena`
+- `/halloween spawn goblinarena`
+
+Není nutné nastavovat souřadnice, stát uprostřed místa ani potvrzovat druhým příkazem. Struktura se umístí přibližně 8 bloků před hráče podle směru pohledu. Ruční FORCE režim může přepsat bloky uvnitř přesně vymezeného půdorysu a výšky; probíhá po dávkách a při výjimce se pokusí o rollback. Příkaz `/spawn` samotný nepřebíráme, protože na serveru může patřit EssentialsX nebo jinému pluginu.
+
+Příkazy vyžadují `hallowencore.admin`, `hallowencore.structure.build` a `hallowencore.structure.force`. Všechny jsou standardně dostupné operátorům.
+
+**Ochrana světa `Spawn`:** automatické eventy a jejich speciální mobové nemohou v tomto světě aktivovat herní mechaniky. Automatické struktury a povrchové dekorace se navíc fail-closed řídí výslovným seznamem světů `world-generation.allowed-worlds`. Seznam je záměrně prázdný, dokud nejsou ověřeny skutečné názvy herních světů; automatické úpravy tak nezačnou v neověřeném světě. Přidej jen skutečný název schváleného survival světa — `Spawn` zůstává zakázán i při omylem přidaném názvu.
+
+Automatické hřbitovy a malé strašidelné osady se zvažují jen při generování nového chunku. Používají footprint 15×15 uvnitř jednoho chunku, dodržují minimální vzdálenost a odmítnou kandidáta, pokud terén není přírodní, je příliš svažitý nebo obsahuje překážky či block entities. Pokusy se ukládají do chunk PDC; výsledné pozice se evidují v konfiguraci. Staré chunky se zpětně neupravují. Ověření na testovacím světě je nutné před zapnutím automatické generace na produkci.
 
 ## Boss bar
 
