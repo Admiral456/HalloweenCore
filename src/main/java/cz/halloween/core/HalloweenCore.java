@@ -43,6 +43,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
     private HalloweenStructureManager structureManager;
+    private int manualStructureChunkLoadDepth;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -624,6 +625,19 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenStructureManager getStructureManager() {
         return structureManager;
+    }
+
+    /** Suppresses automatic terrain modifiers while a manual FORCE build preloads chunks. */
+    public void beginManualStructureChunkLoad() {
+        manualStructureChunkLoadDepth++;
+    }
+
+    public void endManualStructureChunkLoad() {
+        manualStructureChunkLoadDepth = Math.max(0, manualStructureChunkLoadDepth - 1);
+    }
+
+    public boolean isManualStructureChunkLoading() {
+        return manualStructureChunkLoadDepth > 0;
     }
 
 }
