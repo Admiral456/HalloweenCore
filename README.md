@@ -32,6 +32,15 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - po dosažení globálního cíle se natrvalo odemkne serverové finále
 - hráči, kteří se vrátí až po odemčení finále, dostanou při připojení upozornění
 
+## Automatická sezóna a Čarodějnická hodina
+
+- Sekce `season` automaticky zapíná Halloween mezi 1. říjnem a 5. listopadem v časové zóně `Europe/Prague`. Obě hranice jsou včetně uvedeného dne a podporují i sezónu přes Nový rok.
+- Příkazové `/halloween on` a `/halloween off` zůstávají funkční. Ruční změna platí až do další hranice sezóny.
+- Hráči dostávají při připojení odpočet do začátku sezóny, pokud je její začátek do sedmi dnů.
+- Sekce `witching-hour` je ve výchozím nastavení aktivní každý den od 20:00 do 22:00. Během okna se čas do další náhodné události násobí hodnotou `0.5`, takže přicházejí přibližně dvakrát častěji.
+- Čarodějnická hodina může přehrávat vzácné ambientní zvuky. Lze přepnout na herní čas pomocí `mode: minecraft`, změnit interval nebo funkci vypnout nastavením `enabled: false`.
+- Existující `config.yml` dostane chybějící výchozí položky migrací; uživatelská nastavení se nepřepisují.
+
 ## Příkazy
 
 - /halloween
