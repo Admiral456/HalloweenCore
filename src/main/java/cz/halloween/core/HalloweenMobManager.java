@@ -37,6 +37,7 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey cursedKey;
     private final NamespacedKey relicKey;
     private final NamespacedKey eventMobKey;
+    private final NamespacedKey graveEncounterMobKey;
     private final NamespacedKey abilityCooldownKey;
     private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
@@ -45,6 +46,7 @@ public final class HalloweenMobManager implements Listener {
         this.cursedKey = new NamespacedKey(plugin, "cursed_mob");
         this.relicKey = new NamespacedKey(plugin, "halloween_relic");
         this.eventMobKey = new NamespacedKey(plugin, "event_mob");
+        this.graveEncounterMobKey = new NamespacedKey(plugin, "grave_encounter_mob");
         this.abilityCooldownKey = new NamespacedKey(plugin, "special_ability_cooldown");
     }
 
@@ -414,6 +416,44 @@ public final class HalloweenMobManager implements Listener {
             }
             event.getDrops().add(mapItem);
         }
+    }
+
+    /**
+     * Encounter mobs are tracked separately from scheduled-event mobs so ending a
+     * Blood Moon or other event cannot remove a player's independently started grave ritual.
+     */
+    public LivingEntity spawnEncounterMob(Player player, String mobId) {
+        if (!plugin.isEventEnabled() || player == null || !player.isOnline()
+                || !plugin.getConfig().getBoolean("grave-encounters.enabled", true)
+                || !isKnownSpecialMob(mobId)) return null;
+        if (!plugin.isEligibleGameplayPlayer(player)
+                || !plugin.isAutomaticHalloweenWorld(player.getWorld())) return null;
+
+        World world = player.getWorld();
+        int cap = Math.max(3, Math.min(40,
+                plugin.getConfig().getInt("grave-encounters.max-mobs-per-world", 18)));
+        long encounterCount = world.getLivingEntities().stream()
+                .filter(entity -> entity.getPersistentDataContainer()
+                        .has(graveEncounterMobKey, PersistentDataType.BYTE))
+                .count();
+        if (encounterCount >= cap) return null;
+
+        Location spawnLocation = findSafeEventLocation(player);
+        if (spawnLocation == null) return null;
+
+        LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
+        if (living == null) {
+            Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
+            if (!(entity instanceof LivingEntity spawned)) {
+                entity.remove();
+                return null;
+            }
+            living = spawned;
+        }
+
+        configureSpecialMob(living, mobId);
+        living.getPersistentDataContainer().set(graveEncounterMobKey, PersistentDataType.BYTE, (byte) 1);
+        return living;
     }
 
     public boolean spawnEventMob(Player player) {
