@@ -169,6 +169,8 @@ public final class HalloweenEventManager {
         broadcastToEligibleWorlds(announcement);
         plugin.getLogger().info("Halloween event started: " + activeEventId + " (duration=" + duration + "m)");
         playEventSound();
+        // Intervals are measured start-to-start, matching the documented cadence.
+        scheduleNextEvent();
     }
 
     private void endEvent() {
@@ -182,8 +184,8 @@ public final class HalloweenEventManager {
 
         activeEventId = null;
         activeUntil = 0L;
+        lastSurgeAt = 0L;
         invasionCaptainSpawned = false;
-        scheduleNextEvent();
     }
 
     private void playEventSound() {
