@@ -591,7 +591,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {
-        if (player == null) return false;
+        if (player == null || !isEligibleGameplayWorld(player.getWorld())) return false;
 
         java.util.List<String> allowed = getConfig().getStringList("gameplay.allowed-gamemodes");
         if (allowed.isEmpty()) {
