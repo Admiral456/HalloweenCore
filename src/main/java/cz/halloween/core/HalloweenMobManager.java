@@ -490,6 +490,67 @@ public final class HalloweenMobManager implements Listener {
         return true;
     }
 
+    public List<String> getManualMobIds() {
+        return List.of("cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                "blood-spider", "pumpkin-wraith", "hex-witch", "nightmare");
+    }
+
+    public boolean isManualMobId(String input) {
+        if (input == null) return false;
+        String id = input.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+        return getManualMobIds().contains(id);
+    }
+
+    /**
+     * Manual admin/test spawns are not tagged as event mobs, so ending an event
+     * will not unexpectedly remove a mob that an administrator deliberately spawned.
+     */
+    public boolean spawnManualMob(Player player, String input) {
+        if (player == null || !player.isOnline() || !isManualMobId(input)) return false;
+        if (!plugin.isEligibleGameplayWorld(player.getWorld())) return false;
+
+        String mobId = input.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+        Location spawnLocation = findManualSpawnLocation(player);
+        if (spawnLocation == null) return false;
+
+        LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
+        if (living == null) {
+            Entity entity = spawnLocation.getWorld().spawnEntity(spawnLocation, baseEntityType(mobId));
+            if (!(entity instanceof LivingEntity spawned)) {
+                entity.remove();
+                return false;
+            }
+            living = spawned;
+        }
+        configureSpecialMob(living, mobId);
+        return true;
+    }
+
+    private Location findManualSpawnLocation(Player player) {
+        World world = player.getWorld();
+        Vector direction = player.getLocation().getDirection().setY(0);
+        if (direction.lengthSquared() < 0.001D) direction = new Vector(0, 0, 1);
+        direction.normalize();
+
+        int startY = player.getLocation().getBlockY();
+        for (int distance = 2; distance <= 5; distance++) {
+            int x = (int) Math.floor(player.getLocation().getX() + direction.getX() * distance);
+            int z = (int) Math.floor(player.getLocation().getZ() + direction.getZ() * distance);
+            for (int offset = 2; offset >= -8; offset--) {
+                int y = startY + offset;
+                if (y <= world.getMinHeight() || y >= world.getMaxHeight() - 2) continue;
+                Location candidate = new Location(world, x + 0.5D, y, z + 0.5D);
+                if (!world.getWorldBorder().isInside(candidate)) continue;
+                Block feet = candidate.getBlock();
+                Block head = feet.getRelative(0, 1, 0);
+                Block below = feet.getRelative(0, -1, 0);
+                if (feet.isPassable() && head.isPassable() && below.getType().isSolid()
+                        && !feet.isLiquid() && !head.isLiquid() && !below.isLiquid()) return candidate;
+            }
+        }
+        return null;
+    }
+
     private boolean isKnownSpecialMob(String mobId) {
         return mobId != null && switch (mobId) {
             case "cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch" -> true;
@@ -499,10 +560,13 @@ public final class HalloweenMobManager implements Listener {
 
     private EntityType baseEntityType(String mobId) {
         return switch (mobId) {
+            case "void-reaper" -> EntityType.WITHER_SKELETON;
             case "gravekeeper" -> EntityType.SKELETON;
+            case "frost-stalker" -> EntityType.STRAY;
             case "blood-spider" -> EntityType.SPIDER;
             case "pumpkin-wraith" -> EntityType.CREEPER;
             case "hex-witch" -> EntityType.WITCH;
+            case "nightmare" -> EntityType.PHANTOM;
             default -> EntityType.ZOMBIE;
         };
     }
