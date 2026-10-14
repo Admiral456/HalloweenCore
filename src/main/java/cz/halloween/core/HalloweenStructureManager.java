@@ -10,6 +10,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
@@ -17,6 +18,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.util.Vector;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -65,6 +68,8 @@ public final class HalloweenStructureManager implements Listener {
     private final NamespacedKey autoCheckedKey;
     private final NamespacedKey autoReservedKey;
     private final NamespacedKey autoStructureKey;
+    private final File locationsFile;
+    private final YamlConfiguration locations;
     private BuildJob activeJob;
 
     public HalloweenStructureManager(HalloweenCore plugin) {
@@ -72,6 +77,8 @@ public final class HalloweenStructureManager implements Listener {
         this.autoCheckedKey = new NamespacedKey(plugin, "halloween_auto_structure_checked_v1");
         this.autoReservedKey = new NamespacedKey(plugin, "halloween_auto_structure_reserved_v1");
         this.autoStructureKey = new NamespacedKey(plugin, "halloween_auto_structure_v1");
+        this.locationsFile = new File(plugin.getDataFolder(), "structures.yml");
+        this.locations = YamlConfiguration.loadConfiguration(locationsFile);
     }
 
     /**
@@ -135,6 +142,111 @@ public final class HalloweenStructureManager implements Listener {
     public boolean isReservedForNaturalGeneration(Chunk chunk) {
         return chunk != null
                 && chunk.getPersistentDataContainer().has(autoReservedKey, PersistentDataType.BYTE);
+    }
+
+    public boolean isLocateTarget(String input) {
+        return input != null && (input.equalsIgnoreCase("all") || parseKind(input) != null);
+    }
+
+    public List<String> locateTabComplete(String prefix) {
+        String normalized = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
+        return List.of("hřbitov", "vesnice", "aréna", "vampirearena", "goblinarena", "all", "graveyard", "village", "arena")
+                .stream().filter(value -> value.startsWith(normalized)).toList();
+    }
+
+    /** Locates the nearest previously recorded structure of the requested type in the player's current world. */
+    public boolean handleLocateCommand(org.bukkit.command.CommandSender sender, String[] args) {
+        if (!sender.hasPermission("halloweencore.locate") && !sender.hasPermission("halloweencore.admin")) {
+            sender.sendMessage(plugin.color("&cNemáš oprávnění halloweencore.locate."));
+            return true;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cStrukturu můžeš hledat jen ve hře, protože příkaz potřebuje tvoji polohu."));
+            return true;
+        }
+        if (args.length < 2 || args[1].isBlank()) {
+            player.sendMessage(plugin.color("&ePoužití: /halloween locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all>"));
+            player.sendMessage(plugin.color("&7Zkráceně také funguje /locate <typ> bez zásahu do běžného /locate structure."));
+            return true;
+        }
+        if (args[1].equalsIgnoreCase("all")) {
+            player.sendMessage(plugin.color("&6&lHALLOWEEN STRUKTURY &8» &7Nejbližší zaznamenané stavby v tomto světě:"));
+            for (Kind kind : Kind.values()) sendNearestLocation(player, kind, false);
+            return true;
+        }
+        Kind kind = parseKind(args[1]);
+        if (kind == null) {
+            player.sendMessage(plugin.color("&cNeznámý typ. Použij hřbitov, vesnice, aréna, vampirearena, goblinarena nebo all."));
+            return true;
+        }
+        sendNearestLocation(player, kind, true);
+        return true;
+    }
+
+    private void sendNearestLocation(Player player, Kind requested, boolean explainMissing) {
+        Map<?, ?> nearest = null;
+        double nearestDistance = Double.MAX_VALUE;
+        for (Map<?, ?> entry : locations.getMapList("locations")) {
+            Object type = entry.get("type");
+            Object worldName = entry.get("world");
+            if (type == null || worldName == null || !requested.name().equalsIgnoreCase(String.valueOf(type))) continue;
+            if (!player.getWorld().getName().equals(String.valueOf(worldName))) continue;
+            double x = number(entry.get("x"));
+            double y = number(entry.get("y"));
+            double z = number(entry.get("z"));
+            double dx = player.getLocation().getX() - x;
+            double dy = player.getLocation().getY() - y;
+            double dz = player.getLocation().getZ() - z;
+            double distance = dx * dx + dy * dy + dz * dz;
+            if (distance < nearestDistance) {
+                nearest = entry;
+                nearestDistance = distance;
+            }
+        }
+        if (nearest == null) {
+            if (explainMissing) {
+                player.sendMessage(plugin.color("&e" + requested.displayName + ": &cV tomto světě zatím nemám uloženou polohu této struktury."));
+                player.sendMessage(plugin.color("&7Poloha se uloží po úspěšném ručním nebo novém přirozeném vygenerování."));
+            } else {
+                player.sendMessage(plugin.color("&7" + requested.displayName + ": &cnení zatím zaznamenána v tomto světě."));
+            }
+            return;
+        }
+        int x = (int) Math.floor(number(nearest.get("x")));
+        int y = (int) Math.floor(number(nearest.get("y")));
+        int z = (int) Math.floor(number(nearest.get("z")));
+        long distance = Math.round(Math.sqrt(nearestDistance));
+        player.sendMessage(plugin.color("&6" + requested.displayName + " &8» &7Svět: &f" + player.getWorld().getName()
+                + " &7• Souřadnice: &e" + x + " " + y + " " + z + " &7• Vzdálenost: &e" + distance + " bloků"));
+    }
+
+    private double number(Object value) {
+        return value instanceof Number number ? number.doubleValue() : 0.0D;
+    }
+
+    private void recordLocation(Kind kind, World world, double x, double y, double z) {
+        List<Map<?, ?>> entries = new ArrayList<>(locations.getMapList("locations"));
+        for (Map<?, ?> entry : entries) {
+            if (!kind.name().equalsIgnoreCase(String.valueOf(entry.get("type")))
+                    || !world.getName().equals(String.valueOf(entry.get("world")))) continue;
+            double dx = number(entry.get("x")) - x;
+            double dz = number(entry.get("z")) - z;
+            if (dx * dx + dz * dz <= 16.0D) return;
+        }
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("type", kind.name());
+        entry.put("world", world.getName());
+        entry.put("x", x);
+        entry.put("y", y);
+        entry.put("z", z);
+        entries.add(entry);
+        locations.set("locations", entries);
+        try {
+            locations.save(locationsFile);
+        } catch (IOException ex) {
+            plugin.getLogger().warning("Could not save Halloween structure location (" + kind + "): "
+                    + ex.getClass().getSimpleName());
+        }
     }
 
     public boolean handleCommand(org.bukkit.command.CommandSender sender, String[] args) {
@@ -438,6 +550,7 @@ public final class HalloweenStructureManager implements Listener {
         if (job.kind == Kind.VAMPIRE_ARENA || job.kind == Kind.ARENA) saveArenaCenter("bosses.vampire.arena", job);
         if (job.kind == Kind.GOBLIN_ARENA) saveArenaCenter("bosses.goblin.arena", job);
         if (job.kind == Kind.VILLAGE) saveHauntedVillageLocation(job);
+        recordLocation(job.kind, job.world, job.centerX + 0.5D, job.centerY + 1.0D, job.centerZ + 0.5D);
         cleanupChunks(job);
         Player operator = Bukkit.getPlayer(job.operator);
         if (operator != null) {
@@ -917,6 +1030,7 @@ public final class HalloweenStructureManager implements Listener {
             }
             block.setType(wanted, false);
         }
+        recordLocation(kind, world, centerX + 0.5D, centerY + 1.0D, centerZ + 0.5D);
         return true;
     }
 
