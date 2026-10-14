@@ -30,7 +30,8 @@ public final class HalloweenEventManager {
         if (started) return;
         started = true;
         if (plugin.getConfig().getBoolean("random-events.enabled", true) && plugin.isEventEnabled()) {
-            scheduleFirstEvent();
+            // On a normal restart, use the configured interval instead of starting an event 30 seconds later.
+            scheduleNextEvent();
         }
         plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
     }
@@ -46,10 +47,21 @@ public final class HalloweenEventManager {
 
     /** Schedule a short, visible first event when the administrator turns Halloween on. */
     public void scheduleFirstEvent() {
-        clearActiveEvent();
+        // Never interrupt an active event if an administrator repeats /halloween on.
+        if (activeEventId != null) return;
         if (started && plugin.isEventEnabled() && plugin.getConfig().getBoolean("random-events.enabled", true)) {
             int delay = Math.max(5, plugin.getConfig().getInt("random-events.start-delay-seconds", 30));
             nextEventAt = System.currentTimeMillis() + delay * 1000L;
+        } else {
+            nextEventAt = 0L;
+        }
+    }
+
+    /** Refresh scheduling after config reload without cancelling a running event. */
+    public void scheduleNormalNextEventIfIdle() {
+        if (activeEventId != null) return;
+        if (started && plugin.isEventEnabled() && plugin.getConfig().getBoolean("random-events.enabled", true)) {
+            scheduleNextEvent();
         } else {
             nextEventAt = 0L;
         }
