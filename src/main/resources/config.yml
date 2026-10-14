@@ -24,15 +24,16 @@ gameplay:
     mode: BLACKLIST
     names: []
 
-# Fail-closed automatic world generation. Add the exact name of the survival world here.
-# An empty list is intentionally safe and does not guess a world named "world".
-# Manual administrator structure commands are separate and can still target the Spawn world.
+# Seasonal content is enabled in all worlds except the protected world named "Spawn".
+# Set allowed-worlds to an explicit list to restrict it; [] disables automatic content.
+# Generation is add-only in natural spots, including older chunks as they are loaded.
 automatic-world-generation:
   enabled: true
-  allowed-worlds: []
+  allowed-worlds: ["*"]
   structures-enabled: true
-  min-structure-chunk-distance: 4
-  structure-chance-per-anchor: 0.30
+  structures-on-existing-chunks: true
+  min-structure-chunk-distance: 3
+  structure-chance-per-anchor: 0.45
 
 rewards:
   mob-kill:
@@ -582,13 +583,17 @@ structures:
 
 world-decorations:
   enabled: true
-  # Old chunks are left unchanged unless an administrator explicitly enables the safe add-only scan.
-  decorate-existing-chunks: false
-  # Add-only decoration: safe natural ground only; never replaces a solid block or tile entity.
-  pumpkins-per-chunk: 5
-  cobwebs-per-chunk: 2
-  red-candles-per-chunk: 1
-  attempts-per-placement: 32
+  # Safe, add-only decoration also gradually improves older chunks as players explore.
+  decorate-existing-chunks: true
+  # Density is bounded per chunk; occupied blocks and tile entities are never replaced.
+  pumpkins-per-chunk: 7
+  cobwebs-per-chunk: 4
+  red-candles-per-chunk: 2
+  mushrooms-per-chunk: 3
+  graves-per-chunk: 1
+  soul-lanterns-per-chunk: 1
+  dead-bushes-per-chunk: 2
+  attempts-per-placement: 60
   chunks-per-tick: 2
 
 atmosphere:
