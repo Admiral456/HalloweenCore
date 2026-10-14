@@ -30,6 +30,7 @@ gameplay:
 automatic-world-generation:
   enabled: true
   allowed-worlds: []
+  structures-enabled: true
   min-structure-chunk-distance: 4
   structure-chance-per-anchor: 0.30
 
