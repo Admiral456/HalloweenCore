@@ -122,7 +122,10 @@ if missing:
     fail("Missing item textures: " + ", ".join(missing))
 
 for name in sorted(EXPECTED):
-    width, height = png_size(TEXTURES / name)
+    try:
+        width, height = strict_png_size(TEXTURES / name)
+    except (OSError, ValueError) as exc:
+        fail(f"Invalid item texture {name}: {exc}")
     if (width, height) != (32, 32):
         fail(f"{name} must be 32x32, got {width}x{height}")
 
