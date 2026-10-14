@@ -95,6 +95,52 @@ public final class HalloweenMobManager implements Listener {
         configureSpecialMob(entity, mobId);
     }
 
+    /**
+     * Rare Witching Hour easter egg inspired by the reference plugin: a bat can
+     * shed its form and return as a Hex Witch. It only occurs in eligible Halloween
+     * worlds during the configured Witching Hour, preventing daytime bat farms from
+     * becoming a constant witch source.
+     */
+    @EventHandler(ignoreCancelled = true)
+    public void onBatDeath(EntityDeathEvent event) {
+        if (!plugin.isEventEnabled()
+                || !(event.getEntity() instanceof Bat bat)
+                || !plugin.getConfig().getBoolean("witching-hour.bat-transformation-enabled", true)
+                || !plugin.isAutomaticHalloweenWorld(bat.getWorld())
+                || plugin.getSeasonManager() == null
+                || !plugin.getSeasonManager().isWitchingHourActive(bat.getWorld())) return;
+
+        double chance = Math.max(0.0D, Math.min(1.0D,
+                plugin.getConfig().getDouble("witching-hour.bat-transformation-chance", 0.08D)));
+        if (ThreadLocalRandom.current().nextDouble() >= chance) return;
+
+        Location origin = bat.getLocation().clone();
+        plugin.getServer().getScheduler().runTask(plugin, () -> {
+            if (!plugin.isEventEnabled() || origin.getWorld() == null
+                    || !plugin.isAutomaticHalloweenWorld(origin.getWorld())
+                    || !origin.getWorld().isChunkLoaded(origin.getBlockX() >> 4, origin.getBlockZ() >> 4)
+                    || !plugin.getConfig().getBoolean("witching-hour.bat-transformation-enabled", true)
+                    || plugin.getSeasonManager() == null
+                    || !plugin.getSeasonManager().isWitchingHourActive(origin.getWorld())) return;
+
+            LivingEntity witch = spawnMythicModelMob(origin, "hex-witch");
+            if (witch == null) {
+                Entity fallback = origin.getWorld().spawnEntity(origin, EntityType.WITCH);
+                if (!(fallback instanceof LivingEntity living)) {
+                    fallback.remove();
+                    return;
+                }
+                witch = living;
+            }
+            configureSpecialMob(witch, "hex-witch");
+            witch.setCustomName(plugin.color("&5&lNetopýří čarodějka"));
+            witch.setCustomNameVisible(true);
+            witch.getWorld().spawnParticle(Particle.WITCH, witch.getLocation().clone().add(0, 1.0D, 0),
+                    28, 0.6D, 0.8D, 0.6D, 0.08D);
+            witch.getWorld().playSound(witch.getLocation(), "minecraft:entity.witch.ambient", 0.8f, 0.6f);
+        });
+    }
+
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void applyBloodMoonDamageMultiplier(EntityDamageByEntityEvent event) {
         if (!plugin.isEventEnabled() || plugin.getEventManager() == null
