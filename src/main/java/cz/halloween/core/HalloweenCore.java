@@ -45,6 +45,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenStructureManager structureManager;
     private HalloweenRelicAbilityManager relicAbilityManager;
     private HalloweenHeadlessNickManager headlessNickManager;
+    private HalloweenSeasonManager seasonManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -58,6 +59,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
         migrateAtmosphericWorldGenerationDefaults();
+        migrateSeasonAndWitchingDefaults();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -80,6 +82,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         structureManager = new HalloweenStructureManager(this);
         relicAbilityManager = new HalloweenRelicAbilityManager(this);
         headlessNickManager = new HalloweenHeadlessNickManager(this);
+        seasonManager = new HalloweenSeasonManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -111,6 +114,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
+        seasonManager.start();
         vampireEncounterManager.startNaturalSummoningMonitor();
         atmosphere.start();
         worldDecorator.start();
@@ -132,6 +136,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
+        if (seasonManager != null) seasonManager.stop();
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
@@ -171,6 +176,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         reloadConfig();
         migrateAtmosphereVolume();
         migrateAtmosphericWorldGenerationDefaults();
+        migrateSeasonAndWitchingDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
@@ -186,6 +192,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 eventManager.stop();
             }
         }
+        if (seasonManager != null) seasonManager.refresh();
         if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
         if (bossManager != null) bossManager.stopVampireBossBar();
 
@@ -293,6 +300,33 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Additional Halloween mob and story-quest defaults applied without overwriting existing settings.");
         } catch (IOException ex) {
             getLogger().warning("Additional mob/quest migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+    private void migrateSeasonAndWitchingDefaults() {
+        if (getConfig().getBoolean("migrations.season-witching-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; season/Witching Hour defaults were not migrated.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            for (String sectionPath : List.of("season", "witching-hour")) {
+                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
+                if (section == null) continue;
+                for (String key : section.getKeys(true)) {
+                    if (section.isConfigurationSection(key)) continue;
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
+                }
+            }
+            getConfig().set("migrations.season-witching-v1", true);
+            saveConfig();
+            getLogger().info("Season scheduler and Witching Hour defaults migrated without overwriting existing settings.");
+        } catch (IOException ex) {
+            getLogger().warning("Season/Witching Hour migration failed: " + ex.getClass().getSimpleName());
         }
     }
 
@@ -527,6 +561,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenEventManager getEventManager() {
         return eventManager;
+    }
+
+    public HalloweenSeasonManager getSeasonManager() {
+        return seasonManager;
     }
 
     public HalloweenRewardManager getRewardManager() {
