@@ -38,6 +38,7 @@ public final class HalloweenStructureManager implements Listener {
 
     private final HalloweenCore plugin;
     private final NamespacedKey naturalChunkKey;
+    private final NamespacedKey naturalStructurePlacedKey;
     private final Set<BuildJob> activeJobs = new LinkedHashSet<>();
     private boolean suppressAutomaticGeneration;
 
@@ -68,6 +69,7 @@ public final class HalloweenStructureManager implements Listener {
     public HalloweenStructureManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.naturalChunkKey = new NamespacedKey(plugin, "halloween_natural_structure_checked_v1");
+        this.naturalStructurePlacedKey = new NamespacedKey(plugin, "halloween_natural_structure_placed_v1");
     }
 
     /** Only brand-new chunks in explicitly allowed worlds are candidates for automatic structures. */
@@ -129,6 +131,7 @@ public final class HalloweenStructureManager implements Listener {
             if (random.nextBoolean()) world.getBlockAt(cx + gx, baseY + 2, cz + gz).setType(Material.POLISHED_BLACKSTONE_BRICK_WALL, false);
         }
         world.getBlockAt(cx, baseY + 1, cz - 5).setType(Material.SOUL_LANTERN, false);
+        chunk.getPersistentDataContainer().set(naturalStructurePlacedKey, PersistentDataType.BYTE, (byte) 1);
         plugin.getLogger().info("Generated natural Halloween cemetery in " + world.getName() + " at " + cx + "," + baseY + "," + cz);
     }
 
@@ -156,6 +159,7 @@ public final class HalloweenStructureManager implements Listener {
         }
         world.getBlockAt(cx, baseY + 1, cz).setType(Material.POLISHED_BLACKSTONE_BRICKS, false);
         world.getBlockAt(cx, baseY + 2, cz).setType(Material.SOUL_LANTERN, false);
+        chunk.getPersistentDataContainer().set(naturalStructurePlacedKey, PersistentDataType.BYTE, (byte) 1);
         plugin.getLogger().info("Generated natural Halloween village in " + world.getName() + " at " + cx + "," + baseY + "," + cz);
     }
 
