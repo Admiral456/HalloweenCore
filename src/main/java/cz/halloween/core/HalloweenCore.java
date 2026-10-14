@@ -578,6 +578,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return relicAbilityManager;
     }
 
+    public HalloweenHeadlessNickManager getHeadlessNickManager() {
+        return headlessNickManager;
+    }
+
     public void notifyFragmentGain(UUID playerId, long amount) {
         Player player = getServer().getPlayer(playerId);
         if (player == null) return;
