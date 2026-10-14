@@ -24,16 +24,12 @@ jobs:
           fi
       - name: Generate Halloween audio
         run: python3 scripts/generate_halloween_audio.py
-      - name: Generate Halloween block textures
-        run: python3 scripts/generate_halloween_block_textures.py
+      # Artist-owned PNGs are checked as committed; CI must not regenerate/recolor textures.
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
       - name: Validate Vampire King model
         run: python3 scripts/validate_vampire_model.py
-      - name: Install Blockbench texture generator dependency
-        run: python3 -m pip install --user Pillow
-      - name: Generate additional Halloween mob models
-        run: python3 scripts/generate_additional_halloween_mobs.py
+      # Optional artist-owned mob atlases/models are packaged only when present; no recoloring/generation here.
       - name: Validate custom Halloween mob models
         run: python3 scripts/validate_special_mob_models.py
       - name: Validate Halloween runtime rules
