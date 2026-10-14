@@ -134,13 +134,13 @@ Náhodné eventy se spouštějí přibližně 15–24 minut od sebe a trvají 6 
 | **Duševní bouře** | Vlny prokletých zombie, hrobníků a krvavých pavouků; duševní částice; 2× odměna za lov a 1,5× za rybaření. |
 | **Čarodějnická hodina** | Hexové čarodějky a pavouci útočí ze stínů; může se objevit efekt Darkness; zvýšené odměny za těžbu, lov a rybaření. |
 | **Prokletá sklizeň** | Temná magie urychlí několik okolních plodin a ze záhonů vyrazí speciální mobové; 3× odměna za sklizeň. |
-| **Krvavý měsíc – invaze** | Silnější vlny až 4 nepřátel každých 25 sekund, nejvýše 48 eventových mobů na svět, unikátní varovné částice, Kapitán invaze v závěrečné části a **3× poškození od nepřátelských monster**. |
+| **Krvavý měsíc – invaze** | Vlny nepřátel až u 3 hráčů každých 25 sekund, nejvýše 48 eventových mobů na svět, unikátní varovné částice, Kapitán invaze v závěrečné části a **3× poškození od nepřátelských monster**. |
 | **Dýňová apokalypsa** | Husté vlny dýňových přízraků, plameny, popel a lávové částice; 2,5× odměna za lov. |
 | **Hřbitov vstává** | Hrobníci, prokleté zombie a pavouci se objevují ve vlnách z duševní mlhy; 2,25× odměna za lov. |
 
 Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/halloween event`, `/halloween event start <id>` a `/halloween event stop` umožňují správcům ověřit jednotlivé eventy. Dostupné ID jsou `soulstorm`, `witching-hour`, `cursed-harvest`, `blood-moon-invasion`, `pumpkin-apocalypse` a `graveyard-rising`.
 
-Přirozené moby mají šanci změnit se v pět typů speciálních nepřátel. Každý má vlastní 128×128 pixel-art texturu, Blockbench model a animace `idle`, `walk` a `attack`; podle typu také vlastní světelné částice. ModelEngine + MythicMobs definice jsou distribuované odděleně v artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
+Přirozené moby se mohou změnit v osm typů speciálních nepřátel. Pět typů má v repozitáři již dodané ModelEngine modely a textury; Ženec prázdnoty, Ledový stopař a Noční můra zatím používají plně hratelný vanilla vzhled, dokud jejich modely a textury nedodá jejich autor. CI tyto assety nevytváří ani nepřebarvuje. Existující ModelEngine + MythicMobs soubory se balí do artefaktu `HalloweenCore-Special-Mobs-ModelEngine.zip`. Pokud některý požadovaný plugin nebo definice nejsou načtené, HalloweenCore použije vanilla fallback, aby lov a eventy zůstaly hratelné.
 
 Při načítání nových i starších chunků HalloweenCore postupně přidává dýně, jack-o-lanterny, pavučiny, červené svíčky, hřiby, náhrobky, duševní lucerny a suché keře na bezpečná místa s přirozeným terénem. Nezastavuje existující bloky ani bloky s inventářem/entitami; starší chunky dostanou nové atmosférické vrstvy, aniž by se opakovala celá původní dávka dekorací.
 
