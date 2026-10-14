@@ -86,10 +86,9 @@ public final class HalloweenWorldDecorator implements Listener {
     }
 
     private boolean isAllowedWorld(World world) {
-        if (world == null || "Spawn".equalsIgnoreCase(world.getName())) return false;
-        if (!plugin.isEligibleGameplayWorld(world)) return false;
-        return plugin.getConfig().getStringList("world-decorations.allowed-worlds").stream()
-                .anyMatch(name -> name.equalsIgnoreCase(world.getName()));
+        return world != null && HalloweenWorldPolicy.isExplicitlyAllowedForAutomaticGeneration(
+                world.getName(), plugin.getConfig().getStringList("world-decorations.allowed-worlds"),
+                plugin.isEligibleGameplayWorld(world));
     }
 
     private void enqueue(Chunk chunk) {
