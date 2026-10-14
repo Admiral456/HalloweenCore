@@ -31,6 +31,7 @@ structures = read("src/main/java/cz/halloween/core/HalloweenStructureManager.jav
 decorator = read("src/main/java/cz/halloween/core/HalloweenWorldDecorator.java")
 mobs = read("src/main/java/cz/halloween/core/HalloweenMobManager.java")
 events = read("src/main/java/cz/halloween/core/HalloweenEventManager.java")
+grave_encounters = read("src/main/java/cz/halloween/core/HalloweenGraveEncounterManager.java")
 quests = read("src/main/java/cz/halloween/core/HalloweenQuestManager.java")
 passives = read("src/main/java/cz/halloween/core/HalloweenPassiveEffectManager.java")
 config = read("src/main/resources/config.yml")
@@ -184,6 +185,26 @@ if "season:\n  enabled: true" not in config or "witching-hour:\n  enabled: true"
 if "## Automatická sezóna a Čarodějnická hodina" not in readme:
     fail("README is missing season/Witching Hour configuration documentation")
 
+# Candle-triggered grave ritual is integrated, bounded, and rewards only a completed final wave.
+for marker in ("onCandleInteraction(", "isGraveyardSite(", "startWave(encounter, 1)",
+               "case 1 ->", "case 2 ->", "case 3 ->", "createBossBar(encounter)",
+               "finish(encounter, true, true)", "grave-encounter",
+               "graveEncounterMobKey", "max-active", "wave-timeout-seconds"):
+    if marker not in grave_encounters and marker not in mobs:
+        fail(f"Three-wave grave encounter is missing required behavior: {marker}")
+if "spawnEncounterMob(Player player, String mobId)" not in mobs:
+    fail("Grave encounter mobs must use a separate mob-tracking path")
+if "isNearRecordedGraveyard(Location location, double radiusBlocks)" not in structures:
+    fail("Candle-triggered rituals are missing recorded-graveyard proximity checks")
+if "migrateGraveEncounterDefaults()" not in core or "graveEncounterManager.start()" not in core:
+    fail("Grave encounter manager is not fully wired into startup/config migration")
+if 'args[0].equalsIgnoreCase("grave")' not in command or "startTestEncounter(player)" not in command:
+    fail("The admin grave encounter test command is not routed")
+if "grave-encounters:\n  enabled: true" not in config:
+    fail("Default config must include enabled grave encounters")
+if "/halloween grave test" not in readme:
+    fail("README is missing the grave encounter test command")
+
 for item in (
     "/halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena>",
     "/halloween status",
@@ -203,4 +224,5 @@ print("- persistent nearest-structure locating for all five Halloween structure 
 print("- single-location Blood Moon damage multiplier and eligible-world filtering")
 print("- one-heart talisman migration and persisted idempotent story quest completion")
 print("- calendar season transitions/countdown and real-time or Minecraft-time Witching Hour")
+print("- candle-triggered three-wave grave ritual, final boss bar, separate mob tracking and gated rewards")
 print("Note: this is static validation only; actual Paper/Purpur and client rendering still need live tests.")
