@@ -109,8 +109,10 @@ if mobs.count("event.setDamage(event.getDamage() * multiplier);") != 1:
     fail("Blood Moon must apply its damage multiplier at exactly one central location")
 if "isEligibleGameplayWorld(target.getWorld())" not in mobs:
     fail("Mob damage mechanics are missing gameplay-world filtering")
-if "isEligibleGameplayWorld(player.getWorld())" not in events:
-    fail("Scheduled event targeting is missing gameplay-world filtering")
+if "isAutomaticHalloweenWorld(player.getWorld())" not in events:
+    fail("Scheduled event targeting must use the explicit automatic-world allow-list")
+if "isAutomaticHalloweenWorld(entity.getWorld())" not in mobs:
+    fail("Natural special-mob conversion must use the explicit automatic-world allow-list")
 
 # The current spec is one additional heart (+2 max health); old installs migrate once.
 if "bonus-health: 2.0" not in config:
@@ -135,7 +137,7 @@ for item in (
         fail(f"README missing operational instructions: {item}")
 
 print("Runtime-rule static validation passed:")
-print("- fail-closed automatic world allow-list; Spawn exclusions; no old-chunk retrofit by default")
+print("- fail-closed automatic world allow-list for structures, events and natural special mobs; Spawn exclusions; no old-chunk retrofit by default")
 print("- manual structure footprint, tick batching, rollback and world-border checks")
 print("- command route for all eight admin mob spawns and five manual structures")
 print("- single-location Blood Moon damage multiplier and eligible-world filtering")
