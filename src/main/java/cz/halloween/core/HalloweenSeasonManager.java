@@ -61,12 +61,20 @@ public final class HalloweenSeasonManager {
     /** Re-evaluates current settings immediately after /halloween reload. */
     public void refresh() {
         checkSeasonBoundary();
+        if (!plugin.isEventEnabled()) {
+            lastWitchingHourActive = false;
+            return;
+        }
         updateWitchingHourState(true);
     }
 
     private void tick() {
         if (!started) return;
         checkSeasonBoundary();
+        if (!plugin.isEventEnabled()) {
+            lastWitchingHourActive = false;
+            return;
+        }
         updateWitchingHourState(false);
         playAmbientCueIfDue();
     }
@@ -162,7 +170,8 @@ public final class HalloweenSeasonManager {
     }
 
     public double getEventIntervalMultiplier() {
-        if (!plugin.getConfig().getBoolean("witching-hour.enabled", false)
+        if (!plugin.isEventEnabled()
+                || !plugin.getConfig().getBoolean("witching-hour.enabled", false)
                 || !isWitchingHourActiveNow()) return 1.0D;
         double configured = plugin.getConfig().getDouble("witching-hour.interval-multiplier", 0.5D);
         if (!Double.isFinite(configured)) return 0.5D;
@@ -170,7 +179,8 @@ public final class HalloweenSeasonManager {
     }
 
     private boolean isWitchingHourActiveNow() {
-        if (!plugin.getConfig().getBoolean("witching-hour.enabled", false)) return false;
+        if (!plugin.isEventEnabled()
+                || !plugin.getConfig().getBoolean("witching-hour.enabled", false)) return false;
         String mode = plugin.getConfig().getString("witching-hour.mode", "real");
         if (mode != null && mode.equalsIgnoreCase("minecraft")) {
             return Bukkit.getWorlds().stream().anyMatch(this::isWitchingHourActive);
@@ -179,7 +189,8 @@ public final class HalloweenSeasonManager {
     }
 
     public boolean isWitchingHourActive(World world) {
-        if (world == null || !plugin.getConfig().getBoolean("witching-hour.enabled", false)) return false;
+        if (world == null || !plugin.isEventEnabled()
+                || !plugin.getConfig().getBoolean("witching-hour.enabled", false)) return false;
         String mode = plugin.getConfig().getString("witching-hour.mode", "real");
         if (mode != null && mode.equalsIgnoreCase("minecraft")) {
             long start = Math.floorMod(plugin.getConfig().getLong("witching-hour.minecraft-start-tick", 18000L), 24000L);
