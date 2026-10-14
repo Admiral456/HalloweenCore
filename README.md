@@ -41,6 +41,15 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - Čarodějnická hodina může přehrávat vzácné ambientní zvuky. Lze přepnout na herní čas pomocí `mode: minecraft`, změnit interval nebo funkci vypnout nastavením `enabled: false`.
 - Existující `config.yml` dostane chybějící výchozí položky migrací; uživatelská nastavení se nepřepisují.
 
+## Hřbitovní rituál
+
+- Zapálení svíčky u zaznamenaného Halloween hřbitova může zahájit tři vlny nepřátel. Rituál lze aktivovat také u starších rozptýlených hrobů, pokud je v okolí dost náhrobních značek.
+- První dvě vlny mají rostoucí sestavy speciálních mobů; třetí vlna vyvolá Strážce hrobu se 160 HP a boss barem.
+- Hráči, kteří zůstávají poblíž, se započítají mezi účastníky. Po poražení všech tří vln dostanou účastníci nastavenou odměnu v Halloween fragmentech.
+- Rituál má limit souběžných encounterů, limit mobů i časový limit jednotlivých vln. Nedokončená nebo neúplně vyvolaná závěrečná vlna odměnu nevydá.
+- /halloween grave test spustí testovací rituál kolem administrátora; test nedává odměny.
+- Nastavení je v grave-encounters v config.yml. Nové hodnoty se při aktualizaci doplní migrací, aniž by přepsaly stávající nastavení serveru.
+
 ## Příkazy
 
 - /halloween
@@ -63,6 +72,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween spawn <cursed-zombie|void-reaper|gravekeeper|frost-stalker|blood-spider|pumpkin-wraith|hex-witch|nightmare> (admin, testovací spawn jednoho mobu; použije ModelEngine/MythicMobs, pokud jsou dostupné, jinak vanilla fallback)
 - /halloween status (diagnostika aktivního eventu, povolených automatických světů a stavby)
 - /halloween locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all> (najde nejbližší uloženou polohu struktury v aktuálním světě)
+- /halloween grave test (admin, testovací třívlnový hřbitovní rituál bez odměny)
 - /locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all> (zkrácený příkaz; běžný Minecraft /locate structure ... zůstává dostupný)
 - Batwing Elytra: nasazená na hrudi zachovává standardní elytra glide/rocket chování; při plachtění stiskni sneak pro Bat Dash (20s cooldown).
 - Nocturne Sovereign Cowl: nasaď na hlavu pro noční vidění; stiskni sneak pro zpomalení a odhalení okolních monster (30s cooldown).
