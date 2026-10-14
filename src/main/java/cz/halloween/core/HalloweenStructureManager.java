@@ -254,17 +254,13 @@ public final class HalloweenStructureManager implements Listener {
             while (budget-- > 0) {
                 switch (job.phase) {
                     case CLEAR -> {
-                        if (!processClearCell(job)) {
-                            job.phase = Phase.SUPPORT;
-                            prepareSupport(job);
-                        }
+                        if (!processClearCell(job)) job.phase = Phase.SUPPORT;
                     }
                     case SUPPORT -> {
-                        if (job.supportIndex >= job.support.size()) {
+                        if (!processSupportCell(job)) {
                             job.phase = Phase.PLACE;
                             continue;
                         }
-                        apply(job, job.support.get(job.supportIndex++));
                     }
                     case PLACE -> {
                         if (job.placementIndex >= job.placement.size()) {
@@ -284,12 +280,13 @@ public final class HalloweenStructureManager implements Listener {
             }
         } catch (RuntimeException ex) {
             if (job.phase != Phase.ROLLBACK) {
+                Phase failedPhase = job.phase;
                 job.failure = ex.getClass().getSimpleName();
                 job.phase = Phase.ROLLBACK;
                 job.rollbackStates = new ArrayList<>(job.snapshots.values());
                 Collections.reverse(job.rollbackStates);
                 job.rollbackIndex = 0;
-                plugin.getLogger().warning("Halloween structure failed during " + job.phase + " in "
+                plugin.getLogger().warning("Halloween structure failed during " + failedPhase + " in "
                         + job.kind + "; starting rollback (" + job.failure + ").");
             }
         }
@@ -327,24 +324,62 @@ public final class HalloweenStructureManager implements Listener {
         return false;
     }
 
-    private void prepareSupport(BuildJob job) {
-        if (job.supportDepth <= 0) return;
-        for (int lx = -job.kind.radius; lx <= job.kind.radius; lx++) {
-            for (int lz = -job.kind.radius; lz <= job.kind.radius; lz++) {
-                if (!insideFootprint(job.kind, lx, lz)) continue;
-                Pos p = transform(job, lx, 0, lz);
-                ensureChunk(job, p.x, p.z);
-                int y = job.centerY - 1;
-                int floor = Math.max(job.world.getMinHeight(), job.centerY - job.supportDepth);
-                while (y >= floor && !job.world.getBlockAt(p.x, y, p.z).getType().isSolid()) y--;
-                int solidY = y;
-                for (int fillY = solidY + 1; fillY < job.centerY; fillY++) {
-                    Material support = job.kind == Kind.VILLAGE ? Material.COBBLESTONE
-                            : job.kind == Kind.GOBLIN_ARENA ? Material.MOSSY_STONE_BRICKS : Material.DEEPSLATE_BRICKS;
-                    job.support.add(new Cell(new Pos(p.x, fillY, p.z), support));
-                }
+    /**
+     * Incrementally discovers a stable point beneath each footprint column and fills
+     * only the bounded vertical gap. This avoids scanning thousands of columns in one tick.
+     */
+    private boolean processSupportCell(BuildJob job) {
+        while (job.supportX <= job.kind.radius) {
+            if (job.supportZ > job.kind.radius) {
+                job.supportZ = -job.kind.radius;
+                job.supportX++;
+                job.supportColumnInitialized = false;
+                continue;
             }
+            int lx = job.supportX;
+            int lz = job.supportZ;
+            if (!insideFootprint(job.kind, lx, lz)) {
+                advanceSupportColumn(job);
+                continue;
+            }
+
+            Pos p = transform(job, lx, 0, lz);
+            ensureChunk(job, p.x, p.z);
+            if (!job.supportColumnInitialized) {
+                job.supportSearchY = job.centerY - 1;
+                job.supportLowestY = Math.max(job.world.getMinHeight(), job.centerY - job.supportDepth);
+                job.supportFillY = -1;
+                job.supportColumnInitialized = true;
+            }
+
+            if (job.supportFillY >= 0 && job.supportFillY < job.centerY) {
+                Material support = job.kind == Kind.VILLAGE ? Material.COBBLESTONE
+                        : job.kind == Kind.GOBLIN_ARENA ? Material.MOSSY_STONE_BRICKS : Material.DEEPSLATE_BRICKS;
+                apply(job, new Cell(new Pos(p.x, job.supportFillY++, p.z), support));
+                if (job.supportFillY >= job.centerY) advanceSupportColumn(job);
+                return true;
+            }
+
+            if (job.supportDepth <= 0 || job.supportSearchY < job.supportLowestY) {
+                advanceSupportColumn(job);
+                continue;
+            }
+
+            Block below = job.world.getBlockAt(p.x, job.supportSearchY, p.z);
+            if (below.getType().isSolid()) {
+                job.supportFillY = job.supportSearchY + 1;
+                if (job.supportFillY >= job.centerY) advanceSupportColumn(job);
+            } else {
+                job.supportSearchY--;
+            }
+            return true;
         }
+        return false;
+    }
+
+    private void advanceSupportColumn(BuildJob job) {
+        job.supportZ++;
+        job.supportColumnInitialized = false;
     }
 
     private boolean processRollbackCell(BuildJob job) {
@@ -893,12 +928,16 @@ public final class HalloweenStructureManager implements Listener {
         private final Set<ChunkPos> loadedByJob = new LinkedHashSet<>();
         private final Set<ChunkPos> unloadedAtStart = new LinkedHashSet<>();
         private final List<Cell> placement = new ArrayList<>();
-        private final List<Cell> support = new ArrayList<>();
         private Phase phase = Phase.CLEAR;
         private int clearX;
         private int clearZ;
         private int clearY;
-        private int supportIndex;
+        private int supportX;
+        private int supportZ;
+        private int supportSearchY;
+        private int supportLowestY;
+        private int supportFillY = -1;
+        private boolean supportColumnInitialized;
         private int placementIndex;
         private int processed;
         private String failure = "unknown";
@@ -921,6 +960,8 @@ public final class HalloweenStructureManager implements Listener {
             this.clearX = -kind.radius;
             this.clearZ = -kind.radius;
             this.clearY = centerY + 1;
+            this.supportX = -kind.radius;
+            this.supportZ = -kind.radius;
         }
 
     }
