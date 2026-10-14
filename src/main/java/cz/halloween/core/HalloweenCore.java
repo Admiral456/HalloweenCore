@@ -42,6 +42,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
     private HalloweenWorldDecorator worldDecorator;
+    private HalloweenStructureManager structureManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -72,6 +73,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
+        structureManager = new HalloweenStructureManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -94,6 +96,11 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
             getCommand("halloween").setExecutor(halloweenCommand);
             getCommand("halloween").setTabCompleter(halloweenCommand);
+        }
+        if (getCommand("spawn") != null) {
+            HalloweenStructureCommand structureCommand = new HalloweenStructureCommand(this);
+            getCommand("spawn").setExecutor(structureCommand);
+            getCommand("spawn").setTabCompleter(structureCommand);
         }
 
         long saveInterval = 20L * 60L * 5L;
@@ -124,6 +131,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
+        if (structureManager != null) structureManager.stopAndRollback();
         if (passiveEffectManager != null) passiveEffectManager.stop();
         if (dataManager != null) dataManager.save();
     }
@@ -563,6 +571,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public boolean isEligibleGameplayWorld(World world) {
         if (world == null) return false;
+        // Hard safety boundary, independent of configurable world lists.
+        if ("Spawn".equalsIgnoreCase(world.getName())) return false;
 
         java.util.List<String> worlds = getConfig().getStringList("gameplay.worlds.names");
         if (worlds.isEmpty()) return true;
@@ -598,4 +608,9 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     public String color(String text) {
         return ChatColor.translateAlternateColorCodes('&', text == null ? "" : text);
     }
+
+    public HalloweenStructureManager getStructureManager() {
+        return structureManager;
+    }
+
 }
