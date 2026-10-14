@@ -137,13 +137,12 @@ public final class HalloweenEventManager {
             return;
         }
         int phase = getGlobalPhase();
-        int baseMin = Math.max(1, plugin.getConfig().getInt("random-events.interval-minutes.min", 15));
-        int baseMax = Math.max(baseMin, plugin.getConfig().getInt("random-events.interval-minutes.max", 24));
-        // Milestones shorten the start-to-start interval gradually, but keep at
-        // least four minutes of downtime even at high phases (duration caps at 8m).
-        int min = Math.max(12, baseMin - phase);
-        int max = Math.max(min, baseMax - phase);
-        int minutes = ThreadLocalRandom.current().nextInt(min, max + 1);
+        int baseMin = plugin.getConfig().getInt("random-events.interval-minutes.min", 15);
+        int baseMax = plugin.getConfig().getInt("random-events.interval-minutes.max", 24);
+        HalloweenEventTiming.Interval interval =
+                HalloweenEventTiming.intervalForPhase(phase, baseMin, baseMax);
+        int minutes = ThreadLocalRandom.current().nextInt(
+                interval.minimumMinutes(), interval.maximumMinutes() + 1);
         nextEventAt = System.currentTimeMillis() + minutes * 60_000L;
     }
 
@@ -157,8 +156,8 @@ public final class HalloweenEventManager {
         if (eventId == null || eventId.isBlank() || activeEventId != null) return;
         activeEventId = eventId;
         int phase = getGlobalPhase();
-        int duration = Math.max(1, plugin.getConfig().getInt("random-events.duration-minutes", 5)
-                + Math.min(3, phase / 2));
+        int duration = HalloweenEventTiming.durationMinutes(
+                phase, plugin.getConfig().getInt("random-events.duration-minutes", 5));
         activeUntil = System.currentTimeMillis() + duration * 60_000L;
         lastSurgeAt = 0L;
         invasionCaptainSpawned = false;
