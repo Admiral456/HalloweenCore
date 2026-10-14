@@ -287,7 +287,7 @@ public final class HalloweenStructureManager implements Listener {
             if (parts.length < 4) continue;
             try {
                 int oldX = Integer.parseInt(parts[1]);
-                int oldZ = Integer.parseInt(parts[2]);
+                int oldZ = Integer.parseInt(parts.length >= 5 ? parts[3] : parts[2]);
                 long dx = (long) oldX - x;
                 long dz = (long) oldZ - z;
                 if (dx * dx + dz * dz < minDistanceSquared) return false;
@@ -435,7 +435,8 @@ public final class HalloweenStructureManager implements Listener {
     private void completeBuild(BuildJob job) {
         try {
             if (job.automatic) {
-                String indexEntry = job.world.getUID() + ";" + job.centerX + ";" + job.centerZ + ";" + job.type.name();
+                String indexEntry = job.world.getUID() + ";" + job.centerX + ";" + (job.floorY + 1)
+                        + ";" + job.centerZ + ";" + job.type.name();
                 generatedStructureIndex.add(indexEntry);
                 plugin.getConfig().set("world-generation.generated-structure-index", new ArrayList<>(generatedStructureIndex));
                 Chunk anchor = job.world.getChunkAt(job.centerX >> 4, job.centerZ >> 4);
