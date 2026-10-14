@@ -439,6 +439,8 @@ random-events:
     max: 24
   duration-minutes: 6
   surge-interval-seconds: 25
+  # Each surge affects up to this many eligible players in different locations.
+  players-per-surge: 3
   max-event-mobs: 48
   event-mobs-enabled: true
   # Blood Moon is intentionally more intense, but bounded to avoid runaway entity counts.
