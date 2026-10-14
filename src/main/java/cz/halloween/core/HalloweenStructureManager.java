@@ -263,6 +263,16 @@ public final class HalloweenStructureManager implements Listener {
             return;
         }
         if (plan.isEmpty() || plan.size() > 10_000) return;
+        // Check the exact final block plan (including every Y level), not just a few
+        // sample heights, before automatic edits can touch a protected region.
+        if (regionProtection.isWorldGuardEnabled()) {
+            for (BlockPos position : plan.keySet()) {
+                if (regionProtection.isProtected(new Location(world, position.x() + 0.5D,
+                        position.y(), position.z() + 0.5D))) {
+                    return;
+                }
+            }
+        }
 
         building = true;
         plugin.getLogger().info("Automatic Halloween structure accepted: " + type.displayId
@@ -312,15 +322,6 @@ public final class HalloweenStructureManager implements Listener {
                 int groundY = world.getHighestBlockYAt(x, z);
                 Material groundType = world.getBlockAt(x, groundY, z).getType();
                 if (!isAutomaticNaturalGround(groundType)) return false;
-                // WorldGuard is optional. If active, refuse an automatic structure
-                // when the ground or any sampled level of its planned volume is protected.
-                int[] protectionLevels = {floorY - 2, groundY, floorY + type.clearHeight / 2,
-                        floorY + type.clearHeight - 1};
-                for (int protectionY : protectionLevels) {
-                    if (regionProtection.isProtected(new Location(world, x + 0.5D, protectionY, z + 0.5D))) {
-                        return false;
-                    }
-                }
                 Block ground = world.getBlockAt(x, groundY, z);
                 if (ground.getState() instanceof TileState) return false;
                 if (groundY < floorY - 2 || groundY > floorY + maxSlope) return false;
