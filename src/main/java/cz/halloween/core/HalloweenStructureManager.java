@@ -656,7 +656,7 @@ public final class HalloweenStructureManager implements Listener {
         // Soul lanterns at corners.
         for (int x : new int[]{-12, 12}) for (int z : new int[]{-12, 12}) {
             put(job, cells, x, 1, z, Material.POLISHED_BLACKSTONE_BRICKS);
-            put(job, cells, x, 2, z, Material.CHAIN);
+            put(job, cells, x, 2, z, Material.IRON_BARS);
             put(job, cells, x, 3, z, Material.SOUL_LANTERN);
         }
     }
@@ -680,7 +680,7 @@ public final class HalloweenStructureManager implements Listener {
         for (int[] corner : new int[][]{{-3,-3},{-3,3},{3,-3},{3,3}}) {
             put(job, cells, corner[0], 1, corner[1], Material.MOSSY_COBBLESTONE);
             put(job, cells, corner[0], 2, corner[1], Material.COBBLESTONE_WALL);
-            put(job, cells, corner[0], 3, corner[1], Material.CHAIN);
+            put(job, cells, corner[0], 3, corner[1], Material.IRON_BARS);
             put(job, cells, corner[0], 4, corner[1], Material.SOUL_LANTERN);
         }
         for (int[] pos : new int[][]{{-6,-6},{6,-6},{-6,6},{6,6}}) {
@@ -755,7 +755,7 @@ public final class HalloweenStructureManager implements Listener {
                     put(job, cells, cx + dx, y, cz + dz, wall);
                 }
             }
-            put(job, cells, cx, 11, cz, Material.CHAIN);
+            put(job, cells, cx, 11, cz, Material.IRON_BARS);
             put(job, cells, cx, 12, cz, Material.SOUL_LANTERN);
         }
         // Four broad stair-like approaches. They stay inside the defined footprint.
