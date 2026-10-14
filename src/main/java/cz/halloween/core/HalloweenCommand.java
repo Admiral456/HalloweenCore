@@ -242,6 +242,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 + " &8• &7" + eventText));
         sender.sendMessage(plugin.color("&7Automatické hřbitovy/vesnice: " + generation));
         sender.sendMessage(plugin.color("&7Automatické pozemní dekorace: " + decoration));
+        String loadedWorldNames = Bukkit.getWorlds().stream().map(org.bukkit.World::getName)
+                .collect(java.util.stream.Collectors.joining(", "));
+        sender.sendMessage(plugin.color("&7Načtené světy: &f" + loadedWorldNames));
         sender.sendMessage(plugin.color("&7Svět &fSpawn &7je vždy vyloučen z automatického obsahu."));
         sender.sendMessage(plugin.color("&7Příběh dokončen: "
                 + (plugin.getDataManager().isStoryCampaignCompleted() ? "&aANO" : "&eNE")));
