@@ -78,7 +78,7 @@ public final class HalloweenServiceImpl implements HalloweenService {
             if (before < milestone && after >= milestone) {
                 String message = plugin.getConfig().getString("messages.global-milestone",
                         "&6&lHALLOWEEN &8» &dServer dosáhl milníku &e%milestone% &dfragmentů.");
-                plugin.getServer().broadcastMessage(plugin.color(message.replace("%milestone%", Long.toString(milestone))));
+                plugin.broadcastGameplayMessage(plugin.color(message.replace("%milestone%", Long.toString(milestone))));
             }
         }
 
