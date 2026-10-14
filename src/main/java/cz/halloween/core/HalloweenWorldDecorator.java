@@ -75,7 +75,7 @@ public final class HalloweenWorldDecorator implements Listener {
 
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
-        if (!isEnabled()) return;
+        if (plugin.isManualStructureChunkLoading() || !isEnabled()) return;
         if (!event.isNewChunk() && !plugin.getConfig().getBoolean("world-decorations.allow-existing-chunks", false)) return;
         enqueue(event.getChunk());
     }
