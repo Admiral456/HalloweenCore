@@ -164,8 +164,8 @@ Při načítání chunků HalloweenCore postupně přidává dýně, jack-o-lant
 
 ## Návod: aréna, obchod a resource pack
 
-- Správce stojí na bloku, který má být středem podlahy arény, a spustí `/halloween setvampirearena`.
-- Vhodné volné místo ověří pomocí `/halloween buildvampirearena`. Pokud náhled potvrdí volný prostor, dokončí stavbu příkazem `/halloween buildvampirearena confirm`. Stavba mění povrch v kruhu o poloměru 48 bloků a staví až 15 bloků vysoké věže. Před potvrzením udělej zálohu světa.
+- Upíří aréna se postaví jedním příkazem `/halloween spawn vampirearena`, přibližně 8 bloků před hráčem. Není třeba nastavovat střed, vybírat místo ani potvrzovat druhým příkazem. Stavba má průměr 97 bloků a může přepsat bloky uvnitř svého půdorysu a vymezeného objemu; před prvním testem ji vyzkoušej na kopii světa.
+- `/halloween spawn hřbitov`, `/halloween spawn vesnice`, `/halloween spawn aréna` a `/halloween spawn goblinarena` fungují stejným jednorázovým způsobem.
 - `/halloween setsecret <id>` ukládá tajné místo a `/halloween secrets` zobrazuje hráčům nápovědy.
 - `/halloween shader on|off` upraví oranžový nádech přímo v shaderu uloženém v ItemsAdder a spustí `/iazip`. `/halloween shader reload` jen znovu vygeneruje pack.
 - `/halloween rewards` otevře rozšířený 54slotový shop s prostorem až pro 28 položek; `/halloween claim <id>` vyzvedne odměnu podle přesného ID z konfigurace.
