@@ -132,9 +132,18 @@ public final class HalloweenVampireEncounterManager implements Listener {
             summoningWarningStage = 0;
             return;
         }
+        String arenaWorldName = plugin.getConfig().getString("bosses.vampire.arena.world", "");
+        org.bukkit.World arenaWorld = arenaWorldName == null || arenaWorldName.isBlank()
+                ? null : Bukkit.getWorld(arenaWorldName);
+        if (arenaWorld == null || !plugin.isEligibleGameplayWorld(arenaWorld)) {
+            summoningDueAt = 0L;
+            summoningWarningStage = 0;
+            return;
+        }
 
         long eligibleOnline = Bukkit.getOnlinePlayers().stream()
                 .filter(plugin::isEligibleGameplayPlayer)
+                .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
                 .count();
         int minimumPlayers = Math.max(1,
                 plugin.getConfig().getInt("bosses.vampire.summoning.minimum-online-players", 1));
@@ -157,7 +166,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
                     "&5&lHALLOWEEN &8» &7Vzduch ztěžkl. Z hlubin arény se ozývá tlukot, který nepatří živým..."
             )));
             for (Player player : Bukkit.getOnlinePlayers()) {
-                if (!plugin.isEligibleGameplayPlayer(player)) continue;
+                if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
                 player.playSound(player.getLocation(), "minecraft:ambient.cave", 0.8f, 0.55f);
             }
             return;
@@ -200,7 +209,7 @@ public final class HalloweenVampireEncounterManager implements Listener {
     private void announceSummoningWarning(String path, String fallback) {
         Bukkit.broadcastMessage(plugin.color(plugin.getConfig().getString(path, fallback)));
         for (Player player : Bukkit.getOnlinePlayers()) {
-            if (!plugin.isEligibleGameplayPlayer(player)) continue;
+            if (!plugin.isEligibleGameplayPlayer(player) || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
             player.sendTitle(
                     plugin.color("&4&lKRÁL UPÍRŮ"),
                     plugin.color(plugin.getConfig().getString(path, fallback)),
