@@ -52,6 +52,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
+        migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
 
@@ -159,6 +160,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateCrimsonWardenShopDefaults();
         migrateCrimsonWardenArmorStats();
+        migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
         migrateAdditionalMobAndQuestDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
@@ -366,6 +368,19 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
+
+    /**
+     * The current specification defines the talisman as one extra heart (+2 max health),
+     * not the older +20 HP implementation. Apply this migration once to existing installs
+     * without repeatedly overriding an administrator's later balance changes.
+     */
+    private void migrateCursedTalismanHealth() {
+        if (getConfig().getBoolean("migrations.cursed-talisman-single-heart-v1", false)) return;
+        getConfig().set("rewards.shop.cursed-talisman.bonus-health", 2.0D);
+        getConfig().set("migrations.cursed-talisman-single-heart-v1", true);
+        saveConfig();
+        getLogger().info("Cursed talisman health migrated to +2 max health (+1 heart).");
+    }
 
     private void migrateCrimsonWardenArmorStats() {
         if (getConfig().getBoolean("migrations.crimson-warden-armor-stats-v3", false)) return;
