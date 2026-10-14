@@ -42,7 +42,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             java.util.stream.Stream<String> mobs = plugin.getMobManager() == null
                     ? java.util.stream.Stream.empty() : plugin.getMobManager().getManualMobIds().stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)));
-            return java.util.stream.Stream.concat(structures, mobs).distinct().sorted().toList();
+            java.util.stream.Stream<String> encounters = java.util.stream.Stream.of("headless-nick")
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)));
+            return java.util.stream.Stream.concat(java.util.stream.Stream.concat(structures, mobs), encounters)
+                    .distinct().sorted().toList();
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
                 && sender.hasPermission("halloweencore.admin")) {
