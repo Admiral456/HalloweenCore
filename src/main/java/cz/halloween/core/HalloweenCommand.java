@@ -156,6 +156,19 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
         if (args[0].equalsIgnoreCase("status")) return status(sender);
         if (args[0].equalsIgnoreCase("spawn")) {
+            if (args.length >= 2 && args[1].equalsIgnoreCase("headless-nick")) {
+                if (!checkAdmin(sender)) return true;
+                if (!(sender instanceof Player player)) {
+                    sender.sendMessage(plugin.color("&cHeadless Nick musíš vyvolat přímo ve hře."));
+                    return true;
+                }
+                boolean spawned = plugin.getHeadlessNickManager() != null
+                        && plugin.getHeadlessNickManager().spawnForAdmin(player);
+                player.sendMessage(plugin.color(spawned
+                        ? "&4&lBEZHLAVÝ NICK &8» &cSetkal ses s jezdcem, který neměl mít hlavu..."
+                        : "&cHeadless Nick se nepodařilo vyvolat. Ověř volné místo, povolený svět a zda už v něm jeden encounter neběží."));
+                return true;
+            }
             if (args.length >= 2 && plugin.getMobManager() != null
                     && plugin.getMobManager().isManualMobId(args[1])) {
                 if (!sender.hasPermission("halloweencore.admin") && !sender.hasPermission("halloweencore.mob.spawn")) {
