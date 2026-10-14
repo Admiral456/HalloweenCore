@@ -24,6 +24,15 @@ gameplay:
     mode: BLACKLIST
     names: []
 
+# Fail-closed automatic world generation. Add the exact name of the survival world here.
+# An empty list is intentionally safe and does not guess a world named "world".
+# Manual administrator structure commands are separate and can still target the Spawn world.
+automatic-world-generation:
+  enabled: true
+  allowed-worlds: []
+  min-structure-chunk-distance: 4
+  structure-chance-per-anchor: 0.30
+
 rewards:
   mob-kill:
     enabled: true
@@ -550,8 +559,17 @@ bosses:
         phase-4-radius: 10
         phase-4-damage: 7.0
 
+structures:
+  # Manual /halloween spawn uses FORCE only inside the declared structure footprint.
+  placement-distance-blocks: 12
+  blocks-per-tick: 1200
+  max-block-changes: 220000
+  max-support-depth: 32
+
 world-decorations:
   enabled: true
+  # Old chunks are left unchanged unless an administrator explicitly enables the safe add-only scan.
+  decorate-existing-chunks: false
   # Add-only decoration: safe natural ground only; never replaces a solid block or tile entity.
   pumpkins-per-chunk: 5
   cobwebs-per-chunk: 2
