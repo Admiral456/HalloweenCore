@@ -30,7 +30,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "spawn", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "spawn", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -546,6 +546,11 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
     private boolean spawnStructure(CommandSender sender, String type) {
         if (!checkAdmin(sender)) return true;
+        if (!sender.hasPermission("hallowencore.structure.build")
+                || !sender.hasPermission("hallowencore.structure.force")) {
+            sender.sendMessage(plugin.color("&cChybí oprávnění hallowencore.structure.build a hallowencore.structure.force."));
+            return true;
+        }
         if (!(sender instanceof Player player)) {
             sender.sendMessage(plugin.color("&cStavbu spusť přímo ve hře: /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena>."));
             return true;
