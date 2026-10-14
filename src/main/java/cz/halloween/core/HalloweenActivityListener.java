@@ -43,10 +43,11 @@ public final class HalloweenActivityListener implements Listener {
 
         if (isConfiguredBlock(block.getType(), "rewards.mining.blocks")
                 && plugin.getConfig().getBoolean("rewards.mining.enabled", true)) {
+            // Quest progress represents the completed action; it must not depend on the fragment rate limit.
+            if (plugin.getQuestManager() != null) plugin.getQuestManager().recordAction(player, "mining");
             long reward = plugin.getConfig().getLong("rewards.mining.fragments", 1L);
-            if (allowFragmentReward(player, "mining")) {
-                if (plugin.getQuestManager() != null) plugin.getQuestManager().recordAction(player, "mining");
-                if (reward > 0L) plugin.getService().addFragments(player.getUniqueId(), reward, "mining");
+            if (allowFragmentReward(player, "mining") && reward > 0L) {
+                plugin.getService().addFragments(player.getUniqueId(), reward, "mining");
             }
             // Do not allow a block configured for mining to fall through into the farming reward path.
             return;
@@ -63,10 +64,12 @@ public final class HalloweenActivityListener implements Listener {
             return;
         }
 
+        // Only mature, configured crops reach this point. Count quest progress even when
+        // fragment rewards are rate-limited, so a cooldown cannot soft-lock a story chapter.
+        if (plugin.getQuestManager() != null) plugin.getQuestManager().recordAction(player, "farming");
         long reward = plugin.getConfig().getLong("rewards.farming.fragments", 2L);
-        if (allowFragmentReward(player, "farming")) {
-            if (plugin.getQuestManager() != null) plugin.getQuestManager().recordAction(player, "farming");
-            if (reward > 0L) plugin.getService().addFragments(player.getUniqueId(), reward, "farming");
+        if (allowFragmentReward(player, "farming") && reward > 0L) {
+            plugin.getService().addFragments(player.getUniqueId(), reward, "farming");
         }
     }
 
