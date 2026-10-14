@@ -30,7 +30,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "spawn", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -152,6 +152,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest")) return quests(sender, args);
         if (args[0].equalsIgnoreCase("reload")) return reload(sender);
         if (args[0].equalsIgnoreCase("debug")) return debug(sender);
+        if (args[0].equalsIgnoreCase("status")) return status(sender);
         if (args[0].equalsIgnoreCase("spawn")) return spawnStructure(sender, args.length >= 2 ? args[1] : "");
         if (args[0].equalsIgnoreCase("shader")) return shader(sender, args);
         if (args[0].equalsIgnoreCase("setvillage")) return setVillage(sender);
@@ -407,6 +408,42 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         if (position == 1) sender.sendMessage(plugin.color("&7Leaderboard je zatím prázdný."));
+        return true;
+    }
+
+    private boolean status(CommandSender sender) {
+        if (!checkAdmin(sender)) return true;
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        sender.sendMessage(plugin.color("&6&lHALLOWEEN STATUS"));
+        sender.sendMessage(plugin.color("&7Halloween: " + (plugin.isEventEnabled() ? "&aZAPNUTÝ" : "&cVYPNUTÝ")));
+
+        var events = plugin.getEventManager();
+        if (events == null) {
+            sender.sendMessage(plugin.color("&7Eventy: &cmanager není dostupný"));
+        } else if (events.getActiveEventId() != null) {
+            sender.sendMessage(plugin.color("&7Aktivní event: &e" + events.getActiveEventId()
+                    + " &8• &7zbývá &e" + events.getRemainingSeconds() + " s"));
+        } else {
+            long seconds = events.getNextEventSeconds();
+            sender.sendMessage(plugin.color("&7Další event: " + (seconds < 0L
+                    ? "&cnenaplánován" : "&eza " + seconds + " s")));
+        }
+
+        var structureManager = plugin.getStructureManager();
+        sender.sendMessage(plugin.color("&7Stavba: " + (structureManager != null && structureManager.isBuilding()
+                ? "&eprobíhá" : "&ažádná neprobíhá")));
+        sender.sendMessage(plugin.color("&7Svět Spawn: &cautomatický Halloween obsah vždy zakázán"));
+        java.util.List<String> autoWorlds = plugin.getConfig().getStringList("world-generation.allowed-worlds");
+        sender.sendMessage(plugin.color("&7Auto-generování: "
+                + (autoWorlds.isEmpty() ? "&cFAIL-CLOSED — bez povolených světů" : "&aallow-list: &f" + String.join(", ", autoWorlds))));
+        sender.sendMessage(plugin.color("&7Automatické struktury: "
+                + (plugin.getConfig().getBoolean("world-generation.structures.enabled", true) ? "&apovoleny konfigurací" : "&cvypnuty konfigurací")));
+        sender.sendMessage(plugin.color("&7Povrchové dekorace: "
+                + (plugin.getConfig().getBoolean("world-decorations.enabled", true) ? "&apovoleny konfigurací" : "&cvypnuty konfigurací")));
+        org.bukkit.plugin.Plugin worldGuard = Bukkit.getPluginManager().getPlugin("WorldGuard");
+        sender.sendMessage(plugin.color("&7WorldGuard ochrana auto-generování: "
+                + (worldGuard != null && worldGuard.isEnabled() ? "&eaktivní (při chybě API fail-closed)" : "&7WorldGuard nenalezen")));
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
         return true;
     }
 
