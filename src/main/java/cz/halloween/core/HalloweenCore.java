@@ -74,6 +74,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
         structureManager = new HalloweenStructureManager(this);
+        int staleEventMobs = mobManager.cleanupEventMobs();
+        if (staleEventMobs > 0) {
+            getLogger().info("Removed " + staleEventMobs + " leftover temporary Halloween event mobs from a previous server run.");
+        }
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
