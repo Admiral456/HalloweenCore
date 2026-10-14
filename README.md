@@ -286,7 +286,7 @@ Příkazy pro administrátora nevyžadují souřadnice, nastavení středu ani p
 - `/halloween spawn vampirearena`
 - `/halloween spawn goblinarena`
 
-Struktura se umístí před hráče podle směru pohledu. Stavba přepisuje terén jen ve vlastním půdorysu a zpracovává bloky po dávkách. Pokud v půdorysu najde blok s uloženými daty (například truhlu nebo ceduli), přípravu zastaví ještě před první změnou, aby nedošlo k tichému zničení obsahu. Při chybě během stavby se pokusí vrátit bloky podle předběžného snapshotu. Administrátor musí mít oprávnění `halloweencore.structures` nebo `halloweencore.admin`.
+Struktura se umístí před hráče podle směru pohledu. Stavba přepisuje terén jen ve vlastním půdorysu a zpracovává bloky po dávkách. Pokud v půdorysu najde blok s uloženými daty (například truhlu nebo ceduli), přípravu zastaví ještě před první změnou, aby nedošlo k tichému zničení obsahu. Při chybě během stavby se pokusí vrátit bloky podle předběžného snapshotu. Administrátor musí mít obě oprávnění `halloweencore.structures` a `halloweencore.structures.force` (ve výchozím stavu je mají jen operátoři), nebo `halloweencore.admin`.
 
 Zkrácený příkaz `/spawn <typ>` je zaregistrován jako pohodlný alias. Protože jej může poskytovat jiný serverový plugin, spolehlivou alternativou je vždy `/halloween spawn <typ>`. V produkci zatím nebyl konflikt se skutečnou instalací WarriorLandu ověřen.
 
