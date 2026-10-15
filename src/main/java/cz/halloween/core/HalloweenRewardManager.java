@@ -212,6 +212,14 @@ public final class HalloweenRewardManager {
         items.add(plugin.getItemManager().createNocturneSovereignCowl());
         items.add(plugin.getItemManager().createHauntedMap());
         items.add(plugin.getItemManager().createCursedCandy());
+
+        // Include the imported candy set in the admin test kit. Each item still resolves
+        // its appearance and fallback material through the canonical registry.
+        for (HalloweenContentRegistry.Definition definition : plugin.getContentRegistry().all()) {
+            if (definition.internalId().startsWith("candy_stev_")) {
+                items.add(plugin.getItemManager().createRegisteredItem(definition.internalId(), 1));
+            }
+        }
         return items;
     }
 
