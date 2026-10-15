@@ -3,7 +3,7 @@
 Namespace:
 - warriorland_halloween
 
-Included item textures (32x32 PNG):
+Included item textures (16 project-generated 32x32 PNGs plus 13 imported MIT 16x16 PNGs):
 - resourcepack/assets/warriorland_halloween/textures/item/hunter_mask.png
 - resourcepack/assets/warriorland_halloween/textures/item/cursed_talisman.png
 - resourcepack/assets/warriorland_halloween/textures/item/halloween_token.png
@@ -102,7 +102,7 @@ Netherite tools use mining speed 9 for their matching tool classes and have dura
 
 - `cursed-talisman`: **1,000,000 fragments**, +20 max health (one extra full row of hearts), +10% Halloween fragment multiplier while held in either hand.
 - All four armour pieces and the five Crimson Warden weapon/tool items have component JSON files under `configs/` which explicitly preserve enchantability. Tool component files also specify the mining rules.
-- Shop descriptions, configured attributes, durability values, the component JSON files and all 29 item textures are checked by `scripts/validate_halloween_assets.py`.
+- Shop descriptions, configured attributes, durability values, the component JSON files and all 29 item icons are checked by `scripts/validate_halloween_content_registry.py`; model, decoration, armor and sound paths are checked by `scripts/validate_content_registry.py`.
 
 ## Vampire model assets
 
@@ -115,17 +115,18 @@ The generated pack contains a CC0-converted Spooky Fester ambience plus six orig
 
 ## Custom enemy model files
 
-Five ModelEngine blueprints with independent 128×128 atlases are stored in `mythicmobs/models/halloween_*.bbmodel` and `mythicmobs/models/halloween_*.png`. These files are packaged separately from ItemsAdder content in the CI artifact `HalloweenCore-Special-Mobs-ModelEngine.zip`; import the blueprints into ModelEngine and merge `ModelEngine/resource pack` into the ItemsAdder-hosted pack before testing them in-game. The model/texture structure is checked by `scripts/validate_special_mob_models.py`.
+Five ModelEngine blueprints with independent 128×128 atlases are stored in `mythicmobs/models/halloween_*.bbmodel` and `mythicmobs/models/halloween_*.png`. These files are packaged separately from ItemsAdder content in the CI artifact `HalloweenCore-Special-Mobs-ModelEngine-mc1.21.10.zip`; import the blueprints into ModelEngine and merge `ModelEngine/resource pack` into the ItemsAdder-hosted pack before testing them in-game. The model/texture structure is checked by `scripts/validate_special_mob_models.py`.
 
 
 ## Halloween world decoration textures
 
-The ItemsAdder ZIP also includes seven **16×16 vanilla-block texture overrides** under `resourcepack/assets/minecraft/textures/block/`:
+The ItemsAdder ZIP also includes eleven **16×16 vanilla-block texture overrides** under `resourcepack/assets/minecraft/textures/block/`:
 
 - `pumpkin_side.png`, `pumpkin_top.png`, `pumpkin_face.png` — pumpkin body, top and carved face.
 - `jack_o_lantern.png` — glowing jack-o'-lantern face.
 - `cobweb.png` — crimson web strands with transparent background.
 - `red_candle.png`, `red_candle_lit.png` — dark red candles and a warmer lit state.
+- `red_mushroom.png`, `brown_mushroom.png`, `dead_bush.png`, `soul_lantern.png` — recolored mushroom/foliage and lantern variants.
 
 The HalloweenCore decorator places actual vanilla blocks into the world, so the blocks remain present even if a player declines the resource pack. The accepted pack changes their appearance instead of controlling whether they exist. These are vanilla namespace overrides and therefore affect **all** vanilla pumpkins, jack-o'-lanterns, cobwebs and red candles in resource-pack-enabled clients, not just the ones placed by HalloweenCore. They are checked by `scripts/validate_halloween_assets.py` in CI.
 
