@@ -30,19 +30,21 @@ import java.util.UUID;
  * Without those assets, the same tagged vanilla bases still provide server mechanics.
  */
 public final class HalloweenRelicAbilityManager implements Listener {
-    private static final String BATWING = "batwing-elytra";
-    private static final String COWL = "nocturne-sovereign-cowl";
+    private static final String BATWING = "relic_batwing_elytra";
+    private static final String COWL = "relic_nocturne_sovereign_cowl";
     private static final long BATWING_COOLDOWN_MS = 20_000L;
     private static final long COWL_COOLDOWN_MS = 30_000L;
 
     private final HalloweenCore plugin;
     private final NamespacedKey relicKey;
+    private final NamespacedKey contentKey;
     private final Map<UUID, Map<String, Long>> cooldowns = new HashMap<>();
     private BukkitTask passiveTask;
 
     public HalloweenRelicAbilityManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.relicKey = new NamespacedKey(plugin, "halloween_relic");
+        this.contentKey = new NamespacedKey(plugin, "halloween_content_id");
     }
 
     public void start() {
@@ -143,10 +145,15 @@ public final class HalloweenRelicAbilityManager implements Listener {
         return true;
     }
 
-    private boolean isRelic(ItemStack item, String identity) {
+    private boolean isRelic(ItemStack item, String internalId) {
         if (item == null || item.getType().isAir() || item.getItemMeta() == null) return false;
-        String value = item.getItemMeta().getPersistentDataContainer()
-                .get(relicKey, PersistentDataType.STRING);
-        return identity.equalsIgnoreCase(value);
+        var data = item.getItemMeta().getPersistentDataContainer();
+        String canonicalId = data.get(contentKey, PersistentDataType.STRING);
+        if (internalId.equals(canonicalId)) return true;
+
+        // Backward compatibility for relics issued before the canonical registry existed.
+        HalloweenContentRegistry.Definition definition = plugin.getContentRegistry().require(internalId);
+        String legacyIdentity = data.get(relicKey, PersistentDataType.STRING);
+        return definition.runtimeIdentity().equalsIgnoreCase(legacyIdentity);
     }
 }
