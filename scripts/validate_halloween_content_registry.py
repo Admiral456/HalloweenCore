@@ -120,7 +120,12 @@ def validate(root: Path = ROOT) -> int:
         ia_key = definition["itemsadder-id"].split(":", 1)[1]
         block = configured[ia_key]
         expected_texture_ref = definition.get("itemsadder-texture", "item/" + definition["texture"])
-        texture_match = re.search(r"(?m)^\s+(?:texture|icon):\s*([^\s#]+)", block)
+        # Prefer the actual texture override when present. Some block-like items define
+        # both an inventory icon and a block-face texture; the icon is not the block texture.
+        texture_match = re.search(r"(?m)^\s+texture:\s*([^\s#]+)", block)
+        if not texture_match:
+            # Modern ItemsAdder furniture can use a 3D graphics.model with a separate icon.
+            texture_match = re.search(r"(?m)^\s+icon:\s*([^\s#]+)", block)
         if not texture_match:
             fail(f"ItemsAdder item {ia_key} has neither graphics.texture nor graphics.icon")
         texture_ref = texture_match.group(1)

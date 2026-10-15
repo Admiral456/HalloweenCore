@@ -183,6 +183,12 @@ def validate(root: Path = ROOT) -> None:
             fail(f"Furniture model {value} is invalid JSON: {exc}")
         if not isinstance(furniture_model.get("textures"), dict) or not furniture_model["textures"]:
             fail(f"Furniture model {value} must declare textures")
+        for texture_name, texture_path in furniture_model["textures"].items():
+            if not isinstance(texture_path, str) or not re.fullmatch(r"[a-z0-9_.-]+:[a-z0-9_./-]+", texture_path):
+                fail(f"Furniture model {value} has an invalid namespaced texture path for {texture_name}: {texture_path}")
+            namespace_path = texture_path.split(":", 1)[1]
+            if namespace_path.startswith("/") or ".." in namespace_path.split("/"):
+                fail(f"Furniture model {value} has an unsafe texture path for {texture_name}: {texture_path}")
         elements = furniture_model.get("elements", [])
         if not isinstance(elements, list) or not elements:
             fail(f"Furniture model {value} must contain at least one 3D element")

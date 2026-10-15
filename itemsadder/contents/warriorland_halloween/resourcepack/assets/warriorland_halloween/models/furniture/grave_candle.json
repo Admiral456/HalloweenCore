@@ -1,12 +1,12 @@
 {
   "credit": "Original HalloweenCore furniture model. Uses vanilla Minecraft block textures only.",
   "textures": {
-    "particle": "minecraft:block:polished_blackstone_bricks",
-    "stone": "minecraft:block:polished_blackstone_bricks",
-    "gold": "minecraft:block:gold_block",
-    "wax": "minecraft:block:red_nether_bricks",
-    "flame": "minecraft:block:orange_concrete",
-    "core": "minecraft:block:yellow_concrete"
+    "particle": "minecraft:block/polished_blackstone_bricks",
+    "stone": "minecraft:block/polished_blackstone_bricks",
+    "gold": "minecraft:block/gold_block",
+    "wax": "minecraft:block/red_nether_bricks",
+    "flame": "minecraft:block/orange_concrete",
+    "core": "minecraft:block/yellow_concrete"
   },
   "elements": [
     {
