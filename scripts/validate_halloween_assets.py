@@ -38,6 +38,8 @@ EXPECTED = {
     "halloween_token.png",
     "cursed_candy.png",
     "haunted_map.png",
+    "batwing_elytra.png",
+    "nocturne_sovereign_cowl.png",
     "crimson_warden_helmet.png",
     "crimson_warden_chestplate.png",
     "crimson_warden_leggings.png",
@@ -329,7 +331,7 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
                 "crimson_warden_helmet", "crimson_warden_chestplate",
                 "crimson_warden_leggings", "crimson_warden_boots",
                 "crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
-                "crimson_warden_shovel", "crimson_warden_hoe"):
+                "crimson_warden_shovel", "crimson_warden_hoe", "batwing_elytra", "nocturne_sovereign_cowl"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
 
