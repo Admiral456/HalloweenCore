@@ -11,6 +11,7 @@ public final class HalloweenChallengeManager {
     private record Challenge(String id, String name, String source, int target) {}
 
     private final HalloweenCore plugin;
+    private boolean warnedInvalidTimezone;
     private final List<Challenge> challenges = List.of(
             new Challenge("hunt", "Noční lov", "mob-kill", 25),
             new Challenge("miner", "Hřbitovní těžba", "mining", 50),
@@ -57,11 +58,12 @@ public final class HalloweenChallengeManager {
     }
 
     private void ensureToday(Player player) {
-        String day = currentDay().toString();
+        LocalDate today = currentDay();
+        String day = today.toString();
         String stored = plugin.getDataManager().getChallengeDay(player.getUniqueId());
         if (day.equals(stored)) return;
 
-        int index = Math.floorMod(currentDay().getDayOfYear() + player.getUniqueId().hashCode(), challenges.size());
+        int index = Math.floorMod(today.getDayOfYear() + player.getUniqueId().hashCode(), challenges.size());
         Challenge challenge = challenges.get(index);
         plugin.getDataManager().setChallenge(player.getUniqueId(), day, challenge.id());
     }
@@ -72,7 +74,10 @@ public final class HalloweenChallengeManager {
             return LocalDate.now(ZoneId.of(configured == null || configured.isBlank()
                     ? "Europe/Prague" : configured));
         } catch (DateTimeException ex) {
-            plugin.getLogger().warning("Invalid season.timezone for daily challenge; using Europe/Prague.");
+            if (!warnedInvalidTimezone) {
+                plugin.getLogger().warning("Invalid season.timezone for daily challenge; using Europe/Prague.");
+                warnedInvalidTimezone = true;
+            }
             return LocalDate.now(ZoneId.of("Europe/Prague"));
         }
     }
