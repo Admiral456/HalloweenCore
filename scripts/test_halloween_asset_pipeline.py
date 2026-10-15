@@ -63,6 +63,7 @@ class CrimsonWardenArmorTests(unittest.TestCase):
         registry = load_registry()
         self.assertIn("decor_stev_apple_leaves", registry)
         self.assertEqual(registry["decor_stev_apple_leaves"]["texture"], "stev_candy/apple_leaves_with_apples")
+        self.assertEqual(registry["decor_stev_apple_leaves"]["itemsadder-texture"], "block/stev_apple_leaves_with_apples")
         entry = re.search(
             r"(?ms)^  stev_apple_leaves:\\s*\\n(.*?)(?=^  [a-z0-9_]+:\\s*$|\\Z)",
             config,
@@ -86,7 +87,7 @@ class AssetManifestTests(unittest.TestCase):
             self.assertRegex(asset["sha256"], r"^[0-9a-f]{64}$")
             self.assertGreater(asset["size_bytes"], 0)
         imported = [a for a in manifest["assets"] if a.get("source_project") == "Stev's Halloween"]
-        self.assertEqual(len(imported), 14)
+        self.assertEqual(len(imported), 15)
         self.assertTrue(all(a["license"] == "MIT" for a in imported))
 
     def test_unverified_donor_version_is_rejected(self) -> None:
@@ -121,7 +122,8 @@ class AssetManifestTests(unittest.TestCase):
                 self.assertIn("warriorland_halloween/THIRD_PARTY_LICENSES/stevs-halloween-source-manifest.json", names)
                 self.assertIn(b"MIT License", archive.read("warriorland_halloween/THIRD_PARTY_LICENSES/stevs-halloween-MIT.txt"))
                 shipped_source_manifest = json.loads(archive.read("warriorland_halloween/THIRD_PARTY_LICENSES/stevs-halloween-source-manifest.json"))
-                self.assertEqual(len(shipped_source_manifest["assets"]), 14)
+                self.assertEqual(len(shipped_source_manifest["assets"]), 15)
+                self.assertEqual(len({entry["source_path"] for entry in shipped_source_manifest["assets"]}), 14)
                 metadata = json.loads(archive.read("warriorland_halloween/BUILD_METADATA.json"))
                 self.assertEqual(metadata["minecraft_version"], "1.21.10")
                 self.assertTrue(all(info.date_time == (2020, 1, 1, 0, 0, 0) for info in archive.infolist()))
