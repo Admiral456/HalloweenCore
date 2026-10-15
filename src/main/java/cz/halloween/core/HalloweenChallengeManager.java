@@ -89,8 +89,9 @@ public final class HalloweenChallengeManager {
 
     private void claim(Player player, Challenge challenge) {
         long reward = Math.max(1L, plugin.getConfig().getLong("daily-challenge.reward-fragments", 60L));
-        plugin.getService().addFragments(player.getUniqueId(), reward, "challenge");
+        // Mark the one-time claim before award code can trigger a milestone save.
         plugin.getDataManager().markChallengeClaimed(player.getUniqueId());
+        plugin.getService().addFragments(player.getUniqueId(), reward, "challenge");
         plugin.getDataManager().save();
 
         player.sendTitle(
