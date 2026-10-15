@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 import re
+import struct
 import sys
 from pathlib import Path
 
@@ -23,6 +24,16 @@ SOURCE_MANIFEST = ROOT / "third-party-assets/stevs-halloween/asset-source-manife
 def fail(message: str) -> None:
     print(f"ERROR: {message}", file=sys.stderr)
     raise SystemExit(1)
+
+
+def png_dimensions(path: Path) -> tuple[int, int]:
+    """Validate a PNG header before trusting its declared dimensions."""
+    data = path.read_bytes()
+    if len(data) < 26 or data[:8] != b"\\x89PNG\\r\\n\\x1a\\n" or data[12:16] != b"IHDR":
+        fail(f"Invalid PNG signature or IHDR: {path.relative_to(ROOT)}")
+    if data[24] != 8 or data[25] != 6:
+        fail(f"{path.relative_to(ROOT)} must be an 8-bit RGBA PNG")
+    return struct.unpack(">II", data[16:24])
 
 
 def entries(text: str, section_name: str) -> dict[str, dict[str, str]]:
@@ -176,9 +187,14 @@ def validate(root: Path = ROOT) -> None:
         path = (root / value).resolve() if value else None
         if path is None or not path.is_file():
             fail(f"Armor asset {armor_id} is missing its asset-path/file")
+        if png_dimensions(path) != (64, 32):
+            fail(f"Armor texture {path.relative_to(root)} must be exactly 64x32 pixels")
         registered_armor.add(path)
     actual_armor = {path.resolve() for path in armor_root.glob("*.png") if path.is_file()}
     assert_same_paths("Equipment texture", registered_armor, actual_armor)
+    armor_hashes = {hashlib.sha256(path.read_bytes()).hexdigest() for path in registered_armor}
+    if len(armor_hashes) != len(registered_armor):
+        fail("Armor layer textures must not be duplicate copies of one another")
 
     sound_defs = entries(registry_text, "sound-assets")
     registered_sound_paths = set()
