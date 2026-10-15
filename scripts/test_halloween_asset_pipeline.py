@@ -260,6 +260,19 @@ class NaturalStructureReservationTests(unittest.TestCase):
         self.assertIn("remove(autoCheckedKey)", shutdown)
 
 
+class RuntimeLifecycleTests(unittest.TestCase):
+    def test_disabling_halloween_stops_the_world_decoration_queue(self) -> None:
+        source = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenCore.java"
+        ).read_text(encoding="utf-8")
+        start = source.index("public void setEventEnabled(boolean enabled)")
+        end = source.index("private void migrateAtmospherePlaylistDefaults()", start)
+        method = source[start:end]
+        self.assertIn("if (enabled && getConfig().getBoolean(\"world-decorations.enabled\", true))", method)
+        self.assertIn("worldDecorator.scanLoadedChunks()", method)
+        self.assertIn("worldDecorator.stop()", method)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
