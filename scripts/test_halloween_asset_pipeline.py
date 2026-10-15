@@ -273,6 +273,19 @@ class RuntimeLifecycleTests(unittest.TestCase):
         self.assertIn("worldDecorator.stop()", method)
 
 
+class ProtectedMobAssetPolicyTests(unittest.TestCase):
+    def test_protected_mob_generator_fails_closed_without_writing_assets(self) -> None:
+        source = (
+            ROOT / "scripts/generate_additional_halloween_mobs.py"
+        ).read_text(encoding="utf-8")
+        self.assertIn("raise SystemExit(main())", source)
+        self.assertIn("Generation blocked:", source)
+        self.assertNotIn("write_bytes(", source)
+        self.assertNotIn("write_text(", source)
+        self.assertNotIn("recolor_texture(", source)
+        self.assertIn("externally authored", source)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
