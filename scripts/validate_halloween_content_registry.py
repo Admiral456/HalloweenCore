@@ -41,7 +41,10 @@ def section_after(text: str, heading: str, label: str) -> str:
     match = re.search(rf"(?m)^{re.escape(heading)}:\s*$", text)
     if not match:
         fail(f"Missing {label} section")
-    return text[match.end():]
+    # Stop before the next root-level key; later registry sections are not items.
+    following = re.search(r"(?m)^[A-Za-z0-9_-]+:\s*(?:#.*)?$", text[match.end():])
+    end = match.end() + following.start() if following else len(text)
+    return text[match.end():end]
 
 
 def field(block: str, key: str, item_id: str) -> str:
