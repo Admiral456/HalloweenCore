@@ -491,6 +491,51 @@ def grave_marker() -> Canvas:
     return a
 
 
+def broken_grave_marker() -> Canvas:
+    """Original pixel-art icon for a cracked, partially collapsed grave marker."""
+    a = Canvas()
+    a.poly([(5, 8), (10, 5), (18, 4), (21, 7), (20, 11), (17, 14),
+            (18, 24), (7, 24), (5, 16)], C["outline"])
+    a.poly([(7, 9), (11, 7), (17, 6), (19, 8), (18, 11), (15, 14),
+            (16, 22), (9, 22), (7, 15)], C["steel_dark"], C["steel"])
+    # Fallen fragment gives the silhouette a visibly different outline.
+    a.poly([(20, 5), (25, 6), (27, 10), (25, 14), (21, 13), (19, 10)],
+           C["outline"])
+    a.poly([(21, 7), (24, 7), (25, 10), (24, 12), (21, 11)],
+           C["steel"], C["steel_light"])
+    a.line(12, 8, 11, 12, C["void"], 2)
+    a.line(11, 12, 14, 15, C["outline"], 2)
+    a.line(14, 15, 13, 19, C["void"], 2)
+    a.line(16, 9, 16, 12, C["gold_dark"])
+    a.rect(4, 24, 26, 28, C["outline"])
+    a.rect(5, 24, 25, 26, C["steel"])
+    a.set(22, 24, C["green"])
+    a.set(23, 24, C["green_dark"])
+    return a
+
+
+def grave_candle() -> Canvas:
+    """Original pixel-art icon for a candle placed on a Gothic cemetery plinth."""
+    a = Canvas()
+    # Dark outline around the flame; orange outer fire with a pale inner core.
+    a.poly([(15, 2), (12, 7), (9, 10), (10, 14), (13, 16), (20, 15),
+            (23, 11), (20, 7), (19, 4), (17, 8)], C["outline"])
+    a.poly([(15, 4), (13, 8), (11, 11), (13, 14), (18, 14),
+            (21, 11), (18, 8), (17, 6)], C["ember"], C["red"])
+    a.poly([(15, 7), (14, 10), (15, 12), (18, 12), (18, 10)], C["pale_gold"])
+    a.rect(10, 14, 21, 24, C["outline"])
+    a.rect(11, 14, 20, 23, C["wine"], C["gold_dark"])
+    a.line(12, 16, 12, 21, C["red"])
+    a.line(19, 16, 19, 21, C["dark"])
+    a.line(13, 16, 18, 16, C["gold"])
+    a.rect(7, 23, 24, 26, C["outline"])
+    a.rect(8, 23, 23, 25, C["steel_dark"], C["gold_dark"])
+    a.line(10, 24, 13, 24, C["gold_light"])
+    a.diamond(16, 19, 2, 2, C["gold_light"], C["outline"])
+    a.set(16, 19, C["pale_gold"])
+    return a
+
+
 def main() -> None:
     sprites = {
         "hunter_mask.png": hunter_mask,
@@ -501,6 +546,8 @@ def main() -> None:
         "batwing_elytra.png": batwing_elytra,
         "nocturne_sovereign_cowl.png": nocturne_sovereign_cowl,
         "grave_marker.png": grave_marker,
+        "broken_grave_marker.png": broken_grave_marker,
+        "grave_candle.png": grave_candle,
         "crimson_warden_helmet.png": helmet,
         "crimson_warden_chestplate.png": chestplate,
         "crimson_warden_leggings.png": leggings,

@@ -16,9 +16,9 @@ Audit date: 2026-10-15. The supplied JARs are Fabric/Forge/NeoForge mods, not Pa
 
 ## New project-owned furniture asset
 
-- Added an original Gothic Gravestone as an ItemsAdder placeable furniture item: new 32×32 inventory icon, custom 3D Java item model made from Minecraft's vanilla block textures, floor-only placement and a 1×1×1 furniture hitbox.
-- It is not copied from Allhallows, ManyIdeas Halloween or another supplied mod. This adds reusable placeable décor to the resource pack; it does not by itself enable automatic random graveyard placement in world generation.
-- The custom model is registered and structurally validated by CI. Visual placement, model transform, hitbox and break/drop behavior still require the staging-client check.
+- Added three original ItemsAdder furniture props: Gothic Gravestone, Broken Gravestone and Graveyard Candle. Each has a separate 32×32 icon, custom 3D Java item model made from Minecraft's vanilla block textures, floor-only placement and a 1×1×1 hitbox.
+- These are new project-owned designs, not copied from Allhallows, ManyIdeas Halloween or another supplied mod. They provide placeable cemetery décor; they do not by themselves enable automatic random graveyard placement in world generation.
+- Their model paths are registered and structurally validated by CI. Visual placement, model transforms, hitboxes and break/drop behavior still require the staging-client check.
 
 ## Remaining supplied mods — not copied into public asset output
 

@@ -257,6 +257,21 @@ items:
     texture: grave_marker
     display-name: "&8&lGotický náhrobek"
 
+  decoration_broken_grave_marker:
+    category: decoration
+    itemsadder-id: warriorland_halloween:decoration_broken_grave_marker
+    runtime-identity: broken-grave-marker-furniture-2026
+    fallback-material: PAPER
+    texture: broken_grave_marker
+    display-name: "&8&lRozbitý náhrobek"
+  decoration_grave_candle:
+    category: decoration
+    itemsadder-id: warriorland_halloween:decoration_grave_candle
+    runtime-identity: grave-candle-furniture-2026
+    fallback-material: PAPER
+    texture: grave_candle
+    display-name: "&6&lHřbitovní svíce"
+
 # Minecraft profiles are deliberately opt-in. A version becomes verified only after its
 # ItemsAdder schema, models, server build and client resource-pack delivery pass staging.
 target-versions:
@@ -298,6 +313,10 @@ model-assets:
 furniture-model-assets:
   gothic_gravestone:
     asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/models/furniture/grave_marker.json
+  broken_gravestone:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/models/furniture/broken_grave_marker.json
+  graveyard_candle:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/models/furniture/grave_candle.json
 
 world-decoration-assets:
   stev_apple_leaves_with_apples:

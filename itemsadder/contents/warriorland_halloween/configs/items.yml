@@ -435,6 +435,72 @@ items:
             y: 0.8
             z: 0.8
 
+  decoration_broken_grave_marker:
+    name: "&8&lRozbitý náhrobek"
+    lore:
+      - "&7Prasklá 3D dekorace pro opuštěný hřbitov."
+      - "&8Polož na zem; lze bezpečně odstranit."
+    material: PAPER
+    graphics:
+      model: furniture/broken_grave_marker
+      icon: item/broken_grave_marker
+    behaviours:
+      furniture:
+        entity: item_display
+        solid: true
+        fixed_rotation: true
+        placeable_on:
+          floor: true
+          ceiling: false
+          walls: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 1
+        display_transformation:
+          transform: HEAD
+          translation:
+            x: 0
+            y: 0.5
+            z: 0
+          scale:
+            x: 0.8
+            y: 0.8
+            z: 0.8
+
+  decoration_grave_candle:
+    name: "&6&lHřbitovní svíce"
+    lore:
+      - "&7Dekorativní svíce na kamenném podstavci."
+      - "&8Vlastní 3D model; lze umístit na zem."
+    material: PAPER
+    graphics:
+      model: furniture/grave_candle
+      icon: item/grave_candle
+    behaviours:
+      furniture:
+        entity: item_display
+        solid: true
+        fixed_rotation: true
+        placeable_on:
+          floor: true
+          ceiling: false
+          walls: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 1
+        display_transformation:
+          transform: HEAD
+          translation:
+            x: 0
+            y: 0.5
+            z: 0
+          scale:
+            x: 0.8
+            y: 0.8
+            z: 0.8
+
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"
     lore:
