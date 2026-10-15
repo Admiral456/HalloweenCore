@@ -230,7 +230,7 @@ class AdminItemKitRegressionTests(unittest.TestCase):
         end = source.index("public ItemStack createAdminRewardItem(", start)
         method = source[start:end]
         self.assertIn('getConfigurationSection("rewards.shop")', method)
-        self.assertIn('findByInternalId("decor_stev_apple_leaves")', method)
+        self.assertIn('findByItemsAdderId("warriorland_halloween:stev_apple_leaves")', method)
         self.assertNotIn('startsWith("candy_stev_")', method)
         self.assertEqual(method.count("createRegisteredItem(appleLeaves.internalId(), 1)"), 1)
 
