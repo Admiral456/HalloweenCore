@@ -2,7 +2,7 @@ schema-version: 1
 # Canonical logical IDs for HalloweenCore items. Gameplay code uses these IDs,
 # never display names, model filenames, texture filenames, or ItemsAdder paths.
 items:
-  cosmetic.hunter_mask:
+  cosmetic_hunter_mask:
     category: cosmetic
     itemsadder-id: warriorland_halloween:hunter_mask
     runtime-identity: hunter-mask-2026
@@ -12,7 +12,7 @@ items:
     lore:
       - "&7Limitovaná Halloween odměna."
       - "&7Připomínka eventu WarriorLand 2026."
-  relic.cursed_talisman:
+  relic_cursed_talisman:
     category: relic
     itemsadder-id: warriorland_halloween:cursed_talisman
     runtime-identity: cursed-talisman-2026
@@ -23,7 +23,7 @@ items:
       - "&7Relikvie vysokého prokletí."
       - "&d+1 celý řádek srdcí (+20 HP)"
       - "&7Aktivní při držení v ruce nebo offhandu."
-  collectible.halloween_token:
+  collectible_halloween_token:
     category: collectible
     itemsadder-id: warriorland_halloween:halloween_token
     runtime-identity: halloween-token-2026
@@ -32,7 +32,7 @@ items:
     display-name: "&c&lHalloween 2026"
     lore:
       - "&7Jedinečná památka."
-  relic.haunted_map:
+  relic_haunted_map:
     category: relic
     itemsadder-id: warriorland_halloween:haunted_map
     runtime-identity: haunted-map-2026
@@ -41,7 +41,7 @@ items:
     display-name: "&5&lProkletá mapa"
     lore:
       - "&7Ukazuje cestu k Haunted Village."
-  relic.batwing_elytra:
+  relic_batwing_elytra:
     category: relic
     itemsadder-id: warriorland_halloween:batwing_elytra
     runtime-identity: batwing-elytra
@@ -52,7 +52,7 @@ items:
       - "&7Temná relikvie z netopýřího křídla."
       - "&7Při plachtění se skrč pro vzdušný výpad."
       - "&8Obnova schopnosti: 20 sekund."
-  relic.nocturne_sovereign_cowl:
+  relic_nocturne_sovereign_cowl:
     category: relic
     itemsadder-id: warriorland_halloween:nocturne_sovereign_cowl
     runtime-identity: nocturne-sovereign-cowl
@@ -63,70 +63,70 @@ items:
       - "&7Kapuce, která vidí ve tmě."
       - "&7Skrč se pro odhalení a zpomalení monster."
       - "&8Obnova schopnosti: 30 sekund."
-  gear.crimson_warden.helmet:
+  gear_crimson_warden_helmet:
     category: armor
     itemsadder-id: warriorland_halloween:crimson_warden_helmet
     runtime-identity: crimson-warden-helmet
     fallback-material: NETHERITE_HELMET
     texture: crimson_warden_helmet
     display-name: "&4&lHelma Krvavého strážce"
-  gear.crimson_warden.chestplate:
+  gear_crimson_warden_chestplate:
     category: armor
     itemsadder-id: warriorland_halloween:crimson_warden_chestplate
     runtime-identity: crimson-warden-chestplate
     fallback-material: NETHERITE_CHESTPLATE
     texture: crimson_warden_chestplate
     display-name: "&4&lKyrys Krvavého strážce"
-  gear.crimson_warden.leggings:
+  gear_crimson_warden_leggings:
     category: armor
     itemsadder-id: warriorland_halloween:crimson_warden_leggings
     runtime-identity: crimson-warden-leggings
     fallback-material: NETHERITE_LEGGINGS
     texture: crimson_warden_leggings
     display-name: "&4&lNohavice Krvavého strážce"
-  gear.crimson_warden.boots:
+  gear_crimson_warden_boots:
     category: armor
     itemsadder-id: warriorland_halloween:crimson_warden_boots
     runtime-identity: crimson-warden-boots
     fallback-material: NETHERITE_BOOTS
     texture: crimson_warden_boots
     display-name: "&4&lBoty Krvavého strážce"
-  gear.crimson_warden.sword:
+  gear_crimson_warden_sword:
     category: weapon
     itemsadder-id: warriorland_halloween:crimson_warden_sword
     runtime-identity: crimson-warden-sword
     fallback-material: NETHERITE_SWORD
     texture: crimson_warden_sword
     display-name: "&4&lKrvavý meč"
-  gear.crimson_warden.pickaxe:
+  gear_crimson_warden_pickaxe:
     category: tool
     itemsadder-id: warriorland_halloween:crimson_warden_pickaxe
     runtime-identity: crimson-warden-pickaxe
     fallback-material: NETHERITE_PICKAXE
     texture: crimson_warden_pickaxe
     display-name: "&4&lKrumpáč Krvavého strážce"
-  gear.crimson_warden.axe:
+  gear_crimson_warden_axe:
     category: tool
     itemsadder-id: warriorland_halloween:crimson_warden_axe
     runtime-identity: crimson-warden-axe
     fallback-material: NETHERITE_AXE
     texture: crimson_warden_axe
     display-name: "&4&lSekera Krvavého strážce"
-  gear.crimson_warden.shovel:
+  gear_crimson_warden_shovel:
     category: tool
     itemsadder-id: warriorland_halloween:crimson_warden_shovel
     runtime-identity: crimson-warden-shovel
     fallback-material: NETHERITE_SHOVEL
     texture: crimson_warden_shovel
     display-name: "&4&lLopatka Krvavého strážce"
-  gear.crimson_warden.hoe:
+  gear_crimson_warden_hoe:
     category: tool
     itemsadder-id: warriorland_halloween:crimson_warden_hoe
     runtime-identity: crimson-warden-hoe
     fallback-material: NETHERITE_HOE
     texture: crimson_warden_hoe
     display-name: "&4&lMotyka Krvavého strážce"
-  candy.cursed:
+  candy_cursed:
     category: consumable
     itemsadder-id: warriorland_halloween:cursed_candy
     runtime-identity: cursed-candy-2026
@@ -135,106 +135,106 @@ items:
     display-name: "&6&lProkleté cukroví &8[Halloween 2026]"
     lore:
       - "&7Po snědení získáš krátké Halloween efekty."
-  candy.stev.apple_core:
+  candy_stev_apple_core:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_apple_core
-    runtime-identity: candy.stev.apple_core
+    runtime-identity: candy_stev_apple_core
     fallback-material: COOKIE
     texture: stev_candy/apple_core
     display-name: "&6Jablečná jadérka"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.candy_apple:
+  candy_stev_candy_apple:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_candy_apple
-    runtime-identity: candy.stev.candy_apple
+    runtime-identity: candy_stev_candy_apple
     fallback-material: COOKIE
     texture: stev_candy/candy_apple
     display-name: "&cKaramelové jablko"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.candy_bag:
+  candy_stev_candy_bag:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_candy_bag
-    runtime-identity: candy.stev.candy_bag
+    runtime-identity: candy_stev_candy_bag
     fallback-material: COOKIE
     texture: stev_candy/candy_bag
     display-name: "&6Pytlík sladkostí"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.caramel:
+  candy_stev_caramel:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_caramel
-    runtime-identity: candy.stev.caramel
+    runtime-identity: candy_stev_caramel
     fallback-material: COOKIE
     texture: stev_candy/caramel
     display-name: "&6Karamel"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.caramel_apple:
+  candy_stev_caramel_apple:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_caramel_apple
-    runtime-identity: candy.stev.caramel_apple
+    runtime-identity: candy_stev_caramel_apple
     fallback-material: COOKIE
     texture: stev_candy/caramel_apple
     display-name: "&cJablko v karamelu"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.chocolate_bar:
+  candy_stev_chocolate_bar:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_chocolate_bar
-    runtime-identity: candy.stev.chocolate_bar
+    runtime-identity: candy_stev_chocolate_bar
     fallback-material: COOKIE
     texture: stev_candy/chocolate_bar
     display-name: "&6Čokoládová tyčinka"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.frosted_sugar_cookie:
+  candy_stev_frosted_sugar_cookie:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_frosted_sugar_cookie
-    runtime-identity: candy.stev.frosted_sugar_cookie
+    runtime-identity: candy_stev_frosted_sugar_cookie
     fallback-material: COOKIE
     texture: stev_candy/frosted_sugar_cookie
     display-name: "&dZdobená sušenka"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.gumdrop:
+  candy_stev_gumdrop:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_gumdrop
-    runtime-identity: candy.stev.gumdrop
+    runtime-identity: candy_stev_gumdrop
     fallback-material: COOKIE
     texture: stev_candy/gumdrop
     display-name: "&aŽelé bonbon"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.hard_candy:
+  candy_stev_hard_candy:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_hard_candy
-    runtime-identity: candy.stev.hard_candy
+    runtime-identity: candy_stev_hard_candy
     fallback-material: COOKIE
     texture: stev_candy/hard_candy
     display-name: "&6Tvrdý bonbon"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.lollipop:
+  candy_stev_lollipop:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_lollipop
-    runtime-identity: candy.stev.lollipop
+    runtime-identity: candy_stev_lollipop
     fallback-material: COOKIE
     texture: stev_candy/lollipop
     display-name: "&dLízátko"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.peanut_butter_cup:
+  candy_stev_peanut_butter_cup:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_peanut_butter_cup
-    runtime-identity: candy.stev.peanut_butter_cup
+    runtime-identity: candy_stev_peanut_butter_cup
     fallback-material: COOKIE
     texture: stev_candy/peanut_butter_cup
     display-name: "&6Arašídový košíček"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.sugar_cookie:
+  candy_stev_sugar_cookie:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_sugar_cookie
-    runtime-identity: candy.stev.sugar_cookie
+    runtime-identity: candy_stev_sugar_cookie
     fallback-material: COOKIE
     texture: stev_candy/sugar_cookie
     display-name: "&eCukrová sušenka"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
-  candy.stev.toasted_pumpkin_seeds:
+  candy_stev_toasted_pumpkin_seeds:
     category: consumable
     itemsadder-id: warriorland_halloween:stev_toasted_pumpkin_seeds
-    runtime-identity: candy.stev.toasted_pumpkin_seeds
+    runtime-identity: candy_stev_toasted_pumpkin_seeds
     fallback-material: COOKIE
     texture: stev_candy/toasted_pumpkin_seeds
     display-name: "&6Pražená dýňová semínka"
