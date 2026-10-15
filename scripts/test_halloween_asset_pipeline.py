@@ -34,6 +34,29 @@ class ContentRegistryTests(unittest.TestCase):
         validate_full_asset_inventory(ROOT)
 
 
+class CrimsonWardenArmorTests(unittest.TestCase):
+    def test_armor_lore_states_the_worn_slot_bonus(self) -> None:
+        config = (ROOT / "itemsadder/contents/warriorland_halloween/configs/items.yml").read_text(encoding="utf-8")
+        expected = {
+            "crimson_warden_helmet": ("Při nasazení na hlavu: +6 brnění.", 3),
+            "crimson_warden_chestplate": ("Při nasazení na hruď: +12 brnění.", 4),
+            "crimson_warden_leggings": ("Při nasazení na nohy: +9 brnění.", 3),
+            "crimson_warden_boots": ("Při nasazení na chodidla: +6 brnění.", 3),
+        }
+        for item_id, (lore_line, extra_armor) in expected.items():
+            with self.subTest(item=item_id):
+                match = re.search(
+                    rf"(?ms)^  {re.escape(item_id)}:\\n(.*?)(?=^  [a-z0-9_]+:\\s*$|\\Z)",
+                    config,
+                )
+                self.assertIsNotNone(match, f"Missing ItemsAdder entry {item_id}")
+                block = match.group(1)
+                self.assertIn(lore_line, block)
+                modifier = re.search(r"(?m)^\\s+armor:\\s*(\\d+)\\s*$", block)
+                self.assertIsNotNone(modifier, f"{item_id} must have an armor attribute modifier")
+                self.assertEqual(int(modifier.group(1)), extra_armor)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
