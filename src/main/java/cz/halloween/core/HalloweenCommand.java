@@ -33,7 +33,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         if (args.length == 1) {
             List<String> subcommands = List.of(
                     "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "locate", "grave", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "rewards", "claim", "top", "reload", "debug", "status", "spawn", "locate", "grave", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "disable", "enable", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -213,6 +213,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         if (args[0].equalsIgnoreCase("bosseffects")) return bossEffects(sender, args);
         if (args[0].equalsIgnoreCase("modelpreview")) return modelPreview(sender, args);
         if (args[0].equalsIgnoreCase("give")) return give(sender, args);
+        if (args[0].equalsIgnoreCase("disable")) return playerOptOut(sender, true);
+        if (args[0].equalsIgnoreCase("enable")) return playerOptOut(sender, false);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
@@ -238,7 +240,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet|all> &7- přidá fragmenty nebo vydá všechny testovací předměty"));
-        sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
+        sender.sendMessage(plugin.color("&6/halloween disable|enable &7- vypne/zapne Halloween efekty pouze pro tebe"));
+        sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu pro celý server"));
         return true;
     }
 
@@ -1044,6 +1047,19 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
                 sender.sendMessage(plugin.color("&cNepodařilo se zavolat /iazip. Spusť ho ručně v konzoli serveru."));
             }
         });
+        return true;
+    }
+
+    private boolean playerOptOut(CommandSender sender, boolean disabled) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz může použít jen hráč."));
+            return true;
+        }
+        plugin.getDataManager().setHalloweenDisabled(player.getUniqueId(), disabled);
+        plugin.getDataManager().save();
+        player.sendMessage(plugin.color(disabled
+                ? "&6&lHALLOWEEN &8» &7Halloween efekty a osobní odměny jsou pro tebe vypnuté. Zapneš je příkazem &e/halloween enable&7."
+                : "&6&lHALLOWEEN &8» &aHalloween efekty a osobní odměny jsou pro tebe opět zapnuté."));
         return true;
     }
 
