@@ -239,3 +239,108 @@ items:
     texture: stev_candy/toasted_pumpkin_seeds
     display-name: "&6Pražená dýňová semínka"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+
+# Minecraft profiles are deliberately opt-in. A version becomes verified only after its
+# ItemsAdder schema, models, server build and client resource-pack delivery pass staging.
+target-versions:
+  default: "1.21.10"
+  verified:
+    - "1.21.10"
+  pending:
+    - "1.21.1"
+    - "1.21.2"
+
+# These file paths are integration data, not runtime item identity. The validator rejects
+# missing and unregistered files; ASSET_MANIFEST.json records SHA-256 for generated builds.
+model-assets:
+  blood_spider:
+    blueprint-path: mythicmobs/models/halloween_blood_spider.bbmodel
+    texture-path: mythicmobs/models/halloween_blood_spider.png
+    staging-status: live-client-render-required
+  cursed_zombie:
+    blueprint-path: mythicmobs/models/halloween_cursed_zombie.bbmodel
+    texture-path: mythicmobs/models/halloween_cursed_zombie.png
+    staging-status: live-client-render-required
+  gravekeeper:
+    blueprint-path: mythicmobs/models/halloween_gravekeeper.bbmodel
+    texture-path: mythicmobs/models/halloween_gravekeeper.png
+    staging-status: live-client-render-required
+  hex_witch:
+    blueprint-path: mythicmobs/models/halloween_hex_witch.bbmodel
+    texture-path: mythicmobs/models/halloween_hex_witch.png
+    staging-status: live-client-render-required
+  pumpkin_wraith:
+    blueprint-path: mythicmobs/models/halloween_pumpkin_wraith.bbmodel
+    texture-path: mythicmobs/models/halloween_pumpkin_wraith.png
+    staging-status: live-client-render-required
+  vampire_king:
+    blueprint-path: mythicmobs/models/vampire_king.bbmodel
+    texture-path: mythicmobs/models/vampire_king.png
+    staging-status: experimental-disabled-until-staged
+
+world-decoration-assets:
+  pumpkin_side:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/pumpkin_side.png
+  pumpkin_top:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/pumpkin_top.png
+  pumpkin_face:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/pumpkin_face.png
+  jack_o_lantern:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/jack_o_lantern.png
+  cobweb:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/cobweb.png
+  red_candle:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/red_candle.png
+  red_candle_lit:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/red_candle_lit.png
+  red_mushroom:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/red_mushroom.png
+  brown_mushroom:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/brown_mushroom.png
+  dead_bush:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/dead_bush.png
+  soul_lantern:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/soul_lantern.png
+
+armor-assets:
+  crimson_warden_layer_1:
+    asset-path: itemsadder/contents/warriorland_halloween/textures/armor/crimson_warden/layer_1.png
+  crimson_warden_layer_2:
+    asset-path: itemsadder/contents/warriorland_halloween/textures/armor/crimson_warden/layer_2.png
+
+sound-assets:
+  haunted_theme:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/haunted_theme.ogg
+  horror_atmosphere:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/horror_atmosphere.ogg
+  creepy_ambient:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/creepy_ambient.ogg
+  dark_cavern_ambient:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/dark_cavern_ambient.ogg
+  event_sting:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/event_sting.ogg
+  soulstorm_sting:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/soulstorm_sting.ogg
+  witching_sting:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/witching_sting.ogg
+  harvest_sting:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/harvest_sting.ogg
+  blood_moon_rise:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/blood_moon_rise.ogg
+  pumpkin_apocalypse:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/pumpkin_apocalypse.ogg
+  graveyard_rising:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/graveyard_rising.ogg
+  halloween_silence:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/sounds/halloween_silence.ogg
+
+protected-assets:
+  void-reaper:
+    status: externally-authored-protected
+    generation: prohibited
+  frost-stalker:
+    status: externally-authored-protected
+    generation: prohibited
+  nightmare:
+    status: externally-authored-protected
+    generation: prohibited
