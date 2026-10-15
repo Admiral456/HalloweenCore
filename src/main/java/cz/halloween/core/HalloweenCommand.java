@@ -332,7 +332,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
 
     private boolean event(CommandSender sender, String[] args) {
         if (args.length >= 2) {
-            if (!checkAdmin(sender)) return true;
+            if (!checkAdminOrPermission(sender, "halloweencore.event.manage")) return true;
             if (plugin.getEventManager() == null) {
                 sender.sendMessage(plugin.color("&cSprávce eventů není dostupný."));
                 return true;
@@ -507,7 +507,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
     }
 
     private boolean debug(CommandSender sender) {
-        if (!checkAdmin(sender)) return true;
+        if (!checkAdminOrPermission(sender, "halloweencore.debug")) return true;
 
         boolean itemsAdder = plugin.getServer().getPluginManager().getPlugin("ItemsAdder") != null;
         boolean mythicMobs = plugin.getServer().getPluginManager().getPlugin("MythicMobs") != null;
@@ -876,7 +876,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
     }
 
     private boolean reload(CommandSender sender) {
-        if (!checkAdmin(sender)) return true;
+        if (!checkAdminOrPermission(sender, "halloweencore.reload")) return true;
 
         plugin.reloadEventConfig();
         sender.sendMessage(plugin.message("messages.reloaded"));
@@ -903,7 +903,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
     }
 
     private boolean give(CommandSender sender, String[] args) {
-        if (!checkAdmin(sender)) return true;
+        if (!checkAdminOrPermission(sender, "halloweencore.items.give")) return true;
         if (args.length != 3) {
             sender.sendMessage(plugin.color("&cPoužití: /halloween give <hráč> <počet|all>"));
             return true;
@@ -1091,7 +1091,11 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
     }
 
     private boolean checkAdmin(CommandSender sender) {
-        if (!sender.hasPermission("halloweencore.admin")) {
+        return checkAdminOrPermission(sender, "halloweencore.admin");
+    }
+
+    private boolean checkAdminOrPermission(CommandSender sender, String permission) {
+        if (!sender.hasPermission("halloweencore.admin") && !sender.hasPermission(permission)) {
             sender.sendMessage(plugin.message("messages.no-permission"));
             return false;
         }
