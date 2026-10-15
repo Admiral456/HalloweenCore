@@ -172,7 +172,8 @@ def validate(root: Path = ROOT) -> int:
         fail("The imported item-texture directory and source manifest do not match")
     if any(not (p.startswith(item_target_prefix) or p.startswith(block_target_prefix)) for p in imported_targets):
         fail("A third-party texture target uses an unapproved output directory")
-    actual_block_targets = {p.relative_to(ROOT).as_posix() for p in BLOCK_TEXTURES.glob("*.png")}
+    block_texture_dir = ROOT / "itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block"
+    actual_block_targets = {p.relative_to(ROOT).as_posix() for p in block_texture_dir.glob("*.png")}
     if not imported_block_targets.issubset(actual_block_targets):
         fail("A licensed block texture target is missing from the Minecraft block texture directory")
     print(f"PASS {len(registry)} canonical item IDs, unique ItemsAdder IDs and texture keys")
