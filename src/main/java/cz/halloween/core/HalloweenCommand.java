@@ -1058,8 +1058,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         plugin.getDataManager().setHalloweenDisabled(player.getUniqueId(), disabled);
         plugin.getDataManager().save();
         player.sendMessage(plugin.color(disabled
-                ? "&6&lHALLOWEEN &8» &7Halloween efekty a osobní odměny jsou pro tebe vypnuté. Zapneš je příkazem &e/halloween enable&7."
-                : "&6&lHALLOWEEN &8» &aHalloween efekty a osobní odměny jsou pro tebe opět zapnuté."));
+                ? "&6&lHALLOWEEN &8» &7Halloween efekty a získávání fragmentů jsou pro tebe vypnuté. Zapneš je příkazem &e/halloween enable&7."
+                : "&6&lHALLOWEEN &8» &aHalloween efekty a získávání fragmentů jsou pro tebe opět zapnuté."));
         return true;
     }
 
