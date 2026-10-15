@@ -525,7 +525,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             // Explicit user-requested talisman balance. This one-time migration does
             // not keep forcing it on later reloads if the administrator later changes it.
             getConfig().set(root + "cursed-talisman.cost", 1_000_000L);
-            getConfig().set(root + "cursed-talisman.bonus-health", 20.0D);
+            getConfig().set(root + "cursed-talisman.bonus-health", 2.0D);
             getConfig().set(root + "cursed-talisman.bonus-multiplier", 0.10D);
             ConfigurationSection defaultTalisman = defaultShop.getConfigurationSection("cursed-talisman");
             if (defaultTalisman != null) {
@@ -555,7 +555,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getConfig().set("rewards.shop.cursed-talisman.bonus-health", 2.0D);
         getConfig().set("migrations.cursed-talisman-single-heart-v1", true);
         saveConfig();
-        getLogger().info("Cursed talisman health migrated to +2 max health (+1 heart).");
+        getLogger().info("Cursed talisman health migrated to +2 health points (+1 heart).");
     }
 
     /**
