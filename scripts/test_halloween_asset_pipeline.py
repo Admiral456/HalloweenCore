@@ -161,6 +161,23 @@ class PlayerOptOutRegressionTests(unittest.TestCase):
         self.assertIn("plugin.getAtmosphere().refreshPlayerPlayback(player)", command)
 
 
+class HeadlessNickCommandSafetyTests(unittest.TestCase):
+    def test_admin_nick_spawn_refuses_encounters_that_would_be_cleaned_immediately(self) -> None:
+        source = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenHeadlessNickManager.java"
+        ).read_text(encoding="utf-8")
+        start = source.index("public boolean spawnForAdmin(Player target)")
+        end = source.index("public String statusLine()", start)
+        method = source[start:end]
+        for required in (
+            "!plugin.isEventEnabled()",
+            'getBoolean("headless-nick.enabled", true)',
+            "!plugin.isEligibleGameplayPlayer(target)",
+            "!plugin.isEligibleGameplayWorld(target.getWorld())",
+        ):
+            self.assertIn(required, method)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")

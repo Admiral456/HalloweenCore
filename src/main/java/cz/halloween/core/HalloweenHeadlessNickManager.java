@@ -66,7 +66,10 @@ public final class HalloweenHeadlessNickManager implements Listener {
     }
 
     public boolean spawnForAdmin(Player target) {
-        if (target == null || !target.isOnline() || !plugin.isEligibleGameplayWorld(target.getWorld())) return false;
+        if (target == null || !target.isOnline() || !plugin.isEventEnabled()
+                || !plugin.getConfig().getBoolean("headless-nick.enabled", true)
+                || !plugin.isEligibleGameplayPlayer(target)
+                || !plugin.isEligibleGameplayWorld(target.getWorld())) return false;
         if (hasEncounterInWorld(target.getWorld())) return false;
         Location location = findSpawnLocation(target, 8, 14);
         return location != null && spawnEncounter(target, location);
