@@ -186,8 +186,8 @@ class RewardDurabilityRegressionTests(unittest.TestCase):
         start = join.index("private void awardDaily(")
         end = join.index("        if (comeback) {", start)
         method = join[start:end]
-        self.assertLess(method.index("addFragments("), method.index("recordJoin("))
-        self.assertLess(method.index("recordJoin("), method.index("getDataManager().save()"))
+        self.assertLess(method.index("recordJoin("), method.index("addFragments("))
+        self.assertLess(method.index("addFragments("), method.index("getDataManager().save()"))
 
     def test_secret_discovery_and_reward_are_persisted_together(self) -> None:
         source = (
@@ -206,8 +206,8 @@ class RewardDurabilityRegressionTests(unittest.TestCase):
         start = source.index("private void claim(")
         end = source.index("        player.sendTitle(", start)
         claim = source[start:end]
-        self.assertLess(claim.index("addFragments("), claim.index("markChallengeClaimed("))
-        self.assertLess(claim.index("markChallengeClaimed("), claim.index("getDataManager().save()"))
+        self.assertLess(claim.index("markChallengeClaimed("), claim.index("addFragments("))
+        self.assertLess(claim.index("addFragments("), claim.index("getDataManager().save()"))
         self.assertIn('getString("season.timezone", "Europe/Prague")', source)
         self.assertIn("LocalDate.now(ZoneId.of", source)
 
