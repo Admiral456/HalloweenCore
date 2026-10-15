@@ -84,9 +84,10 @@ public final class HalloweenRewardManager {
 
         int amount = Math.max(1, section.getInt("amount", 1));
         String itemsAdderId = section.getString("itemsadder-id", "");
-        ItemStack item = itemsAdderId.isBlank()
-                ? null
-                : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount);
+        HalloweenContentRegistry.Definition registered = plugin.getContentRegistry().findByItemsAdderId(itemsAdderId);
+        ItemStack item = registered != null
+                ? plugin.getItemManager().createRegisteredItem(registered.internalId(), amount)
+                : (itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount));
 
         if (item == null) {
             Material material;
@@ -230,7 +231,10 @@ public final class HalloweenRewardManager {
 
         int amount = Math.max(1, section.getInt("amount", 1));
         String itemsAdderId = section.getString("itemsadder-id", "");
-        ItemStack item = itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount);
+        HalloweenContentRegistry.Definition registered = plugin.getContentRegistry().findByItemsAdderId(itemsAdderId);
+        ItemStack item = registered != null
+                ? plugin.getItemManager().createRegisteredItem(registered.internalId(), amount)
+                : (itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount));
         if (item == null) {
             Material material;
             try {
