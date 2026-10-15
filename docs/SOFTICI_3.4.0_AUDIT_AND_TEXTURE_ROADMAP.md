@@ -47,4 +47,4 @@ Priority order for new visual work:
 
 ## Status
 
-This file is an audit/plan only. It does not claim that candidate mechanics have already been ported or that textures have been created. The current working PR remains a draft until integration and server/client validation are complete.
+The audit and roadmap are committed. The first ported feature is per-player opt-out (`/halloween disable|enable`) with persistent storage and central gameplay/reward gating. Two new 32x32 project-owned relic icons (Batwing Elytra and Nocturne Sovereign Cowl) have been added to the deterministic texture generator, ItemsAdder item definitions, and asset validator. CI is running for these changes. The remaining mob, armor-layer, world-decoration and structure textures are not yet complete; do not treat this initial texture pass as the finished art set. The three externally authored mob assets remain excluded from automatic generation/recoloring.
