@@ -65,7 +65,7 @@ class CrimsonWardenArmorTests(unittest.TestCase):
         self.assertEqual(registry["decor_stev_apple_leaves"]["texture"], "stev_candy/apple_leaves_with_apples")
         self.assertEqual(registry["decor_stev_apple_leaves"]["itemsadder-texture"], "minecraft:block/stev_apple_leaves_with_apples")
         entry = re.search(
-            r"(?ms)^  stev_apple_leaves:\\s*\\n(.*?)(?=^  [a-z0-9_]+:\\s*$|\\Z)",
+            r"(?ms)^  stev_apple_leaves:\s*\n(.*?)(?=^  [a-z0-9_]+:\s*$|\Z)",
             config,
         )
         self.assertIsNotNone(entry)
