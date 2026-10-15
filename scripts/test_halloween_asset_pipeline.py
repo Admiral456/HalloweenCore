@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import sys
 import tempfile
 import unittest
@@ -46,13 +47,13 @@ class CrimsonWardenArmorTests(unittest.TestCase):
         for item_id, (lore_line, extra_armor) in expected.items():
             with self.subTest(item=item_id):
                 match = re.search(
-                    rf"(?ms)^  {re.escape(item_id)}:\\n(.*?)(?=^  [a-z0-9_]+:\\s*$|\\Z)",
+                    rf"(?ms)^  {re.escape(item_id)}:\s*\n(.*?)(?=^  [a-z0-9_]+:\s*$|\Z)",
                     config,
                 )
                 self.assertIsNotNone(match, f"Missing ItemsAdder entry {item_id}")
                 block = match.group(1)
                 self.assertIn(lore_line, block)
-                modifier = re.search(r"(?m)^\\s+armor:\\s*(\\d+)\\s*$", block)
+                modifier = re.search(r"(?m)^\s+armor:\s*(\d+)\s*$", block)
                 self.assertIsNotNone(modifier, f"{item_id} must have an armor attribute modifier")
                 self.assertEqual(int(modifier.group(1)), extra_armor)
 
