@@ -70,6 +70,8 @@ public final class HalloweenStructureManager implements Listener {
     private final NamespacedKey autoStructureKey;
     private final File locationsFile;
     private final YamlConfiguration locations;
+    private final Map<String, BukkitTask> pendingNaturalGenerationTasks = new LinkedHashMap<>();
+    private final Map<String, Chunk> naturalReservedChunks = new LinkedHashMap<>();
     private BuildJob activeJob;
 
     public HalloweenStructureManager(HalloweenCore plugin) {
@@ -88,13 +90,54 @@ public final class HalloweenStructureManager implements Listener {
      */
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
+        Chunk chunk = event.getChunk();
+        recoverStaleReservation(chunk);
         boolean includeExisting = plugin.getConfig().getBoolean(
                 "automatic-world-generation.structures-on-existing-chunks", true);
         if ((!event.isNewChunk() && !includeExisting)
                 || !plugin.isAutomaticHalloweenWorld(event.getWorld())
                 || !plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) return;
+        attemptNaturalGeneration(chunk);
+    }
 
-        Chunk chunk = event.getChunk();
+    /**
+     * Clear reservation markers left by a previous plugin/server process. Pending
+     * in-memory tasks are the authority for whether a reservation is currently live.
+     */
+    public void recoverStaleNaturalReservations() {
+        for (World world : Bukkit.getWorlds()) {
+            for (Chunk chunk : world.getLoadedChunks()) {
+                if (!recoverStaleReservation(chunk)) continue;
+                if (plugin.isAutomaticHalloweenWorld(world)
+                        && plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) {
+                    attemptNaturalGeneration(chunk);
+                }
+            }
+        }
+    }
+
+    private boolean recoverStaleReservation(Chunk chunk) {
+        if (chunk == null
+                || !chunk.getPersistentDataContainer().has(autoReservedKey, PersistentDataType.BYTE)) return false;
+        String key = naturalChunkKey(chunk);
+        if (pendingNaturalGenerationTasks.containsKey(key)) return false;
+
+        chunk.getPersistentDataContainer().remove(autoReservedKey);
+        chunk.getPersistentDataContainer().remove(autoCheckedKey);
+        plugin.getLogger().warning("Recovered a stale Halloween structure reservation at "
+                + chunk.getWorld().getName() + " chunk " + chunk.getX() + "," + chunk.getZ()
+                + "; the candidate may be retried safely.");
+        return true;
+    }
+
+    private String naturalChunkKey(Chunk chunk) {
+        return chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ();
+    }
+
+    private void attemptNaturalGeneration(Chunk chunk) {
+        if (chunk == null
+                || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())
+                || !plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) return;
         if (chunk.getPersistentDataContainer().has(autoCheckedKey, PersistentDataType.BYTE)) return;
         chunk.getPersistentDataContainer().set(autoCheckedKey, PersistentDataType.BYTE, (byte) 1);
 
@@ -109,34 +152,41 @@ public final class HalloweenStructureManager implements Listener {
                 plugin.getConfig().getDouble("automatic-world-generation.structure-chance-per-anchor", 0.30D)));
         if (random.nextDouble() >= chance) return;
         Kind kind = random.nextBoolean() ? Kind.GRAVEYARD : Kind.VILLAGE;
-        // Reserve only actual candidate chunks so the simple decorator does not race
-        // the structure job on the next tick. Chunks that fail preflight are released.
+        // Reserve only real candidates so decorations cannot race the structure job.
         chunk.getPersistentDataContainer().set(autoReservedKey, PersistentDataType.BYTE, (byte) 1);
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) {
-                // If the chunk unloads before the scheduled placement, permit a later
-                // load to retry rather than permanently consuming its one-time attempt.
-                chunk.getPersistentDataContainer().remove(autoCheckedKey);
-                chunk.getPersistentDataContainer().remove(autoReservedKey);
-                return;
-            }
-            if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) {
-                chunk.getPersistentDataContainer().remove(autoReservedKey);
-                return;
-            }
+        String key = naturalChunkKey(chunk);
+        naturalReservedChunks.put(key, chunk);
+        BukkitTask task = Bukkit.getScheduler().runTask(plugin, () -> {
             try {
-                if (generateSafeNaturalFeature(chunk, kind, random)) {
-                    chunk.getPersistentDataContainer().set(autoStructureKey, PersistentDataType.BYTE, (byte) 1);
-                    plugin.getLogger().info("Generated natural Halloween " + kind.displayName + " in "
-                            + chunk.getWorld().getName() + " chunk " + chunk.getX() + "," + chunk.getZ() + ".");
+                if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) {
+                    // A chunk that unloads before placement must be eligible for a later retry.
+                    chunk.getPersistentDataContainer().remove(autoCheckedKey);
+                    chunk.getPersistentDataContainer().remove(autoReservedKey);
+                    return;
                 }
-            } catch (RuntimeException ex) {
-                plugin.getLogger().warning("Skipped natural Halloween structure in chunk " + chunk.getX() + ","
-                        + chunk.getZ() + " because safe placement failed: " + ex.getClass().getSimpleName());
+                if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) {
+                    chunk.getPersistentDataContainer().remove(autoReservedKey);
+                    return;
+                }
+                try {
+                    if (generateSafeNaturalFeature(chunk, kind, random)) {
+                        chunk.getPersistentDataContainer().set(autoStructureKey, PersistentDataType.BYTE, (byte) 1);
+                        plugin.getLogger().info("Generated natural Halloween " + kind.displayName + " in "
+                                + chunk.getWorld().getName() + " chunk " + chunk.getX() + "," + chunk.getZ() + ".");
+                    }
+                } catch (RuntimeException ex) {
+                    plugin.getLogger().warning("Skipped natural Halloween structure in chunk " + chunk.getX() + ","
+                            + chunk.getZ() + " because safe placement failed: " + ex.getClass().getSimpleName());
+                }
             } finally {
-                chunk.getPersistentDataContainer().remove(autoReservedKey);
+                pendingNaturalGenerationTasks.remove(key);
+                naturalReservedChunks.remove(key);
+                if (chunk.isLoaded()) {
+                    chunk.getPersistentDataContainer().remove(autoReservedKey);
+                }
             }
         });
+        pendingNaturalGenerationTasks.put(key, task);
     }
 
     public boolean isReservedForNaturalGeneration(Chunk chunk) {
@@ -305,6 +355,18 @@ public final class HalloweenStructureManager implements Listener {
     }
 
     public void stop() {
+        for (BukkitTask task : pendingNaturalGenerationTasks.values()) {
+            task.cancel();
+        }
+        pendingNaturalGenerationTasks.clear();
+        for (Chunk chunk : new ArrayList<>(naturalReservedChunks.values())) {
+            if (chunk.isLoaded()) {
+                chunk.getPersistentDataContainer().remove(autoReservedKey);
+                chunk.getPersistentDataContainer().remove(autoCheckedKey);
+            }
+        }
+        naturalReservedChunks.clear();
+
         if (activeJob == null) return;
         BuildJob job = activeJob;
         if (job.task != null) job.task.cancel();
