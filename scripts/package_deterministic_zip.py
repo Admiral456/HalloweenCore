@@ -58,20 +58,19 @@ def create_zip(root: Path, output: Path, minecraft_version: str,
         archive_metadata_path = PurePosixPath("BUILD_METADATA.json")
 
     output.parent.mkdir(parents=True, exist_ok=True)
+    payloads = {name: path.read_bytes() for name, path in files.items()}
+    payloads[archive_metadata_path.as_posix()] = metadata_bytes
+    if len(payloads) != len(files) + (0 if archive_metadata_path.as_posix() in files else 1):
+        raise ValueError("Build metadata path collides with a source file")
+
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9, strict_timestamps=True) as archive:
-        for archive_name, path in sorted(files.items()):
+        for archive_name, payload in sorted(payloads.items()):
             info = zipfile.ZipInfo(archive_name, date_time=(2020, 1, 1, 0, 0, 0))
             info.compress_type = zipfile.ZIP_DEFLATED
             info.create_system = 3
             info.external_attr = 0o100644 << 16
             info.flag_bits |= 0x800
-            archive.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
-        info = zipfile.ZipInfo(archive_metadata_path.as_posix(), date_time=(2020, 1, 1, 0, 0, 0))
-        info.compress_type = zipfile.ZIP_DEFLATED
-        info.create_system = 3
-        info.external_attr = 0o100644 << 16
-        info.flag_bits |= 0x800
-        archive.writestr(info, metadata_bytes, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+            archive.writestr(info, payload, compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
     return hashlib.sha256(output.read_bytes()).hexdigest()
 
 
