@@ -231,7 +231,8 @@ items:
       - "&7Průsvitný blok lze položit do světa."
     material: PAPER
     graphics:
-      texture: item/stev_candy/apple_leaves_with_apples
+      icon: item/stev_candy/apple_leaves_with_apples
+      texture: block/stev_apple_leaves_with_apples
     behaviours:
       block:
         placed_model:
