@@ -10,8 +10,8 @@ Audit date: 2026-10-15. The supplied JARs are Fabric/Forge/NeoForge mods, not Pa
 - Upstream source/license: https://github.com/Stev51/stevs-halloween-mod
 - Author: Stev51. The supplied JAR declares MIT and the upstream project contains the matching MIT text.
 - Imported 13 16×16 item PNGs: apple core, candy apple, candy bag, caramel, caramel apple, chocolate bar, frosted sugar cookie, gumdrop, hard candy, lollipop, peanut-butter cup, sugar cookie, and toasted pumpkin seeds.
-- SHA-256 and source/target paths are recorded in third-party-assets/stevs-halloween/asset-source-manifest.json; CI verifies the copied files still match the source JAR.
-- ItemsAdder definitions use new stev_* IDs. The sprites are in the admin test bundle /halloween give <player> all. This does not import the donor mod's Java behavior or recipes.
+- SHA-256 and source/target paths for all 14 imported assets are recorded in third-party-assets/stevs-halloween/asset-source-manifest.json; CI verifies the copied files still match the source JAR.
+- ItemsAdder definitions use new `stev_*` IDs. The candies and apple-leaf block are in the admin test bundle `/halloween give <player> all`; place and break the leaf block on staging before release. This does not import the donor mod's Java behavior or recipes.
 - MIT attribution and full permission notice are included in the delivered ItemsAdder content.
 
 ## Remaining supplied mods — not copied into public asset output
