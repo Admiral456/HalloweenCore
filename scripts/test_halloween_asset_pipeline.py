@@ -310,6 +310,24 @@ class CursedTalismanBalanceTests(unittest.TestCase):
             self.assertNotIn("celý řádek srdcí", source)
 
 
+class PermissionNodeCoverageTests(unittest.TestCase):
+    def test_declared_specialized_permissions_are_honored_by_commands(self) -> None:
+        command = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenCommand.java"
+        ).read_text(encoding="utf-8")
+        plugin_yml = (ROOT / "src/main/resources/plugin.yml").read_text(encoding="utf-8")
+        for permission in (
+            "halloweencore.event.manage",
+            "halloweencore.reload",
+            "halloweencore.debug",
+            "halloweencore.items.give",
+        ):
+            with self.subTest(permission=permission):
+                self.assertIn(permission + ":", plugin_yml)
+                self.assertIn('checkAdminOrPermission(sender, "' + permission + '")', command)
+        self.assertIn('sender.hasPermission("halloweencore.admin")', command)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
