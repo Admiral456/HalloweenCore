@@ -249,8 +249,11 @@ def validate(root: Path = ROOT) -> None:
         if entry.get("license") != "MIT":
             fail(f"Unexpected license in imported asset manifest: {entry['target_path']}")
         imported_count += 1
-    if imported_count != 13:
-        fail(f"Expected 13 explicit MIT-licensed Stev item icons, found {imported_count}")
+    distinct_sources = {entry.get("source_path", "") for entry in manifest.get("assets", [])}
+    if imported_count != 15:
+        fail(f"Expected 15 explicit MIT-licensed Stev target files (14 distinct source assets), found {imported_count}")
+    if len(distinct_sources) != 14 or "" in distinct_sources:
+        fail(f"Expected 14 distinct source assets in the Stev provenance manifest, found {len(distinct_sources)}")
 
     protected = entries(registry_text, "protected-assets")
     for asset_id in ("void-reaper", "frost-stalker", "nightmare"):
@@ -264,7 +267,7 @@ def validate(root: Path = ROOT) -> None:
     print(f"PASS world decorations: {len(registered_blocks)} block textures; no unregistered files.")
     print(f"PASS armor layers: {len(registered_armor)} registered source texture files.")
     print(f"PASS sounds: {len(registered_sound_paths)} OGG assets and no unregistered OGG files.")
-    print(f"PASS provenance: {imported_count} MIT icons match their source SHA-256.")
+    print(f"PASS provenance: {imported_count} MIT target files from 14 distinct source assets match their source SHA-256.")
     print(f"PASS Minecraft profile: {default_version}; donor-only versions remain unverified.")
 
 
