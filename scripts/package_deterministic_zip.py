@@ -58,10 +58,10 @@ def create_zip(root: Path, output: Path, minecraft_version: str,
         archive_metadata_path = PurePosixPath("BUILD_METADATA.json")
 
     output.parent.mkdir(parents=True, exist_ok=True)
+    if archive_metadata_path.as_posix() in files:
+        raise ValueError("Build metadata path collides with a source file")
     payloads = {name: path.read_bytes() for name, path in files.items()}
     payloads[archive_metadata_path.as_posix()] = metadata_bytes
-    if len(payloads) != len(files) + (0 if archive_metadata_path.as_posix() in files else 1):
-        raise ValueError("Build metadata path collides with a source file")
 
     with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9, strict_timestamps=True) as archive:
         for archive_name, payload in sorted(payloads.items()):
