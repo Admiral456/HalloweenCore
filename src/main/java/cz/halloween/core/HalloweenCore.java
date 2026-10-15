@@ -662,6 +662,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return itemManager;
     }
 
+    public HalloweenContentRegistry getContentRegistry() {
+        return contentRegistry;
+    }
+
     public HalloweenDataManager getDataManager() {
         return dataManager;
     }
