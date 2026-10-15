@@ -286,6 +286,30 @@ class ProtectedMobAssetPolicyTests(unittest.TestCase):
         self.assertIn("externally authored", source)
 
 
+class CursedTalismanBalanceTests(unittest.TestCase):
+    def test_talisman_effect_migration_fallback_and_lore_agree_on_one_heart(self) -> None:
+        passive = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenPassiveEffectManager.java"
+        ).read_text(encoding="utf-8")
+        core = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenCore.java"
+        ).read_text(encoding="utf-8")
+        config = (ROOT / "src/main/resources/config.yml").read_text(encoding="utf-8")
+        items = (
+            ROOT / "itemsadder/contents/warriorland_halloween/configs/items.yml"
+        ).read_text(encoding="utf-8")
+        registry = (ROOT / "src/main/resources/content-registry.yml").read_text(encoding="utf-8")
+
+        self.assertIn('getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D)', passive)
+        self.assertIn('set(root + "cursed-talisman.bonus-health", 2.0D)', core)
+        self.assertNotIn('set(root + "cursed-talisman.bonus-health", 20.0D)', core)
+        self.assertIn("bonus-health: 2.0", config)
+        for source in (config, items, registry):
+            self.assertIn("+2 HP", source)
+            self.assertNotIn("+20 HP", source)
+            self.assertNotIn("celý řádek srdcí", source)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
