@@ -56,6 +56,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
+        migrateStevHalloweenCandyShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
@@ -189,6 +190,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateWitchingBatDefaults();
         migrateGraveEncounterDefaults();
         migrateCrimsonWardenShopDefaults();
+        migrateStevHalloweenCandyShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
@@ -410,6 +412,61 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
      * On the first run of this gear release, migrate only shop item data so existing
      * arena coordinates, event settings and other server customizations survive.
      */
+    /**
+     * Adds the licensed Stev's Halloween candy rewards to existing installs without
+     * replacing owner-defined prices or curse requirements.
+     */
+    private void migrateStevHalloweenCandyShopDefaults() {
+        if (getConfig().getBoolean("migrations.stev-halloween-candy-shop-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml is unavailable; Stev candy shop migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection defaultShop = defaults.getConfigurationSection("rewards.shop");
+            if (defaultShop == null) {
+                getLogger().warning("Default rewards.shop section is missing; Stev candy shop migration was skipped.");
+                return;
+            }
+
+            String root = "rewards.shop.";
+            for (String id : defaultShop.getKeys(false)) {
+                if (!id.startsWith("stev-")) continue;
+                ConfigurationSection source = defaultShop.getConfigurationSection(id);
+                if (source == null) continue;
+                String targetPath = root + id;
+                if (!getConfig().isConfigurationSection(targetPath)) {
+                    for (String key : source.getKeys(true)) {
+                        if (!source.isConfigurationSection(key)) {
+                            getConfig().set(targetPath + "." + key, source.get(key));
+                        }
+                    }
+                    continue;
+                }
+
+                // Keep a server owner's balance tweaks while refreshing the new
+                // item identity and copy/lore on an existing partial definition.
+                for (String key : List.of("itemsadder-id", "material", "amount", "name", "lore")) {
+                    if (source.contains(key)) getConfig().set(targetPath + "." + key, source.get(key));
+                }
+                for (String key : List.of("cost", "min-curse")) {
+                    if (!getConfig().contains(targetPath + "." + key) && source.contains(key)) {
+                        getConfig().set(targetPath + "." + key, source.get(key));
+                    }
+                }
+            }
+
+            getConfig().set("migrations.stev-halloween-candy-shop-v1", true);
+            saveConfig();
+            getLogger().info("Stev Halloween candy shop items were added/migrated while preserving configured prices and curse gates.");
+        } catch (IOException ex) {
+            getLogger().warning("Stev Halloween candy shop migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
     private void migrateCrimsonWardenShopDefaults() {
         if (getConfig().getBoolean("migrations.crimson-warden-gear-v2", false)) return;
 
