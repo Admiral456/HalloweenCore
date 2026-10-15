@@ -235,6 +235,31 @@ class AdminItemKitRegressionTests(unittest.TestCase):
         self.assertEqual(method.count("createRegisteredItem(appleLeaves.internalId(), 1)"), 1)
 
 
+class NaturalStructureReservationTests(unittest.TestCase):
+    def test_reservations_are_tracked_recovered_on_enable_and_cleaned_on_stop(self) -> None:
+        structure = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenStructureManager.java"
+        ).read_text(encoding="utf-8")
+        core = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenCore.java"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("pendingNaturalGenerationTasks.containsKey(key)", structure)
+        self.assertIn("public void recoverStaleNaturalReservations()", structure)
+        self.assertIn("naturalReservedChunks.remove(key)", structure)
+        self.assertLess(
+            core.index("structureManager.recoverStaleNaturalReservations();"),
+            core.index("worldDecorator.start();"),
+        )
+
+        start = structure.index("public void stop()")
+        end = structure.index("private boolean hasStructurePermission(", start)
+        shutdown = structure[start:end]
+        self.assertIn("task.cancel()", shutdown)
+        self.assertIn("remove(autoReservedKey)", shutdown)
+        self.assertIn("remove(autoCheckedKey)", shutdown)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
