@@ -240,6 +240,14 @@ items:
     display-name: "&6Pražená dýňová semínka"
     lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
 
+  decor_stev_apple_leaves:
+    category: decoration
+    itemsadder-id: warriorland_halloween:stev_apple_leaves
+    runtime-identity: stev-apple-leaves-block
+    fallback-material: OAK_LEAVES
+    texture: stev_candy/apple_leaves_with_apples
+    display-name: "&a&lJabloňové listí s jablky"
+
 # Minecraft profiles are deliberately opt-in. A version becomes verified only after its
 # ItemsAdder schema, models, server build and client resource-pack delivery pass staging.
 target-versions:
