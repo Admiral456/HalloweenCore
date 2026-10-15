@@ -248,7 +248,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             }
         }
         if (atmosphere != null) atmosphere.refreshPlayback();
-        if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
+        if (worldDecorator != null) {
+            if (enabled && getConfig().getBoolean("world-decorations.enabled", true)) {
+                worldDecorator.scanLoadedChunks();
+            } else {
+                worldDecorator.stop();
+            }
+        }
 
         if (changed) {
             Bukkit.broadcastMessage(color(enabled
