@@ -79,6 +79,10 @@ def load_registry() -> dict[str, dict[str, str]]:
             "texture": field(block, "texture", internal_id),
             "display-name": field(block, "display-name", internal_id),
         }
+        # Some placeable blocks need a different block-face texture than their item icon.
+        block_texture = re.search(r"(?m)^    itemsadder-texture:\\s*(.*?)\\s*$", block)
+        if block_texture:
+            definition["itemsadder-texture"] = block_texture.group(1).strip().strip('"').strip("'")
         ia_id = definition["itemsadder-id"]
         texture = definition["texture"]
         if not re.fullmatch(r"[a-z0-9_]+:[a-z0-9_]+", ia_id):
@@ -115,7 +119,7 @@ def validate(root: Path = ROOT) -> int:
     for internal_id, definition in registry.items():
         ia_key = definition["itemsadder-id"].split(":", 1)[1]
         block = configured[ia_key]
-        expected_texture_ref = "item/" + definition["texture"]
+        expected_texture_ref = definition.get("itemsadder-texture", "item/" + definition["texture"])
         texture_match = re.search(r"(?m)^\s+texture:\s*([^\s#]+)", block)
         if not texture_match:
             fail(f"ItemsAdder item {ia_key} has no graphics.texture")
@@ -157,10 +161,20 @@ def validate(root: Path = ROOT) -> int:
         if png_dimensions(target) != (16, 16):
             fail(f"Imported Stev texture must remain 16x16: {entry['target_path']}")
         imported_targets.add(target.relative_to(ROOT).as_posix())
-    target_prefix = "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/"
-    actual_imported = {p.relative_to(ROOT).as_posix() for p in (ITEM_TEXTURES / "stev_candy").rglob("*.png")}
-    if actual_imported != imported_targets or any(not p.startswith(target_prefix) for p in imported_targets):
-        fail("The imported-texture directory and third-party source manifest do not match")
+    item_target_prefix = "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/"
+    block_target_prefix = "itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/"
+    actual_imported_items = {p.relative_to(ROOT).as_posix() for p in (ITEM_TEXTURES / "stev_candy").rglob("*.png")}
+    imported_item_targets = {p for p in imported_targets if p.startswith(item_target_prefix)}
+    imported_block_targets = {p for p in imported_targets if p.startswith(block_target_prefix)}
+    if len(imported_targets) != len(imported_entries):
+        fail("The third-party source manifest contains duplicate target paths")
+    if actual_imported_items != imported_item_targets:
+        fail("The imported item-texture directory and source manifest do not match")
+    if any(not (p.startswith(item_target_prefix) or p.startswith(block_target_prefix)) for p in imported_targets):
+        fail("A third-party texture target uses an unapproved output directory")
+    actual_block_targets = {p.relative_to(ROOT).as_posix() for p in BLOCK_TEXTURES.glob("*.png")}
+    if not imported_block_targets.issubset(actual_block_targets):
+        fail("A licensed block texture target is missing from the Minecraft block texture directory")
     print(f"PASS {len(registry)} canonical item IDs, unique ItemsAdder IDs and texture keys")
     print(f"PASS {len(actual_textures)} item icons are referenced; no unused item-icon PNGs")
     print(f"PASS {len(imported_entries)} MIT-attributed imported textures match their recorded SHA-256")
