@@ -221,6 +221,20 @@ class RewardDurabilityRegressionTests(unittest.TestCase):
         self.assertLess(method.index('addFragments(uuid, fragments, "grave-encounter")'), method.index("getDataManager().save()"))
 
 
+class AdminItemKitRegressionTests(unittest.TestCase):
+    def test_admin_item_kit_does_not_append_shop_candies_a_second_time(self) -> None:
+        source = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenRewardManager.java"
+        ).read_text(encoding="utf-8")
+        start = source.index("public List<ItemStack> createAdminRewardItems()")
+        end = source.index("public ItemStack createAdminRewardItem(", start)
+        method = source[start:end]
+        self.assertIn('getConfigurationSection("rewards.shop")', method)
+        self.assertIn('findByInternalId("decor_stev_apple_leaves")', method)
+        self.assertNotIn('startsWith("candy_stev_")', method)
+        self.assertEqual(method.count("createRegisteredItem(appleLeaves.internalId(), 1)"), 1)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
