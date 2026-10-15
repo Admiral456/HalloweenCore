@@ -101,6 +101,14 @@ public final class HalloweenContentRegistry {
         return null;
     }
 
+    public Definition findByItemsAdderId(String itemsAdderId) {
+        if (itemsAdderId == null || itemsAdderId.isBlank()) return null;
+        for (Definition definition : definitions.values()) {
+            if (definition.itemsAdderId().equalsIgnoreCase(itemsAdderId)) return definition;
+        }
+        return null;
+    }
+
     public Collection<Definition> all() {
         return definitions.values();
     }
