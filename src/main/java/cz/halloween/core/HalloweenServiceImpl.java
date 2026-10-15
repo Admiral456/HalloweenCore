@@ -20,7 +20,8 @@ public final class HalloweenServiceImpl implements HalloweenService {
     @Override
     public long addFragments(UUID playerId, long amount, String source) {
         if (amount <= 0L) return getFragments(playerId);
-        if (!plugin.isEventEnabled() && (source == null || !source.equalsIgnoreCase("admin"))) {
+        boolean adminSource = source != null && source.equalsIgnoreCase("admin");
+        if (!adminSource && (!plugin.isEventEnabled() || plugin.getDataManager().isHalloweenDisabled(playerId))) {
             return getFragments(playerId);
         }
 
@@ -34,7 +35,6 @@ public final class HalloweenServiceImpl implements HalloweenService {
             rewardedAmount = scaled >= Long.MAX_VALUE ? Long.MAX_VALUE : Math.max(1L, Math.round(scaled));
         }
 
-        boolean adminSource = source != null && source.equalsIgnoreCase("admin");
         long before = getServerFragments();
         long updated = plugin.getDataManager().addFragments(playerId, rewardedAmount, !adminSource, !adminSource);
 
