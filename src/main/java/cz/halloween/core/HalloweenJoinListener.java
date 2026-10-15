@@ -63,9 +63,10 @@ public final class HalloweenJoinListener implements Listener {
                 : 0L;
 
         long total = reward + comebackBonus;
-        plugin.getService().addFragments(player.getUniqueId(), total, "daily");
-
+        // Record the claim eligibility before fragment awarding; addFragments may
+        // save on a global milestone, and that save must include this timestamp.
         plugin.getDataManager().recordJoin(player.getUniqueId(), System.currentTimeMillis(), streak);
+        plugin.getService().addFragments(player.getUniqueId(), total, "daily");
         // Persist the balance and eligibility timestamp together to prevent duplicate
         // daily rewards after a crash/restart before the periodic autosave.
         plugin.getDataManager().save();
