@@ -21,7 +21,7 @@ items:
     name: "&5&lProkletý talisman &8[2026]"
     lore:
       - "&7Relikvie vysokého prokletí."
-      - "&d+1 celý řádek srdcí (+20 HP)"
+      - "&d+1 srdce navíc (+2 HP)"
       - "&7Aktivní při držení v ruce nebo offhandu."
       - "&7Lze enchantovat, pokud máš vhodný enchant."
     material: NETHER_STAR
