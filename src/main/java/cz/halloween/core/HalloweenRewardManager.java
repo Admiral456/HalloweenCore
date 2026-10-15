@@ -214,14 +214,13 @@ public final class HalloweenRewardManager {
         items.add(plugin.getItemManager().createHauntedMap());
         items.add(plugin.getItemManager().createCursedCandy());
 
-        // Include every imported candy and the licensed placed apple-leaf decoration.
-        // Items still resolve their identity/fallback through the canonical registry;
-        // the translucent block can be placed and broken during staging verification.
-        for (HalloweenContentRegistry.Definition definition : plugin.getContentRegistry().all()) {
-            if (definition.internalId().startsWith("candy_stev_")
-                    || definition.internalId().equals("decor_stev_apple_leaves")) {
-                items.add(plugin.getItemManager().createRegisteredItem(definition.internalId(), 1));
-            }
+        // Imported candies are already included by the shop loop above. Add only the
+        // licensed placeable apple-leaf block, which is a registry item but not a shop
+        // reward, so /halloween give <player> all never duplicates the candy icons.
+        HalloweenContentRegistry.Definition appleLeaves =
+                plugin.getContentRegistry().findByInternalId("decor_stev_apple_leaves");
+        if (appleLeaves != null) {
+            items.add(plugin.getItemManager().createRegisteredItem(appleLeaves.internalId(), 1));
         }
         return items;
     }
