@@ -32,6 +32,8 @@ jobs:
         run: python3 scripts/generate_halloween_item_textures.py
       - name: Validate canonical content registry and imported asset provenance
         run: python3 scripts/validate_halloween_content_registry.py
+      - name: Validate all model, decoration, armor and sound registry paths
+        run: python3 scripts/validate_content_registry.py
       # Artist-owned mob PNGs are checked as committed; CI must not regenerate/recolor those textures.
       - name: Validate Halloween assets
         run: python3 scripts/validate_halloween_assets.py
@@ -56,14 +58,14 @@ jobs:
           python3 scripts/package_deterministic_zip.py \
             --root itemsadder/contents \
             --include warriorland_halloween \
-            --output target/WarriorLand-Halloween-ItemsAdder.zip \
+            --output target/WarriorLand-Halloween-ItemsAdder-mc1.21.10.zip \
             --minecraft-version 1.21.10 \
             --metadata-path warriorland_halloween/BUILD_METADATA.json
       - name: Upload ItemsAdder content pack
         uses: actions/upload-artifact@v4
         with:
-          name: WarriorLand-Halloween-ItemsAdder
-          path: target/WarriorLand-Halloween-ItemsAdder.zip
+          name: WarriorLand-Halloween-ItemsAdder-mc1.21.10
+          path: target/WarriorLand-Halloween-ItemsAdder-mc1.21.10.zip
           if-no-files-found: error
           retention-days: 14
       - name: Package special mob models
@@ -75,15 +77,15 @@ jobs:
           cp mythicmobs/README.md target/halloween-mob-pack/README.txt
           python3 scripts/package_deterministic_zip.py \
             --root target/halloween-mob-pack \
-            --output target/HalloweenCore-Special-Mobs-ModelEngine.zip \
+            --output target/HalloweenCore-Special-Mobs-ModelEngine-mc1.21.10.zip \
             --minecraft-version 1.21.10 \
             --metadata-path BUILD_METADATA.json
-          unzip -t target/HalloweenCore-Special-Mobs-ModelEngine.zip
+          unzip -t target/HalloweenCore-Special-Mobs-ModelEngine-mc1.21.10.zip
       - name: Upload special mob ModelEngine pack
         uses: actions/upload-artifact@v4
         with:
-          name: HalloweenCore-Special-Mobs-ModelEngine
-          path: target/HalloweenCore-Special-Mobs-ModelEngine.zip
+          name: HalloweenCore-Special-Mobs-ModelEngine-mc1.21.10
+          path: target/HalloweenCore-Special-Mobs-ModelEngine-mc1.21.10.zip
           if-no-files-found: error
           retention-days: 14
       - name: Upload plugin JAR
@@ -93,3 +95,11 @@ jobs:
           path: target/HalloweenCore.jar
           if-no-files-found: error
           retention-days: 14
+
+      - name: Upload SHA-256 asset manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Asset-Manifest-mc1.21.10
+          path: itemsadder/contents/warriorland_halloween/ASSET_MANIFEST.json
+          if-no-files-found: error
+          retention-days: 90
