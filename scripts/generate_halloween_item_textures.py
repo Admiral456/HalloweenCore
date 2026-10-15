@@ -410,6 +410,56 @@ def hoe() -> Canvas:
     return a
 
 
+def batwing_elytra() -> Canvas:
+    """Inventory icon for the bat-wing gliding relic; project-owned pixel art."""
+    a = Canvas()
+    # Wide scalloped wings with distinct membranes and a narrow central spine.
+    a.poly([(15, 13), (10, 7), (3, 5), (5, 12), (2, 16), (7, 17),
+            (5, 23), (11, 21), (15, 26), (17, 26), (21, 21), (27, 23),
+            (25, 17), (30, 16), (27, 12), (29, 5), (22, 7), (17, 13)],
+           C["outline"])
+    a.poly([(15, 15), (10, 9), (5, 7), (7, 13), (5, 15), (10, 16),
+            (8, 20), (12, 19), (15, 23)], C["purple_dark"], C["purple"])
+    a.poly([(17, 15), (22, 9), (27, 7), (25, 13), (27, 15), (22, 16),
+            (24, 20), (20, 19), (17, 23)], C["dark"], C["crimson"])
+    a.line(15, 14, 11, 12, C["violet"], 2)
+    a.line(14, 18, 10, 18, C["pink"])
+    a.line(17, 14, 21, 12, C["glow"], 2)
+    a.line(18, 18, 22, 18, C["red"])
+    a.poly([(13, 8), (16, 5), (19, 8), (18, 18), (16, 22), (14, 18)],
+           C["steel_dark"], C["gold_dark"])
+    a.line(16, 8, 16, 17, C["gold_light"])
+    a.diamond(16, 14, 2, 3, C["violet"], C["pink"])
+    a.set(7, 11, C["glow"])
+    a.set(25, 11, C["glow"])
+    return a
+
+
+def nocturne_sovereign_cowl() -> Canvas:
+    """Inventory icon for the shadow cowl with violet eye glow and gold trim."""
+    a = Canvas()
+    a.poly([(5, 12), (8, 6), (13, 3), (19, 3), (24, 6), (27, 12),
+            (25, 19), (22, 25), (16, 29), (10, 25), (7, 19)],
+           C["outline"])
+    a.poly([(7, 12), (10, 7), (14, 5), (18, 5), (22, 7), (25, 12),
+            (23, 18), (21, 23), (16, 27), (11, 23), (9, 18)],
+           C["void"], C["purple"])
+    a.poly([(8, 12), (12, 9), (16, 10), (20, 9), (24, 12),
+            (22, 17), (18, 19), (14, 19), (10, 17)],
+           C["dark"], C["gold_dark"])
+    a.line(9, 13, 14, 15, C["violet"], 2)
+    a.line(18, 15, 23, 13, C["pink"], 2)
+    a.set(12, 14, C["pale_gold"])
+    a.set(20, 14, C["pale_gold"])
+    a.poly([(13, 20), (16, 18), (19, 20), (17, 24), (15, 24)],
+           C["purple_dark"], C["crimson"])
+    a.line(12, 24, 16, 27, C["gold"])
+    a.line(20, 24, 16, 27, C["gold"])
+    a.line(11, 8, 14, 6, C["steel"])
+    a.line(18, 6, 21, 8, C["steel"])
+    return a
+
+
 def main() -> None:
     sprites = {
         "hunter_mask.png": hunter_mask,
@@ -417,6 +467,8 @@ def main() -> None:
         "halloween_token.png": halloween_token,
         "cursed_candy.png": cursed_candy,
         "haunted_map.png": haunted_map,
+        "batwing_elytra.png": batwing_elytra,
+        "nocturne_sovereign_cowl.png": nocturne_sovereign_cowl,
         "crimson_warden_helmet.png": helmet,
         "crimson_warden_chestplate.png": chestplate,
         "crimson_warden_leggings.png": leggings,
