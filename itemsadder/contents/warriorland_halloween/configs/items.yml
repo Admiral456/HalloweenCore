@@ -222,6 +222,23 @@ items:
       nutrition: 1
       saturation: 0.2
 
+
+  stev_apple_leaves:
+    name: "&a&lJabloňové listí s jablky"
+    lore:
+      - "&7Dekorativní listí do Halloween zahrad a hřbitovů."
+      - "&8Grafika: Stev's Halloween (MIT)."
+      - "&7Průsvitný blok lze položit do světa."
+    material: PAPER
+    graphics:
+      texture: item/stev_candy/apple_leaves_with_apples
+    behaviours:
+      block:
+        placed_model:
+          type: REAL_TRANSPARENT
+        hardness: 0.2
+        drop_when_mined: true
+
   crimson_warden_helmet:
     name: "&4&lHelma Krvavého strážce"
     lore:
