@@ -318,3 +318,11 @@ Model nyní obsahuje vlastní jednorázové animace false_sigil, blood_pulse, mi
 ## Bezpečný náhled modelu
 
 Administrátor může použít `/halloween modelpreview <idle|walk|attack|fly|false_sigil|blood_pulse|mirror_strike|nightfall>`. Příkaz vytvoří čtyři bloky před hráčem dočasný, nezranitelný model přes MythicMobs a ModelEngine, vypne jeho AI a odstraní ho po 10 sekundách. Náhled nespustí encounter, nepočítá účast a neuděluje odměny. Pořád je nutné ověřit render v klientovi s přijatým resource packem.
+
+## Canonical item and asset pipeline
+
+All equipment, weapons, relics, collectibles and Halloween candy use stable logical IDs in `src/main/resources/content-registry.yml`. The plugin resolves those IDs to ItemsAdder IDs and vanilla fallback materials, and writes the logical ID into item persistent data. Display names and texture paths are not used as gameplay identity.
+
+The original 16×16 candy icons from Stev's Halloween are redistributed unchanged under MIT with their license notice and per-file SHA-256 records in `third-party-assets/stevs-halloween/`. The thirteen candy items are registered in ItemsAdder, included in the fragment shop, and migrated to existing server configurations without forcing new prices over configured ones.
+
+CI validates the registry and every registered icon, validates model/decoration/armor/sound paths, generates a version-specific SHA-256 asset manifest, tests deterministic ZIP output, and packages version-tagged artifacts for Minecraft 1.21.10. See `docs/STAGING_CHECKLIST.md` before installing a candidate on a live server, and `docs/UPLOADED_HALLOWEEN_MODS_ASSET_AUDIT.md` for decisions about the nine uploaded mods. A passing build is not a substitute for confirming resource-pack delivery and rendering on an actual client.
