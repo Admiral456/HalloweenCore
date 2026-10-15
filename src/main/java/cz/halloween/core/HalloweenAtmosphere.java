@@ -34,11 +34,9 @@ public final class HalloweenAtmosphere {
     }
 
     public void onJoin(Player player) {
-        if (isAtmosphereEnabled()) {
-            startLoop(player);
-        }
+        refreshPlayerPlayback(player);
 
-        if (plugin.isEventEnabled()
+        if (plugin.isEventEnabled() && !isPlayerOptedOut(player)
                 && plugin.getConfig().getBoolean("atmosphere.send-title-on-join", true)) {
             String title = plugin.color(plugin.getConfig().getString("atmosphere.title", "&6&lHALLOWEEN 2026"));
             String subtitle = plugin.color(plugin.getConfig().getString("atmosphere.subtitle", "&7Něco se probudilo..."));
@@ -52,8 +50,23 @@ public final class HalloweenAtmosphere {
 
         startVanillaMusicMute();
         for (Player player : Bukkit.getOnlinePlayers()) {
-            startLoop(player);
+            refreshPlayerPlayback(player);
         }
+    }
+
+    /** Reconcile one player's ambience immediately after a personal opt-out toggle. */
+    public void refreshPlayerPlayback(Player player) {
+        if (player == null) return;
+        if (!isAtmosphereEnabled() || isPlayerOptedOut(player)) {
+            stop(player);
+            return;
+        }
+        startLoop(player);
+    }
+
+    private boolean isPlayerOptedOut(Player player) {
+        return player == null || (plugin.getDataManager() != null
+                && plugin.getDataManager().isHalloweenDisabled(player.getUniqueId()));
     }
 
     private void startVanillaMusicMute() {
@@ -104,7 +117,11 @@ public final class HalloweenAtmosphere {
     }
 
     private void startLoop(Player player) {
-        if (player == null || !player.isOnline() || !isAtmosphereEnabled()) return;
+        if (player == null || !player.isOnline()) return;
+        if (!isAtmosphereEnabled() || isPlayerOptedOut(player)) {
+            stop(player);
+            return;
+        }
 
         UUID playerId = player.getUniqueId();
         BukkitTask oldTask = playbackTasks.remove(playerId);

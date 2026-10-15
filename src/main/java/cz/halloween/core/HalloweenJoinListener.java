@@ -19,6 +19,10 @@ public final class HalloweenJoinListener implements Listener {
             plugin.getSeasonManager().sendCountdownIfNeeded(player);
         }
         if (!plugin.isEventEnabled()) return;
+        if (plugin.getDataManager().isHalloweenDisabled(player.getUniqueId())) {
+            if (plugin.getAtmosphere() != null) plugin.getAtmosphere().stop(player);
+            return;
+        }
         if (plugin.getAtmosphere() != null) {
             plugin.getAtmosphere().onJoin(player);
         }

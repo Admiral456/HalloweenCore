@@ -137,6 +137,30 @@ class ConfigUpgradeCoverageTests(unittest.TestCase):
         self.assertIn("min-curse: 4", shop_block)
 
 
+class PlayerOptOutRegressionTests(unittest.TestCase):
+    def test_opted_out_player_is_not_marked_as_daily_reward_claimed_on_join(self) -> None:
+        join = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenJoinListener.java"
+        ).read_text(encoding="utf-8")
+        disabled_guard = "isHalloweenDisabled(player.getUniqueId())"
+        self.assertIn(disabled_guard, join)
+        self.assertIn("plugin.getAtmosphere().stop(player)", join)
+        self.assertLess(join.index(disabled_guard), join.index("long now = System.currentTimeMillis()"))
+        self.assertLess(join.index(disabled_guard), join.index("awardDaily(player, 1, false)"))
+
+    def test_player_opt_out_stops_ambience_and_toggle_can_restore_it(self) -> None:
+        atmosphere = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenAtmosphere.java"
+        ).read_text(encoding="utf-8")
+        command = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenCommand.java"
+        ).read_text(encoding="utf-8")
+        self.assertIn("public void refreshPlayerPlayback(Player player)", atmosphere)
+        self.assertIn("!isAtmosphereEnabled() || isPlayerOptedOut(player)", atmosphere)
+        self.assertIn("!isPlayerOptedOut(player)", atmosphere)
+        self.assertIn("plugin.getAtmosphere().refreshPlayerPlayback(player)", command)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
