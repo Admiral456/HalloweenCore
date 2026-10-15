@@ -86,9 +86,10 @@ class CrimsonWardenShieldTests(unittest.TestCase):
         items_config = (
             ROOT / "itemsadder/contents/warriorland_halloween/configs/items.yml"
         ).read_text(encoding="utf-8")
-        self.assertIn("  crimson_warden_shield:\\n", items_config)
-        shield_block = items_config.split("  crimson_warden_shield:\\n", 1)[1].split(
-            "\\n  crimson_warden_sword:", 1
+        newline = chr(10)
+        self.assertIn("  crimson_warden_shield:" + newline, items_config)
+        shield_block = items_config.split("  crimson_warden_shield:" + newline, 1)[1].split(
+            newline + "  crimson_warden_sword:", 1
         )[0]
         self.assertIn("material: SHIELD", shield_block)
         self.assertIn("texture: item/crimson_warden_shield", shield_block)
