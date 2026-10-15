@@ -127,10 +127,11 @@ class ConfigUpgradeCoverageTests(unittest.TestCase):
             self.fail("Packaged defaults must provide the new shield entry")
         end = next(
             (index for index in range(start, len(lines))
-             if re.match(r"^    [a-z0-9-]+:\\s*$", lines[index])),
+             if len(lines[index]) - len(lines[index].lstrip()) == 4
+             and lines[index].rstrip().endswith(":")),
             len(lines),
         )
-        shop_block = "\\n".join(lines[start:end])
+        shop_block = "\n".join(lines[start:end])
         self.assertIn('itemsadder-id: "warriorland_halloween:crimson_warden_shield"', shop_block)
         self.assertIn("cost: 28000", shop_block)
         self.assertIn("min-curse: 4", shop_block)
