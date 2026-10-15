@@ -135,3 +135,8 @@ The HalloweenCore decorator places actual vanilla blocks into the world, so the 
 Stable logical IDs for equipment, relics, and all registered candy are defined in `src/main/resources/content-registry.yml`. Java gameplay code reads those definitions and stores the canonical ID in item persistent data; ItemsAdder IDs and texture keys are integration metadata validated in CI.
 
 Thirteen 16×16 item icons are imported unchanged from Stev's Halloween 1.0.0 under the MIT license. Attribution, license notice, source JAR SHA-256 and per-texture SHA-256 values are under `third-party-assets/stevs-halloween/`. This license scope applies only to those thirteen textures; the other uploaded mod JARs have not been copied into this resource pack.
+
+
+## Third-party licence files shipped with the pack
+
+The distributable ItemsAdder ZIP also includes `THIRD_PARTY_LICENSES/stevs-halloween-MIT.txt`, `THIRD_PARTY_LICENSES/README.txt`, and `THIRD_PARTY_LICENSES/stevs-halloween-source-manifest.json`. These retain the complete MIT notice, author attribution, and individual source SHA-256 records alongside the redistributed artwork.
