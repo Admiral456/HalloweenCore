@@ -29,7 +29,7 @@ def fail(message: str) -> None:
 def png_dimensions(path: Path) -> tuple[int, int]:
     """Validate a PNG header before trusting its declared dimensions."""
     data = path.read_bytes()
-    if len(data) < 26 or data[:8] != b"\\x89PNG\\r\\n\\x1a\\n" or data[12:16] != b"IHDR":
+    if len(data) < 26 or data[:8] != bytes.fromhex("89504e470d0a1a0a") or data[12:16] != b"IHDR":
         fail(f"Invalid PNG signature or IHDR: {path.relative_to(ROOT)}")
     if data[24] != 8 or data[25] != 6:
         fail(f"{path.relative_to(ROOT)} must be an 8-bit RGBA PNG")
