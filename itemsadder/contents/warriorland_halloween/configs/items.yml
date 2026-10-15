@@ -66,6 +66,162 @@ items:
     graphics:
       texture: item/nocturne_sovereign_cowl
 
+  stev_apple_core:
+    name: "&6Jablečná jadérka"
+    lore:
+      - "&7Halloween sladkost."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/apple_core
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_candy_apple:
+    name: "&cKaramelové jablko"
+    lore:
+      - "&7Sladké jablko s halloweenovým vzhledem."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/candy_apple
+    consumable:
+      nutrition: 3
+      saturation: 0.6
+
+  stev_candy_bag:
+    name: "&6Pytlík sladkostí"
+    lore:
+      - "&7Pytlík plný halloweenských dobrot."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/candy_bag
+    consumable:
+      nutrition: 2
+      saturation: 0.4
+
+  stev_caramel:
+    name: "&6Karamel"
+    lore:
+      - "&7Sladká halloweenská odměna."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/caramel
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_caramel_apple:
+    name: "&cJablko v karamelu"
+    lore:
+      - "&7Karamelová dobrota z halloweenské slavnosti."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/caramel_apple
+    consumable:
+      nutrition: 3
+      saturation: 0.6
+
+  stev_chocolate_bar:
+    name: "&6Čokoládová tyčinka"
+    lore:
+      - "&7Čokoládová sladkost."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/chocolate_bar
+    consumable:
+      nutrition: 2
+      saturation: 0.5
+
+  stev_frosted_sugar_cookie:
+    name: "&dZdobená sušenka"
+    lore:
+      - "&7Sladká sušenka s polevou."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/frosted_sugar_cookie
+    consumable:
+      nutrition: 3
+      saturation: 0.6
+
+  stev_gumdrop:
+    name: "&aŽelé bonbon"
+    lore:
+      - "&7Barevný želé bonbon."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/gumdrop
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_hard_candy:
+    name: "&6Tvrdý bonbon"
+    lore:
+      - "&7Tvrdý bonbon do sbírky."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/hard_candy
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_lollipop:
+    name: "&dLízátko"
+    lore:
+      - "&7Klasické halloweenské lízátko."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/lollipop
+    consumable:
+      nutrition: 2
+      saturation: 0.4
+
+  stev_peanut_butter_cup:
+    name: "&6Arašídový košíček"
+    lore:
+      - "&7Čokoláda a arašídové máslo."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/peanut_butter_cup
+    consumable:
+      nutrition: 2
+      saturation: 0.5
+
+  stev_sugar_cookie:
+    name: "&eCukrová sušenka"
+    lore:
+      - "&7Sladká cukrová sušenka."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/sugar_cookie
+    consumable:
+      nutrition: 2
+      saturation: 0.4
+
+  stev_toasted_pumpkin_seeds:
+    name: "&6Pražená dýňová semínka"
+    lore:
+      - "&7Podzimní pochoutka."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/toasted_pumpkin_seeds
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
   crimson_warden_helmet:
     name: "&4&lHelma Krvavého strážce"
     lore:
