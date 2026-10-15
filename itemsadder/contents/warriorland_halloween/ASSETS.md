@@ -9,6 +9,8 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/item/halloween_token.png
 - resourcepack/assets/warriorland_halloween/textures/item/cursed_candy.png
 - resourcepack/assets/warriorland_halloween/textures/item/haunted_map.png
+- resourcepack/assets/warriorland_halloween/textures/item/batwing_elytra.png
+- resourcepack/assets/warriorland_halloween/textures/item/nocturne_sovereign_cowl.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_helmet.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_chestplate.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_leggings.png
@@ -41,6 +43,8 @@ The Java plugin uses these custom ItemsAdder IDs:
 - warriorland_halloween:halloween_token
 - warriorland_halloween:cursed_candy
 - warriorland_halloween:haunted_map
+- warriorland_halloween:batwing_elytra
+- warriorland_halloween:nocturne_sovereign_cowl
 - warriorland_halloween:crimson_warden_helmet / chestplate / leggings / boots
 - warriorland_halloween:crimson_warden_sword / pickaxe / axe / shovel / hoe
 
@@ -81,7 +85,7 @@ Netherite tools use mining speed 9 for their matching tool classes and have dura
 
 - `cursed-talisman`: **1,000,000 fragments**, +20 max health (one extra full row of hearts), +10% Halloween fragment multiplier while held in either hand.
 - All four armour pieces and the five Crimson Warden weapon/tool items have component JSON files under `configs/` which explicitly preserve enchantability. Tool component files also specify the mining rules.
-- Shop descriptions, configured attributes, durability values, the component JSON files and all 14 item textures are checked by `scripts/validate_halloween_assets.py`.
+- Shop descriptions, configured attributes, durability values, the component JSON files and all 16 item textures are checked by `scripts/validate_halloween_assets.py`.
 
 ## Vampire model assets
 
