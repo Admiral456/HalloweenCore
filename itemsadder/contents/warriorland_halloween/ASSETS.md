@@ -11,6 +11,19 @@ Included item textures (32x32 PNG):
 - resourcepack/assets/warriorland_halloween/textures/item/haunted_map.png
 - resourcepack/assets/warriorland_halloween/textures/item/batwing_elytra.png
 - resourcepack/assets/warriorland_halloween/textures/item/nocturne_sovereign_cowl.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/apple_core.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/candy_apple.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/candy_bag.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/caramel.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/caramel_apple.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/chocolate_bar.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/frosted_sugar_cookie.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/gumdrop.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/hard_candy.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/lollipop.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/peanut_butter_cup.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/sugar_cookie.png
+- resourcepack/assets/warriorland_halloween/textures/item/stev_candy/toasted_pumpkin_seeds.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_helmet.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_chestplate.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_leggings.png
@@ -45,6 +58,10 @@ The Java plugin uses these custom ItemsAdder IDs:
 - warriorland_halloween:haunted_map
 - warriorland_halloween:batwing_elytra
 - warriorland_halloween:nocturne_sovereign_cowl
+- warriorland_halloween:stev_apple_core / stev_candy_apple / stev_candy_bag / stev_caramel
+- warriorland_halloween:stev_caramel_apple / stev_chocolate_bar / stev_frosted_sugar_cookie
+- warriorland_halloween:stev_gumdrop / stev_hard_candy / stev_lollipop / stev_peanut_butter_cup
+- warriorland_halloween:stev_sugar_cookie / stev_toasted_pumpkin_seeds
 - warriorland_halloween:crimson_warden_helmet / chestplate / leggings / boots
 - warriorland_halloween:crimson_warden_sword / pickaxe / axe / shovel / hoe
 
@@ -85,7 +102,7 @@ Netherite tools use mining speed 9 for their matching tool classes and have dura
 
 - `cursed-talisman`: **1,000,000 fragments**, +20 max health (one extra full row of hearts), +10% Halloween fragment multiplier while held in either hand.
 - All four armour pieces and the five Crimson Warden weapon/tool items have component JSON files under `configs/` which explicitly preserve enchantability. Tool component files also specify the mining rules.
-- Shop descriptions, configured attributes, durability values, the component JSON files and all 16 item textures are checked by `scripts/validate_halloween_assets.py`.
+- Shop descriptions, configured attributes, durability values, the component JSON files and all 29 item textures are checked by `scripts/validate_halloween_assets.py`.
 
 ## Vampire model assets
 
@@ -111,3 +128,9 @@ The ItemsAdder ZIP also includes seven **16×16 vanilla-block texture overrides*
 - `red_candle.png`, `red_candle_lit.png` — dark red candles and a warmer lit state.
 
 The HalloweenCore decorator places actual vanilla blocks into the world, so the blocks remain present even if a player declines the resource pack. The accepted pack changes their appearance instead of controlling whether they exist. These are vanilla namespace overrides and therefore affect **all** vanilla pumpkins, jack-o'-lanterns, cobwebs and red candles in resource-pack-enabled clients, not just the ones placed by HalloweenCore. They are checked by `scripts/validate_halloween_assets.py` in CI.
+
+## Canonical registry and imported assets
+
+Stable logical IDs for equipment, relics, and all registered candy are defined in `src/main/resources/content-registry.yml`. Java gameplay code reads those definitions and stores the canonical ID in item persistent data; ItemsAdder IDs and texture keys are integration metadata validated in CI.
+
+Thirteen 16×16 item icons are imported unchanged from Stev's Halloween 1.0.0 under the MIT license. Attribution, license notice, source JAR SHA-256 and per-texture SHA-256 values are under `third-party-assets/stevs-halloween/`. This license scope applies only to those thirteen textures; the other uploaded mod JARs have not been copied into this resource pack.
