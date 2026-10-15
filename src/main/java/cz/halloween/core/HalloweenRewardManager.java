@@ -218,7 +218,7 @@ public final class HalloweenRewardManager {
         // licensed placeable apple-leaf block, which is a registry item but not a shop
         // reward, so /halloween give <player> all never duplicates the candy icons.
         HalloweenContentRegistry.Definition appleLeaves =
-                plugin.getContentRegistry().findByInternalId("decor_stev_apple_leaves");
+                plugin.getContentRegistry().findByItemsAdderId("warriorland_halloween:stev_apple_leaves");
         if (appleLeaves != null) {
             items.add(plugin.getItemManager().createRegisteredItem(appleLeaves.internalId(), 1));
         }
