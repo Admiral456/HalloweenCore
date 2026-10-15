@@ -3,12 +3,15 @@
 Namespace:
 - warriorland_halloween
 
-Included item textures (16 project-generated 32x32 PNGs plus 13 imported MIT 16x16 PNGs):
+Included registered item icons (17 project-generated 32x32 shop/gear PNGs, 3 project-generated 32x32 furniture icons, and 14 imported MIT 16x16 item PNGs):
 - resourcepack/assets/warriorland_halloween/textures/item/hunter_mask.png
 - resourcepack/assets/warriorland_halloween/textures/item/cursed_talisman.png
 - resourcepack/assets/warriorland_halloween/textures/item/halloween_token.png
 - resourcepack/assets/warriorland_halloween/textures/item/cursed_candy.png
 - resourcepack/assets/warriorland_halloween/textures/item/haunted_map.png
+- resourcepack/assets/warriorland_halloween/textures/item/grave_marker.png
+- resourcepack/assets/warriorland_halloween/textures/item/broken_grave_marker.png
+- resourcepack/assets/warriorland_halloween/textures/item/grave_candle.png
 - resourcepack/assets/warriorland_halloween/textures/item/batwing_elytra.png
 - resourcepack/assets/warriorland_halloween/textures/item/nocturne_sovereign_cowl.png
 - resourcepack/assets/warriorland_halloween/textures/item/stev_candy/apple_core.png
@@ -29,6 +32,7 @@ Included item textures (16 project-generated 32x32 PNGs plus 13 imported MIT 16x
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_leggings.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_boots.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_sword.png
+- resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_shield.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_pickaxe.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_axe.png
 - resourcepack/assets/warriorland_halloween/textures/item/crimson_warden_shovel.png
@@ -63,7 +67,7 @@ The Java plugin uses these custom ItemsAdder IDs:
 - warriorland_halloween:stev_gumdrop / stev_hard_candy / stev_lollipop / stev_peanut_butter_cup
 - warriorland_halloween:stev_sugar_cookie / stev_toasted_pumpkin_seeds
 - warriorland_halloween:crimson_warden_helmet / chestplate / leggings / boots
-- warriorland_halloween:crimson_warden_sword / pickaxe / axe / shovel / hoe
+- warriorland_halloween:crimson_warden_sword / shield / pickaxe / axe / shovel / hoe
 
 Sound IDs used by the plugin:
 - `warriorland_halloween:haunted_theme` — background loop, played at the generated track duration

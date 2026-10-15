@@ -312,6 +312,15 @@ items:
       slot_attribute_modifiers:
         armor: 3
 
+  crimson_warden_shield:
+    name: "&4&lŠtít Krvavého strážce"
+    lore:
+      - "&7Štít z černé oceli s karmínovým jádrem."
+      - "&8Součást výbavy Krvavého strážce."
+    material: SHIELD
+    graphics:
+      texture: item/crimson_warden_shield
+
   crimson_warden_sword:
     name: "&4&lKrvavý meč"
     lore:

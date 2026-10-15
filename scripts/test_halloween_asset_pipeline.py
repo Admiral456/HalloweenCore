@@ -74,6 +74,32 @@ class CrimsonWardenArmorTests(unittest.TestCase):
 
 
 
+class CrimsonWardenShieldTests(unittest.TestCase):
+    def test_shield_is_registered_generated_and_available_in_shop(self) -> None:
+        registry = load_registry()
+        self.assertIn("gear_crimson_warden_shield", registry)
+        definition = registry["gear_crimson_warden_shield"]
+        self.assertEqual(definition["itemsadder-id"], "warriorland_halloween:crimson_warden_shield")
+        self.assertEqual(definition["fallback-material"], "SHIELD")
+        self.assertEqual(definition["texture"], "crimson_warden_shield")
+
+        items_config = (
+            ROOT / "itemsadder/contents/warriorland_halloween/configs/items.yml"
+        ).read_text(encoding="utf-8")
+        self.assertIn("  crimson_warden_shield:\\n", items_config)
+        shield_block = items_config.split("  crimson_warden_shield:\\n", 1)[1].split(
+            "\\n  crimson_warden_sword:", 1
+        )[0]
+        self.assertIn("material: SHIELD", shield_block)
+        self.assertIn("texture: item/crimson_warden_shield", shield_block)
+
+        shop_config = (ROOT / "src/main/resources/config.yml").read_text(encoding="utf-8")
+        self.assertIn('itemsadder-id: "warriorland_halloween:crimson_warden_shield"', shop_config)
+
+        generator = (ROOT / "scripts/generate_halloween_item_textures.py").read_text(encoding="utf-8")
+        self.assertIn('"crimson_warden_shield.png": shield', generator)
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")

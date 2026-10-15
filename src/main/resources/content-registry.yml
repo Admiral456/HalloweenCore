@@ -91,6 +91,13 @@ items:
     fallback-material: NETHERITE_BOOTS
     texture: crimson_warden_boots
     display-name: "&4&lBoty Krvavého strážce"
+  gear_crimson_warden_shield:
+    category: shield
+    itemsadder-id: warriorland_halloween:crimson_warden_shield
+    runtime-identity: crimson-warden-shield
+    fallback-material: SHIELD
+    texture: crimson_warden_shield
+    display-name: "&4&lŠtít Krvavého strážce"
   gear_crimson_warden_sword:
     category: weapon
     itemsadder-id: warriorland_halloween:crimson_warden_sword

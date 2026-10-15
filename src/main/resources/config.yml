@@ -220,6 +220,17 @@ rewards:
         - "&c6 bodů brnění (netherit 3) • výdrž 950."
         - "&8Enchantovatelné jako netherit."
 
+    crimson-warden-shield:
+      cost: 28000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:crimson_warden_shield"
+      material: SHIELD
+      amount: 1
+      name: "&4&lŠtít Krvavého strážce"
+      lore:
+        - "&7Štít z černé oceli s karmínovým jádrem."
+        - "&8Součást výbavy Krvavého strážce."
+
     crimson-warden-sword:
       cost: 35000
       min-curse: 5

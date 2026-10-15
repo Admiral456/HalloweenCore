@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate project-owned 32x32 Halloween item sprites with deterministic pixel art.
+"""Generate project-owned 32x32 Halloween item/furniture sprites with deterministic pixel art.
 
-The generator only writes shop/gear item icons. ModelEngine mob atlases supplied by
-artists are deliberately left untouched. It uses the Python standard library only.
+ModelEngine mob atlases supplied by artists are deliberately left untouched. The
+generator uses the Python standard library only and creates reproducible PNG files.
 """
 from __future__ import annotations
 
@@ -346,6 +346,37 @@ def sword() -> Canvas:
     return a
 
 
+def shield() -> Canvas:
+    """Original Crimson Warden shield inventory art; the worn/in-hand model is client-dependent."""
+    a = Canvas()
+    # Broad heater-shield silhouette, blackened steel rim and crimson enamel.
+    a.poly([(6, 2), (26, 2), (29, 8), (27, 19), (22, 26), (16, 31),
+            (10, 26), (5, 19), (3, 8)], C["outline"])
+    a.poly([(7, 4), (25, 4), (27, 9), (25, 18), (21, 25), (16, 29),
+            (11, 25), (7, 18), (5, 9)], C["gold_dark"], C["steel_dark"])
+    a.poly([(8, 6), (24, 6), (25, 10), (23, 17), (20, 23), (16, 27),
+            (12, 23), (9, 17), (7, 10)], C["steel_dark"], C["steel"])
+    a.poly([(10, 8), (22, 8), (23, 11), (21, 16), (18, 21), (16, 24),
+            (14, 21), (11, 16), (9, 11)], C["wine"], C["outline"])
+    # Segmented red plates, antique-gold edging and an unmistakable center gem.
+    a.line(9, 9, 13, 13, C["crimson"], 2)
+    a.line(23, 9, 19, 13, C["crimson"], 2)
+    a.line(10, 16, 14, 21, C["red"], 2)
+    a.line(22, 16, 18, 21, C["red"], 2)
+    a.line(8, 7, 11, 6, C["gold_light"])
+    a.line(21, 6, 24, 7, C["gold_light"])
+    a.line(6, 10, 8, 17, C["gold"])
+    a.line(26, 10, 24, 17, C["gold"])
+    a.poly([(16, 10), (20, 14), (16, 19), (12, 14)], C["outline"])
+    a.poly([(16, 11), (19, 14), (16, 18), (13, 14)], C["glow"], C["gold_light"])
+    a.line(16, 12, 16, 16, C["pale_gold"])
+    a.set(16, 13, C["silver"])
+    for x, y in ((9, 8), (23, 8), (7, 15), (25, 15), (12, 23), (20, 23)):
+        a.set(x, y, C["pale_gold"])
+    a.poly([(14, 24), (16, 26), (18, 24), (16, 28)], C["crimson"], C["outline"])
+    return a
+
+
 def pickaxe() -> Canvas:
     a = Canvas()
     a.line(7, 26, 25, 8, C["outline"], 5)
@@ -553,6 +584,7 @@ def main() -> None:
         "crimson_warden_leggings.png": leggings,
         "crimson_warden_boots.png": boots,
         "crimson_warden_sword.png": sword,
+        "crimson_warden_shield.png": shield,
         "crimson_warden_pickaxe.png": pickaxe,
         "crimson_warden_axe.png": axe,
         "crimson_warden_shovel.png": shovel,
