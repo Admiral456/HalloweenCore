@@ -120,14 +120,20 @@ class ConfigUpgradeCoverageTests(unittest.TestCase):
         self.assertIn('List.of("cost", "min-curse")', migration)
         self.assertIn('!getConfig().contains(targetPath + "." + key)', migration)
 
-        shop = re.search(
-            r"(?ms)^    crimson-warden-shield:\\s*\\n(.*?)(?=^    [a-z0-9-]+:\\s*$|\\Z)",
-            defaults,
+        lines = defaults.splitlines()
+        try:
+            start = lines.index("    crimson-warden-shield:") + 1
+        except ValueError:
+            self.fail("Packaged defaults must provide the new shield entry")
+        end = next(
+            (index for index in range(start, len(lines))
+             if re.match(r"^    [a-z0-9-]+:\\s*$", lines[index])),
+            len(lines),
         )
-        self.assertIsNotNone(shop, "Packaged defaults must provide the new shield entry")
-        self.assertIn('itemsadder-id: "warriorland_halloween:crimson_warden_shield"', shop.group(1))
-        self.assertIn("cost: 28000", shop.group(1))
-        self.assertIn("min-curse: 4", shop.group(1))
+        shop_block = "\\n".join(lines[start:end])
+        self.assertIn('itemsadder-id: "warriorland_halloween:crimson_warden_shield"', shop_block)
+        self.assertIn("cost: 28000", shop_block)
+        self.assertIn("min-curse: 4", shop_block)
 
 
 class AssetManifestTests(unittest.TestCase):
