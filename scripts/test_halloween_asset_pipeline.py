@@ -23,12 +23,12 @@ from validate_content_registry import validate as validate_full_asset_inventory 
 class ContentRegistryTests(unittest.TestCase):
     def test_registered_items_have_unique_ids_and_texture_keys(self) -> None:
         items = load_registry()
-        self.assertGreaterEqual(len(items), 29)
+        self.assertGreaterEqual(len(items), 30)
         self.assertEqual(len({v["itemsadder-id"] for v in items.values()}), len(items))
         self.assertEqual(len({v["texture"] for v in items.values()}), len(items))
 
     def test_registry_and_imported_asset_hashes_match_the_real_pack(self) -> None:
-        self.assertGreaterEqual(validate(), 29)
+        self.assertGreaterEqual(validate(), 30)
 
     def test_models_decorations_armor_and_audio_have_no_unregistered_files(self) -> None:
         # Full-path check also fails when an asset is orphaned from the central registry.
@@ -58,6 +58,21 @@ class CrimsonWardenArmorTests(unittest.TestCase):
                 self.assertEqual(int(modifier.group(1)), extra_armor)
 
 
+    def test_licensed_apple_leaves_are_registered_as_a_translucent_block(self) -> None:
+        config = (ROOT / "itemsadder/contents/warriorland_halloween/configs/items.yml").read_text(encoding="utf-8")
+        registry = load_registry()
+        self.assertIn("decor_stev_apple_leaves", registry)
+        self.assertEqual(registry["decor_stev_apple_leaves"]["texture"], "stev_candy/apple_leaves_with_apples")
+        entry = re.search(
+            r"(?ms)^  stev_apple_leaves:\\s*\\n(.*?)(?=^  [a-z0-9_]+:\\s*$|\\Z)",
+            config,
+        )
+        self.assertIsNotNone(entry)
+        self.assertIn("type: REAL_TRANSPARENT", entry.group(1))
+        self.assertIn("drop_when_mined: true", entry.group(1))
+
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
@@ -71,7 +86,7 @@ class AssetManifestTests(unittest.TestCase):
             self.assertRegex(asset["sha256"], r"^[0-9a-f]{64}$")
             self.assertGreater(asset["size_bytes"], 0)
         imported = [a for a in manifest["assets"] if a.get("source_project") == "Stev's Halloween"]
-        self.assertEqual(len(imported), 13)
+        self.assertEqual(len(imported), 14)
         self.assertTrue(all(a["license"] == "MIT" for a in imported))
 
     def test_unverified_donor_version_is_rejected(self) -> None:
@@ -106,7 +121,7 @@ class AssetManifestTests(unittest.TestCase):
                 self.assertIn("warriorland_halloween/THIRD_PARTY_LICENSES/stevs-halloween-source-manifest.json", names)
                 self.assertIn(b"MIT License", archive.read("warriorland_halloween/THIRD_PARTY_LICENSES/stevs-halloween-MIT.txt"))
                 shipped_source_manifest = json.loads(archive.read("warriorland_halloween/THIRD_PARTY_LICENSES/stevs-halloween-source-manifest.json"))
-                self.assertEqual(len(shipped_source_manifest["assets"]), 13)
+                self.assertEqual(len(shipped_source_manifest["assets"]), 14)
                 metadata = json.loads(archive.read("warriorland_halloween/BUILD_METADATA.json"))
                 self.assertEqual(metadata["minecraft_version"], "1.21.10")
                 self.assertTrue(all(info.date_time == (2020, 1, 1, 0, 0, 0) for info in archive.infolist()))
