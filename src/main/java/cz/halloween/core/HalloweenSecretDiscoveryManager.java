@@ -63,12 +63,14 @@ public final class HalloweenSecretDiscoveryManager implements Listener {
                             plugin.getConfig().getDouble("secret-discoveries.default-radius-blocks", 4.5D)));
             if (playerLocation.distanceSquared(target) > radius * radius) continue;
 
-            // Persist the flag before awarding fragments, so the same location cannot pay twice.
+            // The flag and reward are written in the same atomic data.yml save.
+            // This prevents re-farming the discovery after a restart.
             if (!plugin.getDataManager().markSecretDiscovered(player.getUniqueId(), id)) continue;
             long reward = Math.max(1L,
                     plugin.getConfig().getLong(path + ".reward-fragments",
                             plugin.getConfig().getLong("secret-discoveries.default-reward-fragments", 250L)));
             plugin.getService().addFragments(player.getUniqueId(), reward, "secret-discovery");
+            plugin.getDataManager().save();
 
             String name = plugin.getConfig().getString(path + ".name", id);
             player.sendTitle(plugin.color("&5&lTAJNÝ OBJEV"),

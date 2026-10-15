@@ -178,6 +178,49 @@ class HeadlessNickCommandSafetyTests(unittest.TestCase):
             self.assertIn(required, method)
 
 
+class RewardDurabilityRegressionTests(unittest.TestCase):
+    def test_daily_return_reward_saves_balance_and_join_timestamp(self) -> None:
+        join = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenJoinListener.java"
+        ).read_text(encoding="utf-8")
+        start = join.index("private void awardDaily(")
+        end = join.index("\\n    }", start)
+        method = join[start:end]
+        self.assertLess(method.index("addFragments("), method.index("recordJoin("))
+        self.assertLess(method.index("recordJoin("), method.index("getDataManager().save()"))
+
+    def test_secret_discovery_and_reward_are_persisted_together(self) -> None:
+        source = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenSecretDiscoveryManager.java"
+        ).read_text(encoding="utf-8")
+        start = source.index("private void checkLocations(")
+        end = source.index("public void showSecrets(", start)
+        method = source[start:end]
+        self.assertLess(method.index("markSecretDiscovered("), method.index("addFragments("))
+        self.assertLess(method.index("addFragments("), method.index("getDataManager().save()"))
+
+    def test_daily_challenge_claim_is_saved_immediately_and_uses_configured_timezone(self) -> None:
+        source = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenChallengeManager.java"
+        ).read_text(encoding="utf-8")
+        start = source.index("private void claim(")
+        end = source.index("\\n    }", start)
+        claim = source[start:end]
+        self.assertLess(claim.index("addFragments("), claim.index("markChallengeClaimed("))
+        self.assertLess(claim.index("markChallengeClaimed("), claim.index("getDataManager().save()"))
+        self.assertIn('getString("season.timezone", "Europe/Prague")', source)
+        self.assertIn("LocalDate.now(ZoneId.of", source)
+
+    def test_grave_encounter_payout_is_saved_after_all_participants(self) -> None:
+        source = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenGraveEncounterManager.java"
+        ).read_text(encoding="utf-8")
+        start = source.index("private void finish(Encounter encounter, boolean success, boolean reward)")
+        end = source.index("private void removeWaveMobs(", start)
+        method = source[start:end]
+        self.assertLess(method.index('addFragments(uuid, fragments, "grave-encounter")'), method.index("getDataManager().save()"))
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")

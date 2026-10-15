@@ -368,6 +368,7 @@ public final class HalloweenGraveEncounterManager implements Listener {
                         plugin.getService().addFragments(uuid, fragments, "grave-encounter");
                     }
                 }
+                plugin.getDataManager().save();
             }
         } else if (!encounter.adminTest) {
             Bukkit.broadcastMessage(plugin.color("&8&lHŘBITOV &8» &7Rituál utichl dřív, než byl dokončen."));
