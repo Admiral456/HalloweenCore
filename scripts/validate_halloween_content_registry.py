@@ -120,9 +120,9 @@ def validate(root: Path = ROOT) -> int:
         ia_key = definition["itemsadder-id"].split(":", 1)[1]
         block = configured[ia_key]
         expected_texture_ref = definition.get("itemsadder-texture", "item/" + definition["texture"])
-        texture_match = re.search(r"(?m)^\s+texture:\s*([^\s#]+)", block)
+        texture_match = re.search(r"(?m)^\s+(?:texture|icon):\s*([^\s#]+)", block)
         if not texture_match:
-            fail(f"ItemsAdder item {ia_key} has no graphics.texture")
+            fail(f"ItemsAdder item {ia_key} has neither graphics.texture nor graphics.icon")
         texture_ref = texture_match.group(1)
         if texture_ref != expected_texture_ref:
             fail(f"ItemsAdder item {ia_key} points at {texture_ref}, registry says {expected_texture_ref}")

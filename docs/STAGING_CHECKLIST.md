@@ -26,6 +26,7 @@ This is a required gate before merging a resource-pack or content-registry chang
 - [ ] Every logical item ID resolves to one ItemsAdder ID, one runtime identity, one fallback material and one texture key in `content-registry.yml`.
 - [ ] `/halloween give <hráč> all` gives the Crimson Warden gear, existing relics, both new relics and all thirteen imported test candies plus the apple-leaf decoration block.
 - [ ] Compare every inventory icon against the asset manifest. Confirm there are no missing or unregistered item textures.
+- [ ] Fetch `/iaget warriorland_halloween:decoration_grave_marker`, place the Gothic Gravestone on grass/stone, inspect its 3D shape and rotation, then break it and confirm it drops exactly one item with no invisible leftover entity.
 - [ ] Obtain `warriorland_halloween:stev_apple_leaves` via `/halloween give <hráč> all`, place and break it, and inspect leaf transparency/model and drops on a client with the pack accepted.
 - [ ] Equip the Crimson Warden helmet/chestplate/leggings/boots and inspect the actual player model from front/back/side; an inventory icon is not evidence that worn armor renders.
 - [ ] Wear the Batwing Elytra and check the actual wing model/texture while gliding. Confirm the dash cooldown and player-eligibility filters work.

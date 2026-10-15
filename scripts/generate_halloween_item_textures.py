@@ -460,6 +460,37 @@ def nocturne_sovereign_cowl() -> Canvas:
     return a
 
 
+def grave_marker() -> Canvas:
+    """Original pixel-art icon for a placeable Gothic Gravestone furniture item."""
+    a = Canvas()
+    # Chipped silhouette and offset stone layers give the marker depth at 32px.
+    a.poly([(7, 7), (11, 3), (22, 3), (26, 7), (27, 13), (25, 24),
+            (7, 24), (5, 13)], C["outline"])
+    a.poly([(8, 8), (12, 5), (21, 5), (24, 8), (25, 13), (23, 22),
+            (9, 22), (7, 13)], C["steel_dark"], C["steel"])
+    a.line(11, 7, 21, 7, C["steel_light"])
+    a.line(9, 10, 9, 14, C["steel"])
+    a.line(23, 12, 22, 17, C["void"])
+    # Carved crimson cross with antique-gold inlay, wholly original artwork.
+    a.poly([(14, 9), (18, 9), (18, 13), (21, 13), (21, 17),
+            (18, 17), (18, 21), (14, 21), (14, 17), (11, 17),
+            (11, 13), (14, 13)], C["outline"])
+    a.poly([(15, 10), (17, 10), (17, 14), (20, 14), (20, 16),
+            (17, 16), (17, 20), (15, 20), (15, 16), (12, 16),
+            (12, 14), (15, 14)], C["gold"])
+    a.line(15, 11, 16, 11, C["pale_gold"])
+    a.diamond(16, 15, 1, 1, C["glow"], C["wine"])
+    # Heavy plinth and a small mossy edge.
+    a.rect(4, 24, 28, 28, C["outline"])
+    a.rect(5, 24, 27, 26, C["steel"])
+    a.line(6, 25, 13, 25, C["steel_light"], 2)
+    a.set(22, 24, C["green"])
+    a.set(23, 24, C["green_dark"])
+    a.line(8, 20, 10, 19, C["gold_dark"])
+    a.line(22, 9, 24, 11, C["silver"])
+    return a
+
+
 def main() -> None:
     sprites = {
         "hunter_mask.png": hunter_mask,
@@ -469,6 +500,7 @@ def main() -> None:
         "haunted_map.png": haunted_map,
         "batwing_elytra.png": batwing_elytra,
         "nocturne_sovereign_cowl.png": nocturne_sovereign_cowl,
+        "grave_marker.png": grave_marker,
         "crimson_warden_helmet.png": helmet,
         "crimson_warden_chestplate.png": chestplate,
         "crimson_warden_leggings.png": leggings,

@@ -167,6 +167,39 @@ def validate(root: Path = ROOT) -> None:
                           if path.is_file() and path.suffix.lower() in {".bbmodel", ".png"}}
     assert_same_paths("ModelEngine/Blockbench", registered_model_files, actual_model_files)
 
+    furniture_defs = entries(registry_text, "furniture-model-assets")
+    furniture_model_root = root / "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/models/furniture"
+    registered_furniture_models: set[Path] = set()
+    for model_id, definition in furniture_defs.items():
+        value = definition.get("asset-path", "")
+        path = (root / value).resolve() if value else None
+        if path is None or not path.is_file() or path.suffix.lower() != ".json":
+            fail(f"Furniture model {model_id} is missing a JSON asset: {value}")
+        if furniture_model_root.resolve() not in path.parents:
+            fail(f"Furniture model {model_id} escapes the registered furniture model directory: {value}")
+        try:
+            furniture_model = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            fail(f"Furniture model {value} is invalid JSON: {exc}")
+        if not isinstance(furniture_model.get("textures"), dict) or not furniture_model["textures"]:
+            fail(f"Furniture model {value} must declare textures")
+        elements = furniture_model.get("elements", [])
+        if not isinstance(elements, list) or not elements:
+            fail(f"Furniture model {value} must contain at least one 3D element")
+        for element in elements:
+            start, end = element.get("from", []), element.get("to", [])
+            faces = element.get("faces", {})
+            if len(start) != 3 or len(end) != 3 or any(a > b for a, b in zip(start, end)):
+                fail(f"Furniture model {value} has invalid cube bounds")
+            if set(faces) != {"north", "east", "south", "west", "up", "down"}:
+                fail(f"Furniture model {value} has a cube missing one or more faces")
+            for face in faces.values():
+                if face.get("texture", "").lstrip("#") not in furniture_model["textures"]:
+                    fail(f"Furniture model {value} references an undeclared face texture")
+        registered_furniture_models.add(path)
+    actual_furniture_models = {p.resolve() for p in furniture_model_root.glob("*.json") if p.is_file()}
+    assert_same_paths("ItemsAdder furniture model", registered_furniture_models, actual_furniture_models)
+
     block_defs = entries(registry_text, "world-decoration-assets")
     registered_blocks = set()
     for block_id, definition in block_defs.items():
@@ -263,7 +296,8 @@ def validate(root: Path = ROOT) -> None:
 
     print(f"PASS canonical content registry: {len(item_defs)} unique IDs; ItemsAdder IDs in sync.")
     print(f"PASS item icon inventory: {len(registered_icons)} registered; no unregistered/unused PNGs.")
-    print(f"PASS model inventory: {len(model_defs)} model/texture pairs; no unregistered files.")
+    print(f"PASS model inventory: {len(model_defs)} ModelEngine model/texture pairs; no unregistered files.")
+    print(f"PASS ItemsAdder furniture: {len(registered_furniture_models)} registered 3D furniture model(s), structurally valid.")
     print(f"PASS world decorations: {len(registered_blocks)} block textures; no unregistered files.")
     print(f"PASS armor layers: {len(registered_armor)} registered source texture files.")
     print(f"PASS sounds: {len(registered_sound_paths)} OGG assets and no unregistered OGG files.")

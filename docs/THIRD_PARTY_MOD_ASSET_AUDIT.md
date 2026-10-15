@@ -14,6 +14,12 @@ Audit date: 2026-10-15. The supplied JARs are Fabric/Forge/NeoForge mods, not Pa
 - ItemsAdder definitions use new `stev_*` IDs. The candies and apple-leaf block are in the admin test bundle `/halloween give <player> all`; place and break the leaf block on staging before release. This does not import the donor mod's Java behavior or recipes.
 - MIT attribution and full permission notice are included in the delivered ItemsAdder content.
 
+## New project-owned furniture asset
+
+- Added an original Gothic Gravestone as an ItemsAdder placeable furniture item: new 32×32 inventory icon, custom 3D Java item model made from Minecraft's vanilla block textures, floor-only placement and a 1×1×1 furniture hitbox.
+- It is not copied from Allhallows, ManyIdeas Halloween or another supplied mod. This adds reusable placeable décor to the resource pack; it does not by itself enable automatic random graveyard placement in world generation.
+- The custom model is registered and structurally validated by CI. Visual placement, model transform, hitbox and break/drop behavior still require the staging-client check.
+
 ## Remaining supplied mods — not copied into public asset output
 
 | Supplied mod | Observed asset/format | Disposition |

@@ -402,6 +402,39 @@ items:
         attackDamage: 7.0
         attackSpeed: 1.0
 
+  decoration_grave_marker:
+    name: "&8&lGotický náhrobek"
+    lore:
+      - "&7Vlastní 3D dekorace pro halloweenský hřbitov."
+      - "&8Polož na zem; lze bezpečně odstranit."
+    material: PAPER
+    graphics:
+      model: furniture/grave_marker
+      icon: item/grave_marker
+    behaviours:
+      furniture:
+        entity: item_display
+        solid: true
+        fixed_rotation: true
+        placeable_on:
+          floor: true
+          ceiling: false
+          walls: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 1
+        display_transformation:
+          transform: HEAD
+          translation:
+            x: 0
+            y: 0.5
+            z: 0
+          scale:
+            x: 0.8
+            y: 0.8
+            z: 0.8
+
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"
     lore:

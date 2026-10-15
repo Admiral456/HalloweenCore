@@ -249,6 +249,14 @@ items:
     itemsadder-texture: minecraft:block/stev_apple_leaves_with_apples
     display-name: "&a&lJabloňové listí s jablky"
 
+  decoration_grave_marker:
+    category: decoration
+    itemsadder-id: warriorland_halloween:decoration_grave_marker
+    runtime-identity: grave-marker-furniture-2026
+    fallback-material: PAPER
+    texture: grave_marker
+    display-name: "&8&lGotický náhrobek"
+
 # Minecraft profiles are deliberately opt-in. A version becomes verified only after its
 # ItemsAdder schema, models, server build and client resource-pack delivery pass staging.
 target-versions:
@@ -286,6 +294,10 @@ model-assets:
     blueprint-path: mythicmobs/models/vampire_king.bbmodel
     texture-path: mythicmobs/models/vampire_king.png
     staging-status: experimental-disabled-until-staged
+
+furniture-model-assets:
+  gothic_gravestone:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/models/furniture/grave_marker.json
 
 world-decoration-assets:
   stev_apple_leaves_with_apples:
