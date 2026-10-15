@@ -26,6 +26,7 @@ public final class HalloweenDataManager {
     private final Map<UUID, String> challengeType = new HashMap<>();
     private final Map<UUID, Integer> challengeProgress = new HashMap<>();
     private final Set<UUID> challengeClaimed = new HashSet<>();
+    private final Set<UUID> halloweenDisabledPlayers = new HashSet<>();
     private final Set<UUID> villageDiscovered = new HashSet<>();
     private final Map<UUID, Set<String>> secretDiscoveries = new HashMap<>();
     private final Map<UUID, String> storyQuest = new HashMap<>();
@@ -50,6 +51,7 @@ public final class HalloweenDataManager {
         challengeType.clear();
         challengeProgress.clear();
         challengeClaimed.clear();
+        halloweenDisabledPlayers.clear();
         villageDiscovered.clear();
         secretDiscoveries.clear();
         storyQuest.clear();
@@ -70,6 +72,7 @@ public final class HalloweenDataManager {
                 try {
                     UUID uuid = UUID.fromString(key);
                     String base = "players." + key;
+                    if (data.getBoolean(base + ".halloween-disabled", false)) halloweenDisabledPlayers.add(uuid);
 
                     long amount = Math.max(0L, data.getLong(base + ".fragments", 0L));
                     long lifetime = Math.max(0L, data.getLong(base + ".lifetime-fragments", amount));
@@ -134,6 +137,7 @@ public final class HalloweenDataManager {
         players.addAll(challengeType.keySet());
         players.addAll(challengeProgress.keySet());
         players.addAll(challengeClaimed);
+        players.addAll(halloweenDisabledPlayers);
         players.addAll(villageDiscovered);
         players.addAll(secretDiscoveries.keySet());
         players.addAll(storyQuest.keySet());
@@ -145,6 +149,7 @@ public final class HalloweenDataManager {
             long amount = fragments.getOrDefault(uuid, 0L);
             long join = lastJoin.getOrDefault(uuid, 0L);
             int streak = streaks.getOrDefault(uuid, 0);
+            if (halloweenDisabledPlayers.contains(uuid)) data.set(base + ".halloween-disabled", true);
 
             if (amount > 0L) data.set(base + ".fragments", amount);
             long lifetime = lifetimeFragments.getOrDefault(uuid, 0L);
@@ -195,6 +200,16 @@ public final class HalloweenDataManager {
         } catch (IOException ex) {
             plugin.getLogger().severe("Could not save data.yml: " + ex.getMessage());
         }
+    }
+
+    public boolean isHalloweenDisabled(UUID uuid) {
+        return uuid != null && halloweenDisabledPlayers.contains(uuid);
+    }
+
+    public void setHalloweenDisabled(UUID uuid, boolean disabled) {
+        if (uuid == null) return;
+        if (disabled) halloweenDisabledPlayers.add(uuid);
+        else halloweenDisabledPlayers.remove(uuid);
     }
 
     public long getFragments(UUID uuid) {
