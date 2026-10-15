@@ -56,6 +56,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
+        migrateCrimsonWardenShieldDefaults();
         migrateStevHalloweenCandyShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
@@ -190,6 +191,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateWitchingBatDefaults();
         migrateGraveEncounterDefaults();
         migrateCrimsonWardenShopDefaults();
+        migrateCrimsonWardenShieldDefaults();
         migrateStevHalloweenCandyShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
@@ -547,6 +549,58 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getConfig().set("migrations.cursed-talisman-single-heart-v1", true);
         saveConfig();
         getLogger().info("Cursed talisman health migrated to +2 max health (+1 heart).");
+    }
+
+    /**
+     * One-time migration for the newly added Crimson Warden shield. The original
+     * gear migration is intentionally one-shot, so it cannot install items added
+     * in later releases on servers that already recorded that older migration.
+     * Preserve server-defined prices and curse requirements while refreshing the
+     * item identity and presentation from the packaged defaults.
+     */
+    private void migrateCrimsonWardenShieldDefaults() {
+        if (getConfig().getBoolean("migrations.crimson-warden-shield-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml is unavailable; Crimson Warden shield migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection source = defaults.getConfigurationSection(
+                    "rewards.shop.crimson-warden-shield");
+            if (source == null) {
+                getLogger().warning("Default Crimson Warden shield shop entry is missing; migration was skipped.");
+                return;
+            }
+
+            String targetPath = "rewards.shop.crimson-warden-shield";
+            if (!getConfig().isConfigurationSection(targetPath)) {
+                for (String key : source.getKeys(true)) {
+                    if (!source.isConfigurationSection(key)) {
+                        getConfig().set(targetPath + "." + key, source.get(key));
+                    }
+                }
+            } else {
+                for (String key : List.of("itemsadder-id", "material", "amount", "name", "lore")) {
+                    if (source.contains(key)) {
+                        getConfig().set(targetPath + "." + key, source.get(key));
+                    }
+                }
+                for (String key : List.of("cost", "min-curse")) {
+                    if (!getConfig().contains(targetPath + "." + key) && source.contains(key)) {
+                        getConfig().set(targetPath + "." + key, source.get(key));
+                    }
+                }
+            }
+
+            getConfig().set("migrations.crimson-warden-shield-v1", true);
+            saveConfig();
+            getLogger().info("Crimson Warden shield shop entry migrated once; existing price and curse settings were preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Crimson Warden shield migration failed: " + ex.getClass().getSimpleName());
+        }
     }
 
     private void migrateCrimsonWardenArmorStats() {
