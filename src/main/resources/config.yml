@@ -156,7 +156,7 @@ rewards:
       name: "&5&lProkletý talisman &8[2026]"
       lore:
         - "&7Legendární relikvie z finálního obchodu."
-        - "&d+1 celý řádek srdcí navíc (+20 HP)."
+        - "&d+1 srdce navíc (+2 HP)."
         - "&7Aktivuje se při držení v ruce/offhandu."
         - "&5+10 % Halloween fragmentů."
         - "&8Cena: 1 000 000 fragmentů."
