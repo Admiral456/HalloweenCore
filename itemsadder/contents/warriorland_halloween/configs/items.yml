@@ -46,6 +46,26 @@ items:
     graphics:
       texture: item/haunted_map
 
+  batwing_elytra:
+    name: "&5&lBatwing Elytra"
+    lore:
+      - "&7Temná relikvie z netopýřího křídla."
+      - "&7Při plachtění se skrč pro vzdušný výpad."
+      - "&8Obnova schopnosti: 20 sekund."
+    material: ELYTRA
+    graphics:
+      texture: item/batwing_elytra
+
+  nocturne_sovereign_cowl:
+    name: "&8&lNocturne Sovereign Cowl"
+    lore:
+      - "&7Kapuce, která vidí ve tmě."
+      - "&7Skrč se pro odhalení a zpomalení monster."
+      - "&8Obnova schopnosti: 30 sekund."
+    material: CARVED_PUMPKIN
+    graphics:
+      texture: item/nocturne_sovereign_cowl
+
   crimson_warden_helmet:
     name: "&4&lHelma Krvavého strážce"
     lore:
