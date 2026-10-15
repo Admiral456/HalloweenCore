@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from build_halloween_asset_manifest import build_manifest  # noqa: E402
 from package_deterministic_zip import create_zip  # noqa: E402
 from validate_halloween_content_registry import load_registry, validate  # noqa: E402
+from validate_content_registry import validate as validate_full_asset_inventory  # noqa: E402
 
 
 class ContentRegistryTests(unittest.TestCase):
@@ -27,6 +28,10 @@ class ContentRegistryTests(unittest.TestCase):
 
     def test_registry_and_imported_asset_hashes_match_the_real_pack(self) -> None:
         self.assertGreaterEqual(validate(), 29)
+
+    def test_models_decorations_armor_and_audio_have_no_unregistered_files(self) -> None:
+        # Full-path check also fails when an asset is orphaned from the central registry.
+        validate_full_asset_inventory(ROOT)
 
 
 class AssetManifestTests(unittest.TestCase):
@@ -44,6 +49,10 @@ class AssetManifestTests(unittest.TestCase):
         imported = [a for a in manifest["assets"] if a.get("source_project") == "Stev's Halloween"]
         self.assertEqual(len(imported), 13)
         self.assertTrue(all(a["license"] == "MIT" for a in imported))
+
+    def test_unverified_donor_version_is_rejected(self) -> None:
+        with self.assertRaisesRegex(ValueError, "not verified"):
+            build_manifest(ROOT, "1.21.1")
 
     def test_deterministic_zip_bytes_are_identical(self) -> None:
         with tempfile.TemporaryDirectory(prefix="halloweencore-pack-test-") as temp:
