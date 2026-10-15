@@ -80,7 +80,7 @@ def load_registry() -> dict[str, dict[str, str]]:
             "display-name": field(block, "display-name", internal_id),
         }
         # Some placeable blocks need a different block-face texture than their item icon.
-        block_texture = re.search(r"(?m)^    itemsadder-texture:\\s*(.*?)\\s*$", block)
+        block_texture = re.search(r"(?m)^    itemsadder-texture:\s*(.*?)\s*$", block)
         if block_texture:
             definition["itemsadder-texture"] = block_texture.group(1).strip().strip('"').strip("'")
         ia_id = definition["itemsadder-id"]
