@@ -81,6 +81,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween secrets (zobrazí postup a nápovědy bez souřadnic)
 - /halloween bosseffects <1|2|3|4> (admin, vizuální náhled útoků bez bosse a bez poškození)
 - /halloween give <hráč> <počet|all> (admin; all vydá všechny nakonfigurované odměny, gear a přenosné relikvie pro testování)
+- /halloween disable|enable — vypnutí/zapnutí osobních Halloween efektů a odměn pro konkrétního hráče (stav se ukládá do data.yml)
 - /halloween on|off
 
 ## Boss bar
