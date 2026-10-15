@@ -15,6 +15,14 @@
   },
   "assets": [
     {
+      "source_path": "assets/stevs_halloween_mod/textures/block/apple_leaves_with_apples.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/apple_leaves_with_apples.png",
+      "sha256": "2b4d7f640b7695b5d21cbf48ca32488a75a8a34a343ff1b22d507fe57d497c3e",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder custom translucent decoration block warriorland_halloween:stev_apple_leaves"
+    },
+    {
       "source_path": "assets/stevs_halloween_mod/textures/item/apple_core.png",
       "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/apple_core.png",
       "sha256": "7a44f880c613f68fc741d5516a8d204f751b87407fb76a0598405170d9607fe1",
