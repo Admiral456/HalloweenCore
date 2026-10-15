@@ -214,10 +214,12 @@ public final class HalloweenRewardManager {
         items.add(plugin.getItemManager().createHauntedMap());
         items.add(plugin.getItemManager().createCursedCandy());
 
-        // Include the imported candy set in the admin test kit. Each item still resolves
-        // its appearance and fallback material through the canonical registry.
+        // Include every imported candy and the licensed placed apple-leaf decoration.
+        // Items still resolve their identity/fallback through the canonical registry;
+        // the translucent block can be placed and broken during staging verification.
         for (HalloweenContentRegistry.Definition definition : plugin.getContentRegistry().all()) {
-            if (definition.internalId().startsWith("candy_stev_")) {
+            if (definition.internalId().startsWith("candy_stev_")
+                    || definition.internalId().equals("decor_stev_apple_leaves")) {
                 items.add(plugin.getItemManager().createRegisteredItem(definition.internalId(), 1));
             }
         }
