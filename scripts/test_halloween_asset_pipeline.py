@@ -101,6 +101,35 @@ class CrimsonWardenShieldTests(unittest.TestCase):
         self.assertIn('"crimson_warden_shield.png": shield', generator)
 
 
+class ConfigUpgradeCoverageTests(unittest.TestCase):
+    def test_new_shield_migrates_to_existing_servers_after_older_migration_ran(self) -> None:
+        core = (
+            ROOT / "src/main/java/cz/halloween/core/HalloweenCore.java"
+        ).read_text(encoding="utf-8")
+        defaults = (ROOT / "src/main/resources/config.yml").read_text(encoding="utf-8")
+
+        # The migration has a dedicated version flag and is called both at startup
+        # and after /halloween reload; it does not depend on the older gear-v2 flag.
+        self.assertIn('getConfig().getBoolean("migrations.crimson-warden-shield-v1", false)', core)
+        self.assertIn('getConfig().set("migrations.crimson-warden-shield-v1", true)', core)
+        self.assertEqual(core.count("migrateCrimsonWardenShieldDefaults();"), 2)
+        migration_start = core.index("private void migrateCrimsonWardenShieldDefaults()")
+        migration_end = core.index("private void migrateCrimsonWardenArmorStats()", migration_start)
+        migration = core[migration_start:migration_end]
+        self.assertIn('"rewards.shop.crimson-warden-shield"', migration)
+        self.assertIn('List.of("cost", "min-curse")', migration)
+        self.assertIn('!getConfig().contains(targetPath + "." + key)', migration)
+
+        shop = re.search(
+            r"(?ms)^    crimson-warden-shield:\\s*\\n(.*?)(?=^    [a-z0-9-]+:\\s*$|\\Z)",
+            defaults,
+        )
+        self.assertIsNotNone(shop, "Packaged defaults must provide the new shield entry")
+        self.assertIn('itemsadder-id: "warriorland_halloween:crimson_warden_shield"', shop.group(1))
+        self.assertIn("cost: 28000", shop.group(1))
+        self.assertIn("min-curse: 4", shop.group(1))
+
+
 class AssetManifestTests(unittest.TestCase):
     def test_manifest_is_sorted_unique_and_sha256_only(self) -> None:
         manifest = build_manifest(ROOT, "1.21.10")
