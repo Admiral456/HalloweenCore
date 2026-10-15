@@ -204,6 +204,24 @@ def validate(root: Path = ROOT) -> None:
         manifest = json.loads(source_manifest.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
         fail(f"Cannot read third-party asset source manifest: {exc}")
+    packaged_license_dir = root / "itemsadder/contents/warriorland_halloween/THIRD_PARTY_LICENSES"
+    packaged_license = packaged_license_dir / "stevs-halloween-MIT.txt"
+    packaged_notice = packaged_license_dir / "README.txt"
+    packaged_manifest = packaged_license_dir / "stevs-halloween-source-manifest.json"
+    for required in (packaged_license, packaged_notice, packaged_manifest):
+        if not required.is_file():
+            fail(f"Third-party licence/provenance file is missing from the distributable pack: {required.relative_to(root)}")
+    if "MIT License" not in packaged_license.read_text(encoding="utf-8"):
+        fail("The distributable pack must include the complete MIT license notice")
+    if "Stev51" not in packaged_notice.read_text(encoding="utf-8"):
+        fail("The distributable pack must attribute Stev's Halloween artwork to Stev51")
+    try:
+        packaged_manifest_data = json.loads(packaged_manifest.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        fail(f"Bundled third-party source manifest is invalid: {exc}")
+    if packaged_manifest_data != manifest:
+        fail("Bundled third-party source manifest differs from the repository's source manifest")
+
     imported_count = 0
     for entry in manifest.get("assets", []):
         path = root / entry["target_path"]
