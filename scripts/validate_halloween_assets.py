@@ -459,7 +459,7 @@ if root_textures.exists():
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
 print("Halloween asset validation passed.")
-print("16 project-generated item icons: 32x32 PNG; 13 imported 16x16 icons are verified by validate_halloween_content_registry.py; 2 Crimson Warden armor layers: 64x32 PNG")
+print("16 project-generated item icons: 32x32 PNG; 14 imported 16x16 item-icon targets (13 candy sprites + 1 apple-leaf block icon) are verified by validate_halloween_content_registry.py; 2 Crimson Warden armor layers: 64x32 PNG")
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
