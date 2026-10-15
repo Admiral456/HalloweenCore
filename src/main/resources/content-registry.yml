@@ -246,7 +246,7 @@ items:
     runtime-identity: stev-apple-leaves-block
     fallback-material: OAK_LEAVES
     texture: stev_candy/apple_leaves_with_apples
-    itemsadder-texture: block/stev_apple_leaves_with_apples
+    itemsadder-texture: minecraft:block/stev_apple_leaves_with_apples
     display-name: "&a&lJabloňové listí s jablky"
 
 # Minecraft profiles are deliberately opt-in. A version becomes verified only after its
