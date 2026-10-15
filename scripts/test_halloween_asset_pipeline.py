@@ -184,7 +184,7 @@ class RewardDurabilityRegressionTests(unittest.TestCase):
             ROOT / "src/main/java/cz/halloween/core/HalloweenJoinListener.java"
         ).read_text(encoding="utf-8")
         start = join.index("private void awardDaily(")
-        end = join.index("\\n    }", start)
+        end = join.index("        if (comeback) {", start)
         method = join[start:end]
         self.assertLess(method.index("addFragments("), method.index("recordJoin("))
         self.assertLess(method.index("recordJoin("), method.index("getDataManager().save()"))
@@ -204,7 +204,7 @@ class RewardDurabilityRegressionTests(unittest.TestCase):
             ROOT / "src/main/java/cz/halloween/core/HalloweenChallengeManager.java"
         ).read_text(encoding="utf-8")
         start = source.index("private void claim(")
-        end = source.index("\\n    }", start)
+        end = source.index("        player.sendTitle(", start)
         claim = source[start:end]
         self.assertLess(claim.index("addFragments("), claim.index("markChallengeClaimed("))
         self.assertLess(claim.index("markChallengeClaimed("), claim.index("getDataManager().save()"))
