@@ -23,19 +23,18 @@ ASSET_SUFFIXES = {".png", ".bbmodel", ".json", ".ogg", ".fsh", ".mcmeta"}
 def verified_minecraft_versions(root: Path) -> tuple[str, list[str]]:
     registry = root / "src/main/resources/content-registry.yml"
     text = registry.read_text(encoding="utf-8")
-    section = re.search(r"(?ms)^target-versions:[ \\t]*\\n(.*?)(?=^[a-z][a-z0-9_-]*:[ \\t]*$|\\Z)", text)
+    section = re.search(r"(?ms)^target-versions:[ \t]*\n(.*?)(?=^[a-z][a-z0-9_-]*:[ \t]*$|\Z)", text)
     if not section:
         raise ValueError("content-registry.yml is missing target-versions")
     body = section.group(1)
-    default = re.search(r"(?m)^[ \\t]+default:[ \\t]*[\\"']?([0-9]+(?:\\.[0-9]+){1,2})", body)
-    verified_block = re.search(r"(?ms)^[ \\t]+verified:[ \\t]*\\n((?:^[ \\t]+-[ \\t]*[\\"']?[0-9]+(?:\\.[0-9]+){1,2}[\\"']?[ \\t]*$\\n?)+)", body)
+    default = re.search(r"(?m)^[ \t]+default:[ \t]*[\"']?([0-9]+(?:\.[0-9]+){1,2})", body)
+    verified_block = re.search(r"(?ms)^[ \t]+verified:[ \t]*\n((?:^[ \t]+-[ \t]*[\"']?[0-9]+(?:\.[0-9]+){1,2}[\"']?[ \t]*$\n?)+)", body)
     if not default or not verified_block:
         raise ValueError("target-versions requires a default and a verified list")
-    versions = re.findall(r"(?m)^[ \\t]+-[ \\t]*[\\"']?([0-9]+(?:\\.[0-9]+){1,2})[\\"']?[ \\t]*$", verified_block.group(1))
+    versions = re.findall(r"(?m)^[ \t]+-[ \t]*[\"']?([0-9]+(?:\.[0-9]+){1,2})[\"']?[ \t]*$", verified_block.group(1))
     if not versions or default.group(1) not in versions or len(versions) != len(set(versions)):
         raise ValueError("The default Minecraft version must be present exactly once in verified")
     return default.group(1), versions
-
 
 def build_manifest(root: Path, minecraft_version: str) -> dict:
     default_version, verified_versions = verified_minecraft_versions(root)
