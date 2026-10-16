@@ -33,6 +33,18 @@ jobs:
       # Bitmap glyph textures used by the illustrated written-book guide.
       - name: Generate illustrated guide-book glyphs
         run: python3 scripts/generate_halloween_guide_textures.py
+      # Build the supplied MIT-licensed Koto cubemap into Java's 3x2 custom-sky atlas.
+      - name: Install Koto sky converter dependency
+        run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
+      - name: Download reviewed Koto sky source
+        run: |
+          mkdir -p target
+          curl --fail --location --retry 3 --connect-timeout 20 \\
+            https://api.modrinth.com/v2/version/2CcGu1oW -o target/koto-sky-version.json
+          source_url="$(python3 -c 'import json; d=json.load(open("target/koto-sky-version.json", encoding="utf-8")); print(next(f["url"] for f in d["files"] if f["filename"].lower().endswith(".zip")))')"
+          curl --fail --location --retry 3 --connect-timeout 20 "$source_url" -o target/red-sky-by-koto.zip
+      - name: Generate Java-compatible Koto sky atlas
+        run: python3 scripts/generate_koto_skybox.py --source-zip target/red-sky-by-koto.zip
       - name: Validate canonical content registry and imported asset provenance
         run: python3 scripts/validate_halloween_content_registry.py
       - name: Validate all model, decoration, armor and sound registry paths

@@ -163,6 +163,23 @@ for marker in (
 if not shader_text.lstrip().startswith("#version 330"):
     fail("Sky shader must start with the supported GLSL version declaration")
 
+# Koto's source is converted to a Java custom-sky atlas during the build. Keep
+# the full-resolution layout and loader configuration explicit and reproducible.
+KOTO_SKY_ATLAS = CONTENT / "resourcepack/assets/minecraft/optifine/sky/world0/sky1.png"
+KOTO_SKY_PROPERTIES = CONTENT / "resourcepack/assets/minecraft/optifine/sky/world0/sky1.properties"
+if not KOTO_SKY_ATLAS.is_file() or not KOTO_SKY_PROPERTIES.is_file():
+    fail("Missing generated Koto Java sky atlas or sky1.properties")
+try:
+    sky_width, sky_height = strict_png_size(KOTO_SKY_ATLAS)
+except (OSError, ValueError) as exc:
+    fail(f"Invalid Koto sky atlas: {exc}")
+if (sky_width, sky_height) != (1536, 1024):
+    fail(f"Koto Java sky atlas must be 1536x1024 (3x2 faces), got {sky_width}x{sky_height}")
+sky_properties = KOTO_SKY_PROPERTIES.read_text(encoding="utf-8")
+for marker in ("source=./sky1.png", "blend=replace", "rotate=false"):
+    if marker not in sky_properties.splitlines():
+        fail(f"Koto sky properties are missing required setting: {marker}")
+
 # Explicit vanilla texture overrides give physical Halloween decoration its
 # seasonal appearance while keeping the server-side blocks present with or
 # without the pack. Fail the build if any required 16x16 texture is missing.
