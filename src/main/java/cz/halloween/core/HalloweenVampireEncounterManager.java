@@ -1274,6 +1274,10 @@ public final class HalloweenVampireEncounterManager implements Listener {
             finishNoReward();
             return;
         }
-        finishVictory(event.getEntity().getKiller());
+        Player killer = event.getEntity().getKiller();
+        if (killer != null && plugin.getAchievementManager() != null) {
+            plugin.getAchievementManager().award(killer, "boss_vampire_king");
+        }
+        finishVictory(killer);
     }
 }

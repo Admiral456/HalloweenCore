@@ -90,7 +90,13 @@ public final class HalloweenHeadlessNickManager implements Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         UUID entityId = event.getEntity().getUniqueId();
         for (Encounter encounter : new ArrayList<>(encounters.values())) {
-            if (encounter.rider.getUniqueId().equals(entityId) || encounter.horse.getUniqueId().equals(entityId)) {
+            if (encounter.rider.getUniqueId().equals(entityId)) {
+                Player killer = event.getEntity().getKiller();
+                if (killer != null && plugin.getAchievementManager() != null) {
+                    plugin.getAchievementManager().award(killer, "boss_headless_nick");
+                }
+                cleanup(encounter, true);
+            } else if (encounter.horse.getUniqueId().equals(entityId)) {
                 cleanup(encounter, true);
             }
         }

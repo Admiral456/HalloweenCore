@@ -39,6 +39,7 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey eventMobKey;
     private final NamespacedKey graveEncounterMobKey;
     private final NamespacedKey abilityCooldownKey;
+    private final NamespacedKey bloodMoonCaptainKey;
     private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
     public HalloweenMobManager(HalloweenCore plugin) {
@@ -48,6 +49,7 @@ public final class HalloweenMobManager implements Listener {
         this.eventMobKey = new NamespacedKey(plugin, "event_mob");
         this.graveEncounterMobKey = new NamespacedKey(plugin, "grave_encounter_mob");
         this.abilityCooldownKey = new NamespacedKey(plugin, "special_ability_cooldown");
+        this.bloodMoonCaptainKey = new NamespacedKey(plugin, "blood_moon_captain");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -594,6 +596,7 @@ public final class HalloweenMobManager implements Listener {
                     plugin.getConfig().getInt("special-mobs.types.pumpkin-wraith.explosion-radius", 3))));
         }
         living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
+        living.getPersistentDataContainer().set(bloodMoonCaptainKey, PersistentDataType.BYTE, (byte) 1);
         if (living instanceof Mob mobEntity) mobEntity.setTarget(player);
         scheduleEventMobCleanup(living);
         return true;

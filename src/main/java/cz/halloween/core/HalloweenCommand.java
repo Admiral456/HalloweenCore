@@ -8,6 +8,7 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 
@@ -32,7 +33,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = List.of(
-                    "guide", "stats", "progress", "curse", "event", "challenge", "quests",
+                    "guide", "stats", "progress", "curse", "event", "challenge", "quests", "achievements",
                     "rewards", "claim", "top", "reload", "debug", "status", "spawn", "locate", "grave", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "disable", "enable", "on", "off"
             );
             return subcommands.stream()
@@ -167,6 +168,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
         if (args[0].equalsIgnoreCase("curse")) return curse(sender);
+        if (args[0].equalsIgnoreCase("achievements") || args[0].equalsIgnoreCase("achievement")) return achievements(sender);
         if (args[0].equalsIgnoreCase("event")) return event(sender, args);
         if (args[0].equalsIgnoreCase("rewards")) return rewards(sender);
         if (args[0].equalsIgnoreCase("claim")) return claim(sender, args);
@@ -226,7 +228,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         if (args[0].equalsIgnoreCase("enable")) return playerOptOut(sender, false);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
-        sender.sendMessage(plugin.color("&6/halloween guide &7- herní kniha o funkcích a eventech"));
+        sender.sendMessage(plugin.color("&6/halloween guide &7- ilustrovaná herní kniha"));
+        sender.sendMessage(plugin.color("&6/halloween achievements &7- vlastní Halloween úspěchy"));
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
@@ -250,6 +253,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
         sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet|all> &7- přidá fragmenty nebo vydá všechny testovací předměty"));
+        sender.sendMessage(plugin.color("&6/give tutorial_book <hráč> &7- vydá ilustrovanou knihu (admin)"));
         sender.sendMessage(plugin.color("&6/halloween disable|enable &7- vypne/zapne Halloween efekty pouze pro tebe"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu pro celý server"));
         return true;
@@ -259,6 +263,33 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
      * Convenience alias for Halloween structures that leaves Minecraft's
      * native /locate structure command untouched.
      */
+    /**
+     * Narrow shortcut for the custom guide. Only the exact
+     * "/give tutorial_book <online-player>" form is intercepted.
+     */
+    @EventHandler(priority = EventPriority.HIGHEST)
+    public void onTutorialBookGiveAlias(PlayerCommandPreprocessEvent event) {
+        String[] parts = event.getMessage().trim().split("\\s+");
+        if (parts.length < 2 || !parts[0].equalsIgnoreCase("/give")
+                || !parts[1].equalsIgnoreCase("tutorial_book")) return;
+        event.setCancelled(true);
+        Player sender = event.getPlayer();
+        if (!checkAdminOrPermission(sender, "halloweencore.items.give")) return;
+        if (parts.length != 3) {
+            sender.sendMessage(plugin.color("&cPoužití: /give tutorial_book <hráč>"));
+            return;
+        }
+        Player target = Bukkit.getPlayerExact(parts[2]);
+        if (target == null) {
+            sender.sendMessage(plugin.color("&cHráč &f" + parts[2] + " &cnení online."));
+            return;
+        }
+        HalloweenGuideBook.give(plugin, target);
+        if (!target.getUniqueId().equals(sender.getUniqueId())) {
+            sender.sendMessage(plugin.color("&aIlustrovanou knihu HalloweenCore jsi vydal hráči &f" + target.getName() + "&a."));
+        }
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onVanillaLocateAlias(PlayerCommandPreprocessEvent event) {
         String[] parts = event.getMessage().trim().split("\\s+");
@@ -278,6 +309,31 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
 
         event.setCancelled(true);
         plugin.getStructureManager().handleLocateCommand(event.getPlayer(), new String[]{"locate", target});
+    }
+
+    private boolean achievements(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cÚspěchy může zobrazit pouze hráč ve hře."));
+            return true;
+        }
+        if (!checkUse(player)) return true;
+        HalloweenAchievementManager manager = plugin.getAchievementManager();
+        if (manager == null) {
+            player.sendMessage(plugin.color("&cSystém úspěchů není dostupný."));
+            return true;
+        }
+        long completed = manager.getAchievementCatalog().stream()
+                .filter(achievement -> plugin.getDataManager().hasAchievement(player.getUniqueId(), achievement.id()))
+                .count();
+        player.sendMessage(plugin.color("&8&m--------------------------------"));
+        player.sendMessage(plugin.color("&6&lHALLOWEEN ÚSPĚCHY &8» &e" + completed + "/" + manager.getAchievementCatalog().size()));
+        for (HalloweenAchievementManager.Achievement achievement : manager.getAchievementCatalog()) {
+            boolean unlocked = plugin.getDataManager().hasAchievement(player.getUniqueId(), achievement.id());
+            player.sendMessage(plugin.color((unlocked ? "&a✔ " : "&8○ ")
+                    + "&f" + achievement.title() + " &8— " + (unlocked ? "&7" : "&8") + achievement.description()));
+        }
+        player.sendMessage(plugin.color("&7Úspěchy se odemykají automaticky a ukládají se."));
+        return true;
     }
 
     private boolean stats(CommandSender sender) {
