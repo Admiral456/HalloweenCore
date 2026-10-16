@@ -55,6 +55,8 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 
 - /halloween
 - /halloween guide (dá hráči Minecraft knihu se shrnutím systémů a šesti eventů)
+- /halloween achievements (přehled trvale uložených úspěchů)
+- /give tutorial_book <hráč> (admin: vydá ilustrovanou knihu konkrétnímu online hráči)
 - /halloween stats
 - /halloween progress
 - /halloween curse

@@ -25,6 +25,23 @@ Plugin chápe pole jako blok `FARMLAND`, který vznikne použitím motyky na vho
 - `/halloween quests` — příběhové úkoly.
 - `/halloween secrets` — nápovědy k tajným místům.
 - `/halloween guide` — získat knihu znovu.
+- `/halloween achievements` — přehled vlastních, trvale uložených úspěchů.
+- `/give tutorial_book <hráč>` — admin příkaz pro vydání ilustrované knihy konkrétnímu online hráči.
+
+## Úspěchy
+
+Úspěchy se odemykají automaticky, ukládají se do hráčských dat a lze je zobrazit příkazem `/halloween achievements`.
+
+- **První výprava** — objevit Halloween vesnici.
+- **Město mrtvých** — objevit Halloween hřbitov.
+- **Konec noci** — porazit Krále upírů.
+- **Strážce padl** — porazit Strážce hrobu při skutečném rituálu, nikoli při admin testu.
+- **Bezhlavý konec** — porazit Bezhlavého Nicka.
+- **Zhasni krvavý měsíc** — porazit Kapitána krvavé invaze.
+- **Lovec bossů** — porazit všechny čtyři uvedené bosse.
+- **Krvavý strážce** — získat všechny čtyři kusy zbroje Krvavého strážce.
+
+Odemčení zobrazí titul, zprávu a zvuk; trvalý záznam je v `data.yml`.
 
 ## Relikvie a vlastní vzhled
 Maska nočního lovce zvyšuje příjem fragmentů; Prokletý talisman přidá při držení jedno srdce; Batwing Elytra má výpad při skrčení během plachtění; Nocturne Sovereign Cowl odhaluje a zpomaluje okolní monstra. Vlastní vzhled vyžaduje přijatý ItemsAdder resource pack.

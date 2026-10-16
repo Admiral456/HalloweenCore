@@ -49,6 +49,8 @@ jobs:
         run: python3 scripts/validate_halloween_runtime_rules.py
       - name: Test Halloween event behavior contract
         run: python3 scripts/test_halloween_event_semantics.py
+      - name: Test Halloween achievements and tutorial-book shortcut
+        run: python3 scripts/test_halloween_achievements.py
       - name: Build deterministic asset manifest
         run: python3 scripts/build_halloween_asset_manifest.py --minecraft-version 1.21.10
       - name: Verify deterministic asset manifest

@@ -70,9 +70,11 @@ public final class HalloweenGuideBook {
 
             "§e§l11 • SVĚT A TAJEMSTVÍ\n§8━━━━━━━━━━━━\n§0V přírodě hledej dýně, pavučiny, houby, svíčky a hroby.\n\n§6• §0Krvavý oltář\n§5• §0Doupě hexové čarodějky\n§8• §0Zapomenutý hrob\n\n§e/halloween secrets",
 
-            "§b§l12 • PŘÍKAZY\n§8━━━━━━\n§e/halloween §0statistiky\n§e/halloween progress §0cíl serveru\n§e/halloween curse §0prokletí\n§e/halloween rewards §0obchod\n§e/halloween challenge §0výzva\n§e/halloween quests §0příběh\n§e/halloween guide §0kniha znovu",
+            "§b§l12 • PŘÍKAZY\n§8━━━━━━\n§e/halloween §0statistiky\n§e/halloween progress §0cíl\n§e/halloween curse §0prokletí\n§e/halloween rewards §0obchod\n§e/halloween challenge §0výzva\n§e/halloween quests §0příběh\n§e/halloween guide §0kniha",
 
-            "§4§l13 • PAMATUJ SI\n§8━━━━━━\n§0Počet mobů je omezený; některé vlny proto nemusí využít maximum.\n\n§0Pole i dýně se zpracovávají v načtených chunkech, ne na celé mapě naráz.\n\n§eObrázky vyžadují ItemsAdder pack.\n§6Přežij noc!"
+            "§4§l13 • PAMATUJ SI\n§8━━━━━━\n§0Počet mobů je omezený; některé vlny proto nemusí využít maximum.\n\n§0Pole i dýně se zpracovávají v načtených chunkech.\n\n§eObrázky vyžadují ItemsAdder pack.\n§6Přežij noc!",
+            "§6§l14 • ÚSPĚCHY\n§8━━━━━━\n§0Odemčené úspěchy se ukládají.\n§e/halloween achievements\n§0Najdi Halloween vesnici i hřbitov.\n§0Získej všechny 4 kusy zbroje Krvavého strážce.\n§6Prohlédni si další stránku.",
+            "§4§l15 • LOVEC BOSSŮ\n§8━━━━━━\n§0Poraz jednotlivé hlavní bosse:\n§4• §0Krále upírů\n§8• §0Strážce hrobu\n§5• §0Bezhlavého Nicka\n§c• §0Kapitána krvavé invaze\n\n§6Poraz všechny čtyři a získej další úspěch!"
         );
     }
 }
