@@ -4,49 +4,75 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BookMeta;
+
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Illustrated HalloweenCore guide. The private-use characters are mapped to
+ * bitmap glyphs by the ItemsAdder font_images resource-pack content.
+ */
 public final class HalloweenGuideBook {
     private HalloweenGuideBook() {}
+
     public static void give(HalloweenCore plugin, Player player) {
         ItemStack item = new ItemStack(Material.WRITTEN_BOOK);
         BookMeta meta = (BookMeta) item.getItemMeta();
-        if (meta == null) { player.sendMessage(plugin.color("&cHalloween průvodce se nepodařilo vytvořit.")); return; }
+        if (meta == null) {
+            player.sendMessage(plugin.color("&cPrůvodce HalloweenCore se nepodařilo vytvořit."));
+            return;
+        }
+
         meta.setTitle("Průvodce HalloweenCore");
         meta.setAuthor("WarriorLand");
+        meta.setDisplayName(plugin.color("&6&l✦ Průvodce HalloweenCore"));
+        meta.setLore(List.of(
+                plugin.color("&7Ilustrovaná příručka eventů"),
+                plugin.color("&8WarriorLand • Halloween 2026"),
+                plugin.color("&ePravým kliknutím otevři")
+        ));
         meta.addPage(pages().toArray(String[]::new));
         item.setItemMeta(meta);
+
         Map<Integer, ItemStack> leftovers = player.getInventory().addItem(item);
-        for (ItemStack leftover : leftovers.values()) player.getWorld().dropItemNaturally(player.getLocation(), leftover);
-        player.sendMessage(plugin.color("&6&lHALLOWEEN &8» &7Dostal jsi knihu &ePrůvodce HalloweenCore&7."));
+        for (ItemStack leftover : leftovers.values()) {
+            player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+        }
+        player.sendMessage(plugin.color("&6&lHALLOWEEN &8» &7Do inventáře jsi dostal &eIlustrovaného průvodce&7."));
+        player.sendMessage(plugin.color("&8Poznámka: vlastní obrázky v knize vyžadují přijatý ItemsAdder resource pack."));
     }
+
     private static List<String> pages() {
         return List.of(
-            "§6§lHALLOWEEN 2026\n§0Průvodce serverovým eventem WarriorLand.\n\n§0Pravidla událostí, postup, fragmenty, speciální mobové, odměny a příkazy.",
-            "§6§lJAK HRÁT\n§0Hraj v Survivalu nebo Adventure. Zabíjej moby, těž rudy, sklízej a rybař. Získáváš §6Halloween fragmenty§0 do obchodu.",
-            "§6§lPROKLETÍ\n§0Tvoje úroveň prokletí je 0 až 5. Vyšší úroveň zvyšuje zisk fragmentů a odemyká dražší odměny. §e/halloween curse",
-            "§5§lDUŠEVNÍ BOUŘE\n§0Každých 25 sekund přichází vlna prokletých zombie, hrobníků a krvavých pavouků. Moby se objevují u každého hráče do 25 bloků.",
-            "§5§lČARODĚJNICKÁ HODINA\n§0U každého hráče se objevují hexové čarodějky, krvaví pavouci a prokletí zombie. Temnota a zvuky oznamují začátek lovu.",
-            "§a§lPROKLETÁ SKLIZEŇ\n§0Nepřátelé se probouzejí na blocích §eFarmland§0 — zorané půdě po použití motyky. Plugin postupně prochází načtené chunky a pole.",
-            "§4§lKRVAVÝ MĚSÍC\n§0Svět se přepne na noc a červené částice napodobí krvavý měsíc. Vlny míří k hráčům; nepřátelská monstra způsobují 3× poškození.",
-            "§6§lDÝŇOVÁ APOKALYPSA\n§0U každého hráče se objevují dýňoví přízraci. Plugin přidává dýně a jack-o-lanterny do bezpečných míst v načtených přírodních chunkech.",
-            "§8§lHŘBITOV VSTÁVÁ\n§0Moby se objevují pouze u hřbitovů zaznamenaných při generování. Útočí na nejbližšího způsobilého hráče v okolí hřbitova.",
-            "§c§lSPECIÁLNÍ MOBOVÉ\n§0Prokletý zombie, Ženec prázdnoty, Hrobník, Ledový stopař, Krvavý pavouk, Dýňový přízrak, Hexová čarodějka a Noční můra mají vlastní útoky.",
-            "§6§lODMĚNY\n§0Obchod: §e/halloween rewards§0. Denní lov: §e/halloween challenge§0. Příběh: §e/halloween quests§0. Některé věci potřebují vyšší prokletí.",
-            "§5§lRELIKVIE\n§0Maska nočního lovce zvyšuje fragmenty. Talisman při držení přidá jedno srdce. Batwing Elytra nabízí výpad za letu; Cowl odhaluje a zpomaluje monstra.",
-            "§e§lSVĚT A HUDBA\n§0V přírodě se mohou objevit dýně, pavučiny, červené svíčky, houby, náhrobky, duševní lucerny a suché keře. V noci hraje Halloween playlist.",
-            "§b§lPŘÍKAZY HRÁČE\n§e/halloween §0statistiky\n§e/halloween progress §0cíl serveru\n§e/halloween event §0stav eventu\n§e/halloween secrets §0nápovědy\n§e/halloween guide §0kniha znovu.",
-            "§c§lVLASTNÍ VZHLEDY\n§0Vlastní modely vyžadují přijetí ItemsAdder resource packu. Pokud předmět vypadá jako vanilla, může chybět pack nebo model; některé modely čekají na ověření.",
-            "§6§lSPOLEČNÝ CÍL\n§0Všichni přispívají fragmenty do společného cíle. Dosáhněte milníků, posilujte Halloween eventy a odemkněte finále.\n\n§8§oPřežij noc — a pozor na hřbitově.",
-            "§e§lSEZÓNA\n§0Halloween sezóna běží standardně od 1. října do 5. listopadu. Čarodějnická hodina je obvykle 20:00–22:00 a zkracuje čas do náhodné události.",
-            "§8§lHŘBITOVNÍ RITUÁL\n§0U zaznamenaného hřbitova zapal svíčku pro tři vlny nepřátel. Poslední vlna vyvolá Strážce hrobu. Úspěšní účastníci dostanou fragmenty. Admin test odměny nedává.",
-            "§5§lTAJNÁ MÍSTA\n§0Krvavý oltář, Doupě hexové čarodějky a Zapomenutý hrob skrývají jednorázové odměny. Sleduj nápovědy přes §e/halloween secrets§0; souřadnice se hráčům neukazují.",
-            "§c§lSTRUKTURY\n§0Hřbitovy a strašidelné vesnice se mohou generovat u průzkumu vhodného terénu. Arény a ruční stavby ovládají správci. FORCE může přepsat bloky uvnitř ohraničené stavby.",
-            "§4§lHEADLESS NICK\n§0V noci může v povolených světech pronásledovat hráče bezhlavý jezdec. Jeho vlastní model koně a jezdce musí být na serveru správně nahrán, jinak se může použít fallback.",
-            "§4§lKRÁL UPÍRŮ\n§0Po společném globálním cíli se má odemknout finální souboj v upíří aréně. Boss potřebuje připravený ModelEngine model, arénu a povolenou konfiguraci; dokud není připravený, zůstává vypnutý.",
-            "§7§lOSOBNÍ VYPNUTÍ\n§0Příkazy §e/halloween disable§0 a §e/halloween enable§0 vypnou či zapnou tvoje osobní Halloween efekty a získávání fragmentů. Stav se ukládá.",
-            "§b§lPOZNÁMKA K VZHLEDU\n§0Eventová mechanika může fungovat i s vanilla vzhledem. Vlastní zbroj, modely, ambient i červený krvavý měsíc závisí na správném packu a testu klienta."
+            "\uE1F0\n\n\n§6§lHALLOWEENCORE\n§0ILUSTROVANÝ PRŮVODCE\n§8━━━━━━━━━━━━\n§0WarriorLand • 2026\n\n§7Otevři další stránku.",
+
+            "§6§lOBSAH\n§8━━━━━━━━━━━━\n§0 1. Jak začít .......... 3\n§0 2. Fragmenty .......... 4\n§5 3. Duševní bouře ...... 5\n§d 4. Čarodějnická hodina  6\n§a 5. Prokletá sklizeň ... 7\n§4 6. Krvavý měsíc ....... 8\n§6 7. Dýňová apokalypsa .. 9\n§3 8. Hřbitov vstává .... 10\n§0 9. Relikvie a příkazy  12",
+
+            "§6§l01 • JAK ZAČÍT\n§8━━━━━━━━━━━━\n§0Halloween svět skrývá eventy, speciální moby a vzácné odměny.\n\n§2◆ §0Bojuj s monstry.\n§2◆ §0Těž rudy, farmař a rybař.\n§2◆ §0Sbírej Halloween fragmenty.\n§2◆ §0Plň úkoly a prozkoumávej hřbitovy.\n\n§eTip: §0Na těžké eventy se připrav s výbavou a jídlem.",
+
+            "§6§l02 • FRAGMENTY\n§8━━━━━━━━━━━━\n§0Fragmenty jsou měna HalloweenCore. Získáš je hraním a můžeš je utrácet za odměny.\n\n§d◆ §0Lov a PvE\n§6◆ §0Těžba a farmaření\n§b◆ §0Rybaření a úkoly\n\n§5PROKLETÍ 0–5\n§0Vyšší úroveň může zvýšit výdělek a odemknout další odměny.\n§e/halloween curse",
+
+            "\uE1F1\n\n§5§l03 • DUŠEVNÍ BOUŘE\n§8━━━━━━━━━━━━\n§0Každých 25 sekund přichází další vlna.\n\n§5◆ §0Spawn u každého způsobilého hráče.\n§5◆ §0Místo se hledá do 25 bloků.\n§5◆ §0Prokletí zombie, hrobníci a krvaví pavouci.\n\n§dTIP\n§0Drž se v pohybu a nenech se obklíčit.",
+
+            "\uE1F2\n\n§5§l04 • ČARODĚJNICKÁ HODINA\n§8━━━━━━━━━━━━\n§0Temnota dává prostor lovcům a čarodějnicím.\n\n§d◆ §0Vlna u každého způsobilého hráče.\n§d◆ §0Spawn do 25 bloků.\n§d◆ §0Hexové čarodějky, pavouci a zombie.\n§d◆ §0Může se objevit efekt temnoty.\n\n§5TIP\n§0Sleduj zvuky a měj připravené léčení.",
+
+            "\uE1F3\n\n§a§l05 • PROKLETÁ SKLIZEŇ\n§8━━━━━━━━━━━━\n§0Pole už není bezpečné. Nepřátelé se probouzejí na skutečné zorané půdě.\n\n§a◆ §0Pole = blok FARMLAND po použití motyky.\n§a◆ §0Krvaví pavouci a dýňoví přízraci.\n§a◆ §0Cílí na nejbližšího hráče v dosahu.\n\n§ePOZOR\n§0Svět se prochází postupně v načtených chunkech, ne celý najednou.",
+
+            "\uE1F4\n\n§4§l06 • KRVAVÝ MĚSÍC\n§8━━━━━━━━━━━━\n§0Noc se zbarví do ruda a začíná invaze.\n\n§c◆ §0Vlny u každého způsobilého hráče.\n§c◆ §0Spawn do 25 bloků.\n§c◆ §0Nepřátelská monstra udělují 3× poškození.\n§c◆ §0Může se objevit kapitán invaze.\n\n§4TIP\n§0Červený disk je efekt z částic; textura vanilla měsíce se dynamicky nepřebarvuje.",
+
+            "\uE1F5\n\n§6§l07 • DÝŇOVÁ APOKALYPSA\n§8━━━━━━━━━━━━\n§0Dýňoví přízraci přicházejí z plamenů a dýně se objevují v krajině.\n\n§6◆ §0Vlna u každého způsobilého hráče.\n§6◆ §0Spawn do 25 bloků.\n§6◆ §0Dýně a jack-o'-lanterny v přírodě.\n\n§eTIP\n§0Dekorace přibývají postupně v načtených přírodních chunkech a nepřepisují obsazené bloky.",
+
+            "\uE1F6\n\n§3§l08 • HŘBITOV VSTÁVÁ\n§8━━━━━━━━━━━━\n§0Tady je důležité místo: mrtví povstanou jen na zaznamenaných hřbitovech.\n\n§3◆ §0Spawn pouze na evidovaných hřbitovech.\n§3◆ §0Žádné běžné vlny na volném poli.\n§3◆ §0Moby útočí na nejbližšího hráče v dosahu.\n\n§eTIP\n§0Prozkoumávej hřbitovy a dávej pozor na hrobníky.",
+
+            "§c§l09 • SPECIÁLNÍ MOBOVÉ\n§8━━━━━━━━━━━━\n§0Každý typ má vlastní vlastnosti a může používat speciální útoky.\n\n§5◆ §0Prokletý zombie — vysává sílu.\n§8◆ §0Hrobník — označuje místo útoku.\n§c◆ §0Krvavý pavouk — jed a zpomalení.\n§6◆ §0Dýňový přízrak — výbuch popela.\n§d◆ §0Hexová čarodějka — kletby a lektvary.\n\n§7Některé modely potřebují správně nahraný resource pack.",
+
+            "§5§l10 • RELIKVIE\n§8━━━━━━━━━━━━\n§0Vzácné předměty poskytují bonusy a schopnosti.\n\n§6◆ §0Maska nočního lovce — bonus k fragmentům.\n§5◆ §0Prokletý talisman — extra srdce při držení.\n§d◆ §0Batwing Elytra — výpad při plachtění.\n§8◆ §0Nocturne Sovereign Cowl — odhalení monster.\n\n§e/halloween rewards\n§0Požadavky a ceny najdeš v obchodě.",
+
+            "§e§l11 • SVĚT A TAJEMSTVÍ\n§8━━━━━━━━━━━━\n§0V přírodě můžeš najít dýně, pavučiny, houby, svíčky, lucerny a hroby.\n\n§6◆ §0Hřbitovy a strašidelné vesnice.\n§5◆ §0Krvavý oltář.\n§d◆ §0Doupě hexové čarodějky.\n§8◆ §0Zapomenutý hrob.\n\n§e/halloween secrets\n§0Zobrazí nápovědy, nikoli přesné souřadnice.",
+
+            "§b§l12 • PŘÍKAZY HRÁČE\n§8━━━━━━━━━━━━\n§e/halloween §0— statistiky\n§e/halloween progress §0— cíl serveru\n§e/halloween curse §0— tvé prokletí\n§e/halloween rewards §0— obchod\n§e/halloween challenge §0— denní výzva\n§e/halloween quests §0— příběh\n§e/halloween secrets §0— tajná místa\n§e/halloween guide §0— získat tuto knihu znovu.",
+
+            "§4§l13 • CO SI PAMATOVAT\n§8━━━━━━━━━━━━\n§0Eventy mají limit počtu mobů a bezpečných spawn míst. Ne každá vlna proto musí vytvořit maximální počet nepřátel.\n\n§0Pole, dýně a hřbitovy se zpracovávají podle načtených chunků. Celá nekonečná mapa se neprochází naráz.\n\n§eVlastní obrázky\n§0Ilustrace této knihy vyžadují přijatý ItemsAdder resource pack. Bez něj se soukromé znaky nemusí zobrazit správně.\n\n§6Přežij noc — a nechoď sám na hřbitov."
         );
     }
 }

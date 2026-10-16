@@ -1,6 +1,6 @@
 # HalloweenCore — herní průvodce
 
-Tento návod je dostupný ve hře jako napsaná kniha příkazem `/halloween guide`.
+Tento návod je dostupný ve hře jako ilustrovaná napsaná kniha příkazem `/halloween guide`. Kniha používá vlastní bitmapové ikonky z ItemsAdder font images; hráč musí přijmout aktuální resource pack, jinak se ilustrace nezobrazí správně.
 
 ## Základní postup
 Hráči získávají Halloween fragmenty za PvE, těžbu rud, farmaření a rybaření. Prokletí od 0 do 5 zvyšuje výdělek a odemyká dražší předměty. Celý server společně přispívá do globálního cíle.

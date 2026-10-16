@@ -30,6 +30,9 @@ jobs:
       # Player-owned shop and gear icons are reproducibly generated. Artist-owned mob UV atlases remain untouched.
       - name: Generate Halloween item textures
         run: python3 scripts/generate_halloween_item_textures.py
+      # Bitmap glyph textures used by the illustrated written-book guide.
+      - name: Generate illustrated guide-book glyphs
+        run: python3 scripts/generate_halloween_guide_textures.py
       - name: Validate canonical content registry and imported asset provenance
         run: python3 scripts/validate_halloween_content_registry.py
       - name: Validate all model, decoration, armor and sound registry paths
