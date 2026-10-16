@@ -171,10 +171,22 @@ for event_id in ("soulstorm", "witching-hour", "cursed-harvest",
     if f"    {event_id}:" not in config:
         fail(f"Config is missing event type: {event_id}")
 for marker in ("applySurgeToPlayer(target, now)",
-               'getInt("random-events.players-per-surge", 3)',
+               "for (Player target : players)",
                "cleanupEventMobs()", "scheduleNextEvent()"):
     if marker not in events:
         fail(f"Event lifecycle/surge contract is missing: {marker}")
+if 'getInt("random-events.players-per-surge"' in events:
+    fail("Event waves must target every eligible player, not a random player subset")
+if 'getInt("random-events.spawn-radius-blocks", 25)' not in mobs:
+    fail("Player-proximity event spawn radius must be explicitly capped at 25 blocks")
+if "spawnFromLoadedFarmland()" not in events or "Material.FARMLAND" not in events:
+    fail("Cursed Harvest must scan real Farmland blocks")
+if "spawnFromRecordedGraveyards()" not in events or "getRecordedGraveyardLocations" not in structures:
+    fail("Graveyard Rising must spawn from recorded cemetery sites")
+if "displayBloodMoonToPlayers()" not in events or "world.setTime(13_000L)" not in events:
+    fail("Blood Moon must set night and show its event-only red visual")
+if "decorateLoadedChunksWithPumpkins()" not in events:
+    fail("Pumpkin Apocalypse must decorate the active world's loaded natural chunks")
 
 # The current spec is one additional heart (+2 max health); old installs migrate once.
 if "bonus-health: 2.0" not in config:

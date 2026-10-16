@@ -530,6 +530,7 @@ public final class HalloweenMobManager implements Listener {
     private boolean spawnTrackedEventMob(Location spawnLocation, String mobId, Player target) {
         if (spawnLocation == null || spawnLocation.getWorld() == null) return false;
         World world = spawnLocation.getWorld();
+        if (!plugin.isAutomaticHalloweenWorld(world)) return false;
         int cap = Math.max(1, Math.min(512, plugin.getConfig().getInt("random-events.max-event-mobs", 256)));
         if (countEventMobs(world) >= cap) return false;
         LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
