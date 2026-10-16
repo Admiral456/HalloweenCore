@@ -20,4 +20,4 @@ The source is **Blood Moon Horizon — red sky by koto (1.0)**, uploaded by abdo
 - https://modrinth.com/resourcepack/blood-moon-horizon/version/2CcGu1oW
 - https://www.curseforge.com/minecraft/texture-packs/blood-moon-horizon/files/5489312
 
-See `third-party-assets/koto-sky/NOTICE.md` for the source details and checksums.
+See `THIRD_PARTY_LICENSES/koto-sky-NOTICE.txt` for the source details, checksums, and license notice.

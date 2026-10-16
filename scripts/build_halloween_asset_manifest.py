@@ -86,6 +86,13 @@ def build_manifest(root: Path, minecraft_version: str) -> dict:
                     "source_project": imported[relative]["source"],
                     "source_asset_sha256": imported[relative]["source_sha256"],
                 })
+            elif relative.endswith("/resourcepack/assets/minecraft/optifine/sky/world0/sky1.png"):
+                info.update({
+                    "provenance": "third-party import (converted cubemap atlas)",
+                    "license": "MIT License per upstream distribution pages; see packaged notice",
+                    "author": "Koto (as named in the source); uploaded by abdouahabch7",
+                    "source_project": "Blood Moon Horizon — red sky by koto (1.0)",
+                })
             elif "/mythicmobs/models/" in "/" + relative:
                 info.update({
                     "provenance": "existing ModelEngine/Blockbench asset",

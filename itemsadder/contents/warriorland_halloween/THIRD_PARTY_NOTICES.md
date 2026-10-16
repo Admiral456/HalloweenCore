@@ -27,3 +27,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+The generated Java custom-sky atlas `resourcepack/assets/minecraft/optifine/sky/world0/sky1.png` is converted from **Blood Moon Horizon — red sky by koto (1.0)**. Its distribution pages list the license as MIT. The source ZIP did not include a standalone license file or explicit copyright line; attribution, URLs, source-face checksums, and the MIT license text are included in `THIRD_PARTY_LICENSES/koto-sky-NOTICE.txt`. The six faces are reassembled at their original 512x512 resolution and are not recolored.
