@@ -32,7 +32,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = List.of(
-                    "stats", "progress", "curse", "event", "challenge", "quests",
+                    "guide", "stats", "progress", "curse", "event", "challenge", "quests",
                     "rewards", "claim", "top", "reload", "debug", "status", "spawn", "locate", "grave", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "disable", "enable", "on", "off"
             );
             return subcommands.stream()
@@ -154,6 +154,15 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (args.length > 0 && args[0].equalsIgnoreCase("guide")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(plugin.color("&cPrůvodce si můžeš vzít pouze ve hře."));
+                return true;
+            }
+            if (!checkUse(player)) return true;
+            HalloweenGuideBook.give(plugin, player);
+            return true;
+        }
         if (args.length == 0 || args[0].equalsIgnoreCase("stats")) return stats(sender);
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
@@ -217,6 +226,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         if (args[0].equalsIgnoreCase("enable")) return playerOptOut(sender, false);
         if (args[0].equalsIgnoreCase("on") || args[0].equalsIgnoreCase("off")) return toggle(sender, args[0]);
 
+        sender.sendMessage(plugin.color("&6/halloween guide &7- herní kniha o funkcích a eventech"));
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));

@@ -212,6 +212,21 @@ public final class HalloweenStructureManager implements Listener {
         return false;
     }
 
+    /** Recorded/generated cemetery locations in already-loaded chunks only. */
+    public List<Location> getRecordedGraveyardLocations(World world) {
+        if (world == null) return List.of();
+        List<Location> result = new ArrayList<>();
+        for (Map<?, ?> entry : locations.getMapList("locations")) {
+            if (!"GRAVEYARD".equalsIgnoreCase(String.valueOf(entry.get("type")))) continue;
+            if (!world.getName().equals(String.valueOf(entry.get("world")))) continue;
+            double x = number(entry.get("x")), y = number(entry.get("y")), z = number(entry.get("z"));
+            int blockX = (int) Math.floor(x), blockZ = (int) Math.floor(z);
+            if (!world.isChunkLoaded(blockX >> 4, blockZ >> 4)) continue;
+            result.add(new Location(world, x, y, z));
+        }
+        return List.copyOf(result);
+    }
+
     public List<String> locateTabComplete(String prefix) {
         String normalized = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
         return List.of("hřbitov", "vesnice", "aréna", "vampirearena", "goblinarena", "all", "graveyard", "village", "arena")

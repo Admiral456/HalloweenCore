@@ -635,14 +635,25 @@ random-events:
     max: 24
   duration-minutes: 6
   surge-interval-seconds: 25
-  # Each surge affects up to this many eligible players in different locations.
-  players-per-surge: 3
-  max-event-mobs: 48
+  # Every eligible player receives every player-targeted wave in allowed worlds.
+  spawn-radius-blocks: 25
+  max-event-mobs: 256
+  event-mob-lifetime-seconds: 45
   event-mobs-enabled: true
-  # Blood Moon is intentionally more intense, but bounded to avoid runaway entity counts.
-  invasion-mobs-per-surge: 4
+  invasion-mobs-per-surge: 2
   blood-moon-damage-multiplier: 3.0
   special-mob-chance-multiplier: 2.0
+  cursed-harvest:
+    field-scan-chunks-per-surge: 128
+    max-field-mobs-per-surge: 48
+    field-target-radius-blocks: 192
+  pumpkin-apocalypse:
+    chunks-per-surge: 128
+    additional-pumpkins-per-chunk: 3
+  graveyard-rising:
+    max-sites-per-surge: 64
+    mobs-per-site-per-surge: 3
+    aggro-radius-blocks: 128
   sound: "warriorland_halloween:event_sting"
   types:
     soulstorm:
