@@ -31,8 +31,8 @@ checks = {
     ),
     "recorded village and graveyard discoveries": (
         "getRecordedStructureLocations(World world, String requestedType)" in STRUCTURES
-        and 'nearAnyRecordedStructure(structures, world, playerLocation, "VILLAGE"' in MANAGER
-        and 'nearAnyRecordedStructure(structures, world, playerLocation, "GRAVEYARD"' in MANAGER
+        and 'nearAnyRecordedStructure(structures, world, at, "VILLAGE"' in MANAGER
+        and 'nearAnyRecordedStructure(structures, world, at, "GRAVEYARD"' in MANAGER
         and 'award(player, "find_village")' in VILLAGE
     ),
     "vampire achievement is awarded only in the real encounter": (
