@@ -418,6 +418,10 @@ public final class HalloweenEventManager {
         return result;
     }
 
+    private String blockKey(Block block) {
+        return block.getWorld().getUID() + ":" + block.getX() + ":" + block.getY() + ":" + block.getZ();
+    }
+
     private Player nearestEligiblePlayer(Location location, double radius) {
         if (location == null || location.getWorld() == null) return null;
         double limit = radius * radius;
