@@ -28,10 +28,15 @@ FACE_HASHES = {
     4: "c0a470bdd2819fb443f4c9f64822394220116bb0e0d1ffb782abb9fc64c27806",
     5: "ebe2fe434f0ac6a79857e556a5c69a120194f1a48bb04c2526a1eb03988b3cc6",
 }
-# Source cubemap mapping: 0=south, 1=east, 2=north, 3=west, 4=up, 5=down.
-# Java 3x2 atlas: [west, up, east] / [north, down, south].
-ATLAS_LAYOUT = ((3, 0, 0), (4, 1, 0), (1, 2, 0),
-                (2, 0, 1), (5, 1, 1), (0, 2, 1))
+# Source cubemap mapping: 0=south (+Z), 1=east (+X), 2=north (-Z),
+# 3=west (-X), 4=up (+Y), 5=down (-Y).
+# OptiFine's 3x2 sky atlas layout is:
+# [down, up, north] / [west, south, east].
+# The previous order incorrectly put west/up/east above north/down/south,
+# splitting the six directions across the wrong faces and causing the jagged
+# black shards reported in-game.
+ATLAS_LAYOUT = ((5, 0, 0), (4, 1, 0), (2, 2, 0),
+                (3, 0, 1), (0, 1, 1), (1, 2, 1))
 
 
 def main() -> int:
@@ -75,6 +80,10 @@ def main() -> int:
     atlas = Image.new("RGB", (1536, 1024))
     for face_id, column, row in ATLAS_LAYOUT:
         atlas.paste(faces[face_id], (column * 512, row * 512))
+        # Guard against accidental loss or resizing of any face during assembly.
+        tile = atlas.crop((column * 512, row * 512, (column + 1) * 512, (row + 1) * 512))
+        if tile.tobytes() != faces[face_id].tobytes():
+            raise ValueError(f"cubemap_{face_id} was not copied losslessly into the expected atlas cell")
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     atlas.save(OUTPUT, format="PNG", optimize=True, compress_level=9)
 

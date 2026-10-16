@@ -5,7 +5,7 @@ The Halloween content pack now includes Koto's high-resolution red-sky artwork a
 - Atlas: `resourcepack/assets/minecraft/optifine/sky/world0/sky1.png` (1536x1024, 3x2 faces).
 - Loader settings: `resourcepack/assets/minecraft/optifine/sky/world0/sky1.properties`.
 
-The source package labels the six files as PNGs, but their binary signature is BMP; the converter detects and decodes the actual image format, then writes a valid PNG atlas. Face order is west/up/east on the upper row and north/down/south on the lower row.
+The source package labels the six files as PNGs, but their binary signature is BMP; the converter detects and decodes the actual image format, then writes a valid PNG atlas. The six directions are placed in OptiFine's required order: **down / up / north** on the upper row, and **west / south / east** on the lower row. This corrects an earlier face-order mistake that produced jagged black geometry in-game. Each original 512x512 face is kept pixel-for-pixel; only its position in the atlas changes.
 
 ## Client compatibility
 
