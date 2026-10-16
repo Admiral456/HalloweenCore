@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
-"""Static regression guard for Halloween event behavior."""
+"""Static regression guard for Halloween event behavior and the illustrated guide."""
 from pathlib import Path
+import re
+import struct
+
 ROOT = Path(__file__).resolve().parents[1]
 EVENT = (ROOT / "src/main/java/cz/halloween/core/HalloweenEventManager.java").read_text(encoding="utf-8")
 MOBS = (ROOT / "src/main/java/cz/halloween/core/HalloweenMobManager.java").read_text(encoding="utf-8")
@@ -11,6 +14,15 @@ BOOK = (ROOT / "src/main/java/cz/halloween/core/HalloweenGuideBook.java").read_t
 FONT_CONFIG = (ROOT / "itemsadder/contents/warriorland_halloween/guide_font_images.yml").read_text(encoding="utf-8")
 FONT_GENERATOR = (ROOT / "scripts/generate_halloween_guide_textures.py").read_text(encoding="utf-8")
 FONT_TEXTURES = ROOT / "itemsadder/contents/warriorland_halloween/textures/font"
+
+def decode_java_page(literal: str) -> str:
+    literal = re.sub(r"\\u([0-9a-fA-F]{4})", lambda match: chr(int(match.group(1), 16)), literal)
+    literal = literal.replace(r"\n", "\n").replace(r"\"", '"').replace(r"\\", "\\")
+    return literal
+
+PAGE_LITERALS = re.findall(r'(?m)^\s+"((?:\\.|[^"\\])*)",?\s*$', BOOK)
+PAGE_LENGTHS = [len(decode_java_page(page)) for page in PAGE_LITERALS]
+
 checks = {
     "all eligible players receive event waves": 'getInt("random-events.players-per-surge"' not in EVENT and "for (Player target : players)" in EVENT,
     "event spawning is capped at 25 blocks": 'getInt("random-events.spawn-radius-blocks", 25)' in MOBS and "spawn-radius-blocks: 25" in CONFIG,
@@ -24,57 +36,30 @@ checks = {
     "graveyard event uses recorded cemetery sites": "getRecordedGraveyardLocations" in STRUCTURES and "spawnFromRecordedGraveyards" in EVENT,
     "event mobs receive explicit targets": "mobEntity.setTarget(target)" in MOBS,
     "written in-game guide book command exists": "Material.WRITTEN_BOOK" in BOOK and 'equalsIgnoreCase("guide")' in COMMAND,
-    "illustrated book has ItemsAdder bitmap glyphs for cover and all six events": all(
+    "illustrated book maps private-use glyphs to ItemsAdder images": all(
         symbol in BOOK and symbol in FONT_CONFIG
         for symbol in (r"\uE1F0", r"\uE1F1", r"\uE1F2", r"\uE1F3", r"\uE1F4", r"\uE1F5", r"\uE1F6")
     ) and all(name in FONT_CONFIG and name in FONT_GENERATOR for name in (
         "guide_cover", "guide_soulstorm", "guide_witching", "guide_harvest",
         "guide_blood_moon", "guide_pumpkin", "guide_graveyard"
     )),
-    "written-book pages remain below Minecraft's 256-character limit": all(
-        len(__import__("re").sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)),
-             __import__("re").sub(r"\\n", "\\n", literal))) <= 250
-        for literal in __import__("re").findall(r'(?m)^\s+"((?:\\.|[^"\\])*)"[,]?\s*
-        (FONT_TEXTURES / name).is_file()
-        and (FONT_TEXTURES / name).read_bytes()[12:16] == b"IHDR"
-        and __import__("struct").unpack(">II", (FONT_TEXTURES / name).read_bytes()[16:24]) == (64, 64)
-        for name in (
-            "guide_cover.png", "guide_soulstorm.png", "guide_witching.png",
-            "guide_harvest.png", "guide_blood_moon.png", "guide_pumpkin.png", "guide_graveyard.png"
-        )
-    ),
-}
-failed=[name for name, ok in checks.items() if not ok]
-for name, ok in checks.items(): print(("PASS" if ok else "FAIL")+" - "+name)
-if failed: raise SystemExit(f"{len(failed)} event behavior checks failed")
-print(f"All {len(checks)} event behavior checks passed.")
-, BOOK)
-    ) and len(__import__("re").findall(r'(?m)^\s+"((?:\\.|[^"\\])*)"[,]?\s*
-        (FONT_TEXTURES / name).is_file()
-        and (FONT_TEXTURES / name).read_bytes()[12:16] == b"IHDR"
-        and __import__("struct").unpack(">II", (FONT_TEXTURES / name).read_bytes()[16:24]) == (64, 64)
-        for name in (
-            "guide_cover.png", "guide_soulstorm.png", "guide_witching.png",
-            "guide_harvest.png", "guide_blood_moon.png", "guide_pumpkin.png", "guide_graveyard.png"
-        )
-    ),
-}
-failed=[name for name, ok in checks.items() if not ok]
-for name, ok in checks.items(): print(("PASS" if ok else "FAIL")+" - "+name)
-if failed: raise SystemExit(f"{len(failed)} event behavior checks failed")
-print(f"All {len(checks)} event behavior checks passed.")
-, BOOK)) >= 10,
+    "written-book pages remain below Minecraft's page text limit": bool(PAGE_LENGTHS)
+        and max(PAGE_LENGTHS) <= 250 and len(PAGE_LENGTHS) >= 10,
     "illustrated book glyphs are generated as 64x64 PNGs": all(
         (FONT_TEXTURES / name).is_file()
         and (FONT_TEXTURES / name).read_bytes()[12:16] == b"IHDR"
-        and __import__("struct").unpack(">II", (FONT_TEXTURES / name).read_bytes()[16:24]) == (64, 64)
+        and struct.unpack(">II", (FONT_TEXTURES / name).read_bytes()[16:24]) == (64, 64)
         for name in (
             "guide_cover.png", "guide_soulstorm.png", "guide_witching.png",
             "guide_harvest.png", "guide_blood_moon.png", "guide_pumpkin.png", "guide_graveyard.png"
         )
     ),
 }
-failed=[name for name, ok in checks.items() if not ok]
-for name, ok in checks.items(): print(("PASS" if ok else "FAIL")+" - "+name)
-if failed: raise SystemExit(f"{len(failed)} event behavior checks failed")
+failed = [name for name, ok in checks.items() if not ok]
+for name, ok in checks.items():
+    print(("PASS" if ok else "FAIL") + " - " + name)
+if failed:
+    raise SystemExit(f"{len(failed)} event behavior checks failed")
 print(f"All {len(checks)} event behavior checks passed.")
+if PAGE_LENGTHS:
+    print(f"Guide pages: {len(PAGE_LENGTHS)} pages; longest page {max(PAGE_LENGTHS)} characters.")
