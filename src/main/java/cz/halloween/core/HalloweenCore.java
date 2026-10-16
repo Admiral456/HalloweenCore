@@ -48,6 +48,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenHeadlessNickManager headlessNickManager;
     private HalloweenSeasonManager seasonManager;
     private HalloweenGraveEncounterManager graveEncounterManager;
+    private HalloweenAchievementManager achievementManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -93,6 +94,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         headlessNickManager = new HalloweenHeadlessNickManager(this);
         seasonManager = new HalloweenSeasonManager(this);
         graveEncounterManager = new HalloweenGraveEncounterManager(this);
+        achievementManager = new HalloweenAchievementManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -114,6 +116,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(headlessNickManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
         getServer().getPluginManager().registerEvents(graveEncounterManager, this);
+        getServer().getPluginManager().registerEvents(achievementManager, this);
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
@@ -133,6 +136,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         headlessNickManager.start();
         passiveEffectManager.start();
         graveEncounterManager.start();
+        achievementManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
@@ -150,6 +154,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (eventManager != null) eventManager.stop();
         if (seasonManager != null) seasonManager.stop();
         if (graveEncounterManager != null) graveEncounterManager.stop();
+        if (achievementManager != null) achievementManager.stop();
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
@@ -863,6 +868,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenHeadlessNickManager getHeadlessNickManager() {
         return headlessNickManager;
+    }
+
+    public HalloweenAchievementManager getAchievementManager() {
+        return achievementManager;
     }
 
     public void notifyFragmentGain(UUID playerId, long amount) {

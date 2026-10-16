@@ -29,6 +29,7 @@ public final class HalloweenDataManager {
     private final Set<UUID> halloweenDisabledPlayers = new HashSet<>();
     private final Set<UUID> villageDiscovered = new HashSet<>();
     private final Map<UUID, Set<String>> secretDiscoveries = new HashMap<>();
+    private final Map<UUID, Set<String>> achievements = new HashMap<>();
     private final Map<UUID, String> storyQuest = new HashMap<>();
     private final Map<UUID, Integer> storyQuestProgress = new HashMap<>();
     private final Map<UUID, Set<String>> completedStoryQuests = new HashMap<>();
@@ -54,6 +55,7 @@ public final class HalloweenDataManager {
         halloweenDisabledPlayers.clear();
         villageDiscovered.clear();
         secretDiscoveries.clear();
+        achievements.clear();
         storyQuest.clear();
         storyQuestProgress.clear();
         completedStoryQuests.clear();
@@ -105,6 +107,8 @@ public final class HalloweenDataManager {
                     if (!secrets.isEmpty()) {
                         secretDiscoveries.put(uuid, new HashSet<>(secrets));
                     }
+                    java.util.List<String> unlockedAchievements = data.getStringList(base + ".achievements");
+                    if (!unlockedAchievements.isEmpty()) achievements.put(uuid, new HashSet<>(unlockedAchievements));
 
                     String questId = data.getString(base + ".story-quest.active", "");
                     int questProgress = Math.max(0, data.getInt(base + ".story-quest.progress", 0));
@@ -140,6 +144,7 @@ public final class HalloweenDataManager {
         players.addAll(halloweenDisabledPlayers);
         players.addAll(villageDiscovered);
         players.addAll(secretDiscoveries.keySet());
+        players.addAll(achievements.keySet());
         players.addAll(storyQuest.keySet());
         players.addAll(storyQuestProgress.keySet());
         players.addAll(completedStoryQuests.keySet());
@@ -170,6 +175,10 @@ public final class HalloweenDataManager {
             Set<String> secrets = secretDiscoveries.get(uuid);
             if (secrets != null && !secrets.isEmpty()) {
                 data.set(base + ".secret-discoveries", new ArrayList<>(secrets));
+            }
+            Set<String> unlockedAchievements = achievements.get(uuid);
+            if (unlockedAchievements != null && !unlockedAchievements.isEmpty()) {
+                data.set(base + ".achievements", new ArrayList<>(unlockedAchievements));
             }
 
             String activeQuest = storyQuest.get(uuid);
@@ -358,6 +367,21 @@ public final class HalloweenDataManager {
 
     public void markVillageDiscovered(UUID uuid) {
         villageDiscovered.add(uuid);
+    }
+
+    public boolean hasAchievement(UUID uuid, String achievementId) {
+        if (uuid == null || achievementId == null || achievementId.isBlank()) return false;
+        return achievements.getOrDefault(uuid, Collections.emptySet()).contains(achievementId.trim().toLowerCase(java.util.Locale.ROOT));
+    }
+
+    public boolean unlockAchievement(UUID uuid, String achievementId) {
+        if (uuid == null || achievementId == null || achievementId.isBlank()) return false;
+        return achievements.computeIfAbsent(uuid, ignored -> new HashSet<>()).add(achievementId.trim().toLowerCase(java.util.Locale.ROOT));
+    }
+
+    public Set<String> getAchievements(UUID uuid) {
+        if (uuid == null) return Set.of();
+        return Set.copyOf(achievements.getOrDefault(uuid, Collections.emptySet()));
     }
 
     public boolean hasDiscoveredSecret(UUID uuid, String secretId) {

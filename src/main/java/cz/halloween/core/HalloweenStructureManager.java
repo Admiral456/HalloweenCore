@@ -227,6 +227,23 @@ public final class HalloweenStructureManager implements Listener {
         return List.copyOf(result);
     }
 
+    /** Recorded village or graveyard centers from structures.yml, loaded-chunk safe. */
+    public List<Location> getRecordedStructureLocations(World world, String requestedType) {
+        if (world == null || requestedType == null) return List.of();
+        String type = requestedType.trim().toUpperCase(Locale.ROOT);
+        if (!type.equals("VILLAGE") && !type.equals("GRAVEYARD")) return List.of();
+        List<Location> result = new ArrayList<>();
+        for (Map<?, ?> entry : locations.getMapList("locations")) {
+            if (!type.equalsIgnoreCase(String.valueOf(entry.get("type")))) continue;
+            if (!world.getName().equals(String.valueOf(entry.get("world"))) ) continue;
+            double x = number(entry.get("x")), y = number(entry.get("y")), z = number(entry.get("z"));
+            int blockX = (int) Math.floor(x), blockZ = (int) Math.floor(z);
+            if (!world.isChunkLoaded(blockX >> 4, blockZ >> 4)) continue;
+            result.add(new Location(world, x, y, z));
+        }
+        return List.copyOf(result);
+    }
+
     public List<String> locateTabComplete(String prefix) {
         String normalized = prefix == null ? "" : prefix.toLowerCase(Locale.ROOT);
         return List.of("hřbitov", "vesnice", "aréna", "vampirearena", "goblinarena", "all", "graveyard", "village", "arena")
