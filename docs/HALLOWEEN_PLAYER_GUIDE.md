@@ -31,3 +31,11 @@ Maska nočního lovce zvyšuje příjem fragmentů; Prokletý talisman přidá p
 
 ## Administrace
 Ruční spawn struktur, mobů a testování eventů jsou vyhrazené správcům. Ruční stavby používají FORCE v ohraničeném prostoru a před testováním na produkčním světě je nutná záloha.
+
+
+## Sezóna, rituál a finále
+Halloween sezóna standardně probíhá od 1. října do 5. listopadu. Čarodějnická hodina je konfigurovatelná; výchozí okno je 20:00–22:00. U zaznamenaného hřbitova lze zahájit třívlnový rituál zapálením svíčky; finální vlna vyvolává Strážce hrobu. Skrytá místa jsou Krvavý oltář, Doupě hexové čarodějky a Zapomenutý hrob; hráč vidí nápovědy, nikoli souřadnice.
+
+K dispozici jsou struktury hřbitova, strašidelné vesnice a arény. Ruční stavby používají FORCE v omezeném footprintu a vyžadují zálohu světa. Headless Nick je připravený noční encounter. Král upírů je zamýšlené finále po dosažení společného cíle, ale zůstává vypnutý, dokud nebude model a aréna potvrzeně připravená.
+
+Hráči mohou pomocí `/halloween disable` a `/halloween enable` vypnout nebo zapnout osobní Halloween efekty a získávání fragmentů. Automatické eventové vlny jsou cílené na všechny způsobilé hráče; zemědělská sklizeň a dýně zpracovávají načtené chunky postupně, aby se zbytečně nenačítala celá mapa.

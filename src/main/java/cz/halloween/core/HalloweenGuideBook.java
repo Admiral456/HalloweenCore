@@ -38,7 +38,15 @@ public final class HalloweenGuideBook {
             "§e§lSVĚT A HUDBA\n§0V přírodě se mohou objevit dýně, pavučiny, červené svíčky, houby, náhrobky, duševní lucerny a suché keře. V noci hraje Halloween playlist.",
             "§b§lPŘÍKAZY HRÁČE\n§e/halloween §0statistiky\n§e/halloween progress §0cíl serveru\n§e/halloween event §0stav eventu\n§e/halloween secrets §0nápovědy\n§e/halloween guide §0kniha znovu.",
             "§c§lVLASTNÍ VZHLEDY\n§0Vlastní modely vyžadují přijetí ItemsAdder resource packu. Pokud předmět vypadá jako vanilla, může chybět pack nebo model; některé modely čekají na ověření.",
-            "§6§lSPOLEČNÝ CÍL\n§0Všichni přispívají fragmenty do společného cíle. Dosáhněte milníků, posilujte Halloween eventy a odemkněte finále.\n\n§8§oPřežij noc — a pozor na hřbitově."
+            "§6§lSPOLEČNÝ CÍL\n§0Všichni přispívají fragmenty do společného cíle. Dosáhněte milníků, posilujte Halloween eventy a odemkněte finále.\n\n§8§oPřežij noc — a pozor na hřbitově.",
+            "§e§lSEZÓNA\n§0Halloween sezóna běží standardně od 1. října do 5. listopadu. Čarodějnická hodina je obvykle 20:00–22:00 a zkracuje čas do náhodné události.",
+            "§8§lHŘBITOVNÍ RITUÁL\n§0U zaznamenaného hřbitova zapal svíčku pro tři vlny nepřátel. Poslední vlna vyvolá Strážce hrobu. Úspěšní účastníci dostanou fragmenty. Admin test odměny nedává.",
+            "§5§lTAJNÁ MÍSTA\n§0Krvavý oltář, Doupě hexové čarodějky a Zapomenutý hrob skrývají jednorázové odměny. Sleduj nápovědy přes §e/halloween secrets§0; souřadnice se hráčům neukazují.",
+            "§c§lSTRUKTURY\n§0Hřbitovy a strašidelné vesnice se mohou generovat u průzkumu vhodného terénu. Arény a ruční stavby ovládají správci. FORCE může přepsat bloky uvnitř ohraničené stavby.",
+            "§4§lHEADLESS NICK\n§0V noci může v povolených světech pronásledovat hráče bezhlavý jezdec. Jeho vlastní model koně a jezdce musí být na serveru správně nahrán, jinak se může použít fallback.",
+            "§4§lKRÁL UPÍRŮ\n§0Po společném globálním cíli se má odemknout finální souboj v upíří aréně. Boss potřebuje připravený ModelEngine model, arénu a povolenou konfiguraci; dokud není připravený, zůstává vypnutý.",
+            "§7§lOSOBNÍ VYPNUTÍ\n§0Příkazy §e/halloween disable§0 a §e/halloween enable§0 vypnou či zapnou tvoje osobní Halloween efekty a získávání fragmentů. Stav se ukládá.",
+            "§b§lPOZNÁMKA K VZHLEDU\n§0Eventová mechanika může fungovat i s vanilla vzhledem. Vlastní zbroj, modely, ambient i červený krvavý měsíc závisí na správném packu a testu klienta."
         );
     }
 }

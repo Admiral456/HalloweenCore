@@ -245,7 +245,7 @@ public final class HalloweenEventManager {
         }
         long interval = Math.max(10L, plugin.getConfig().getLong("random-events.surge-interval-seconds", 25L));
         if (now - lastSurgeAt < interval * 1000L) return;
-        List<Player> players = Bukkit.getOnlinePlayers().stream()
+        List<? extends Player> players = Bukkit.getOnlinePlayers().stream()
                 .filter(plugin::isEligibleGameplayPlayer)
                 .filter(player -> plugin.isAutomaticHalloweenWorld(player.getWorld()))
                 .toList();
@@ -349,54 +349,73 @@ public final class HalloweenEventManager {
     private int spawnFromLoadedFarmland() {
         if (plugin.getMobManager() == null) return 0;
         int chunkBudget = Math.max(1, Math.min(512,
-                plugin.getConfig().getInt("random-events.cursed-harvest.field-scan-chunks-per-surge", 128)));
+                plugin.getConfig().getInt("random-events.cursed-harvest.field-scan-chunks-per-surge", 64)));
         int mobBudget = Math.max(1, Math.min(256,
                 plugin.getConfig().getInt("random-events.cursed-harvest.max-field-mobs-per-surge", 48)));
         double radius = Math.max(16.0D, Math.min(256.0D,
                 plugin.getConfig().getDouble("random-events.cursed-harvest.field-target-radius-blocks", 192.0D)));
         int spawned = 0;
         for (Chunk chunk : nextLoadedChunkBatch(chunkBudget, scannedHarvestChunkKeys)) {
-            boolean complete = true;
+            boolean needsRetry = false;
+            boolean budgetReached = false;
             World world = chunk.getWorld();
-            for (int x = chunk.getX() << 4; x < (chunk.getX() << 4) + 16 && complete; x++) {
-                for (int z = chunk.getZ() << 4; z < (chunk.getZ() << 4) + 16; z++) {
-                    Block farmland = findSurfaceFarmland(world, x, z);
-                    if (farmland == null) continue;
-                    String tile = blockKey(farmland);
-                    if (processedFarmlandBlocks.contains(tile)) continue;
-                    if (spawned >= mobBudget) { complete = false; break; }
-                    Location anchor = farmland.getLocation().add(0.5D, 1.0D, 0.5D);
-                    Player target = nearestEligiblePlayer(anchor, radius);
-                    if (target == null) { processedFarmlandBlocks.add(tile); continue; }
-                    String mobId = ThreadLocalRandom.current().nextBoolean() ? "blood-spider" : "pumpkin-wraith";
-                    if (!plugin.getMobManager().spawnEventMobAt(anchor, mobId, target)) {
-                        if (plugin.getMobManager().countEventMobs(world) >= plugin.getConfig().getInt("random-events.max-event-mobs", 256)) {
-                            complete = false;
+            for (int x = chunk.getX() << 4; x < (chunk.getX() << 4) + 16 && !budgetReached; x++) {
+                for (int z = chunk.getZ() << 4; z < (chunk.getZ() << 4) + 16 && !budgetReached; z++) {
+                    for (Block farmland : findFarmlandBlocks(world, x, z)) {
+                        String tile = blockKey(farmland);
+                        if (processedFarmlandBlocks.contains(tile)) continue;
+                        if (spawned >= mobBudget) {
+                            needsRetry = true;
+                            budgetReached = true;
                             break;
                         }
-                        continue;
+                        Location anchor = farmland.getLocation().add(0.5D, 1.0D, 0.5D);
+                        Player target = nearestEligiblePlayer(anchor, radius);
+                        if (target == null) {
+                            // Leave this tile pending; a later surge retries after a player approaches.
+                            needsRetry = true;
+                            continue;
+                        }
+                        String mobId = ThreadLocalRandom.current().nextBoolean() ? "blood-spider" : "pumpkin-wraith";
+                        if (!plugin.getMobManager().spawnEventMobAt(anchor, mobId, target)) {
+                            needsRetry = true;
+                            int cap = plugin.getConfig().getInt("random-events.max-event-mobs", 256);
+                            if (plugin.getMobManager().countEventMobs(world) >= cap) {
+                                budgetReached = true;
+                                break;
+                            }
+                            continue;
+                        }
+                        processedFarmlandBlocks.add(tile);
+                        spawned++;
+                        world.spawnParticle(Particle.SOUL, anchor, 12, 0.45D, 0.3D, 0.45D, 0.02D);
+                        if (spawned >= mobBudget) {
+                            needsRetry = true;
+                            budgetReached = true;
+                            break;
+                        }
                     }
-                    processedFarmlandBlocks.add(tile);
-                    spawned++;
-                    world.spawnParticle(Particle.SOUL, anchor, 12, 0.45D, 0.3D, 0.45D, 0.02D);
                 }
             }
-            if (complete) scannedHarvestChunkKeys.add(chunkKey(chunk));
-            if (spawned >= mobBudget) break;
+            if (!needsRetry) scannedHarvestChunkKeys.add(chunkKey(chunk));
+            if (budgetReached) break;
         }
         return spawned;
     }
 
-    private Block findSurfaceFarmland(World world, int x, int z) {
-        if (world == null || !world.isChunkLoaded(x >> 4, z >> 4)) return null;
+    /** Finds every farmland block in the upper 8 blocks beneath the surface. */
+    private List<Block> findFarmlandBlocks(World world, int x, int z) {
+        if (world == null || !world.isChunkLoaded(x >> 4, z >> 4)) return List.of();
         Block top = world.getHighestBlockAt(x, z);
-        if (top.getType() == Material.FARMLAND) return top;
-        Block below = top.getRelative(0, -1, 0);
-        return below.getType() == Material.FARMLAND ? below : null;
-    }
-
-    private String blockKey(Block block) {
-        return block.getWorld().getUID() + ":" + block.getX() + ":" + block.getY() + ":" + block.getZ();
+        int depth = Math.max(1, Math.min(16,
+                plugin.getConfig().getInt("random-events.cursed-harvest.field-column-scan-depth-blocks", 8)));
+        int bottomY = Math.max(world.getMinHeight(), top.getY() - depth);
+        List<Block> result = new ArrayList<>();
+        for (int y = top.getY(); y >= bottomY; y--) {
+            Block candidate = world.getBlockAt(x, y, z);
+            if (candidate.getType() == Material.FARMLAND) result.add(candidate);
+        }
+        return result;
     }
 
     private Player nearestEligiblePlayer(Location location, double radius) {

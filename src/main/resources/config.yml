@@ -644,7 +644,8 @@ random-events:
   blood-moon-damage-multiplier: 3.0
   special-mob-chance-multiplier: 2.0
   cursed-harvest:
-    field-scan-chunks-per-surge: 128
+    field-scan-chunks-per-surge: 64
+    field-column-scan-depth-blocks: 8
     max-field-mobs-per-surge: 48
     field-target-radius-blocks: 192
   pumpkin-apocalypse:
