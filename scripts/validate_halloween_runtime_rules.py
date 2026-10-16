@@ -101,8 +101,12 @@ if "naturalGenerationStatus(player.getWorld())" not in command or "naturalGenera
     fail("Locate/status output must explain protected Spawn and per-world natural generation settings")
 if 'List.of("on", "off", "reload", "status")' not in command:
     fail("The shader status diagnostic subcommand is missing")
-if "Koto custom skybox" not in command:
-    fail("Shader command must explain it controls the vanilla fallback, not Koto's separate custom skybox")
+if "skyPropertiesPath" not in command or "skyAtlasPath" not in command or "koto-sky1.properties" not in command:
+    fail("Shader command must address the Koto custom skybox and preserve its settings on disable")
+if "Files.deleteIfExists(skyPropertiesPath)" not in command or "Files.copy(skyPropertiesPath, skyPropertiesBackup" not in command:
+    fail("Shader off must remove the Koto layer from the client pack while retaining a restore backup")
+if "Koto skybox + oranžový vanilla tint" not in command or "Koto skybox: " not in command:
+    fail("Shader command must report both client-visible sky layers")
 if "halloween_auto_structure_reserved_v1" not in structures or "isReservedForNaturalGeneration" not in decorator:
     fail("Candidate structures and chunk decoration need race protection")
 

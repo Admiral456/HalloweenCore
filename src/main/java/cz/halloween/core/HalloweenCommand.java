@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 
 public final class HalloweenCommand implements CommandExecutor, TabCompleter, Listener {
     private final HalloweenCore plugin;
@@ -1056,11 +1057,16 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         }
 
         String action = args[1].toLowerCase(java.util.Locale.ROOT);
-        Path shaderPath = plugin.getDataFolder().getParentFile().toPath()
-                .resolve("ItemsAdder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh");
+        Path itemsAdderContent = plugin.getDataFolder().getParentFile().toPath()
+                .resolve("ItemsAdder/contents/warriorland_halloween/resourcepack/assets/minecraft");
+        Path shaderPath = itemsAdderContent.resolve("shaders/core/sky.fsh");
+        Path skyPropertiesPath = itemsAdderContent.resolve("optifine/sky/world0/sky1.properties");
+        Path skyAtlasPath = itemsAdderContent.resolve("optifine/sky/world0/sky1.png");
+        Path skyPropertiesBackup = plugin.getDataFolder().toPath().resolve("koto-sky1.properties");
+        String defaultSkyProperties = "source=./sky1.png\nblend=replace\nrotate=false\nweather=clear rain thunder\n";
 
         if (action.equals("reload")) {
-            sender.sendMessage(plugin.color("&6&lHALLOWEEN &8» &7Spouštím nové sestavení resource packu pro shader..."));
+            sender.sendMessage(plugin.color("&6&lHALLOWEEN &8» &7Spouštím nové sestavení resource packu..."));
             return rebuildItemsAdderPack(sender);
         }
         if (!action.equals("on") && !action.equals("off") && !action.equals("status")) {
@@ -1069,8 +1075,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         }
 
         if (!Files.isRegularFile(shaderPath)) {
-            sender.sendMessage(plugin.color("&cShader jsem nenašel na serveru: &7plugins/ItemsAdder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh"));
-            sender.sendMessage(plugin.color("&7Nahraj obsah ItemsAdderu a pak spusť /halloween shader reload."));
+            sender.sendMessage(plugin.color("&cShader jsem nenašel: &7plugins/ItemsAdder/contents/warriorland_halloween/resourcepack/assets/minecraft/shaders/core/sky.fsh"));
+            sender.sendMessage(plugin.color("&7Nahraj aktuální Halloween ItemsAdder obsah a zkus to znovu."));
             return true;
         }
 
@@ -1081,7 +1087,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
             java.util.regex.Matcher matcher = tintPattern.matcher(source);
             if (!matcher.find()) {
                 sender.sendMessage(plugin.color("&cV souboru sky.fsh jsem nenašel očekávaný Halloween tint."));
-                sender.sendMessage(plugin.color("&7Shader nebyl změněn. Obnov zdrojový Halloween shader a opakuj příkaz."));
+                sender.sendMessage(plugin.color("&7Shader ani skybox nebyly změněny."));
                 return true;
             }
 
@@ -1093,37 +1099,57 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
                 return true;
             }
 
+            boolean kotoSkyEnabled = Files.isRegularFile(skyPropertiesPath);
             if (action.equals("status")) {
-                sender.sendMessage(plugin.color("&6&lHALLOWEEN SKY &8» &7Vanilla tint: "
+                sender.sendMessage(plugin.color("&6&lHALLOWEEN SKY &8» &7Koto skybox: "
+                        + (kotoSkyEnabled ? "&aZAPNUTÝ" : "&cVYPNUTÝ")));
+                sender.sendMessage(plugin.color("&7Vanilla oranžový tint: "
                         + (currentWeight > 0.0D ? "&aZAPNUTÝ" : "&cVYPNUTÝ")
-                        + " &8(" + currentWeight + ")"));
-                sender.sendMessage(plugin.color("&7Tento přepínač mění základní vanilla oblohu, nikoli Koto custom skybox."));
-                sender.sendMessage(plugin.color("&7Po změně musí doběhnout /iazip a klient musí stáhnout aktualizovaný pack."));
+                        + " &8(intenzita " + currentWeight + ")"));
+                sender.sendMessage(plugin.color("&7Zapnutí/vypnutí upraví obě části resource packu."));
+                sender.sendMessage(plugin.color("&7Po změně musí doběhnout /iazip a klient musí stáhnout nový pack."));
                 return true;
             }
 
             String weight = action.equals("on") ? "0.55" : "0.0";
             double targetWeight = Double.parseDouble(weight);
-            if (Math.abs(currentWeight - targetWeight) < 0.000001D) {
-                sender.sendMessage(plugin.color(action.equals("on")
-                        ? "&eHalloween vanilla tint už je zapnutý (intenzita 0.55)."
-                        : "&eHalloween vanilla tint už je vypnutý."));
-                sender.sendMessage(plugin.color("&7Znovu sestavuji pack; změna nemusí být vidět, pokud klient vykresluje Koto custom skybox."));
-                sender.sendMessage(plugin.color("&7Po dokončení /iazip se znovu připoj a přijmi nový resource pack."));
-                return rebuildItemsAdderPack(sender);
+            boolean tintNeedsChange = Math.abs(currentWeight - targetWeight) >= 0.000001D;
+
+            if (action.equals("on")) {
+                if (!Files.isRegularFile(skyAtlasPath)) {
+                    sender.sendMessage(plugin.color("&cKoto sky atlas nebyl nalezen: &7" + skyAtlasPath));
+                    sender.sendMessage(plugin.color("&7Nahraj opravený Halloween ItemsAdder balíček a zkus to znovu."));
+                    return true;
+                }
+                if (!kotoSkyEnabled) {
+                    Files.createDirectories(skyPropertiesPath.getParent());
+                    if (Files.isRegularFile(skyPropertiesBackup)) {
+                        Files.copy(skyPropertiesBackup, skyPropertiesPath, StandardCopyOption.REPLACE_EXISTING);
+                    } else {
+                        Files.writeString(skyPropertiesPath, defaultSkyProperties, StandardCharsets.UTF_8);
+                    }
+                }
+            } else if (Files.isRegularFile(skyPropertiesPath)) {
+                Files.createDirectories(skyPropertiesBackup.getParent());
+                Files.copy(skyPropertiesPath, skyPropertiesBackup, StandardCopyOption.REPLACE_EXISTING);
+                Files.deleteIfExists(skyPropertiesPath);
             }
 
-            String replacement = "sky.rgb = mix(sky.rgb, sky.rgb * halloweenTint, " + weight + ");";
-            String updated = matcher.replaceFirst(java.util.regex.Matcher.quoteReplacement(replacement));
-            Files.writeString(shaderPath, updated, StandardCharsets.UTF_8);
+            if (tintNeedsChange) {
+                String replacement = "sky.rgb = mix(sky.rgb, sky.rgb * halloweenTint, " + weight + ");";
+                String updated = matcher.replaceFirst(java.util.regex.Matcher.quoteReplacement(replacement));
+                Files.writeString(shaderPath, updated, StandardCharsets.UTF_8);
+            }
+
             sender.sendMessage(plugin.color(action.equals("on")
-                    ? "&aHalloween vanilla sky tint byl zapnut."
-                    : "&eHalloween vanilla sky tint byl vypnut."));
-            sender.sendMessage(plugin.color("&7Tento příkaz nepřepíná Koto custom skybox; mění pouze vanilla náhradní oblohu."));
+                    ? "&aHalloween sky zapnutý: Koto skybox + oranžový vanilla tint."
+                    : "&eHalloween sky vypnutý: Koto skybox odstraněn z packu + vanilla tint vypnut."));
+            sender.sendMessage(plugin.color("&7Teď sestavuji resource pack. Po dokončení /iazip se odpoj a znovu připoj, aby sis stáhl změnu."));
             return rebuildItemsAdderPack(sender);
         } catch (IOException ex) {
-            plugin.getLogger().warning("Could not update Halloween sky shader: " + ex.getMessage());
-            sender.sendMessage(plugin.color("&cShader se nepodařilo změnit: &7" + ex.getMessage()));
+            plugin.getLogger().warning("Could not update Halloween sky settings: " + ex.getMessage());
+            sender.sendMessage(plugin.color("&cNastavení oblohy se nepodařilo změnit: &7" + ex.getMessage()));
+            sender.sendMessage(plugin.color("&7Zkontroluj konzoli a obnov poslední funkční ItemsAdder obsah, pokud změna zůstala neúplná."));
             return true;
         }
     }

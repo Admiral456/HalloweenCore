@@ -64,7 +64,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion|pumpkin-apocalypse|graveyard-rising> (admin, testovací okamžité spuštění)
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
-- /halloween shader <on|off|status|reload> (admin, změna shaderu a automatické předání /iazip)
+- /halloween shader <on|off|status|reload> (admin, přepíná Koto skybox i vanilla tint, status ukazuje oba stavy a změna spustí /iazip)
 - /halloween quests — příběhová kampaň o devíti kapitolách, uložený postup a automatické odměny
 - /halloween challenge
 - /halloween rewards
