@@ -89,6 +89,20 @@ for feature in ("placeMushrooms(", "placeGraves(", "placeSoulLanterns(", "placeD
         fail(f"Atmospheric world generation is missing feature layer: {feature}")
 if "structures-on-existing-chunks: true" not in config or "automatic-world-generation.structures-on-existing-chunks" not in structures:
     fail("Natural graveyard/village generation must also run on eligible explored chunks")
+if 'new NamespacedKey(plugin, "halloween_auto_structure_checked_v2")' not in structures:
+    fail("Natural structure scan needs a new checked marker so existing chunks get reconsidered once")
+if "scanLoadedChunksForNaturalGeneration()" not in core or "scanLoadedChunksForNaturalGeneration()" not in structures:
+    fail("Loaded eligible chunks must be scanned once on startup without force-loading any chunks")
+if "migrateStructureDiscoveryV2()" not in core or "migrations.structure-discovery-v2" not in core:
+    fail("Natural structure discovery must migrate existing servers to the less sparse settings")
+if "min-structure-chunk-distance: 2" not in config or "structure-chance-per-anchor: 0.65" not in config:
+    fail("Default natural structure discovery settings are unexpectedly sparse")
+if "naturalGenerationStatus(player.getWorld())" not in command or "naturalGenerationStatus(World world)" not in structures:
+    fail("Locate/status output must explain protected Spawn and per-world natural generation settings")
+if 'List.of("on", "off", "reload", "status")' not in command:
+    fail("The shader status diagnostic subcommand is missing")
+if "Koto custom skybox" not in command:
+    fail("Shader command must explain it controls the vanilla fallback, not Koto's separate custom skybox")
 if "halloween_auto_structure_reserved_v1" not in structures or "isReservedForNaturalGeneration" not in decorator:
     fail("Candidate structures and chunk decoration need race protection")
 

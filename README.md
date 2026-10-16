@@ -64,7 +64,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween event start <random|soulstorm|witching-hour|cursed-harvest|blood-moon-invasion|pumpkin-apocalypse|graveyard-rising> (admin, testovací okamžité spuštění)
 - /halloween event stop (admin)
 - /halloween boss test (admin, testovací boss bez progressu, odměn a dokončení finále)
-- /halloween shader <on|off|reload> (admin, změna shaderu a automatické předání /iazip)
+- /halloween shader <on|off|status|reload> (admin, změna shaderu a automatické předání /iazip)
 - /halloween quests — příběhová kampaň o devíti kapitolách, uložený postup a automatické odměny
 - /halloween challenge
 - /halloween rewards
@@ -75,7 +75,8 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 - /halloween spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena> (admin, ihned umístí strukturu před hráčem v režimu FORCE; žádné nastavování středu ani confirm)
 - /halloween spawn <cursed-zombie|void-reaper|gravekeeper|frost-stalker|blood-spider|pumpkin-wraith|hex-witch|nightmare> (admin, testovací spawn jednoho mobu; použije ModelEngine/MythicMobs, pokud jsou dostupné, jinak vanilla fallback)
 - /halloween status (diagnostika aktivního eventu, povolených automatických světů a stavby)
-- /halloween locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all> (najde nejbližší uloženou polohu struktury v aktuálním světě)
+- /halloween locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all> (najde nejbližší uloženou polohu struktury v aktuálním světě; vypíše i stav generování)
+- Automatické struktury se generují při načtení vhodných chunků v povolených světech, nikoli po pevném 15minutovém timeru. Svět `Spawn` je záměrně chráněný.
 - /halloween grave test (admin, testovací třívlnový hřbitovní rituál bez odměny)
 - /locate <hřbitov|vesnice|aréna|vampirearena|goblinarena|all> (zkrácený příkaz; běžný Minecraft /locate structure ... zůstává dostupný)
 - Batwing Elytra: nasazená na hrudi zachovává standardní elytra glide/rocket chování; při plachtění stiskni sneak pro Bat Dash (20s cooldown).

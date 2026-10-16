@@ -87,7 +87,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("shader") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("on", "off", "reload").stream()
+            return List.of("on", "off", "reload", "status").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
@@ -566,6 +566,11 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         java.util.List<String> allowed = plugin.getConfig().getStringList("automatic-world-generation.allowed-worlds");
         sender.sendMessage(plugin.color("&7Automaticky povolené světy: &f" + (allowed.isEmpty() ? "žádné — bezpečný režim" : String.join(", ", allowed))));
         sender.sendMessage(plugin.color("&7Svět Spawn: &cautomatický Halloween obsah je zakázán"));
+        if (sender instanceof Player player) {
+            sender.sendMessage(plugin.color("&7Aktuální svět: &f" + player.getWorld().getName()));
+            sender.sendMessage(plugin.color("&7Automatické struktury v tomto světě: &f"
+                    + (plugin.getStructureManager() == null ? "není dostupné" : plugin.getStructureManager().naturalGenerationStatus(player.getWorld()))));
+        }
         sender.sendMessage(plugin.color("&7Generování staveb: &f" + (plugin.getStructureManager() == null ? "není dostupné" : plugin.getStructureManager().statusLine())));
         sender.sendMessage(plugin.color("&7" + (plugin.getHeadlessNickManager() == null ? "Headless Nick: nedostupný" : plugin.getHeadlessNickManager().statusLine())));
         sender.sendMessage(plugin.color("&7Poznámka: shader/resource pack se musí ověřit v klientu a přes /iainfo."));
@@ -1043,10 +1048,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         return true;
     }
 
-    private boolean shader(CommandSender sender, String[] args) {
+    boolean shader(CommandSender sender, String[] args) {
         if (!checkAdmin(sender)) return true;
         if (args.length != 2) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween shader <on|off|reload>"));
+            sender.sendMessage(plugin.color("&cPoužití: /halloween shader <on|off|status|reload>"));
             return true;
         }
 
@@ -1058,8 +1063,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
             sender.sendMessage(plugin.color("&6&lHALLOWEEN &8» &7Spouštím nové sestavení resource packu pro shader..."));
             return rebuildItemsAdderPack(sender);
         }
-        if (!action.equals("on") && !action.equals("off")) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween shader <on|off|reload>"));
+        if (!action.equals("on") && !action.equals("off") && !action.equals("status")) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween shader <on|off|status|reload>"));
             return true;
         }
 
@@ -1072,7 +1077,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         try {
             String source = Files.readString(shaderPath, StandardCharsets.UTF_8);
             java.util.regex.Pattern tintPattern = java.util.regex.Pattern.compile(
-                    "sky\\.rgb\\s*=\\s*mix\\(sky\\.rgb,\\s*sky\\.rgb\\s*\\*\\s*halloweenTint,\\s*[0-9.]+\\s*\\);");
+                    "sky\\.rgb\\s*=\\s*mix\\(sky\\.rgb,\\s*sky\\.rgb\\s*\\*\\s*halloweenTint,\\s*([0-9.]+)\\s*\\);");
             java.util.regex.Matcher matcher = tintPattern.matcher(source);
             if (!matcher.find()) {
                 sender.sendMessage(plugin.color("&cV souboru sky.fsh jsem nenašel očekávaný Halloween tint."));
@@ -1080,13 +1085,41 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
                 return true;
             }
 
+            double currentWeight;
+            try {
+                currentWeight = Double.parseDouble(matcher.group(1));
+            } catch (NumberFormatException invalidWeight) {
+                sender.sendMessage(plugin.color("&cShader má neplatnou hodnotu intenzity."));
+                return true;
+            }
+
+            if (action.equals("status")) {
+                sender.sendMessage(plugin.color("&6&lHALLOWEEN SKY &8» &7Vanilla tint: "
+                        + (currentWeight > 0.0D ? "&aZAPNUTÝ" : "&cVYPNUTÝ")
+                        + " &8(" + currentWeight + ")"));
+                sender.sendMessage(plugin.color("&7Tento přepínač mění základní vanilla oblohu, nikoli Koto custom skybox."));
+                sender.sendMessage(plugin.color("&7Po změně musí doběhnout /iazip a klient musí stáhnout aktualizovaný pack."));
+                return true;
+            }
+
             String weight = action.equals("on") ? "0.55" : "0.0";
+            double targetWeight = Double.parseDouble(weight);
+            if (Math.abs(currentWeight - targetWeight) < 0.000001D) {
+                sender.sendMessage(plugin.color(action.equals("on")
+                        ? "&eHalloween vanilla tint už je zapnutý (intenzita 0.55)."
+                        : "&eHalloween vanilla tint už je vypnutý."));
+                sender.sendMessage(plugin.color("&7Znovu sestavuji pack; změna nemusí být vidět, pokud klient vykresluje Koto custom skybox."));
+                sender.sendMessage(plugin.color("&7Po dokončení /iazip se znovu připoj a přijmi nový resource pack."));
+                return rebuildItemsAdderPack(sender);
+            }
+
             String replacement = "sky.rgb = mix(sky.rgb, sky.rgb * halloweenTint, " + weight + ");";
             String updated = matcher.replaceFirst(java.util.regex.Matcher.quoteReplacement(replacement));
             Files.writeString(shaderPath, updated, StandardCharsets.UTF_8);
             sender.sendMessage(plugin.color(action.equals("on")
-                    ? "&aHalloween shader je zapnutý."
-                    : "&eHalloween barevný nádech shaderu je vypnutý."));
+                    ? "&aHalloween vanilla sky tint byl zapnut."
+                    : "&eHalloween vanilla sky tint byl vypnut."));
+            sender.sendMessage(plugin.color("&7Tento příkaz nepřepíná Koto custom skybox; mění pouze vanilla náhradní oblohu."));
             return rebuildItemsAdderPack(sender);
         } catch (IOException ex) {
             plugin.getLogger().warning("Could not update Halloween sky shader: " + ex.getMessage());
@@ -1095,7 +1128,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter, Li
         }
     }
 
-    private boolean rebuildItemsAdderPack(CommandSender sender) {
+private boolean rebuildItemsAdderPack(CommandSender sender) {
         var itemsAdder = Bukkit.getPluginManager().getPlugin("ItemsAdder");
         if (itemsAdder == null || !itemsAdder.isEnabled()) {
             sender.sendMessage(plugin.color("&cItemsAdder není zapnutý. Změna shaderu byla uložena, ale pack teď nemohu sestavit."));

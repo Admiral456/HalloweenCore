@@ -65,6 +65,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateEventSpawnRules();
         migrateAdditionalMobAndQuestDefaults();
         migrateAtmosphericWorldGenerationDefaults();
+        migrateStructureDiscoveryV2();
         migrateSeasonAndWitchingDefaults();
         migrateWitchingBatDefaults();
         migrateGraveEncounterDefaults();
@@ -117,6 +118,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
         getServer().getPluginManager().registerEvents(graveEncounterManager, this);
         getServer().getPluginManager().registerEvents(achievementManager, this);
+        structureManager.scanLoadedChunksForNaturalGeneration();
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
@@ -929,6 +931,23 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getConfig().set("migrations.atmospheric-world-generation-v1", true);
         saveConfig();
         getLogger().info("Atmospheric Halloween generation migration complete; all non-Spawn worlds are eligible.");
+    }
+
+    /** Increase discovery cadence once for servers running the previous sparse defaults. */
+    private void migrateStructureDiscoveryV2() {
+        if (getConfig().getBoolean("migrations.structure-discovery-v2", false)) return;
+        String spacingPath = "automatic-world-generation.min-structure-chunk-distance";
+        if (!getConfig().contains(spacingPath) || getConfig().getInt(spacingPath, 3) == 3) {
+            getConfig().set(spacingPath, 2);
+        }
+        String chancePath = "automatic-world-generation.structure-chance-per-anchor";
+        double oldChance = getConfig().getDouble(chancePath, 0.45D);
+        if (!getConfig().contains(chancePath) || Math.abs(oldChance - 0.45D) < 0.000001D) {
+            getConfig().set(chancePath, 0.65D);
+        }
+        getConfig().set("migrations.structure-discovery-v2", true);
+        saveConfig();
+        getLogger().info("Halloween natural structure discovery migration complete (denser candidate checks).");
     }
 
     /**

@@ -76,7 +76,7 @@ public final class HalloweenStructureManager implements Listener {
 
     public HalloweenStructureManager(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.autoCheckedKey = new NamespacedKey(plugin, "halloween_auto_structure_checked_v1");
+        this.autoCheckedKey = new NamespacedKey(plugin, "halloween_auto_structure_checked_v2");
         this.autoReservedKey = new NamespacedKey(plugin, "halloween_auto_structure_reserved_v1");
         this.autoStructureKey = new NamespacedKey(plugin, "halloween_auto_structure_v1");
         this.locationsFile = new File(plugin.getDataFolder(), "structures.yml");
@@ -142,14 +142,14 @@ public final class HalloweenStructureManager implements Listener {
         chunk.getPersistentDataContainer().set(autoCheckedKey, PersistentDataType.BYTE, (byte) 1);
 
         int spacing = Math.max(2, Math.min(64,
-                plugin.getConfig().getInt("automatic-world-generation.min-structure-chunk-distance", 4)));
+                plugin.getConfig().getInt("automatic-world-generation.min-structure-chunk-distance", 2)));
         if (Math.floorMod(chunk.getX(), spacing) != 0 || Math.floorMod(chunk.getZ(), spacing) != 0) return;
 
         long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C53545255L;
         Random random = new Random(seed);
         double chance = Math.max(0.0D, Math.min(1.0D,
-                plugin.getConfig().getDouble("automatic-world-generation.structure-chance-per-anchor", 0.30D)));
+                plugin.getConfig().getDouble("automatic-world-generation.structure-chance-per-anchor", 0.65D)));
         if (random.nextDouble() >= chance) return;
         Kind kind = random.nextBoolean() ? Kind.GRAVEYARD : Kind.VILLAGE;
         // Reserve only real candidates so decorations cannot race the structure job.
@@ -187,6 +187,48 @@ public final class HalloweenStructureManager implements Listener {
             }
         });
         pendingNaturalGenerationTasks.put(key, task);
+    }
+
+    /** Scan only already-loaded chunks after the discovery migration; never force-load terrain. */
+    public void scanLoadedChunksForNaturalGeneration() {
+        if (!plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) return;
+        int scanned = 0;
+        for (World world : Bukkit.getWorlds()) {
+            if (!plugin.isAutomaticHalloweenWorld(world)) continue;
+            for (Chunk chunk : world.getLoadedChunks()) {
+                if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) continue;
+                attemptNaturalGeneration(chunk);
+                scanned++;
+            }
+        }
+        if (scanned > 0) {
+            plugin.getLogger().info("Checked " + scanned
+                    + " already-loaded chunks for natural Halloween structures (no chunks force-loaded).");
+        }
+    }
+
+    public String naturalGenerationStatus(World world) {
+        if (world == null) return "svět není dostupný";
+        if (world.getName().equalsIgnoreCase("Spawn")) {
+            return "vypnuto: svět Spawn je záměrně chráněný před automatickými Halloween strukturami";
+        }
+        if (!plugin.getConfig().getBoolean("automatic-world-generation.enabled", true)) {
+            return "vypnuto v config.yml (automatic-world-generation.enabled)";
+        }
+        List<String> allowed = plugin.getConfig().getStringList("automatic-world-generation.allowed-worlds");
+        if (allowed.isEmpty()) return "vypnuto: seznam automatic-world-generation.allowed-worlds je prázdný";
+        boolean allowedWorld = allowed.stream().anyMatch(name -> name.equals("*") || name.equalsIgnoreCase(world.getName()));
+        if (!allowedWorld) return "vypnuto pro tento svět: " + world.getName() + " není v allowed-worlds";
+        if (!plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) {
+            return "vypnuto v config.yml (automatic-world-generation.structures-enabled)";
+        }
+        int spacing = Math.max(2, Math.min(64,
+                plugin.getConfig().getInt("automatic-world-generation.min-structure-chunk-distance", 2)));
+        double chance = Math.max(0.0D, Math.min(1.0D,
+                plugin.getConfig().getDouble("automatic-world-generation.structure-chance-per-anchor", 0.65D)));
+        return String.format(Locale.ROOT,
+                "aktivní: kontrola při načtení chunků (není to 15min časovač), rozestup %d chunků, šance %.0f%% před kontrolou terénu",
+                spacing, chance * 100.0D);
     }
 
     public boolean isReservedForNaturalGeneration(Chunk chunk) {
@@ -268,6 +310,7 @@ public final class HalloweenStructureManager implements Listener {
         if (args[1].equalsIgnoreCase("all")) {
             player.sendMessage(plugin.color("&6&lHALLOWEEN STRUKTURY &8» &7Nejbližší zaznamenané stavby v tomto světě:"));
             for (Kind kind : Kind.values()) sendNearestLocation(player, kind, false);
+            player.sendMessage(plugin.color("&7Automatické generování v tomto světě: &f" + naturalGenerationStatus(player.getWorld())));
             return true;
         }
         Kind kind = parseKind(args[1]);
@@ -302,7 +345,11 @@ public final class HalloweenStructureManager implements Listener {
         if (nearest == null) {
             if (explainMissing) {
                 player.sendMessage(plugin.color("&e" + requested.displayName + ": &cV tomto světě zatím nemám uloženou polohu této struktury."));
-                player.sendMessage(plugin.color("&7Poloha se uloží po úspěšném ručním nebo novém přirozeném vygenerování."));
+                player.sendMessage(plugin.color("&7Automatické generování: &f" + naturalGenerationStatus(player.getWorld())));
+                if (plugin.isAutomaticHalloweenWorld(player.getWorld())
+                        && plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) {
+                    player.sendMessage(plugin.color("&7Nečeká se pevně 15 minut: struktury se zkoušejí při načtení chunků a potřebují vhodnou přírodní plochu."));
+                }
             } else {
                 player.sendMessage(plugin.color("&7" + requested.displayName + ": &cnení zatím zaznamenána v tomto světě."));
             }
