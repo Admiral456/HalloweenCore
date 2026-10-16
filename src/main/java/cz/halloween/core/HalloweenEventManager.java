@@ -5,7 +5,6 @@ import org.bukkit.Chunk;
 import org.bukkit.Color;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
@@ -13,7 +12,6 @@ import org.bukkit.Particle;
 import org.bukkit.SoundCategory;
 import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
-import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
@@ -36,7 +34,6 @@ public final class HalloweenEventManager {
     private long lastSurgeAt;
     private boolean invasionCaptainSpawned;
     private final java.util.Set<String> warnedSurgeErrors = new java.util.HashSet<>();
-    private final NamespacedKey pumpkinApocalypseDecoratedKey;
     private final Set<String> processedFarmlandBlocks = new HashSet<>();
     private final Set<String> scannedHarvestChunkKeys = new HashSet<>();
     private final Set<String> scannedPumpkinChunkKeys = new HashSet<>();
@@ -45,7 +42,6 @@ public final class HalloweenEventManager {
 
     public HalloweenEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.pumpkinApocalypseDecoratedKey = new NamespacedKey(plugin, "pumpkin_apocalypse_decorated_v1");
     }
 
     public void start() {
@@ -92,7 +88,6 @@ public final class HalloweenEventManager {
         scannedHarvestChunkKeys.clear();
         scannedPumpkinChunkKeys.clear();
         bloodMoonNightWorlds.clear();
-        loadedChunkScanCursor = 0;
     }
 
     public boolean startEventNow(String requestedId) {
@@ -355,7 +350,7 @@ public final class HalloweenEventManager {
         double radius = Math.max(16.0D, Math.min(256.0D,
                 plugin.getConfig().getDouble("random-events.cursed-harvest.field-target-radius-blocks", 192.0D)));
         int spawned = 0;
-        for (Chunk chunk : nextLoadedChunkBatch(chunkBudget, scannedHarvestChunkKeys)) {
+        for (Chunk chunk : nextLoadedChunkBatch(chunkBudget, null)) {
             boolean needsRetry = false;
             boolean budgetReached = false;
             World world = chunk.getWorld();
@@ -397,7 +392,6 @@ public final class HalloweenEventManager {
                     }
                 }
             }
-            if (!needsRetry) scannedHarvestChunkKeys.add(chunkKey(chunk));
             if (budgetReached) break;
         }
         return spawned;
@@ -449,8 +443,7 @@ public final class HalloweenEventManager {
     }
 
     private int decoratePumpkinChunk(Chunk chunk) {
-        if (chunk == null || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())
-                || chunk.getPersistentDataContainer().has(pumpkinApocalypseDecoratedKey, PersistentDataType.BYTE)) return 0;
+        if (chunk == null || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) return 0;
         World world = chunk.getWorld();
         int target = Math.max(0, Math.min(12,
                 plugin.getConfig().getInt("random-events.pumpkin-apocalypse.additional-pumpkins-per-chunk", 3)));
@@ -472,7 +465,6 @@ public final class HalloweenEventManager {
             air.setType(type, false);
             placed++;
         }
-        chunk.getPersistentDataContainer().set(pumpkinApocalypseDecoratedKey, PersistentDataType.BYTE, (byte) 1);
         return placed;
     }
 
