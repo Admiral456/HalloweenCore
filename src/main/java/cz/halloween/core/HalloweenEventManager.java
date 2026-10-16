@@ -297,11 +297,11 @@ public final class HalloweenEventManager {
             if (forward.lengthSquared() < 0.001D) forward = new Vector(0.0D, 0.0D, 1.0D);
             forward.normalize();
             Vector right = new Vector(-forward.getZ(), 0.0D, forward.getX()).normalize();
-            Location center = player.getEyeLocation().clone().add(forward.multiply(32.0D)).add(0.0D, 10.0D, 0.0D);
+            Location center = player.getEyeLocation().clone().add(forward.multiply(23.0D)).add(0.0D, 7.0D, 0.0D);
             for (int i = 0; i < 36; i++) {
                 double angle = Math.PI * 2.0D * i / 36.0D;
-                Location point = center.clone().add(right.clone().multiply(Math.cos(angle) * 2.6D))
-                        .add(0.0D, Math.sin(angle) * 2.6D, 0.0D);
+                Location point = center.clone().add(right.clone().multiply(Math.cos(angle) * 2.4D))
+                        .add(0.0D, Math.sin(angle) * 2.4D, 0.0D);
                 player.spawnParticle(Particle.DUST, point, 1, 0.0D, 0.0D, 0.0D, 0.0D, blood);
             }
             for (int i = 0; i < 18; i++) {

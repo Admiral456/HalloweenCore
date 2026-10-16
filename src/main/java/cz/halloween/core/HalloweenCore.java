@@ -61,6 +61,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
+        migrateEventSpawnRules();
         migrateAdditionalMobAndQuestDefaults();
         migrateAtmosphericWorldGenerationDefaults();
         migrateSeasonAndWitchingDefaults();
@@ -197,6 +198,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
+        migrateEventSpawnRules();
         migrateAdditionalMobAndQuestDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
@@ -720,6 +722,57 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             getLogger().info("Halloween event overhaul applied once: six event definitions, denser Blood Moon waves, 3x hostile-mob damage and refreshed world decorations; unrelated settings were preserved.");
         } catch (IOException ex) {
             getLogger().warning("Halloween event overhaul migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
+
+    /**
+     * Event behavior migration. Older configurations may still limit waves to 48 mobs
+     * per world and 4 invasion mobs per player. Upgrade only known historical defaults;
+     * preserve any non-default administrator choices.
+     */
+    private void migrateEventSpawnRules() {
+        if (getConfig().getBoolean("migrations.event-spawn-rules-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; event spawn-rule migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            String root = "random-events.";
+            // Upgrade only the old built-in values from previous releases.
+            if (getConfig().getInt(root + "max-event-mobs", 48) == 48) {
+                getConfig().set(root + "max-event-mobs",
+                        defaults.getInt(root + "max-event-mobs", 256));
+            }
+            if (getConfig().getInt(root + "invasion-mobs-per-surge", 4) == 4) {
+                getConfig().set(root + "invasion-mobs-per-surge",
+                        defaults.getInt(root + "invasion-mobs-per-surge", 2));
+            }
+            for (String key : List.of("spawn-radius-blocks", "event-mob-lifetime-seconds")) {
+                String path = root + key;
+                if (!getConfig().contains(path) && defaults.contains(path)) {
+                    getConfig().set(path, defaults.get(path));
+                }
+            }
+            for (String sectionPath : List.of(
+                    "random-events.cursed-harvest",
+                    "random-events.pumpkin-apocalypse",
+                    "random-events.graveyard-rising")) {
+                ConfigurationSection source = defaults.getConfigurationSection(sectionPath);
+                if (source == null) continue;
+                for (String key : source.getKeys(true)) {
+                    if (source.isConfigurationSection(key)) continue;
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, source.get(key));
+                }
+            }
+            getConfig().set("migrations.event-spawn-rules-v1", true);
+            saveConfig();
+            getLogger().info("Halloween event spawn rules migrated: all-player targeting, 25-block radius and bounded world scans; customized non-default values were preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Event spawn-rule migration failed: " + ex.getClass().getSimpleName());
         }
     }
 

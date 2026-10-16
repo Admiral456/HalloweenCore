@@ -185,6 +185,8 @@ if "spawnFromRecordedGraveyards()" not in events or "getRecordedGraveyardLocatio
     fail("Graveyard Rising must spawn from recorded cemetery sites")
 if "displayBloodMoonToPlayers()" not in events or "world.setTime(13_000L)" not in events:
     fail("Blood Moon must set night and show its event-only red visual")
+if "migrateEventSpawnRules()" not in core or "migrations.event-spawn-rules-v1" not in core:
+    fail("Older server configs must migrate the new radius, entity cap and field/structure scan budgets")
 if "decorateLoadedChunksWithPumpkins()" not in events:
     fail("Pumpkin Apocalypse must decorate the active world's loaded natural chunks")
 
