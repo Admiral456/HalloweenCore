@@ -11,7 +11,7 @@ The source package labels the six files as PNGs, but their binary signature is B
 
 The Java custom-sky format at `assets/minecraft/optifine/sky/world0` is recognized by OptiFine and compatible custom-sky loaders (for example, certain Skyboxify setups). Plain vanilla clients do not read OptiFine sky properties. They keep the existing Halloween-tinted vanilla sky shader as a fallback. Shader packs or client modifications that replace Minecraft's sky renderer may override either appearance.
 
-This is a permanent custom-sky visual for compatible clients; it is not automatically toggled by server event state. A server-side plugin cannot force a client to load a custom-sky mod. The command `/halloween shader on|off` changes only the vanilla `sky.fsh` fallback tint; it does not switch Koto's separate OptiFine skybox. `/halloween shader status` reports the fallback tint weight. A live Minecraft client/resource-pack test is still required before calling the rendered result verified.
+The skybox properties explicitly include clear, rain and thunder weather, so the Koto sky should not disappear just because it starts raining. This is a permanent custom-sky visual for compatible clients; it is not automatically toggled by server event state. A server-side plugin cannot force a client to load a custom-sky mod. The command `/halloween shader on|off` changes only the vanilla `sky.fsh` fallback tint; it does not switch Koto's separate OptiFine skybox. `/halloween shader status` reports the fallback tint weight. A live Minecraft client/resource-pack test is still required before calling the rendered result verified.
 
 ## Attribution and license
 

@@ -176,7 +176,7 @@ except (OSError, ValueError) as exc:
 if (sky_width, sky_height) != (1536, 1024):
     fail(f"Koto Java sky atlas must be 1536x1024 (3x2 faces), got {sky_width}x{sky_height}")
 sky_properties = KOTO_SKY_PROPERTIES.read_text(encoding="utf-8")
-for marker in ("source=./sky1.png", "blend=replace", "rotate=false"):
+for marker in ("source=./sky1.png", "blend=replace", "rotate=false", "weather=clear rain thunder"):
     if marker not in sky_properties.splitlines():
         fail(f"Koto sky properties are missing required setting: {marker}")
 
