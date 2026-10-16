@@ -38,6 +38,8 @@ EXPECTED = {
     "halloween_token.png",
     "cursed_candy.png",
     "haunted_map.png",
+    "batwing_elytra.png",
+    "nocturne_sovereign_cowl.png",
     "crimson_warden_helmet.png",
     "crimson_warden_chestplate.png",
     "crimson_warden_leggings.png",
@@ -160,6 +162,23 @@ for marker in (
         fail(f"Sky shader is missing required Minecraft 1.21.10 contract marker: {marker}")
 if not shader_text.lstrip().startswith("#version 330"):
     fail("Sky shader must start with the supported GLSL version declaration")
+
+# Koto's source is converted to a Java custom-sky atlas during the build. Keep
+# the full-resolution layout and loader configuration explicit and reproducible.
+KOTO_SKY_ATLAS = CONTENT / "resourcepack/assets/minecraft/optifine/sky/world0/sky1.png"
+KOTO_SKY_PROPERTIES = CONTENT / "resourcepack/assets/minecraft/optifine/sky/world0/sky1.properties"
+if not KOTO_SKY_ATLAS.is_file() or not KOTO_SKY_PROPERTIES.is_file():
+    fail("Missing generated Koto Java sky atlas or sky1.properties")
+try:
+    sky_width, sky_height = strict_png_size(KOTO_SKY_ATLAS)
+except (OSError, ValueError) as exc:
+    fail(f"Invalid Koto sky atlas: {exc}")
+if (sky_width, sky_height) != (1536, 1024):
+    fail(f"Koto Java sky atlas must be 1536x1024 (3x2 faces), got {sky_width}x{sky_height}")
+sky_properties = KOTO_SKY_PROPERTIES.read_text(encoding="utf-8")
+for marker in ("source=./sky1.png", "blend=replace", "rotate=false", "weather=clear rain thunder"):
+    if marker not in sky_properties.splitlines():
+        fail(f"Koto sky properties are missing required setting: {marker}")
 
 # Explicit vanilla texture overrides give physical Halloween decoration its
 # seasonal appearance while keeping the server-side blocks present with or
@@ -329,7 +348,7 @@ for item_id in ("hunter_mask", "cursed_talisman", "halloween_token", "cursed_can
                 "crimson_warden_helmet", "crimson_warden_chestplate",
                 "crimson_warden_leggings", "crimson_warden_boots",
                 "crimson_warden_sword", "crimson_warden_pickaxe", "crimson_warden_axe",
-                "crimson_warden_shovel", "crimson_warden_hoe"):
+                "crimson_warden_shovel", "crimson_warden_hoe", "batwing_elytra", "nocturne_sovereign_cowl"):
     if f"  {item_id}:" not in config:
         fail(f"ItemsAdder item '{item_id}' missing from items.yml")
 
@@ -449,18 +468,41 @@ for layer in ("layer_1.png", "layer_2.png"):
     if (width, height) != (64, 32):
         fail(f"ItemsAdder source {layer} must be 64x32, got {width}x{height}")
 
+# The illustrated guide uses one dedicated ItemsAdder font-image folder alongside
+# the existing armor layers. No other source texture folders are permitted.
+GUIDE_FONT_TEXTURES = CONTENT / "textures" / "font"
+GUIDE_FONT_CONFIG = CONTENT / "guide_font_images.yml"
+GUIDE_GLYPHS = {
+    "guide_cover.png", "guide_soulstorm.png", "guide_witching.png", "guide_harvest.png",
+    "guide_blood_moon.png", "guide_pumpkin.png", "guide_graveyard.png",
+}
+if not GUIDE_FONT_CONFIG.is_file():
+    fail("Missing ItemsAdder illustrated guide font config: " + str(GUIDE_FONT_CONFIG.relative_to(ROOT)))
+font_config_text = GUIDE_FONT_CONFIG.read_text(encoding="utf-8")
+for glyph_id in ("guide_cover", "guide_soulstorm", "guide_witching", "guide_harvest",
+                 "guide_blood_moon", "guide_pumpkin", "guide_graveyard"):
+    if not re.search(rf"(?m)^  {re.escape(glyph_id)}:\s*$", font_config_text):
+        fail("Missing illustrated guide font_images entry: " + glyph_id)
+for filename in sorted(GUIDE_GLYPHS):
+    path = GUIDE_FONT_TEXTURES / filename
+    if not path.is_file():
+        fail("Missing illustrated guide glyph: " + str(path.relative_to(ROOT)))
+    if png_size(path) != (64, 64):
+        fail(f"Illustrated guide glyph {filename} must be 64x64")
 root_textures = CONTENT / "textures"
 if root_textures.exists():
     unexpected = [p for p in root_textures.rglob("*") if p.is_file()
-                  and not (p.parent == ARMOR_SOURCE_TEXTURES and p.name in ("layer_1.png", "layer_2.png"))]
+                  and not (p.parent == ARMOR_SOURCE_TEXTURES and p.name in ("layer_1.png", "layer_2.png"))
+                  and not (p.parent == GUIDE_FONT_TEXTURES and p.name in GUIDE_GLYPHS)]
     if unexpected:
         fail("Unexpected ItemsAdder top-level texture files: " + ", ".join(str(p.relative_to(ROOT)) for p in unexpected))
 
 print("Halloween asset validation passed.")
-print("14 item textures: 32x32 PNG; 2 Crimson Warden armor layers: 64x32 PNG")
+print("16 project-generated item icons: 32x32 PNG; 14 imported 16x16 item-icon targets (13 candy sprites + 1 apple-leaf block icon) are verified by validate_halloween_content_registry.py; 2 Crimson Warden armor layers: 64x32 PNG")
 print("Crimson Warden gear: attack stats/durability verified; 4 armor pieces and 5 weapons/tools enchantable")
 print("Pickaxe, axe, shovel and hoe: custom 14x mining-speed tool components verified")
 print("ItemsAdder namespace: warriorland_halloween")
+print(f"Illustrated guide book: {len(GUIDE_GLYPHS)} 64x64 bitmap glyph images and matching ItemsAdder font configuration")
 print(f"Seasonal vanilla block overrides: {len(EXPECTED_SEASONAL_BLOCK_TEXTURES)} textures verified at 16x16")
 print("Sky shader: Minecraft 1.21.10 entry point present")
 print(f"Audio: Spooky Fester ambience ({round(theme_duration * 1000)} ms), 5s generic cue, and {len(EVENT_CUES)} unique event cues; all mono OGG/Vorbis")

@@ -73,8 +73,8 @@ automatic-world-generation:
   allowed-worlds: ["*"]
   structures-enabled: true
   structures-on-existing-chunks: true
-  min-structure-chunk-distance: 3
-  structure-chance-per-anchor: 0.45
+  min-structure-chunk-distance: 2
+  structure-chance-per-anchor: 0.65
 
 rewards:
   mob-kill:
@@ -156,7 +156,7 @@ rewards:
       name: "&5&lProkletý talisman &8[2026]"
       lore:
         - "&7Legendární relikvie z finálního obchodu."
-        - "&d+1 celý řádek srdcí navíc (+20 HP)."
+        - "&d+1 srdce navíc (+2 HP)."
         - "&7Aktivuje se při držení v ruce/offhandu."
         - "&5+10 % Halloween fragmentů."
         - "&8Cena: 1 000 000 fragmentů."
@@ -220,6 +220,17 @@ rewards:
         - "&c6 bodů brnění (netherit 3) • výdrž 950."
         - "&8Enchantovatelné jako netherit."
 
+    crimson-warden-shield:
+      cost: 28000
+      min-curse: 4
+      itemsadder-id: "warriorland_halloween:crimson_warden_shield"
+      material: SHIELD
+      amount: 1
+      name: "&4&lŠtít Krvavého strážce"
+      lore:
+        - "&7Štít z černé oceli s karmínovým jádrem."
+        - "&8Součást výbavy Krvavého strážce."
+
     crimson-warden-sword:
       cost: 35000
       min-curse: 5
@@ -279,6 +290,150 @@ rewards:
         - "&7Legendární motyka se zpevněným ostřím."
         - "&cTěžba 14 • útokový modifier 7 • rychlostní modifier 1,0."
         - "&7Výdrž 4 500 • plně enchantovatelná."
+
+
+    stev-apple-core:
+      cost: 250
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_apple_core"
+      material: COOKIE
+      amount: 1
+      name: "&6Jablečná jadérka"
+      lore:
+        - "&7Halloween sladkost."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-candy-apple:
+      cost: 450
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_candy_apple"
+      material: COOKIE
+      amount: 1
+      name: "&cKaramelové jablko"
+      lore:
+        - "&7Sladké jablko s halloweenským vzhledem."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-candy-bag:
+      cost: 600
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_candy_bag"
+      material: COOKIE
+      amount: 1
+      name: "&6Pytlík sladkostí"
+      lore:
+        - "&7Pytlík plný halloweenských dobrot."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-caramel:
+      cost: 250
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_caramel"
+      material: COOKIE
+      amount: 1
+      name: "&6Karamel"
+      lore:
+        - "&7Sladká halloweenská odměna."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-caramel-apple:
+      cost: 400
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_caramel_apple"
+      material: COOKIE
+      amount: 1
+      name: "&cJablko v karamelu"
+      lore:
+        - "&7Karamelová dobrota z halloweenské slavnosti."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-chocolate-bar:
+      cost: 350
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_chocolate_bar"
+      material: COOKIE
+      amount: 1
+      name: "&6Čokoládová tyčinka"
+      lore:
+        - "&7Čokoládová sladkost."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-frosted-sugar-cookie:
+      cost: 400
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_frosted_sugar_cookie"
+      material: COOKIE
+      amount: 1
+      name: "&dZdobená sušenka"
+      lore:
+        - "&7Sladká sušenka s polevou."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-gumdrop:
+      cost: 250
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_gumdrop"
+      material: COOKIE
+      amount: 1
+      name: "&aŽelé bonbon"
+      lore:
+        - "&7Barevný želé bonbon."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-hard-candy:
+      cost: 300
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_hard_candy"
+      material: COOKIE
+      amount: 1
+      name: "&6Tvrdý bonbon"
+      lore:
+        - "&7Tvrdý bonbon do sbírky."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-lollipop:
+      cost: 350
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_lollipop"
+      material: COOKIE
+      amount: 1
+      name: "&dLízátko"
+      lore:
+        - "&7Klasické halloweenské lízátko."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-peanut-butter-cup:
+      cost: 400
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_peanut_butter_cup"
+      material: COOKIE
+      amount: 1
+      name: "&6Arašídový košíček"
+      lore:
+        - "&7Čokoláda a arašídové máslo."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-sugar-cookie:
+      cost: 300
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_sugar_cookie"
+      material: COOKIE
+      amount: 1
+      name: "&eCukrová sušenka"
+      lore:
+        - "&7Sladká cukrová sušenka."
+        - "&8Grafika: Stev's Halloween (MIT)."
+
+    stev-toasted-pumpkin-seeds:
+      cost: 250
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:stev_toasted_pumpkin_seeds"
+      material: COOKIE
+      amount: 1
+      name: "&6Pražená dýňová semínka"
+      lore:
+        - "&7Podzimní pochoutka."
+        - "&8Grafika: Stev's Halloween (MIT)."
 
 haunted-village:
   enabled: false
@@ -480,14 +635,26 @@ random-events:
     max: 24
   duration-minutes: 6
   surge-interval-seconds: 25
-  # Each surge affects up to this many eligible players in different locations.
-  players-per-surge: 3
-  max-event-mobs: 48
+  # Every eligible player receives every player-targeted wave in allowed worlds.
+  spawn-radius-blocks: 25
+  max-event-mobs: 256
+  event-mob-lifetime-seconds: 45
   event-mobs-enabled: true
-  # Blood Moon is intentionally more intense, but bounded to avoid runaway entity counts.
-  invasion-mobs-per-surge: 4
+  invasion-mobs-per-surge: 2
   blood-moon-damage-multiplier: 3.0
   special-mob-chance-multiplier: 2.0
+  cursed-harvest:
+    field-scan-chunks-per-surge: 64
+    field-column-scan-depth-blocks: 8
+    max-field-mobs-per-surge: 48
+    field-target-radius-blocks: 192
+  pumpkin-apocalypse:
+    chunks-per-surge: 128
+    additional-pumpkins-per-chunk: 3
+  graveyard-rising:
+    max-sites-per-surge: 64
+    mobs-per-site-per-surge: 3
+    aggro-radius-blocks: 128
   sound: "warriorland_halloween:event_sting"
   types:
     soulstorm:

@@ -39,6 +39,7 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey eventMobKey;
     private final NamespacedKey graveEncounterMobKey;
     private final NamespacedKey abilityCooldownKey;
+    private final NamespacedKey bloodMoonCaptainKey;
     private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
     public HalloweenMobManager(HalloweenCore plugin) {
@@ -48,6 +49,7 @@ public final class HalloweenMobManager implements Listener {
         this.eventMobKey = new NamespacedKey(plugin, "event_mob");
         this.graveEncounterMobKey = new NamespacedKey(plugin, "grave_encounter_mob");
         this.abilityCooldownKey = new NamespacedKey(plugin, "special_ability_cooldown");
+        this.bloodMoonCaptainKey = new NamespacedKey(plugin, "blood_moon_captain");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -509,32 +511,51 @@ public final class HalloweenMobManager implements Listener {
 
     /** Spawn a specific special type so every event can choose its own enemy mix. */
     public boolean spawnEventMob(Player player, String mobId) {
-        if (!plugin.isEventEnabled() || player == null
-                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
-        if (!isKnownSpecialMob(mobId)) return false;
+        if (!plugin.isEventEnabled() || player == null || !player.isOnline()
+                || !plugin.isEligibleGameplayPlayer(player)
+                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)
+                || !isKnownSpecialMob(mobId) || !plugin.isAutomaticHalloweenWorld(player.getWorld())) return false;
+        return spawnTrackedEventMob(findSafeEventLocation(player), mobId, player);
+    }
 
-        World world = player.getWorld();
+    /** Spawn beside a farmland or cemetery landmark, targeting its nearest eligible player. */
+    public boolean spawnEventMobAt(Location anchor, String mobId, Player target) {
+        if (!plugin.isEventEnabled() || anchor == null || anchor.getWorld() == null || target == null
+                || !target.isOnline() || !plugin.isEligibleGameplayPlayer(target)
+                || !anchor.getWorld().getUID().equals(target.getWorld().getUID())
+                || !plugin.isAutomaticHalloweenWorld(anchor.getWorld())
+                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)
+                || !isKnownSpecialMob(mobId)) return false;
+        return spawnTrackedEventMob(findSafeLocationAround(anchor, 1, 4, 24), mobId, target);
+    }
+
+    private boolean spawnTrackedEventMob(Location spawnLocation, String mobId, Player target) {
+        if (spawnLocation == null || spawnLocation.getWorld() == null) return false;
+        World world = spawnLocation.getWorld();
         if (!plugin.isAutomaticHalloweenWorld(world)) return false;
-        int maxEventMobs = Math.max(1, Math.min(80,
-                plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
-        if (countEventMobs(world) >= maxEventMobs) return false;
-
-        Location spawnLocation = findSafeEventLocation(player);
-        if (spawnLocation == null) return false;
-
+        int cap = Math.max(1, Math.min(512, plugin.getConfig().getInt("random-events.max-event-mobs", 256)));
+        if (countEventMobs(world) >= cap) return false;
         LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
         if (living == null) {
             Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
-            if (!(entity instanceof LivingEntity spawned)) {
-                entity.remove();
-                return false;
-            }
+            if (!(entity instanceof LivingEntity spawned)) { entity.remove(); return false; }
             living = spawned;
         }
-
         configureSpecialMob(living, mobId);
         living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
+        if (target != null && target.isOnline() && target.getWorld().getUID().equals(world.getUID())
+                && living instanceof Mob mobEntity) mobEntity.setTarget(target);
+        scheduleEventMobCleanup(living);
         return true;
+    }
+
+    private void scheduleEventMobCleanup(LivingEntity entity) {
+        int seconds = Math.max(10, Math.min(180,
+                plugin.getConfig().getInt("random-events.event-mob-lifetime-seconds", 45)));
+        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
+            if (entity.isValid() && !entity.isDead()
+                    && entity.getPersistentDataContainer().has(eventMobKey, PersistentDataType.BYTE)) entity.remove();
+        }, seconds * 20L);
     }
 
     /**
@@ -547,8 +568,8 @@ public final class HalloweenMobManager implements Listener {
         World world = player.getWorld();
         if (!plugin.isAutomaticHalloweenWorld(world)) return false;
 
-        int maxEventMobs = Math.max(1, Math.min(80,
-                plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
+        int maxEventMobs = Math.max(1, Math.min(512,
+                plugin.getConfig().getInt("random-events.max-event-mobs", 256)));
         if (countEventMobs(world) >= maxEventMobs) return false;
         Location spawnLocation = findSafeEventLocation(player);
         if (spawnLocation == null) return false;
@@ -575,6 +596,9 @@ public final class HalloweenMobManager implements Listener {
                     plugin.getConfig().getInt("special-mobs.types.pumpkin-wraith.explosion-radius", 3))));
         }
         living.getPersistentDataContainer().set(eventMobKey, PersistentDataType.BYTE, (byte) 1);
+        living.getPersistentDataContainer().set(bloodMoonCaptainKey, PersistentDataType.BYTE, (byte) 1);
+        if (living instanceof Mob mobEntity) mobEntity.setTarget(player);
+        scheduleEventMobCleanup(living);
         return true;
     }
 
@@ -819,37 +843,42 @@ public final class HalloweenMobManager implements Listener {
         }
     }
 
-    private org.bukkit.Location findSafeEventLocation(Player player) {
-        World world = player.getWorld();
+    private Location findSafeEventLocation(Player player) {
+        if (player == null) return null;
+        int radius = Math.max(8, Math.min(25, plugin.getConfig().getInt("random-events.spawn-radius-blocks", 25)));
+        return findSafeLocationAround(player.getLocation(), 8, radius - 2, 24);
+    }
 
-        for (int attempt = 0; attempt < 6; attempt++) {
-            int radius = ThreadLocalRandom.current().nextInt(12, 29);
+    private Location findSafeLocationAround(Location origin, int minimumRadius, int maximumRadius, int attempts) {
+        if (origin == null || origin.getWorld() == null || maximumRadius < minimumRadius) return null;
+        World world = origin.getWorld();
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            double radius = minimumRadius + ThreadLocalRandom.current().nextDouble(
+                    Math.max(0.01D, maximumRadius - minimumRadius + 1.0D));
             double angle = ThreadLocalRandom.current().nextDouble(0.0D, Math.PI * 2.0D);
-            int x = player.getLocation().getBlockX() + (int) Math.round(Math.cos(angle) * radius);
-            int z = player.getLocation().getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
+            int x = origin.getBlockX() + (int) Math.round(Math.cos(angle) * radius);
+            int z = origin.getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
+            if (Math.hypot(x + 0.5D - origin.getX(), z + 0.5D - origin.getZ()) > maximumRadius + 1.0D) continue;
+            // Do not let an event query terrain in an unloaded neighbouring chunk.
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
             int y = world.getHighestBlockYAt(x, z) + 1;
-
             if (y < world.getMinHeight() || y >= world.getMaxHeight() - 1) continue;
-
-            org.bukkit.Location location = new org.bukkit.Location(world, x + 0.5D, y, z + 0.5D);
+            Location location = new Location(world, x + 0.5D, y, z + 0.5D);
+            // For player waves this keeps the whole 3D spawn position inside the configured
+            // radius, not merely its X/Z projection. The same check also avoids distant
+            // vertical spawns when an anchor sits on steep terrain.
+            double allowedDistance = maximumRadius + 1.0D;
+            if (location.distanceSquared(origin) > allowedDistance * allowedDistance) continue;
             if (!world.getWorldBorder().isInside(location)) continue;
-
-            Block feet = location.getBlock();
-            Block head = feet.getRelative(0, 1, 0);
-            Block below = feet.getRelative(0, -1, 0);
-
+            Block feet = location.getBlock(), head = feet.getRelative(0, 1, 0), below = feet.getRelative(0, -1, 0);
             if (!feet.isPassable() || !head.isPassable() || below.isPassable()
-                    || below.isLiquid() || feet.isLiquid() || head.isLiquid()) {
-                continue;
-            }
-
+                    || below.isLiquid() || feet.isLiquid() || head.isLiquid()) continue;
             return location;
         }
-
         return null;
     }
 
-    private long countEventMobs(World world) {
+    public long countEventMobs(World world) {
         return world.getLivingEntities().stream()
                 .filter(entity -> entity.getPersistentDataContainer().has(eventMobKey, PersistentDataType.BYTE))
                 .count();

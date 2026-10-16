@@ -50,54 +50,79 @@ public final class HalloweenItemManager {
     }
 
     /**
-     * Portable fallback-backed relics. If the named ItemsAdder IDs exist, their actual
-     * custom models/textures are retained; otherwise a functional vanilla base item is
-     * returned and marked with the same server-side identity.
+     * Create an item using its stable registry ID. ItemsAdder ID, display text, fallback material,
+     * and texture key are resolved from content-registry.yml rather than being repeated in gameplay.
      */
-    public ItemStack createBatwingElytra() {
-        return createPortableRelic(
-                "warriorland_halloween:batwing_elytra",
-                "batwing-elytra",
-                Material.ELYTRA,
-                "&5&lBatwing Elytra",
-                List.of("&7Custom bat-wing relic", "&7Sneak while gliding: Bat Dash", "&8Cooldown: 20 seconds"),
-                true
+    public ItemStack createRegisteredItem(String internalId, int amount) {
+        return createRegisteredItem(internalId, null, amount);
+    }
+
+    private ItemStack createRegisteredItem(String internalId, String itemsAdderOverride, int amount) {
+        HalloweenContentRegistry.Definition definition = plugin.getContentRegistry().require(internalId);
+        String itemsAdderId = itemsAdderOverride == null || itemsAdderOverride.isBlank()
+                ? definition.itemsAdderId() : itemsAdderOverride;
+        ItemStack item = getItemsAdderItem(itemsAdderId, amount);
+        if (item == null) item = new ItemStack(definition.fallbackMaterial(), Math.max(1, amount));
+
+        var meta = item.getItemMeta();
+        if (meta == null) return item;
+        meta.setDisplayName(org.bukkit.ChatColor.translateAlternateColorCodes('&', definition.displayName()));
+        meta.setLore(definition.lore().stream()
+                .map(line -> org.bukkit.ChatColor.translateAlternateColorCodes('&', line))
+                .toList());
+        meta.getPersistentDataContainer().set(
+                new NamespacedKey(plugin, "halloween_content_id"),
+                PersistentDataType.STRING,
+                definition.internalId()
         );
+        // Keep the historical marker so items already distributed on the server keep working.
+        meta.getPersistentDataContainer().set(
+                new NamespacedKey(plugin, "halloween_relic"),
+                PersistentDataType.STRING,
+                definition.runtimeIdentity()
+        );
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    public ItemStack createBatwingElytra() {
+        ItemStack item = createRegisteredItem("relic_batwing_elytra", 1);
+        var meta = item.getItemMeta();
+        if (meta != null) {
+            meta.addEnchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 3, true);
+            meta.addEnchant(org.bukkit.enchantments.Enchantment.MENDING, 1, true);
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     public ItemStack createNocturneSovereignCowl() {
-        return createPortableRelic(
-                "warriorland_halloween:nocturne_sovereign_cowl",
-                "nocturne-sovereign-cowl",
-                Material.CARVED_PUMPKIN,
-                "&8&lNocturne Sovereign Cowl",
-                List.of("&7Wear on your head for night vision", "&7Sneak: reveal and slow nearby hostile mobs", "&8Cooldown: 30 seconds"),
-                false
-        );
+        ItemStack item = createRegisteredItem("relic_nocturne_sovereign_cowl", 1);
+        var meta = item.getItemMeta();
+        if (meta != null) {
+            meta.addEnchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 3, true);
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     public ItemStack createHauntedMap() {
-        return createPortableRelic(
-                plugin.getConfig().getString("special-mobs.map-item-id", "warriorland_halloween:haunted_map"),
-                "haunted-map-2026",
-                Material.PAPER,
-                "&5&lProkletá mapa",
-                List.of("&7Ukazuje cestu k Haunted Village."),
-                false
-        );
+        String configuredId = plugin.getConfig().getString(
+                "special-mobs.map-item-id",
+                plugin.getContentRegistry().require("relic_haunted_map").itemsAdderId());
+        return createRegisteredItem("relic_haunted_map", configuredId, 1);
     }
 
     public ItemStack createCursedCandy() {
-        return createPortableRelic(
-                plugin.getConfig().getString("special-mobs.relic-item-id", "warriorland_halloween:cursed_candy"),
-                "cursed-candy-2026",
-                Material.COOKIE,
-                "&6&lProkleté cukroví",
-                List.of("&7Po snědení získáš krátké Halloween efekty."),
-                false
-        );
+        String configuredId = plugin.getConfig().getString(
+                "special-mobs.relic-item-id",
+                plugin.getContentRegistry().require("candy_cursed").itemsAdderId());
+        return createRegisteredItem("candy_cursed", configuredId, 1);
     }
 
+    /**
+     * Compatibility helper for older internal integrations; new content should use the registry ID.
+     */
     public ItemStack createPortableRelic(String itemsAdderId, String relicIdentity,
                                          Material fallbackMaterial, String displayName,
                                          java.util.List<String> lore, boolean elytra) {

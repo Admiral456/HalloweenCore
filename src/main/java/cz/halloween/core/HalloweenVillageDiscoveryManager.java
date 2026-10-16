@@ -49,6 +49,9 @@ public final class HalloweenVillageDiscoveryManager implements Listener {
         if (player.getLocation().distanceSquared(target) > radius * radius) return;
 
         plugin.getDataManager().markVillageDiscovered(player.getUniqueId());
+        if (plugin.getAchievementManager() != null) {
+            plugin.getAchievementManager().award(player, "find_village");
+        }
 
         long reward = Math.max(1L,
                 plugin.getConfig().getLong("haunted-village.discovery-reward-fragments", 150L));

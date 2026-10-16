@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Generate project-owned 32x32 Halloween item sprites with deterministic pixel art.
+"""Generate project-owned 32x32 Halloween item/furniture sprites with deterministic pixel art.
 
-The generator only writes shop/gear item icons. ModelEngine mob atlases supplied by
-artists are deliberately left untouched. It uses the Python standard library only.
+ModelEngine mob atlases supplied by artists are deliberately left untouched. The
+generator uses the Python standard library only and creates reproducible PNG files.
 """
 from __future__ import annotations
 
@@ -346,6 +346,37 @@ def sword() -> Canvas:
     return a
 
 
+def shield() -> Canvas:
+    """Original Crimson Warden shield inventory art; the worn/in-hand model is client-dependent."""
+    a = Canvas()
+    # Broad heater-shield silhouette, blackened steel rim and crimson enamel.
+    a.poly([(6, 2), (26, 2), (29, 8), (27, 19), (22, 26), (16, 31),
+            (10, 26), (5, 19), (3, 8)], C["outline"])
+    a.poly([(7, 4), (25, 4), (27, 9), (25, 18), (21, 25), (16, 29),
+            (11, 25), (7, 18), (5, 9)], C["gold_dark"], C["steel_dark"])
+    a.poly([(8, 6), (24, 6), (25, 10), (23, 17), (20, 23), (16, 27),
+            (12, 23), (9, 17), (7, 10)], C["steel_dark"], C["steel"])
+    a.poly([(10, 8), (22, 8), (23, 11), (21, 16), (18, 21), (16, 24),
+            (14, 21), (11, 16), (9, 11)], C["wine"], C["outline"])
+    # Segmented red plates, antique-gold edging and an unmistakable center gem.
+    a.line(9, 9, 13, 13, C["crimson"], 2)
+    a.line(23, 9, 19, 13, C["crimson"], 2)
+    a.line(10, 16, 14, 21, C["red"], 2)
+    a.line(22, 16, 18, 21, C["red"], 2)
+    a.line(8, 7, 11, 6, C["gold_light"])
+    a.line(21, 6, 24, 7, C["gold_light"])
+    a.line(6, 10, 8, 17, C["gold"])
+    a.line(26, 10, 24, 17, C["gold"])
+    a.poly([(16, 10), (20, 14), (16, 19), (12, 14)], C["outline"])
+    a.poly([(16, 11), (19, 14), (16, 18), (13, 14)], C["glow"], C["gold_light"])
+    a.line(16, 12, 16, 16, C["pale_gold"])
+    a.set(16, 13, C["silver"])
+    for x, y in ((9, 8), (23, 8), (7, 15), (25, 15), (12, 23), (20, 23)):
+        a.set(x, y, C["pale_gold"])
+    a.poly([(14, 24), (16, 26), (18, 24), (16, 28)], C["crimson"], C["outline"])
+    return a
+
+
 def pickaxe() -> Canvas:
     a = Canvas()
     a.line(7, 26, 25, 8, C["outline"], 5)
@@ -410,6 +441,132 @@ def hoe() -> Canvas:
     return a
 
 
+def batwing_elytra() -> Canvas:
+    """Inventory icon for the bat-wing gliding relic; project-owned pixel art."""
+    a = Canvas()
+    # Wide scalloped wings with distinct membranes and a narrow central spine.
+    a.poly([(15, 13), (10, 7), (3, 5), (5, 12), (2, 16), (7, 17),
+            (5, 23), (11, 21), (15, 26), (17, 26), (21, 21), (27, 23),
+            (25, 17), (30, 16), (27, 12), (29, 5), (22, 7), (17, 13)],
+           C["outline"])
+    a.poly([(15, 15), (10, 9), (5, 7), (7, 13), (5, 15), (10, 16),
+            (8, 20), (12, 19), (15, 23)], C["purple_dark"], C["purple"])
+    a.poly([(17, 15), (22, 9), (27, 7), (25, 13), (27, 15), (22, 16),
+            (24, 20), (20, 19), (17, 23)], C["dark"], C["crimson"])
+    a.line(15, 14, 11, 12, C["violet"], 2)
+    a.line(14, 18, 10, 18, C["pink"])
+    a.line(17, 14, 21, 12, C["glow"], 2)
+    a.line(18, 18, 22, 18, C["red"])
+    a.poly([(13, 8), (16, 5), (19, 8), (18, 18), (16, 22), (14, 18)],
+           C["steel_dark"], C["gold_dark"])
+    a.line(16, 8, 16, 17, C["gold_light"])
+    a.diamond(16, 14, 2, 3, C["violet"], C["pink"])
+    a.set(7, 11, C["glow"])
+    a.set(25, 11, C["glow"])
+    return a
+
+
+def nocturne_sovereign_cowl() -> Canvas:
+    """Inventory icon for the shadow cowl with violet eye glow and gold trim."""
+    a = Canvas()
+    a.poly([(5, 12), (8, 6), (13, 3), (19, 3), (24, 6), (27, 12),
+            (25, 19), (22, 25), (16, 29), (10, 25), (7, 19)],
+           C["outline"])
+    a.poly([(7, 12), (10, 7), (14, 5), (18, 5), (22, 7), (25, 12),
+            (23, 18), (21, 23), (16, 27), (11, 23), (9, 18)],
+           C["void"], C["purple"])
+    a.poly([(8, 12), (12, 9), (16, 10), (20, 9), (24, 12),
+            (22, 17), (18, 19), (14, 19), (10, 17)],
+           C["dark"], C["gold_dark"])
+    a.line(9, 13, 14, 15, C["violet"], 2)
+    a.line(18, 15, 23, 13, C["pink"], 2)
+    a.set(12, 14, C["pale_gold"])
+    a.set(20, 14, C["pale_gold"])
+    a.poly([(13, 20), (16, 18), (19, 20), (17, 24), (15, 24)],
+           C["purple_dark"], C["crimson"])
+    a.line(12, 24, 16, 27, C["gold"])
+    a.line(20, 24, 16, 27, C["gold"])
+    a.line(11, 8, 14, 6, C["steel"])
+    a.line(18, 6, 21, 8, C["steel"])
+    return a
+
+
+def grave_marker() -> Canvas:
+    """Original pixel-art icon for a placeable Gothic Gravestone furniture item."""
+    a = Canvas()
+    # Chipped silhouette and offset stone layers give the marker depth at 32px.
+    a.poly([(7, 7), (11, 3), (22, 3), (26, 7), (27, 13), (25, 24),
+            (7, 24), (5, 13)], C["outline"])
+    a.poly([(8, 8), (12, 5), (21, 5), (24, 8), (25, 13), (23, 22),
+            (9, 22), (7, 13)], C["steel_dark"], C["steel"])
+    a.line(11, 7, 21, 7, C["steel_light"])
+    a.line(9, 10, 9, 14, C["steel"])
+    a.line(23, 12, 22, 17, C["void"])
+    # Carved crimson cross with antique-gold inlay, wholly original artwork.
+    a.poly([(14, 9), (18, 9), (18, 13), (21, 13), (21, 17),
+            (18, 17), (18, 21), (14, 21), (14, 17), (11, 17),
+            (11, 13), (14, 13)], C["outline"])
+    a.poly([(15, 10), (17, 10), (17, 14), (20, 14), (20, 16),
+            (17, 16), (17, 20), (15, 20), (15, 16), (12, 16),
+            (12, 14), (15, 14)], C["gold"])
+    a.line(15, 11, 16, 11, C["pale_gold"])
+    a.diamond(16, 15, 1, 1, C["glow"], C["wine"])
+    # Heavy plinth and a small mossy edge.
+    a.rect(4, 24, 28, 28, C["outline"])
+    a.rect(5, 24, 27, 26, C["steel"])
+    a.line(6, 25, 13, 25, C["steel_light"], 2)
+    a.set(22, 24, C["green"])
+    a.set(23, 24, C["green_dark"])
+    a.line(8, 20, 10, 19, C["gold_dark"])
+    a.line(22, 9, 24, 11, C["silver"])
+    return a
+
+
+def broken_grave_marker() -> Canvas:
+    """Original pixel-art icon for a cracked, partially collapsed grave marker."""
+    a = Canvas()
+    a.poly([(5, 8), (10, 5), (18, 4), (21, 7), (20, 11), (17, 14),
+            (18, 24), (7, 24), (5, 16)], C["outline"])
+    a.poly([(7, 9), (11, 7), (17, 6), (19, 8), (18, 11), (15, 14),
+            (16, 22), (9, 22), (7, 15)], C["steel_dark"], C["steel"])
+    # Fallen fragment gives the silhouette a visibly different outline.
+    a.poly([(20, 5), (25, 6), (27, 10), (25, 14), (21, 13), (19, 10)],
+           C["outline"])
+    a.poly([(21, 7), (24, 7), (25, 10), (24, 12), (21, 11)],
+           C["steel"], C["steel_light"])
+    a.line(12, 8, 11, 12, C["void"], 2)
+    a.line(11, 12, 14, 15, C["outline"], 2)
+    a.line(14, 15, 13, 19, C["void"], 2)
+    a.line(16, 9, 16, 12, C["gold_dark"])
+    a.rect(4, 24, 26, 28, C["outline"])
+    a.rect(5, 24, 25, 26, C["steel"])
+    a.set(22, 24, C["green"])
+    a.set(23, 24, C["green_dark"])
+    return a
+
+
+def grave_candle() -> Canvas:
+    """Original pixel-art icon for a candle placed on a Gothic cemetery plinth."""
+    a = Canvas()
+    # Dark outline around the flame; orange outer fire with a pale inner core.
+    a.poly([(15, 2), (12, 7), (9, 10), (10, 14), (13, 16), (20, 15),
+            (23, 11), (20, 7), (19, 4), (17, 8)], C["outline"])
+    a.poly([(15, 4), (13, 8), (11, 11), (13, 14), (18, 14),
+            (21, 11), (18, 8), (17, 6)], C["ember"], C["red"])
+    a.poly([(15, 7), (14, 10), (15, 12), (18, 12), (18, 10)], C["pale_gold"])
+    a.rect(10, 14, 21, 24, C["outline"])
+    a.rect(11, 14, 20, 23, C["wine"], C["gold_dark"])
+    a.line(12, 16, 12, 21, C["red"])
+    a.line(19, 16, 19, 21, C["dark"])
+    a.line(13, 16, 18, 16, C["gold"])
+    a.rect(7, 23, 24, 26, C["outline"])
+    a.rect(8, 23, 23, 25, C["steel_dark"], C["gold_dark"])
+    a.line(10, 24, 13, 24, C["gold_light"])
+    a.diamond(16, 19, 2, 2, C["gold_light"], C["outline"])
+    a.set(16, 19, C["pale_gold"])
+    return a
+
+
 def main() -> None:
     sprites = {
         "hunter_mask.png": hunter_mask,
@@ -417,11 +574,17 @@ def main() -> None:
         "halloween_token.png": halloween_token,
         "cursed_candy.png": cursed_candy,
         "haunted_map.png": haunted_map,
+        "batwing_elytra.png": batwing_elytra,
+        "nocturne_sovereign_cowl.png": nocturne_sovereign_cowl,
+        "grave_marker.png": grave_marker,
+        "broken_grave_marker.png": broken_grave_marker,
+        "grave_candle.png": grave_candle,
         "crimson_warden_helmet.png": helmet,
         "crimson_warden_chestplate.png": chestplate,
         "crimson_warden_leggings.png": leggings,
         "crimson_warden_boots.png": boots,
         "crimson_warden_sword.png": sword,
+        "crimson_warden_shield.png": shield,
         "crimson_warden_pickaxe.png": pickaxe,
         "crimson_warden_axe.png": axe,
         "crimson_warden_shovel.png": shovel,

@@ -2,13 +2,16 @@ package cz.halloween.core;
 
 import org.bukkit.entity.Player;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 
 public final class HalloweenChallengeManager {
     private record Challenge(String id, String name, String source, int target) {}
 
     private final HalloweenCore plugin;
+    private boolean warnedInvalidTimezone;
     private final List<Challenge> challenges = List.of(
             new Challenge("hunt", "Noční lov", "mob-kill", 25),
             new Challenge("miner", "Hřbitovní těžba", "mining", 50),
@@ -55,13 +58,28 @@ public final class HalloweenChallengeManager {
     }
 
     private void ensureToday(Player player) {
-        String day = LocalDate.now().toString();
+        LocalDate today = currentDay();
+        String day = today.toString();
         String stored = plugin.getDataManager().getChallengeDay(player.getUniqueId());
         if (day.equals(stored)) return;
 
-        int index = Math.floorMod(LocalDate.now().getDayOfYear() + player.getUniqueId().hashCode(), challenges.size());
+        int index = Math.floorMod(today.getDayOfYear() + player.getUniqueId().hashCode(), challenges.size());
         Challenge challenge = challenges.get(index);
         plugin.getDataManager().setChallenge(player.getUniqueId(), day, challenge.id());
+    }
+
+    private LocalDate currentDay() {
+        String configured = plugin.getConfig().getString("season.timezone", "Europe/Prague");
+        try {
+            return LocalDate.now(ZoneId.of(configured == null || configured.isBlank()
+                    ? "Europe/Prague" : configured));
+        } catch (DateTimeException ex) {
+            if (!warnedInvalidTimezone) {
+                plugin.getLogger().warning("Invalid season.timezone for daily challenge; using Europe/Prague.");
+                warnedInvalidTimezone = true;
+            }
+            return LocalDate.now(ZoneId.of("Europe/Prague"));
+        }
     }
 
     private Challenge getChallenge(Player player) {
@@ -71,8 +89,10 @@ public final class HalloweenChallengeManager {
 
     private void claim(Player player, Challenge challenge) {
         long reward = Math.max(1L, plugin.getConfig().getLong("daily-challenge.reward-fragments", 60L));
-        plugin.getService().addFragments(player.getUniqueId(), reward, "challenge");
+        // Mark the one-time claim before award code can trigger a milestone save.
         plugin.getDataManager().markChallengeClaimed(player.getUniqueId());
+        plugin.getService().addFragments(player.getUniqueId(), reward, "challenge");
+        plugin.getDataManager().save();
 
         player.sendTitle(
                 plugin.color("&6&lDENNÍ LOV SPLNĚN"),

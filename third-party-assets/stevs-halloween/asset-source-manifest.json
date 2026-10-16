@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "source": {
+    "project": "Stev's Halloween",
+    "version": "1.0.0",
+    "author": "Stev51",
+    "minecraft_version": "1.21.1",
+    "loader": "NeoForge",
+    "source_jar": "stevs_halloween_mod-1.0.0.jar",
+    "source_jar_sha256": "0e69b791b295f79857f7470eff8b86c1cfb040e0dc9c21826cdf01364b37d696",
+    "source_url": "https://www.curseforge.com/minecraft/mc-mods/stevs-halloween",
+    "license": "MIT",
+    "license_url": "https://www.curseforge.com/minecraft/mc-mods/stevs-halloween/license",
+    "notice": "Retain this attribution and MIT permission notice with the redistributed asset files."
+  },
+  "assets": [
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/block/apple_leaves_with_apples.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/stev_apple_leaves_with_apples.png",
+      "sha256": "2b4d7f640b7695b5d21cbf48ca32488a75a8a34a343ff1b22d507fe57d497c3e",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder block-face texture warriorland_halloween:stev_apple_leaves"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/block/apple_leaves_with_apples.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/apple_leaves_with_apples.png",
+      "sha256": "2b4d7f640b7695b5d21cbf48ca32488a75a8a34a343ff1b22d507fe57d497c3e",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder custom translucent decoration block warriorland_halloween:stev_apple_leaves"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/apple_core.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/apple_core.png",
+      "sha256": "7a44f880c613f68fc741d5516a8d204f751b87407fb76a0598405170d9607fe1",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_apple_core"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/candy_apple.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/candy_apple.png",
+      "sha256": "b826bd540c9754ba44258fdee1a7f962fe7039ddc6c5f988c853690fb09f3a29",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_candy_apple"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/candy_bag.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/candy_bag.png",
+      "sha256": "73b5a220540001297a30841cf7b70b1df7eec6239c83357d0b226e2a6d91fc81",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_candy_bag"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/caramel.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/caramel.png",
+      "sha256": "1232fd2a0d9fb897db9e6ca4198b8317051707549eb942706b70b21989dbf2b3",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_caramel"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/caramel_apple.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/caramel_apple.png",
+      "sha256": "fe007cb0fe9247ee404c197778374088700a5f0b0d8d4132b8b6e38786966e5e",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_caramel_apple"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/chocolate_bar.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/chocolate_bar.png",
+      "sha256": "ea3cc21e1b4764300448bd78222816287c9329c9aaf77eb7604607fefa3009b1",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_chocolate_bar"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/frosted_sugar_cookie.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/frosted_sugar_cookie.png",
+      "sha256": "226c19cb6af6c101706784c749cd7f5ff8c45c565c910cc36d3d6849f496a93b",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_frosted_sugar_cookie"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/gumdrop.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/gumdrop.png",
+      "sha256": "b03f8d472a53395abec3d1d8f3db824f9ed19f06dd6ce93af4f8aa0cf6b36adc",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_gumdrop"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/hard_candy.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/hard_candy.png",
+      "sha256": "3e9e1c0136692550dc34228b02f1605c741ca134cc6156ecb7d791dafc87d32b",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_hard_candy"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/lollipop.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/lollipop.png",
+      "sha256": "5255b6657b2260e4dcf6992367b23280a5d21fd4691181a9d76e8f40c7a0c6cb",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_lollipop"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/peanut_butter_cup.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/peanut_butter_cup.png",
+      "sha256": "a17954d362f8263724141862ed264a5b14a3e8f0bea0550ee0afb56b327e9676",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_peanut_butter_cup"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/sugar_cookie.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/sugar_cookie.png",
+      "sha256": "d330b9601860cd8d9d0db0d70b82db0f1911c0cb75e0dac66320056895707d5f",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_sugar_cookie"
+    },
+    {
+      "source_path": "assets/stevs_halloween_mod/textures/item/toasted_pumpkin_seeds.png",
+      "target_path": "itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/textures/item/stev_candy/toasted_pumpkin_seeds.png",
+      "sha256": "6fc7f1b85d0faef7420df7ac848f78a2c45253eb5ccf436c54d8006bf2abe47d",
+      "dimensions": "16x16",
+      "license": "MIT",
+      "used_by": "ItemsAdder item stev_toasted_pumpkin_seeds"
+    }
+  ]
+}

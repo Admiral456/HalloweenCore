@@ -1,0 +1,47 @@
+Koto red-sky texture — attribution and license notice
+====================================================
+
+Asset: Blood Moon Horizon — red sky by koto (1.0)
+Uploader shown on the distribution page: abdouahabch7
+The original file name and project title attribute the art as “red sky by koto”.
+Original source pages:
+  https://modrinth.com/resourcepack/blood-moon-horizon/version/2CcGu1oW
+  https://www.curseforge.com/minecraft/texture-packs/blood-moon-horizon/files/5489312
+
+The distribution pages list this asset as MIT licensed. The user-supplied archive
+SHA-256 used for review was:
+  3c2317f665cfcd3ed22bd77dd13977b837483f71a9bc09b050bc3c70c265247e
+
+The source ZIP does not contain a standalone LICENSE file or an explicit
+copyright line. The build validates these original face-file SHA-256 values
+before using the artwork:
+  cubemap_0.png  467c3cae4bd103c41cdca9f757fddc3c239e9f280981043eedc1bd2f8b3ea1b2
+  cubemap_1.png  2f29da03f7dcd73221474652e2f31a4d5cb235057b14c2105437b7d2307817b4
+  cubemap_2.png  b5f555661a3a0a812bd3ede48fc9d33d7cd2594e6e3eda339a539ae0ee765d31
+  cubemap_3.png  969f31a07f7c3f360b29a32768a1332f4919c1c86ed340114e92d9dc42bdb6e9
+  cubemap_4.png  c0a470bdd2819fb443f4c9f64822394220116bb0e0d1ffb782abb9fc64c27806
+  cubemap_5.png  ebe2fe434f0ac6a79857e556a5c69a120194f1a48bb04c2526a1eb03988b3cc6
+
+The faces are reassembled, without resizing or recoloring, into a Java 3x2
+sky atlas. Only the file container and layout are changed.
+
+MIT License
+-----------
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.

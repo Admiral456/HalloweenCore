@@ -70,11 +70,13 @@ public final class HalloweenStructureManager implements Listener {
     private final NamespacedKey autoStructureKey;
     private final File locationsFile;
     private final YamlConfiguration locations;
+    private final Map<String, BukkitTask> pendingNaturalGenerationTasks = new LinkedHashMap<>();
+    private final Map<String, Chunk> naturalReservedChunks = new LinkedHashMap<>();
     private BuildJob activeJob;
 
     public HalloweenStructureManager(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.autoCheckedKey = new NamespacedKey(plugin, "halloween_auto_structure_checked_v1");
+        this.autoCheckedKey = new NamespacedKey(plugin, "halloween_auto_structure_checked_v2");
         this.autoReservedKey = new NamespacedKey(plugin, "halloween_auto_structure_reserved_v1");
         this.autoStructureKey = new NamespacedKey(plugin, "halloween_auto_structure_v1");
         this.locationsFile = new File(plugin.getDataFolder(), "structures.yml");
@@ -88,55 +90,145 @@ public final class HalloweenStructureManager implements Listener {
      */
     @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
+        Chunk chunk = event.getChunk();
+        recoverStaleReservation(chunk);
         boolean includeExisting = plugin.getConfig().getBoolean(
                 "automatic-world-generation.structures-on-existing-chunks", true);
         if ((!event.isNewChunk() && !includeExisting)
                 || !plugin.isAutomaticHalloweenWorld(event.getWorld())
                 || !plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) return;
+        attemptNaturalGeneration(chunk);
+    }
 
-        Chunk chunk = event.getChunk();
+    /**
+     * Clear reservation markers left by a previous plugin/server process. Pending
+     * in-memory tasks are the authority for whether a reservation is currently live.
+     */
+    public void recoverStaleNaturalReservations() {
+        for (World world : Bukkit.getWorlds()) {
+            for (Chunk chunk : world.getLoadedChunks()) {
+                if (!recoverStaleReservation(chunk)) continue;
+                if (plugin.isAutomaticHalloweenWorld(world)
+                        && plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) {
+                    attemptNaturalGeneration(chunk);
+                }
+            }
+        }
+    }
+
+    private boolean recoverStaleReservation(Chunk chunk) {
+        if (chunk == null
+                || !chunk.getPersistentDataContainer().has(autoReservedKey, PersistentDataType.BYTE)) return false;
+        String key = naturalChunkKey(chunk);
+        if (pendingNaturalGenerationTasks.containsKey(key)) return false;
+
+        chunk.getPersistentDataContainer().remove(autoReservedKey);
+        chunk.getPersistentDataContainer().remove(autoCheckedKey);
+        plugin.getLogger().warning("Recovered a stale Halloween structure reservation at "
+                + chunk.getWorld().getName() + " chunk " + chunk.getX() + "," + chunk.getZ()
+                + "; the candidate may be retried safely.");
+        return true;
+    }
+
+    private String naturalChunkKey(Chunk chunk) {
+        return chunk.getWorld().getUID() + ":" + chunk.getX() + ":" + chunk.getZ();
+    }
+
+    private void attemptNaturalGeneration(Chunk chunk) {
+        if (chunk == null
+                || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())
+                || !plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) return;
         if (chunk.getPersistentDataContainer().has(autoCheckedKey, PersistentDataType.BYTE)) return;
         chunk.getPersistentDataContainer().set(autoCheckedKey, PersistentDataType.BYTE, (byte) 1);
 
         int spacing = Math.max(2, Math.min(64,
-                plugin.getConfig().getInt("automatic-world-generation.min-structure-chunk-distance", 4)));
+                plugin.getConfig().getInt("automatic-world-generation.min-structure-chunk-distance", 2)));
         if (Math.floorMod(chunk.getX(), spacing) != 0 || Math.floorMod(chunk.getZ(), spacing) != 0) return;
 
         long seed = chunk.getWorld().getSeed() ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L) ^ 0x48414C4C53545255L;
         Random random = new Random(seed);
         double chance = Math.max(0.0D, Math.min(1.0D,
-                plugin.getConfig().getDouble("automatic-world-generation.structure-chance-per-anchor", 0.30D)));
+                plugin.getConfig().getDouble("automatic-world-generation.structure-chance-per-anchor", 0.65D)));
         if (random.nextDouble() >= chance) return;
         Kind kind = random.nextBoolean() ? Kind.GRAVEYARD : Kind.VILLAGE;
-        // Reserve only actual candidate chunks so the simple decorator does not race
-        // the structure job on the next tick. Chunks that fail preflight are released.
+        // Reserve only real candidates so decorations cannot race the structure job.
         chunk.getPersistentDataContainer().set(autoReservedKey, PersistentDataType.BYTE, (byte) 1);
-        Bukkit.getScheduler().runTask(plugin, () -> {
-            if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) {
-                // If the chunk unloads before the scheduled placement, permit a later
-                // load to retry rather than permanently consuming its one-time attempt.
-                chunk.getPersistentDataContainer().remove(autoCheckedKey);
-                chunk.getPersistentDataContainer().remove(autoReservedKey);
-                return;
-            }
-            if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) {
-                chunk.getPersistentDataContainer().remove(autoReservedKey);
-                return;
-            }
+        String key = naturalChunkKey(chunk);
+        naturalReservedChunks.put(key, chunk);
+        BukkitTask task = Bukkit.getScheduler().runTask(plugin, () -> {
             try {
-                if (generateSafeNaturalFeature(chunk, kind, random)) {
-                    chunk.getPersistentDataContainer().set(autoStructureKey, PersistentDataType.BYTE, (byte) 1);
-                    plugin.getLogger().info("Generated natural Halloween " + kind.displayName + " in "
-                            + chunk.getWorld().getName() + " chunk " + chunk.getX() + "," + chunk.getZ() + ".");
+                if (!chunk.isLoaded() || !plugin.isAutomaticHalloweenWorld(chunk.getWorld())) {
+                    // A chunk that unloads before placement must be eligible for a later retry.
+                    chunk.getPersistentDataContainer().remove(autoCheckedKey);
+                    chunk.getPersistentDataContainer().remove(autoReservedKey);
+                    return;
                 }
-            } catch (RuntimeException ex) {
-                plugin.getLogger().warning("Skipped natural Halloween structure in chunk " + chunk.getX() + ","
-                        + chunk.getZ() + " because safe placement failed: " + ex.getClass().getSimpleName());
+                if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) {
+                    chunk.getPersistentDataContainer().remove(autoReservedKey);
+                    return;
+                }
+                try {
+                    if (generateSafeNaturalFeature(chunk, kind, random)) {
+                        chunk.getPersistentDataContainer().set(autoStructureKey, PersistentDataType.BYTE, (byte) 1);
+                        plugin.getLogger().info("Generated natural Halloween " + kind.displayName + " in "
+                                + chunk.getWorld().getName() + " chunk " + chunk.getX() + "," + chunk.getZ() + ".");
+                    }
+                } catch (RuntimeException ex) {
+                    plugin.getLogger().warning("Skipped natural Halloween structure in chunk " + chunk.getX() + ","
+                            + chunk.getZ() + " because safe placement failed: " + ex.getClass().getSimpleName());
+                }
             } finally {
-                chunk.getPersistentDataContainer().remove(autoReservedKey);
+                pendingNaturalGenerationTasks.remove(key);
+                naturalReservedChunks.remove(key);
+                if (chunk.isLoaded()) {
+                    chunk.getPersistentDataContainer().remove(autoReservedKey);
+                }
             }
         });
+        pendingNaturalGenerationTasks.put(key, task);
+    }
+
+    /** Scan only already-loaded chunks after the discovery migration; never force-load terrain. */
+    public void scanLoadedChunksForNaturalGeneration() {
+        if (!plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) return;
+        int scanned = 0;
+        for (World world : Bukkit.getWorlds()) {
+            if (!plugin.isAutomaticHalloweenWorld(world)) continue;
+            for (Chunk chunk : world.getLoadedChunks()) {
+                if (chunk.getPersistentDataContainer().has(autoStructureKey, PersistentDataType.BYTE)) continue;
+                attemptNaturalGeneration(chunk);
+                scanned++;
+            }
+        }
+        if (scanned > 0) {
+            plugin.getLogger().info("Checked " + scanned
+                    + " already-loaded chunks for natural Halloween structures (no chunks force-loaded).");
+        }
+    }
+
+    public String naturalGenerationStatus(World world) {
+        if (world == null) return "svět není dostupný";
+        if (world.getName().equalsIgnoreCase("Spawn")) {
+            return "vypnuto: svět Spawn je záměrně chráněný před automatickými Halloween strukturami";
+        }
+        if (!plugin.getConfig().getBoolean("automatic-world-generation.enabled", true)) {
+            return "vypnuto v config.yml (automatic-world-generation.enabled)";
+        }
+        List<String> allowed = plugin.getConfig().getStringList("automatic-world-generation.allowed-worlds");
+        if (allowed.isEmpty()) return "vypnuto: seznam automatic-world-generation.allowed-worlds je prázdný";
+        boolean allowedWorld = allowed.stream().anyMatch(name -> name.equals("*") || name.equalsIgnoreCase(world.getName()));
+        if (!allowedWorld) return "vypnuto pro tento svět: " + world.getName() + " není v allowed-worlds";
+        if (!plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) {
+            return "vypnuto v config.yml (automatic-world-generation.structures-enabled)";
+        }
+        int spacing = Math.max(2, Math.min(64,
+                plugin.getConfig().getInt("automatic-world-generation.min-structure-chunk-distance", 2)));
+        double chance = Math.max(0.0D, Math.min(1.0D,
+                plugin.getConfig().getDouble("automatic-world-generation.structure-chance-per-anchor", 0.65D)));
+        return String.format(Locale.ROOT,
+                "aktivní: kontrola při načtení chunků (není to 15min časovač), rozestup %d chunků, šance %.0f%% před kontrolou terénu",
+                spacing, chance * 100.0D);
     }
 
     public boolean isReservedForNaturalGeneration(Chunk chunk) {
@@ -160,6 +252,38 @@ public final class HalloweenStructureManager implements Listener {
             if (dx * dx + dz * dz <= radiusSquared) return true;
         }
         return false;
+    }
+
+    /** Recorded/generated cemetery locations in already-loaded chunks only. */
+    public List<Location> getRecordedGraveyardLocations(World world) {
+        if (world == null) return List.of();
+        List<Location> result = new ArrayList<>();
+        for (Map<?, ?> entry : locations.getMapList("locations")) {
+            if (!"GRAVEYARD".equalsIgnoreCase(String.valueOf(entry.get("type")))) continue;
+            if (!world.getName().equals(String.valueOf(entry.get("world")))) continue;
+            double x = number(entry.get("x")), y = number(entry.get("y")), z = number(entry.get("z"));
+            int blockX = (int) Math.floor(x), blockZ = (int) Math.floor(z);
+            if (!world.isChunkLoaded(blockX >> 4, blockZ >> 4)) continue;
+            result.add(new Location(world, x, y, z));
+        }
+        return List.copyOf(result);
+    }
+
+    /** Recorded village or graveyard centers from structures.yml, loaded-chunk safe. */
+    public List<Location> getRecordedStructureLocations(World world, String requestedType) {
+        if (world == null || requestedType == null) return List.of();
+        String type = requestedType.trim().toUpperCase(Locale.ROOT);
+        if (!type.equals("VILLAGE") && !type.equals("GRAVEYARD")) return List.of();
+        List<Location> result = new ArrayList<>();
+        for (Map<?, ?> entry : locations.getMapList("locations")) {
+            if (!type.equalsIgnoreCase(String.valueOf(entry.get("type")))) continue;
+            if (!world.getName().equals(String.valueOf(entry.get("world"))) ) continue;
+            double x = number(entry.get("x")), y = number(entry.get("y")), z = number(entry.get("z"));
+            int blockX = (int) Math.floor(x), blockZ = (int) Math.floor(z);
+            if (!world.isChunkLoaded(blockX >> 4, blockZ >> 4)) continue;
+            result.add(new Location(world, x, y, z));
+        }
+        return List.copyOf(result);
     }
 
     public List<String> locateTabComplete(String prefix) {
@@ -186,6 +310,7 @@ public final class HalloweenStructureManager implements Listener {
         if (args[1].equalsIgnoreCase("all")) {
             player.sendMessage(plugin.color("&6&lHALLOWEEN STRUKTURY &8» &7Nejbližší zaznamenané stavby v tomto světě:"));
             for (Kind kind : Kind.values()) sendNearestLocation(player, kind, false);
+            player.sendMessage(plugin.color("&7Automatické generování v tomto světě: &f" + naturalGenerationStatus(player.getWorld())));
             return true;
         }
         Kind kind = parseKind(args[1]);
@@ -220,7 +345,11 @@ public final class HalloweenStructureManager implements Listener {
         if (nearest == null) {
             if (explainMissing) {
                 player.sendMessage(plugin.color("&e" + requested.displayName + ": &cV tomto světě zatím nemám uloženou polohu této struktury."));
-                player.sendMessage(plugin.color("&7Poloha se uloží po úspěšném ručním nebo novém přirozeném vygenerování."));
+                player.sendMessage(plugin.color("&7Automatické generování: &f" + naturalGenerationStatus(player.getWorld())));
+                if (plugin.isAutomaticHalloweenWorld(player.getWorld())
+                        && plugin.getConfig().getBoolean("automatic-world-generation.structures-enabled", true)) {
+                    player.sendMessage(plugin.color("&7Nečeká se pevně 15 minut: struktury se zkoušejí při načtení chunků a potřebují vhodnou přírodní plochu."));
+                }
             } else {
                 player.sendMessage(plugin.color("&7" + requested.displayName + ": &cnení zatím zaznamenána v tomto světě."));
             }
@@ -305,6 +434,18 @@ public final class HalloweenStructureManager implements Listener {
     }
 
     public void stop() {
+        for (BukkitTask task : pendingNaturalGenerationTasks.values()) {
+            task.cancel();
+        }
+        pendingNaturalGenerationTasks.clear();
+        for (Chunk chunk : new ArrayList<>(naturalReservedChunks.values())) {
+            if (chunk.isLoaded()) {
+                chunk.getPersistentDataContainer().remove(autoReservedKey);
+                chunk.getPersistentDataContainer().remove(autoCheckedKey);
+            }
+        }
+        naturalReservedChunks.clear();
+
         if (activeJob == null) return;
         BuildJob job = activeJob;
         if (job.task != null) job.task.cancel();

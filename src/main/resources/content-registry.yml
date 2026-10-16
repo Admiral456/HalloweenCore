@@ -1,0 +1,395 @@
+schema-version: 1
+# Canonical logical IDs for HalloweenCore items. Gameplay code uses these IDs,
+# never display names, model filenames, texture filenames, or ItemsAdder paths.
+items:
+  cosmetic_hunter_mask:
+    category: cosmetic
+    itemsadder-id: warriorland_halloween:hunter_mask
+    runtime-identity: hunter-mask-2026
+    fallback-material: CARVED_PUMPKIN
+    texture: hunter_mask
+    display-name: "&6&lMaska nočního lovce &8[Halloween 2026]"
+    lore:
+      - "&7Limitovaná Halloween odměna."
+      - "&7Připomínka eventu WarriorLand 2026."
+  relic_cursed_talisman:
+    category: relic
+    itemsadder-id: warriorland_halloween:cursed_talisman
+    runtime-identity: cursed-talisman-2026
+    fallback-material: NETHER_STAR
+    texture: cursed_talisman
+    display-name: "&5&lProkletý talisman &8[2026]"
+    lore:
+      - "&7Relikvie vysokého prokletí."
+      - "&d+1 srdce navíc (+2 HP)"
+      - "&7Aktivní při držení v ruce nebo offhandu."
+  collectible_halloween_token:
+    category: collectible
+    itemsadder-id: warriorland_halloween:halloween_token
+    runtime-identity: halloween-token-2026
+    fallback-material: NAME_TAG
+    texture: halloween_token
+    display-name: "&c&lHalloween 2026"
+    lore:
+      - "&7Jedinečná památka."
+  relic_haunted_map:
+    category: relic
+    itemsadder-id: warriorland_halloween:haunted_map
+    runtime-identity: haunted-map-2026
+    fallback-material: PAPER
+    texture: haunted_map
+    display-name: "&5&lProkletá mapa"
+    lore:
+      - "&7Ukazuje cestu k Haunted Village."
+  relic_batwing_elytra:
+    category: relic
+    itemsadder-id: warriorland_halloween:batwing_elytra
+    runtime-identity: batwing-elytra
+    fallback-material: ELYTRA
+    texture: batwing_elytra
+    display-name: "&5&lBatwing Elytra"
+    lore:
+      - "&7Temná relikvie z netopýřího křídla."
+      - "&7Při plachtění se skrč pro vzdušný výpad."
+      - "&8Obnova schopnosti: 20 sekund."
+  relic_nocturne_sovereign_cowl:
+    category: relic
+    itemsadder-id: warriorland_halloween:nocturne_sovereign_cowl
+    runtime-identity: nocturne-sovereign-cowl
+    fallback-material: CARVED_PUMPKIN
+    texture: nocturne_sovereign_cowl
+    display-name: "&8&lNocturne Sovereign Cowl"
+    lore:
+      - "&7Kapuce, která vidí ve tmě."
+      - "&7Skrč se pro odhalení a zpomalení monster."
+      - "&8Obnova schopnosti: 30 sekund."
+  gear_crimson_warden_helmet:
+    category: armor
+    itemsadder-id: warriorland_halloween:crimson_warden_helmet
+    runtime-identity: crimson-warden-helmet
+    fallback-material: NETHERITE_HELMET
+    texture: crimson_warden_helmet
+    display-name: "&4&lHelma Krvavého strážce"
+  gear_crimson_warden_chestplate:
+    category: armor
+    itemsadder-id: warriorland_halloween:crimson_warden_chestplate
+    runtime-identity: crimson-warden-chestplate
+    fallback-material: NETHERITE_CHESTPLATE
+    texture: crimson_warden_chestplate
+    display-name: "&4&lKyrys Krvavého strážce"
+  gear_crimson_warden_leggings:
+    category: armor
+    itemsadder-id: warriorland_halloween:crimson_warden_leggings
+    runtime-identity: crimson-warden-leggings
+    fallback-material: NETHERITE_LEGGINGS
+    texture: crimson_warden_leggings
+    display-name: "&4&lNohavice Krvavého strážce"
+  gear_crimson_warden_boots:
+    category: armor
+    itemsadder-id: warriorland_halloween:crimson_warden_boots
+    runtime-identity: crimson-warden-boots
+    fallback-material: NETHERITE_BOOTS
+    texture: crimson_warden_boots
+    display-name: "&4&lBoty Krvavého strážce"
+  gear_crimson_warden_shield:
+    category: shield
+    itemsadder-id: warriorland_halloween:crimson_warden_shield
+    runtime-identity: crimson-warden-shield
+    fallback-material: SHIELD
+    texture: crimson_warden_shield
+    display-name: "&4&lŠtít Krvavého strážce"
+  gear_crimson_warden_sword:
+    category: weapon
+    itemsadder-id: warriorland_halloween:crimson_warden_sword
+    runtime-identity: crimson-warden-sword
+    fallback-material: NETHERITE_SWORD
+    texture: crimson_warden_sword
+    display-name: "&4&lKrvavý meč"
+  gear_crimson_warden_pickaxe:
+    category: tool
+    itemsadder-id: warriorland_halloween:crimson_warden_pickaxe
+    runtime-identity: crimson-warden-pickaxe
+    fallback-material: NETHERITE_PICKAXE
+    texture: crimson_warden_pickaxe
+    display-name: "&4&lKrumpáč Krvavého strážce"
+  gear_crimson_warden_axe:
+    category: tool
+    itemsadder-id: warriorland_halloween:crimson_warden_axe
+    runtime-identity: crimson-warden-axe
+    fallback-material: NETHERITE_AXE
+    texture: crimson_warden_axe
+    display-name: "&4&lSekera Krvavého strážce"
+  gear_crimson_warden_shovel:
+    category: tool
+    itemsadder-id: warriorland_halloween:crimson_warden_shovel
+    runtime-identity: crimson-warden-shovel
+    fallback-material: NETHERITE_SHOVEL
+    texture: crimson_warden_shovel
+    display-name: "&4&lLopatka Krvavého strážce"
+  gear_crimson_warden_hoe:
+    category: tool
+    itemsadder-id: warriorland_halloween:crimson_warden_hoe
+    runtime-identity: crimson-warden-hoe
+    fallback-material: NETHERITE_HOE
+    texture: crimson_warden_hoe
+    display-name: "&4&lMotyka Krvavého strážce"
+  candy_cursed:
+    category: consumable
+    itemsadder-id: warriorland_halloween:cursed_candy
+    runtime-identity: cursed-candy-2026
+    fallback-material: COOKIE
+    texture: cursed_candy
+    display-name: "&6&lProkleté cukroví &8[Halloween 2026]"
+    lore:
+      - "&7Po snědení získáš krátké Halloween efekty."
+  candy_stev_apple_core:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_apple_core
+    runtime-identity: candy_stev_apple_core
+    fallback-material: COOKIE
+    texture: stev_candy/apple_core
+    display-name: "&6Jablečná jadérka"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_candy_apple:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_candy_apple
+    runtime-identity: candy_stev_candy_apple
+    fallback-material: COOKIE
+    texture: stev_candy/candy_apple
+    display-name: "&cKaramelové jablko"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_candy_bag:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_candy_bag
+    runtime-identity: candy_stev_candy_bag
+    fallback-material: COOKIE
+    texture: stev_candy/candy_bag
+    display-name: "&6Pytlík sladkostí"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_caramel:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_caramel
+    runtime-identity: candy_stev_caramel
+    fallback-material: COOKIE
+    texture: stev_candy/caramel
+    display-name: "&6Karamel"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_caramel_apple:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_caramel_apple
+    runtime-identity: candy_stev_caramel_apple
+    fallback-material: COOKIE
+    texture: stev_candy/caramel_apple
+    display-name: "&cJablko v karamelu"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_chocolate_bar:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_chocolate_bar
+    runtime-identity: candy_stev_chocolate_bar
+    fallback-material: COOKIE
+    texture: stev_candy/chocolate_bar
+    display-name: "&6Čokoládová tyčinka"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_frosted_sugar_cookie:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_frosted_sugar_cookie
+    runtime-identity: candy_stev_frosted_sugar_cookie
+    fallback-material: COOKIE
+    texture: stev_candy/frosted_sugar_cookie
+    display-name: "&dZdobená sušenka"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_gumdrop:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_gumdrop
+    runtime-identity: candy_stev_gumdrop
+    fallback-material: COOKIE
+    texture: stev_candy/gumdrop
+    display-name: "&aŽelé bonbon"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_hard_candy:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_hard_candy
+    runtime-identity: candy_stev_hard_candy
+    fallback-material: COOKIE
+    texture: stev_candy/hard_candy
+    display-name: "&6Tvrdý bonbon"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_lollipop:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_lollipop
+    runtime-identity: candy_stev_lollipop
+    fallback-material: COOKIE
+    texture: stev_candy/lollipop
+    display-name: "&dLízátko"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_peanut_butter_cup:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_peanut_butter_cup
+    runtime-identity: candy_stev_peanut_butter_cup
+    fallback-material: COOKIE
+    texture: stev_candy/peanut_butter_cup
+    display-name: "&6Arašídový košíček"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_sugar_cookie:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_sugar_cookie
+    runtime-identity: candy_stev_sugar_cookie
+    fallback-material: COOKIE
+    texture: stev_candy/sugar_cookie
+    display-name: "&eCukrová sušenka"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+  candy_stev_toasted_pumpkin_seeds:
+    category: consumable
+    itemsadder-id: warriorland_halloween:stev_toasted_pumpkin_seeds
+    runtime-identity: candy_stev_toasted_pumpkin_seeds
+    fallback-material: COOKIE
+    texture: stev_candy/toasted_pumpkin_seeds
+    display-name: "&6Pražená dýňová semínka"
+    lore: ["&7Halloween sladkost s licencovanou grafikou Stev’s Halloween."]
+
+  decor_stev_apple_leaves:
+    category: decoration
+    itemsadder-id: warriorland_halloween:stev_apple_leaves
+    runtime-identity: stev-apple-leaves-block
+    fallback-material: OAK_LEAVES
+    texture: stev_candy/apple_leaves_with_apples
+    itemsadder-texture: minecraft:block/stev_apple_leaves_with_apples
+    display-name: "&a&lJabloňové listí s jablky"
+
+  decoration_grave_marker:
+    category: decoration
+    itemsadder-id: warriorland_halloween:decoration_grave_marker
+    runtime-identity: grave-marker-furniture-2026
+    fallback-material: PAPER
+    texture: grave_marker
+    display-name: "&8&lGotický náhrobek"
+
+  decoration_broken_grave_marker:
+    category: decoration
+    itemsadder-id: warriorland_halloween:decoration_broken_grave_marker
+    runtime-identity: broken-grave-marker-furniture-2026
+    fallback-material: PAPER
+    texture: broken_grave_marker
+    display-name: "&8&lRozbitý náhrobek"
+  decoration_grave_candle:
+    category: decoration
+    itemsadder-id: warriorland_halloween:decoration_grave_candle
+    runtime-identity: grave-candle-furniture-2026
+    fallback-material: PAPER
+    texture: grave_candle
+    display-name: "&6&lHřbitovní svíce"
+
+# Minecraft profiles are deliberately opt-in. A version becomes verified only after its
+# ItemsAdder schema, models, server build and client resource-pack delivery pass staging.
+target-versions:
+  default: "1.21.10"
+  verified:
+    - "1.21.10"
+  pending:
+    - "1.21.1"
+    - "1.21.2"
+
+# These file paths are integration data, not runtime item identity. The validator rejects
+# missing and unregistered files; ASSET_MANIFEST.json records SHA-256 for generated builds.
+model-assets:
+  blood_spider:
+    blueprint-path: mythicmobs/models/halloween_blood_spider.bbmodel
+    texture-path: mythicmobs/models/halloween_blood_spider.png
+    staging-status: live-client-render-required
+  cursed_zombie:
+    blueprint-path: mythicmobs/models/halloween_cursed_zombie.bbmodel
+    texture-path: mythicmobs/models/halloween_cursed_zombie.png
+    staging-status: live-client-render-required
+  gravekeeper:
+    blueprint-path: mythicmobs/models/halloween_gravekeeper.bbmodel
+    texture-path: mythicmobs/models/halloween_gravekeeper.png
+    staging-status: live-client-render-required
+  hex_witch:
+    blueprint-path: mythicmobs/models/halloween_hex_witch.bbmodel
+    texture-path: mythicmobs/models/halloween_hex_witch.png
+    staging-status: live-client-render-required
+  pumpkin_wraith:
+    blueprint-path: mythicmobs/models/halloween_pumpkin_wraith.bbmodel
+    texture-path: mythicmobs/models/halloween_pumpkin_wraith.png
+    staging-status: live-client-render-required
+  vampire_king:
+    blueprint-path: mythicmobs/models/vampire_king.bbmodel
+    texture-path: mythicmobs/models/vampire_king.png
+    staging-status: experimental-disabled-until-staged
+
+furniture-model-assets:
+  gothic_gravestone:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/models/furniture/grave_marker.json
+  broken_gravestone:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/models/furniture/broken_grave_marker.json
+  graveyard_candle:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/models/furniture/grave_candle.json
+
+world-decoration-assets:
+  stev_apple_leaves_with_apples:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/stev_apple_leaves_with_apples.png
+  pumpkin_side:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/pumpkin_side.png
+  pumpkin_top:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/pumpkin_top.png
+  pumpkin_face:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/pumpkin_face.png
+  jack_o_lantern:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/jack_o_lantern.png
+  cobweb:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/cobweb.png
+  red_candle:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/red_candle.png
+  red_candle_lit:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/red_candle_lit.png
+  red_mushroom:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/red_mushroom.png
+  brown_mushroom:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/brown_mushroom.png
+  dead_bush:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/dead_bush.png
+  soul_lantern:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/minecraft/textures/block/soul_lantern.png
+
+armor-assets:
+  crimson_warden_layer_1:
+    asset-path: itemsadder/contents/warriorland_halloween/textures/armor/crimson_warden/layer_1.png
+  crimson_warden_layer_2:
+    asset-path: itemsadder/contents/warriorland_halloween/textures/armor/crimson_warden/layer_2.png
+
+sound-assets:
+  haunted_theme:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/haunted_theme.ogg
+  horror_atmosphere:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/horror_atmosphere.ogg
+  creepy_ambient:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/creepy_ambient.ogg
+  dark_cavern_ambient:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/dark_cavern_ambient.ogg
+  event_sting:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/event_sting.ogg
+  soulstorm_sting:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/soulstorm_sting.ogg
+  witching_sting:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/witching_sting.ogg
+  harvest_sting:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/harvest_sting.ogg
+  blood_moon_rise:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/blood_moon_rise.ogg
+  pumpkin_apocalypse:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/pumpkin_apocalypse.ogg
+  graveyard_rising:
+    asset-path: itemsadder/contents/warriorland_halloween/sounds/graveyard_rising.ogg
+  halloween_silence:
+    asset-path: itemsadder/contents/warriorland_halloween/resourcepack/assets/warriorland_halloween/sounds/halloween_silence.ogg
+
+protected-assets:
+  void-reaper:
+    status: externally-authored-protected
+    generation: prohibited
+  frost-stalker:
+    status: externally-authored-protected
+    generation: prohibited
+  nightmare:
+    status: externally-authored-protected
+    generation: prohibited

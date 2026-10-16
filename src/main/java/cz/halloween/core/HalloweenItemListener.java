@@ -23,11 +23,13 @@ import java.util.UUID;
 public final class HalloweenItemListener implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey relicKey;
+    private final NamespacedKey contentKey;
     private final Map<UUID, Long> mapCooldowns = new HashMap<>();
 
     public HalloweenItemListener(HalloweenCore plugin) {
         this.plugin = plugin;
         this.relicKey = new NamespacedKey(plugin, "halloween_relic");
+        this.contentKey = new NamespacedKey(plugin, "halloween_content_id");
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -37,7 +39,7 @@ public final class HalloweenItemListener implements Listener {
 
         String relicId = item.getItemMeta().getPersistentDataContainer()
                 .get(relicKey, PersistentDataType.STRING);
-        if (!"cursed-candy-2026".equalsIgnoreCase(relicId)) return;
+        if (!isContent(item, "candy_cursed")) return;
 
         Player player = event.getPlayer();
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 20, 0, true, true, true));
@@ -55,7 +57,7 @@ public final class HalloweenItemListener implements Listener {
         Player player = event.getPlayer();
         if (!plugin.isEventEnabled()) return;
         ItemStack item = event.getItem();
-        if (!isRelic(item, "haunted-map-2026")) return;
+        if (!isContent(item, "relic_haunted_map")) return;
 
         event.setCancelled(true);
 
@@ -119,11 +121,16 @@ public final class HalloweenItemListener implements Listener {
         );
     }
 
-    private boolean isRelic(ItemStack item, String id) {
+    private boolean isContent(ItemStack item, String internalId) {
         if (item == null || item.getType().isAir() || item.getItemMeta() == null) return false;
-        String stored = item.getItemMeta().getPersistentDataContainer()
-                .get(relicKey, PersistentDataType.STRING);
-        return id.equalsIgnoreCase(stored);
+        var data = item.getItemMeta().getPersistentDataContainer();
+        String canonicalId = data.get(contentKey, PersistentDataType.STRING);
+        if (internalId.equals(canonicalId)) return true;
+
+        // Backward compatibility for items already distributed before the registry migration.
+        HalloweenContentRegistry.Definition definition = plugin.getContentRegistry().require(internalId);
+        String legacyIdentity = data.get(relicKey, PersistentDataType.STRING);
+        return definition.runtimeIdentity().equalsIgnoreCase(legacyIdentity);
     }
 
     private String direction(Location from, Location to) {

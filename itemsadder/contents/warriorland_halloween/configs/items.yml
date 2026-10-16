@@ -21,7 +21,7 @@ items:
     name: "&5&lProkletý talisman &8[2026]"
     lore:
       - "&7Relikvie vysokého prokletí."
-      - "&d+1 celý řádek srdcí (+20 HP)"
+      - "&d+1 srdce navíc (+2 HP)"
       - "&7Aktivní při držení v ruce nebo offhandu."
       - "&7Lze enchantovat, pokud máš vhodný enchant."
     material: NETHER_STAR
@@ -46,11 +46,206 @@ items:
     graphics:
       texture: item/haunted_map
 
+  batwing_elytra:
+    name: "&5&lBatwing Elytra"
+    lore:
+      - "&7Temná relikvie z netopýřího křídla."
+      - "&7Při plachtění se skrč pro vzdušný výpad."
+      - "&8Obnova schopnosti: 20 sekund."
+    material: ELYTRA
+    graphics:
+      texture: item/batwing_elytra
+
+  nocturne_sovereign_cowl:
+    name: "&8&lNocturne Sovereign Cowl"
+    lore:
+      - "&7Kapuce, která vidí ve tmě."
+      - "&7Skrč se pro odhalení a zpomalení monster."
+      - "&8Obnova schopnosti: 30 sekund."
+    material: CARVED_PUMPKIN
+    graphics:
+      texture: item/nocturne_sovereign_cowl
+
+  stev_apple_core:
+    name: "&6Jablečná jadérka"
+    lore:
+      - "&7Halloween sladkost."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/apple_core
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_candy_apple:
+    name: "&cKaramelové jablko"
+    lore:
+      - "&7Sladké jablko s halloweenovým vzhledem."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/candy_apple
+    consumable:
+      nutrition: 3
+      saturation: 0.6
+
+  stev_candy_bag:
+    name: "&6Pytlík sladkostí"
+    lore:
+      - "&7Pytlík plný halloweenských dobrot."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/candy_bag
+    consumable:
+      nutrition: 2
+      saturation: 0.4
+
+  stev_caramel:
+    name: "&6Karamel"
+    lore:
+      - "&7Sladká halloweenská odměna."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/caramel
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_caramel_apple:
+    name: "&cJablko v karamelu"
+    lore:
+      - "&7Karamelová dobrota z halloweenské slavnosti."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/caramel_apple
+    consumable:
+      nutrition: 3
+      saturation: 0.6
+
+  stev_chocolate_bar:
+    name: "&6Čokoládová tyčinka"
+    lore:
+      - "&7Čokoládová sladkost."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/chocolate_bar
+    consumable:
+      nutrition: 2
+      saturation: 0.5
+
+  stev_frosted_sugar_cookie:
+    name: "&dZdobená sušenka"
+    lore:
+      - "&7Sladká sušenka s polevou."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/frosted_sugar_cookie
+    consumable:
+      nutrition: 3
+      saturation: 0.6
+
+  stev_gumdrop:
+    name: "&aŽelé bonbon"
+    lore:
+      - "&7Barevný želé bonbon."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/gumdrop
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_hard_candy:
+    name: "&6Tvrdý bonbon"
+    lore:
+      - "&7Tvrdý bonbon do sbírky."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/hard_candy
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_lollipop:
+    name: "&dLízátko"
+    lore:
+      - "&7Klasické halloweenské lízátko."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/lollipop
+    consumable:
+      nutrition: 2
+      saturation: 0.4
+
+  stev_peanut_butter_cup:
+    name: "&6Arašídový košíček"
+    lore:
+      - "&7Čokoláda a arašídové máslo."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/peanut_butter_cup
+    consumable:
+      nutrition: 2
+      saturation: 0.5
+
+  stev_sugar_cookie:
+    name: "&eCukrová sušenka"
+    lore:
+      - "&7Sladká cukrová sušenka."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/sugar_cookie
+    consumable:
+      nutrition: 2
+      saturation: 0.4
+
+  stev_toasted_pumpkin_seeds:
+    name: "&6Pražená dýňová semínka"
+    lore:
+      - "&7Podzimní pochoutka."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/toasted_pumpkin_seeds
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+
+  stev_apple_leaves:
+    name: "&a&lJabloňové listí s jablky"
+    lore:
+      - "&7Dekorativní listí do Halloween zahrad a hřbitovů."
+      - "&8Grafika: Stev's Halloween (MIT)."
+      - "&7Průsvitný blok lze položit do světa."
+    material: PAPER
+    graphics:
+      icon: item/stev_candy/apple_leaves_with_apples
+      texture: minecraft:block/stev_apple_leaves_with_apples
+    behaviours:
+      block:
+        placed_model:
+          type: REAL_TRANSPARENT
+        hardness: 0.2
+        drop_when_mined: true
+
   crimson_warden_helmet:
     name: "&4&lHelma Krvavého strážce"
     lore:
       - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 6 (netherit 3) • výdrž 900."
+      - "&cPři nasazení na hlavu: +6 brnění."
+      - "&8Výdrž: 900."
       - "&8Lze enchantovat běžnými enchanty."
     material: NETHERITE_HELMET
     components_nbt_file: "crimson_warden_helmet.json"
@@ -67,7 +262,8 @@ items:
     name: "&4&lKyrys Krvavého strážce"
     lore:
       - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 12 (netherit 8) • výdrž 1 300."
+      - "&cPři nasazení na hruď: +12 brnění."
+      - "&8Výdrž: 1 300."
       - "&8Lze enchantovat běžnými enchanty."
     material: NETHERITE_CHESTPLATE
     components_nbt_file: "crimson_warden_chestplate.json"
@@ -84,7 +280,8 @@ items:
     name: "&4&lNohavice Krvavého strážce"
     lore:
       - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 9 (netherit 6) • výdrž 1 150."
+      - "&cPři nasazení na nohy: +9 brnění."
+      - "&8Výdrž: 1 150."
       - "&8Lze enchantovat běžnými enchanty."
     material: NETHERITE_LEGGINGS
     components_nbt_file: "crimson_warden_leggings.json"
@@ -101,7 +298,8 @@ items:
     name: "&4&lBoty Krvavého strážce"
     lore:
       - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 6 (netherit 3) • výdrž 950."
+      - "&cPři nasazení na chodidla: +6 brnění."
+      - "&8Výdrž: 950."
       - "&8Lze enchantovat běžnými enchanty."
     material: NETHERITE_BOOTS
     components_nbt_file: "crimson_warden_boots.json"
@@ -113,6 +311,15 @@ items:
       id: warriorland_halloween:crimson_warden
       slot_attribute_modifiers:
         armor: 3
+
+  crimson_warden_shield:
+    name: "&4&lŠtít Krvavého strážce"
+    lore:
+      - "&7Štít z černé oceli s karmínovým jádrem."
+      - "&8Součást výbavy Krvavého strážce."
+    material: SHIELD
+    graphics:
+      texture: item/crimson_warden_shield
 
   crimson_warden_sword:
     name: "&4&lKrvavý meč"
@@ -203,6 +410,105 @@ items:
       mainhand:
         attackDamage: 7.0
         attackSpeed: 1.0
+
+  decoration_grave_marker:
+    name: "&8&lGotický náhrobek"
+    lore:
+      - "&7Vlastní 3D dekorace pro halloweenský hřbitov."
+      - "&8Polož na zem; lze bezpečně odstranit."
+    material: PAPER
+    graphics:
+      model: furniture/grave_marker
+      icon: item/grave_marker
+    behaviours:
+      furniture:
+        entity: item_display
+        solid: true
+        fixed_rotation: true
+        placeable_on:
+          floor: true
+          ceiling: false
+          walls: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 1
+        display_transformation:
+          transform: HEAD
+          translation:
+            x: 0
+            y: 0.5
+            z: 0
+          scale:
+            x: 0.8
+            y: 0.8
+            z: 0.8
+
+  decoration_broken_grave_marker:
+    name: "&8&lRozbitý náhrobek"
+    lore:
+      - "&7Prasklá 3D dekorace pro opuštěný hřbitov."
+      - "&8Polož na zem; lze bezpečně odstranit."
+    material: PAPER
+    graphics:
+      model: furniture/broken_grave_marker
+      icon: item/broken_grave_marker
+    behaviours:
+      furniture:
+        entity: item_display
+        solid: true
+        fixed_rotation: true
+        placeable_on:
+          floor: true
+          ceiling: false
+          walls: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 1
+        display_transformation:
+          transform: HEAD
+          translation:
+            x: 0
+            y: 0.5
+            z: 0
+          scale:
+            x: 0.8
+            y: 0.8
+            z: 0.8
+
+  decoration_grave_candle:
+    name: "&6&lHřbitovní svíce"
+    lore:
+      - "&7Dekorativní svíce na kamenném podstavci."
+      - "&8Vlastní 3D model; lze umístit na zem."
+    material: PAPER
+    graphics:
+      model: furniture/grave_candle
+      icon: item/grave_candle
+    behaviours:
+      furniture:
+        entity: item_display
+        solid: true
+        fixed_rotation: true
+        placeable_on:
+          floor: true
+          ceiling: false
+          walls: false
+        hitbox:
+          length: 1
+          width: 1
+          height: 1
+        display_transformation:
+          transform: HEAD
+          translation:
+            x: 0
+            y: 0.5
+            z: 0
+          scale:
+            x: 0.8
+            y: 0.8
+            z: 0.8
 
   cursed_candy:
     name: "&6&lProkleté cukroví &8[Halloween 2026]"

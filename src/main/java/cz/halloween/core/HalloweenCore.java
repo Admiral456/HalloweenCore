@@ -37,6 +37,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenQuestManager questManager;
     private HalloweenBossManager bossManager;
     private HalloweenItemManager itemManager;
+    private HalloweenContentRegistry contentRegistry;
     private HalloweenPassiveEffectManager passiveEffectManager;
     private HalloweenVillageDiscoveryManager villageDiscoveryManager;
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
@@ -47,6 +48,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenHeadlessNickManager headlessNickManager;
     private HalloweenSeasonManager seasonManager;
     private HalloweenGraveEncounterManager graveEncounterManager;
+    private HalloweenAchievementManager achievementManager;
     private final Set<String> reportedConfigErrors = new HashSet<>();
 
     @Override
@@ -55,11 +57,15 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateAtmosphereVolume();
         migrateAtmospherePlaylistDefaults();
         migrateCrimsonWardenShopDefaults();
+        migrateCrimsonWardenShieldDefaults();
+        migrateStevHalloweenCandyShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
+        migrateEventSpawnRules();
         migrateAdditionalMobAndQuestDefaults();
         migrateAtmosphericWorldGenerationDefaults();
+        migrateStructureDiscoveryV2();
         migrateSeasonAndWitchingDefaults();
         migrateWitchingBatDefaults();
         migrateGraveEncounterDefaults();
@@ -76,6 +82,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         challengeManager = new HalloweenChallengeManager(this);
         questManager = new HalloweenQuestManager(this);
         bossManager = new HalloweenBossManager(this);
+        contentRegistry = new HalloweenContentRegistry(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
         villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
@@ -83,10 +90,12 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
         worldDecorator = new HalloweenWorldDecorator(this);
         structureManager = new HalloweenStructureManager(this);
+        structureManager.recoverStaleNaturalReservations();
         relicAbilityManager = new HalloweenRelicAbilityManager(this);
         headlessNickManager = new HalloweenHeadlessNickManager(this);
         seasonManager = new HalloweenSeasonManager(this);
         graveEncounterManager = new HalloweenGraveEncounterManager(this);
+        achievementManager = new HalloweenAchievementManager(this);
 
         logConfigValidationIssues();
         bossManager.validateConfiguration();
@@ -108,6 +117,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(headlessNickManager, this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
         getServer().getPluginManager().registerEvents(graveEncounterManager, this);
+        getServer().getPluginManager().registerEvents(achievementManager, this);
+        structureManager.scanLoadedChunksForNaturalGeneration();
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
@@ -127,6 +138,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         headlessNickManager.start();
         passiveEffectManager.start();
         graveEncounterManager.start();
+        achievementManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
@@ -144,6 +156,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (eventManager != null) eventManager.stop();
         if (seasonManager != null) seasonManager.stop();
         if (graveEncounterManager != null) graveEncounterManager.stop();
+        if (achievementManager != null) achievementManager.stop();
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
@@ -187,9 +200,12 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         migrateWitchingBatDefaults();
         migrateGraveEncounterDefaults();
         migrateCrimsonWardenShopDefaults();
+        migrateCrimsonWardenShieldDefaults();
+        migrateStevHalloweenCandyShopDefaults();
         migrateCrimsonWardenArmorStats();
         migrateCursedTalismanHealth();
         migrateHalloweenEventOverhaul();
+        migrateEventSpawnRules();
         migrateAdditionalMobAndQuestDefaults();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
@@ -241,7 +257,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             }
         }
         if (atmosphere != null) atmosphere.refreshPlayback();
-        if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
+        if (worldDecorator != null) {
+            if (enabled && getConfig().getBoolean("world-decorations.enabled", true)) {
+                worldDecorator.scanLoadedChunks();
+            } else {
+                worldDecorator.stop();
+            }
+        }
 
         if (changed) {
             Bukkit.broadcastMessage(color(enabled
@@ -408,6 +430,61 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
      * On the first run of this gear release, migrate only shop item data so existing
      * arena coordinates, event settings and other server customizations survive.
      */
+    /**
+     * Adds the licensed Stev's Halloween candy rewards to existing installs without
+     * replacing owner-defined prices or curse requirements.
+     */
+    private void migrateStevHalloweenCandyShopDefaults() {
+        if (getConfig().getBoolean("migrations.stev-halloween-candy-shop-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml is unavailable; Stev candy shop migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection defaultShop = defaults.getConfigurationSection("rewards.shop");
+            if (defaultShop == null) {
+                getLogger().warning("Default rewards.shop section is missing; Stev candy shop migration was skipped.");
+                return;
+            }
+
+            String root = "rewards.shop.";
+            for (String id : defaultShop.getKeys(false)) {
+                if (!id.startsWith("stev-")) continue;
+                ConfigurationSection source = defaultShop.getConfigurationSection(id);
+                if (source == null) continue;
+                String targetPath = root + id;
+                if (!getConfig().isConfigurationSection(targetPath)) {
+                    for (String key : source.getKeys(true)) {
+                        if (!source.isConfigurationSection(key)) {
+                            getConfig().set(targetPath + "." + key, source.get(key));
+                        }
+                    }
+                    continue;
+                }
+
+                // Keep a server owner's balance tweaks while refreshing the new
+                // item identity and copy/lore on an existing partial definition.
+                for (String key : List.of("itemsadder-id", "material", "amount", "name", "lore")) {
+                    if (source.contains(key)) getConfig().set(targetPath + "." + key, source.get(key));
+                }
+                for (String key : List.of("cost", "min-curse")) {
+                    if (!getConfig().contains(targetPath + "." + key) && source.contains(key)) {
+                        getConfig().set(targetPath + "." + key, source.get(key));
+                    }
+                }
+            }
+
+            getConfig().set("migrations.stev-halloween-candy-shop-v1", true);
+            saveConfig();
+            getLogger().info("Stev Halloween candy shop items were added/migrated while preserving configured prices and curse gates.");
+        } catch (IOException ex) {
+            getLogger().warning("Stev Halloween candy shop migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
     private void migrateCrimsonWardenShopDefaults() {
         if (getConfig().getBoolean("migrations.crimson-warden-gear-v2", false)) return;
 
@@ -457,7 +534,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             // Explicit user-requested talisman balance. This one-time migration does
             // not keep forcing it on later reloads if the administrator later changes it.
             getConfig().set(root + "cursed-talisman.cost", 1_000_000L);
-            getConfig().set(root + "cursed-talisman.bonus-health", 20.0D);
+            getConfig().set(root + "cursed-talisman.bonus-health", 2.0D);
             getConfig().set(root + "cursed-talisman.bonus-multiplier", 0.10D);
             ConfigurationSection defaultTalisman = defaultShop.getConfigurationSection("cursed-talisman");
             if (defaultTalisman != null) {
@@ -487,7 +564,59 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getConfig().set("rewards.shop.cursed-talisman.bonus-health", 2.0D);
         getConfig().set("migrations.cursed-talisman-single-heart-v1", true);
         saveConfig();
-        getLogger().info("Cursed talisman health migrated to +2 max health (+1 heart).");
+        getLogger().info("Cursed talisman health migrated to +2 health points (+1 heart).");
+    }
+
+    /**
+     * One-time migration for the newly added Crimson Warden shield. The original
+     * gear migration is intentionally one-shot, so it cannot install items added
+     * in later releases on servers that already recorded that older migration.
+     * Preserve server-defined prices and curse requirements while refreshing the
+     * item identity and presentation from the packaged defaults.
+     */
+    private void migrateCrimsonWardenShieldDefaults() {
+        if (getConfig().getBoolean("migrations.crimson-warden-shield-v1", false)) return;
+
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged default config.yml is unavailable; Crimson Warden shield migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            ConfigurationSection source = defaults.getConfigurationSection(
+                    "rewards.shop.crimson-warden-shield");
+            if (source == null) {
+                getLogger().warning("Default Crimson Warden shield shop entry is missing; migration was skipped.");
+                return;
+            }
+
+            String targetPath = "rewards.shop.crimson-warden-shield";
+            if (!getConfig().isConfigurationSection(targetPath)) {
+                for (String key : source.getKeys(true)) {
+                    if (!source.isConfigurationSection(key)) {
+                        getConfig().set(targetPath + "." + key, source.get(key));
+                    }
+                }
+            } else {
+                for (String key : List.of("itemsadder-id", "material", "amount", "name", "lore")) {
+                    if (source.contains(key)) {
+                        getConfig().set(targetPath + "." + key, source.get(key));
+                    }
+                }
+                for (String key : List.of("cost", "min-curse")) {
+                    if (!getConfig().contains(targetPath + "." + key) && source.contains(key)) {
+                        getConfig().set(targetPath + "." + key, source.get(key));
+                    }
+                }
+            }
+
+            getConfig().set("migrations.crimson-warden-shield-v1", true);
+            saveConfig();
+            getLogger().info("Crimson Warden shield shop entry migrated once; existing price and curse settings were preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Crimson Warden shield migration failed: " + ex.getClass().getSimpleName());
+        }
     }
 
     private void migrateCrimsonWardenArmorStats() {
@@ -603,6 +732,57 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
+
+    /**
+     * Event behavior migration. Older configurations may still limit waves to 48 mobs
+     * per world and 4 invasion mobs per player. Upgrade only known historical defaults;
+     * preserve any non-default administrator choices.
+     */
+    private void migrateEventSpawnRules() {
+        if (getConfig().getBoolean("migrations.event-spawn-rules-v1", false)) return;
+        try (InputStream input = getResource("config.yml")) {
+            if (input == null) {
+                getLogger().warning("Packaged config.yml unavailable; event spawn-rule migration was skipped.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(input, StandardCharsets.UTF_8));
+            String root = "random-events.";
+            // Upgrade only the old built-in values from previous releases.
+            if (getConfig().getInt(root + "max-event-mobs", 48) == 48) {
+                getConfig().set(root + "max-event-mobs",
+                        defaults.getInt(root + "max-event-mobs", 256));
+            }
+            if (getConfig().getInt(root + "invasion-mobs-per-surge", 4) == 4) {
+                getConfig().set(root + "invasion-mobs-per-surge",
+                        defaults.getInt(root + "invasion-mobs-per-surge", 2));
+            }
+            for (String key : List.of("spawn-radius-blocks", "event-mob-lifetime-seconds")) {
+                String path = root + key;
+                if (!getConfig().contains(path) && defaults.contains(path)) {
+                    getConfig().set(path, defaults.get(path));
+                }
+            }
+            for (String sectionPath : List.of(
+                    "random-events.cursed-harvest",
+                    "random-events.pumpkin-apocalypse",
+                    "random-events.graveyard-rising")) {
+                ConfigurationSection source = defaults.getConfigurationSection(sectionPath);
+                if (source == null) continue;
+                for (String key : source.getKeys(true)) {
+                    if (source.isConfigurationSection(key)) continue;
+                    String path = sectionPath + "." + key;
+                    if (!getConfig().contains(path)) getConfig().set(path, source.get(key));
+                }
+            }
+            getConfig().set("migrations.event-spawn-rules-v1", true);
+            saveConfig();
+            getLogger().info("Halloween event spawn rules migrated: all-player targeting, 25-block radius and bounded world scans; customized non-default values were preserved.");
+        } catch (IOException ex) {
+            getLogger().warning("Event spawn-rule migration failed: " + ex.getClass().getSimpleName());
+        }
+    }
+
     private void logConfigValidationIssues() {
         var errors = HalloweenConfigValidator.validate(this);
         Set<String> currentErrors = new HashSet<>(errors);
@@ -660,6 +840,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         return itemManager;
     }
 
+    public HalloweenContentRegistry getContentRegistry() {
+        return contentRegistry;
+    }
+
     public HalloweenDataManager getDataManager() {
         return dataManager;
     }
@@ -686,6 +870,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
     public HalloweenHeadlessNickManager getHeadlessNickManager() {
         return headlessNickManager;
+    }
+
+    public HalloweenAchievementManager getAchievementManager() {
+        return achievementManager;
     }
 
     public void notifyFragmentGain(UUID playerId, long amount) {
@@ -745,6 +933,23 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getLogger().info("Atmospheric Halloween generation migration complete; all non-Spawn worlds are eligible.");
     }
 
+    /** Increase discovery cadence once for servers running the previous sparse defaults. */
+    private void migrateStructureDiscoveryV2() {
+        if (getConfig().getBoolean("migrations.structure-discovery-v2", false)) return;
+        String spacingPath = "automatic-world-generation.min-structure-chunk-distance";
+        if (!getConfig().contains(spacingPath) || getConfig().getInt(spacingPath, 3) == 3) {
+            getConfig().set(spacingPath, 2);
+        }
+        String chancePath = "automatic-world-generation.structure-chance-per-anchor";
+        double oldChance = getConfig().getDouble(chancePath, 0.45D);
+        if (!getConfig().contains(chancePath) || Math.abs(oldChance - 0.45D) < 0.000001D) {
+            getConfig().set(chancePath, 0.65D);
+        }
+        getConfig().set("migrations.structure-discovery-v2", true);
+        saveConfig();
+        getLogger().info("Halloween natural structure discovery migration complete (denser candidate checks).");
+    }
+
     /**
      * Automatic generation is limited to the configured allow-list. The wildcard
      * means all worlds except the protected Spawn world; an empty list remains fail-closed.
@@ -757,7 +962,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     }
 
     public boolean isEligibleGameplayPlayer(Player player) {
-        if (player == null) return false;
+        if (player == null || dataManager == null || dataManager.isHalloweenDisabled(player.getUniqueId())) return false;
 
         java.util.List<String> allowed = getConfig().getStringList("gameplay.allowed-gamemodes");
         if (allowed.isEmpty()) {

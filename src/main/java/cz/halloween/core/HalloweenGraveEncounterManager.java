@@ -98,7 +98,14 @@ public final class HalloweenGraveEncounterManager implements Listener {
     public void onEncounterMobDeath(EntityDeathEvent event) {
         Encounter encounter = encounterByMob.remove(event.getEntity().getUniqueId());
         if (encounter == null) return;
-        encounter.mobs.remove(event.getEntity().getUniqueId());
+        UUID deadId = event.getEntity().getUniqueId();
+        if (encounter.boss != null && encounter.boss.getUniqueId().equals(deadId) && !encounter.adminTest) {
+            Player killer = event.getEntity().getKiller();
+            if (killer != null && plugin.getAchievementManager() != null) {
+                plugin.getAchievementManager().award(killer, "boss_grave_guardian");
+            }
+        }
+        encounter.mobs.remove(deadId);
 
         if (encounter.mobs.isEmpty() && encounter.pendingAdvance == null) {
             encounter.pendingAdvance = Bukkit.getScheduler().runTaskLater(plugin, () -> {
@@ -368,6 +375,7 @@ public final class HalloweenGraveEncounterManager implements Listener {
                         plugin.getService().addFragments(uuid, fragments, "grave-encounter");
                     }
                 }
+                plugin.getDataManager().save();
             }
         } else if (!encounter.adminTest) {
             Bukkit.broadcastMessage(plugin.color("&8&lHŘBITOV &8» &7Rituál utichl dřív, než byl dokončen."));

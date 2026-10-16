@@ -89,6 +89,24 @@ for feature in ("placeMushrooms(", "placeGraves(", "placeSoulLanterns(", "placeD
         fail(f"Atmospheric world generation is missing feature layer: {feature}")
 if "structures-on-existing-chunks: true" not in config or "automatic-world-generation.structures-on-existing-chunks" not in structures:
     fail("Natural graveyard/village generation must also run on eligible explored chunks")
+if 'new NamespacedKey(plugin, "halloween_auto_structure_checked_v2")' not in structures:
+    fail("Natural structure scan needs a new checked marker so existing chunks get reconsidered once")
+if "scanLoadedChunksForNaturalGeneration()" not in core or "scanLoadedChunksForNaturalGeneration()" not in structures:
+    fail("Loaded eligible chunks must be scanned once on startup without force-loading any chunks")
+if "migrateStructureDiscoveryV2()" not in core or "migrations.structure-discovery-v2" not in core:
+    fail("Natural structure discovery must migrate existing servers to the less sparse settings")
+if "min-structure-chunk-distance: 2" not in config or "structure-chance-per-anchor: 0.65" not in config:
+    fail("Default natural structure discovery settings are unexpectedly sparse")
+if "naturalGenerationStatus(player.getWorld())" not in command or "naturalGenerationStatus(World world)" not in structures:
+    fail("Locate/status output must explain protected Spawn and per-world natural generation settings")
+if 'List.of("on", "off", "reload", "status")' not in command:
+    fail("The shader status diagnostic subcommand is missing")
+if "skyPropertiesPath" not in command or "skyAtlasPath" not in command or "koto-sky1.properties" not in command:
+    fail("Shader command must address the Koto custom skybox and preserve its settings on disable")
+if "Files.deleteIfExists(skyPropertiesPath)" not in command or "Files.copy(skyPropertiesPath, skyPropertiesBackup" not in command:
+    fail("Shader off must remove the Koto layer from the client pack while retaining a restore backup")
+if "Koto skybox + oranžový vanilla tint" not in command or "Koto skybox: " not in command:
+    fail("Shader command must report both client-visible sky layers")
 if "halloween_auto_structure_reserved_v1" not in structures or "isReservedForNaturalGeneration" not in decorator:
     fail("Candidate structures and chunk decoration need race protection")
 
@@ -171,10 +189,24 @@ for event_id in ("soulstorm", "witching-hour", "cursed-harvest",
     if f"    {event_id}:" not in config:
         fail(f"Config is missing event type: {event_id}")
 for marker in ("applySurgeToPlayer(target, now)",
-               'getInt("random-events.players-per-surge", 3)',
+               "for (Player target : players)",
                "cleanupEventMobs()", "scheduleNextEvent()"):
     if marker not in events:
         fail(f"Event lifecycle/surge contract is missing: {marker}")
+if 'getInt("random-events.players-per-surge"' in events:
+    fail("Event waves must target every eligible player, not a random player subset")
+if 'getInt("random-events.spawn-radius-blocks", 25)' not in mobs:
+    fail("Player-proximity event spawn radius must be explicitly capped at 25 blocks")
+if "spawnFromLoadedFarmland()" not in events or "Material.FARMLAND" not in events:
+    fail("Cursed Harvest must scan real Farmland blocks")
+if "spawnFromRecordedGraveyards()" not in events or "getRecordedGraveyardLocations" not in structures:
+    fail("Graveyard Rising must spawn from recorded cemetery sites")
+if "displayBloodMoonToPlayers()" not in events or "world.setTime(13_000L)" not in events:
+    fail("Blood Moon must set night and show its event-only red visual")
+if "migrateEventSpawnRules()" not in core or "migrations.event-spawn-rules-v1" not in core:
+    fail("Older server configs must migrate the new radius, entity cap and field/structure scan budgets")
+if "decorateLoadedChunksWithPumpkins()" not in events:
+    fail("Pumpkin Apocalypse must decorate the active world's loaded natural chunks")
 
 # The current spec is one additional heart (+2 max health); old installs migrate once.
 if "bonus-health: 2.0" not in config:

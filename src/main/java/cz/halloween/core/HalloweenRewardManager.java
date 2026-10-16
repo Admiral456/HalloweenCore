@@ -84,9 +84,10 @@ public final class HalloweenRewardManager {
 
         int amount = Math.max(1, section.getInt("amount", 1));
         String itemsAdderId = section.getString("itemsadder-id", "");
-        ItemStack item = itemsAdderId.isBlank()
-                ? null
-                : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount);
+        HalloweenContentRegistry.Definition registered = plugin.getContentRegistry().findByItemsAdderId(itemsAdderId);
+        ItemStack item = registered != null
+                ? plugin.getItemManager().createRegisteredItem(registered.internalId(), amount)
+                : (itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount));
 
         if (item == null) {
             Material material;
@@ -212,6 +213,15 @@ public final class HalloweenRewardManager {
         items.add(plugin.getItemManager().createNocturneSovereignCowl());
         items.add(plugin.getItemManager().createHauntedMap());
         items.add(plugin.getItemManager().createCursedCandy());
+
+        // Imported candies are already included by the shop loop above. Add only the
+        // licensed placeable apple-leaf block, which is a registry item but not a shop
+        // reward, so /halloween give <player> all never duplicates the candy icons.
+        HalloweenContentRegistry.Definition appleLeaves =
+                plugin.getContentRegistry().findByItemsAdderId("warriorland_halloween:stev_apple_leaves");
+        if (appleLeaves != null) {
+            items.add(plugin.getItemManager().createRegisteredItem(appleLeaves.internalId(), 1));
+        }
         return items;
     }
 
@@ -222,7 +232,10 @@ public final class HalloweenRewardManager {
 
         int amount = Math.max(1, section.getInt("amount", 1));
         String itemsAdderId = section.getString("itemsadder-id", "");
-        ItemStack item = itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount);
+        HalloweenContentRegistry.Definition registered = plugin.getContentRegistry().findByItemsAdderId(itemsAdderId);
+        ItemStack item = registered != null
+                ? plugin.getItemManager().createRegisteredItem(registered.internalId(), amount)
+                : (itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount));
         if (item == null) {
             Material material;
             try {
@@ -281,7 +294,10 @@ public final class HalloweenRewardManager {
 
         int amount = Math.max(1, section.getInt("amount", 1));
         String itemsAdderId = section.getString("itemsadder-id", "");
-        ItemStack item = itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount);
+        HalloweenContentRegistry.Definition registered = plugin.getContentRegistry().findByItemsAdderId(itemsAdderId);
+        ItemStack item = registered != null
+                ? plugin.getItemManager().createRegisteredItem(registered.internalId(), amount)
+                : (itemsAdderId.isBlank() ? null : plugin.getItemManager().getItemsAdderItem(itemsAdderId, amount));
 
         if (item == null) {
             Material material;

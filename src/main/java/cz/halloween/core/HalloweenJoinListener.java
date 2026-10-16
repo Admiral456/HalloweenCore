@@ -19,6 +19,10 @@ public final class HalloweenJoinListener implements Listener {
             plugin.getSeasonManager().sendCountdownIfNeeded(player);
         }
         if (!plugin.isEventEnabled()) return;
+        if (plugin.getDataManager().isHalloweenDisabled(player.getUniqueId())) {
+            if (plugin.getAtmosphere() != null) plugin.getAtmosphere().stop(player);
+            return;
+        }
         if (plugin.getAtmosphere() != null) {
             plugin.getAtmosphere().onJoin(player);
         }
@@ -59,9 +63,13 @@ public final class HalloweenJoinListener implements Listener {
                 : 0L;
 
         long total = reward + comebackBonus;
-        plugin.getService().addFragments(player.getUniqueId(), total, "daily");
-
+        // Record the claim eligibility before fragment awarding; addFragments may
+        // save on a global milestone, and that save must include this timestamp.
         plugin.getDataManager().recordJoin(player.getUniqueId(), System.currentTimeMillis(), streak);
+        plugin.getService().addFragments(player.getUniqueId(), total, "daily");
+        // Persist the balance and eligibility timestamp together to prevent duplicate
+        // daily rewards after a crash/restart before the periodic autosave.
+        plugin.getDataManager().save();
 
         if (comeback) {
             player.sendMessage(plugin.color("&6HALLOWEEN &8» &fTma tě po delší době zase našla. &e+" + total + " &ffragmentů."));

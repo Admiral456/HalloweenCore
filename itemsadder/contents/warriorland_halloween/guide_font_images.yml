@@ -1,0 +1,63 @@
+info:
+  namespace: warriorland_halloween
+
+# Custom bitmap glyphs embedded into the illustrated Minecraft guide book.
+# Java BookMeta uses these exact private-use symbols. ItemsAdder adds the PNGs
+# to the generated client resource pack.
+font_images:
+  guide_cover:
+    path: font/guide_cover.png
+    symbol: "\uE1F0"
+    permission: 0
+    show_in_gui: false
+    suggest_in_command: false
+    scale_ratio: 42
+    y_position: 38
+  guide_soulstorm:
+    path: font/guide_soulstorm.png
+    symbol: "\uE1F1"
+    permission: 0
+    show_in_gui: false
+    suggest_in_command: false
+    scale_ratio: 30
+    y_position: 26
+  guide_witching:
+    path: font/guide_witching.png
+    symbol: "\uE1F2"
+    permission: 0
+    show_in_gui: false
+    suggest_in_command: false
+    scale_ratio: 30
+    y_position: 26
+  guide_harvest:
+    path: font/guide_harvest.png
+    symbol: "\uE1F3"
+    permission: 0
+    show_in_gui: false
+    suggest_in_command: false
+    scale_ratio: 30
+    y_position: 26
+  guide_blood_moon:
+    path: font/guide_blood_moon.png
+    symbol: "\uE1F4"
+    permission: 0
+    show_in_gui: false
+    suggest_in_command: false
+    scale_ratio: 30
+    y_position: 26
+  guide_pumpkin:
+    path: font/guide_pumpkin.png
+    symbol: "\uE1F5"
+    permission: 0
+    show_in_gui: false
+    suggest_in_command: false
+    scale_ratio: 30
+    y_position: 26
+  guide_graveyard:
+    path: font/guide_graveyard.png
+    symbol: "\uE1F6"
+    permission: 0
+    show_in_gui: false
+    suggest_in_command: false
+    scale_ratio: 30
+    y_position: 26
