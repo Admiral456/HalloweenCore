@@ -31,6 +31,39 @@ checks = {
         "guide_cover", "guide_soulstorm", "guide_witching", "guide_harvest",
         "guide_blood_moon", "guide_pumpkin", "guide_graveyard"
     )),
+    "written-book pages remain below Minecraft's 256-character limit": all(
+        len(__import__("re").sub(r"\\u([0-9a-fA-F]{4})", lambda m: chr(int(m.group(1), 16)),
+             __import__("re").sub(r"\\n", "\\n", literal))) <= 250
+        for literal in __import__("re").findall(r'(?m)^\s+"((?:\\.|[^"\\])*)"[,]?\s*
+        (FONT_TEXTURES / name).is_file()
+        and (FONT_TEXTURES / name).read_bytes()[12:16] == b"IHDR"
+        and __import__("struct").unpack(">II", (FONT_TEXTURES / name).read_bytes()[16:24]) == (64, 64)
+        for name in (
+            "guide_cover.png", "guide_soulstorm.png", "guide_witching.png",
+            "guide_harvest.png", "guide_blood_moon.png", "guide_pumpkin.png", "guide_graveyard.png"
+        )
+    ),
+}
+failed=[name for name, ok in checks.items() if not ok]
+for name, ok in checks.items(): print(("PASS" if ok else "FAIL")+" - "+name)
+if failed: raise SystemExit(f"{len(failed)} event behavior checks failed")
+print(f"All {len(checks)} event behavior checks passed.")
+, BOOK)
+    ) and len(__import__("re").findall(r'(?m)^\s+"((?:\\.|[^"\\])*)"[,]?\s*
+        (FONT_TEXTURES / name).is_file()
+        and (FONT_TEXTURES / name).read_bytes()[12:16] == b"IHDR"
+        and __import__("struct").unpack(">II", (FONT_TEXTURES / name).read_bytes()[16:24]) == (64, 64)
+        for name in (
+            "guide_cover.png", "guide_soulstorm.png", "guide_witching.png",
+            "guide_harvest.png", "guide_blood_moon.png", "guide_pumpkin.png", "guide_graveyard.png"
+        )
+    ),
+}
+failed=[name for name, ok in checks.items() if not ok]
+for name, ok in checks.items(): print(("PASS" if ok else "FAIL")+" - "+name)
+if failed: raise SystemExit(f"{len(failed)} event behavior checks failed")
+print(f"All {len(checks)} event behavior checks passed.")
+, BOOK)) >= 10,
     "illustrated book glyphs are generated as 64x64 PNGs": all(
         (FONT_TEXTURES / name).is_file()
         and (FONT_TEXTURES / name).read_bytes()[12:16] == b"IHDR"
