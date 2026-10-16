@@ -9,7 +9,7 @@ Hráči získávají Halloween fragmenty za PvE, těžbu rud, farmaření a ryba
 - **Duševní bouře:** každá vlna vyvolá u každého způsobilého hráče v povoleném světě prokleté zombie, hrobníky a krvavé pavouky. Spawn je omezen na 25 bloků od hráče.
 - **Čarodějnická hodina:** stejně jako Duševní bouře, ale s hexovými čarodějkami, krvavými pavouky a prokletými zombie a efekty temnoty.
 - **Prokletá sklizeň:** hledá bloky `FARMLAND`, zoranou půdu vytvořenou motykou. Na nalezených povrchových políčkách se postupně pokouší vyvolat nepřítele.
-- **Krvavý měsíc:** přepne svět na noc, každých 25 sekund přivádí vlny nepřátel u hráčů a násobí nepřátelské poškození na hráče třemi. Červené částice simulují eventový krvavý měsíc; skutečnou vanilla texturu měsíce Bukkit API dynamicky nepřebarví.
+- **Krvavý měsíc:** přepne svět na noc, každých 25 sekund přivádí vlny nepřátel u hráčů a násobí nepřátelské poškození na hráče třemi. Červené částice simulují eventový krvavý měsíc; skutečnou vanilla texturu měsíce Bukkit API dynamicky nepřebarví. Při živém klientském testu je nutné potvrdit, že disk viditelně vykreslí klient.
 - **Dýňová apokalypsa:** u každého způsobilého hráče se objevují dýňoví přízraci a další nepřátelé. Plugin přidává dýně a jack-o-lanterny na bezpečná volná místa v načtených přírodních chunkech.
 - **Hřbitov vstává:** spawnuje jen u hřbitovů zaznamenaných při generování Halloween struktur. Moby cílí na nejbližšího způsobilého hráče v dosahu; na volném poli se tato událost nespouští.
 

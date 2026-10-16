@@ -54,6 +54,7 @@ Cíl není přidat jen dekorace nebo pár příkazů. Plugin postupně propojuje
 ## Příkazy
 
 - /halloween
+- /halloween guide (dá hráči Minecraft knihu se shrnutím systémů a šesti eventů)
 - /halloween stats
 - /halloween progress
 - /halloween curse
@@ -154,12 +155,14 @@ Náhodné eventy se spouštějí přibližně 15–24 minut od sebe a trvají 6 
 
 | Event | Co se během něj děje |
 |---|---|
-| **Duševní bouře** | Vlny prokletých zombie, hrobníků a krvavých pavouků; duševní částice; 2× odměna za lov a 1,5× za rybaření. |
-| **Čarodějnická hodina** | Hexové čarodějky a pavouci útočí ze stínů; může se objevit efekt Darkness; zvýšené odměny za těžbu, lov a rybaření. |
-| **Prokletá sklizeň** | Temná magie urychlí několik okolních plodin a ze záhonů vyrazí speciální mobové; 3× odměna za sklizeň. |
-| **Krvavý měsíc – invaze** | Vlny nepřátel až u 3 hráčů každých 25 sekund, nejvýše 48 eventových mobů na svět, unikátní varovné částice, Kapitán invaze v závěrečné části a **3× poškození od nepřátelských monster**. |
-| **Dýňová apokalypsa** | Husté vlny dýňových přízraků, plameny, popel a lávové částice; 2,5× odměna za lov. |
-| **Hřbitov vstává** | Hrobníci, prokleté zombie a pavouci se objevují ve vlnách z duševní mlhy; 2,25× odměna za lov. |
+| **Duševní bouře** | Každých 25 sekund vlna Prokletých zombie, Hrobníků a Krvavých pavouků u každého způsobilého hráče, v okruhu do **25 bloků**; duševní částice, 2× odměna za lov a 1,5× za rybaření. |
+| **Čarodějnická hodina** | Stejné cílení do **25 bloků od každého způsobilého hráče**, ale s Hexovými čarodějkami, Krvavými pavouky a Prokletými zombie; může se objevit efekt Darkness a jsou zvýšené odměny za těžbu, lov a rybaření. |
+| **Prokletá sklizeň** | Během eventu se postupně procházejí načtené chunky a hledají bloky **Farmland** (oraná půda po použití motyky). Z nalezených polí se vyvolávají Krvaví pavouci a Dýňoví přízraci, kteří cílí na nejbližšího hráče v dosahu; limit je 48 polních spawnů za jednu vlnu. |
+| **Krvavý měsíc – invaze** | Každých 25 sekund zkouší vyvolat vlnu u každého způsobilého hráče v povoleném světě, v okruhu do **25 bloků**. Nepřátelská monstra udělují **3× poškození**. Svět se přepne na noc a objeví se červený částicový disk jako eventový vizuál krvavého měsíce. |
+| **Dýňová apokalypsa** | Každých 25 sekund zkouší spawn u každého způsobilého hráče do **25 bloků**. Navíc postupně přidává až tři dýně nebo jack-o-lanterny do bezpečných volných míst v přírodním terénu každého zpracovaného načteného chunku. |
+| **Hřbitov vstává** | Vlny se spouštějí pouze u pluginem zaznamenaných hřbitovů; nemrtví se objevují poblíž hřbitova a dostávají jako cíl nejbližšího způsobilého hráče v konfigurovatelném dosahu. Na obyčejném poli se tato událost nespawnuje. |
+
+Eventové vlny zkoušejí spawn u každého způsobilého online hráče, ale skutečný počet se může snížit, pokud v okruhu není bezpečné místo nebo je dosažen limit **256 označených eventových mobů na svět**. Nové vlny nepřátel mají omezenou dobu života. Systém zpracovává již načtené chunky v omezených dávkách a nikdy nenačítá celou nekonečnou mapu naráz. Červený krvavý měsíc je zatím simulovaný částicovým diskem; není to dynamicky přebarvená vanilla textura měsíce. Zobrazení je stále třeba ověřit v živém klientovi.
 
 Každý event má vlastní zvukovou znělku v resource packu. Příkazy `/halloween event`, `/halloween event start <id>` a `/halloween event stop` umožňují správcům ověřit jednotlivé eventy. Dostupné ID jsou `soulstorm`, `witching-hour`, `cursed-harvest`, `blood-moon-invasion`, `pumpkin-apocalypse` a `graveyard-rising`.
 
