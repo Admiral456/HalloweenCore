@@ -11,6 +11,8 @@ BOOK = (ROOT / "src/main/java/cz/halloween/core/HalloweenGuideBook.java").read_t
 checks = {
     "all eligible players receive event waves": 'getInt("random-events.players-per-surge"' not in EVENT and "for (Player target : players)" in EVENT,
     "event spawning is capped at 25 blocks": 'getInt("random-events.spawn-radius-blocks", 25)' in MOBS and "spawn-radius-blocks: 25" in CONFIG,
+    "safe location search never reads unloaded chunk terrain": "if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;" in MOBS,
+    "event spawn radius includes vertical distance": "location.distanceSquared(origin) > allowedDistance * allowedDistance" in MOBS and "double allowedDistance = maximumRadius + 1.0D;" in MOBS,
     "event mobs have a bounded lifetime": "scheduleEventMobCleanup(living)" in MOBS and "event-mob-lifetime-seconds: 45" in CONFIG,
     "blood moon forces night and displays red particles": "world.setTime(13_000L)" in EVENT and "Particle.DUST" in EVENT and "blood-moon-damage-multiplier: 3.0" in CONFIG,
     "cursed harvest scans actual FARMLAND": "Material.FARMLAND" in EVENT and "spawnFromLoadedFarmland" in EVENT,

@@ -856,9 +856,16 @@ public final class HalloweenMobManager implements Listener {
             int x = origin.getBlockX() + (int) Math.round(Math.cos(angle) * radius);
             int z = origin.getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
             if (Math.hypot(x + 0.5D - origin.getX(), z + 0.5D - origin.getZ()) > maximumRadius + 1.0D) continue;
+            // Do not let an event query terrain in an unloaded neighbouring chunk.
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) continue;
             int y = world.getHighestBlockYAt(x, z) + 1;
             if (y < world.getMinHeight() || y >= world.getMaxHeight() - 1) continue;
             Location location = new Location(world, x + 0.5D, y, z + 0.5D);
+            // For player waves this keeps the whole 3D spawn position inside the configured
+            // radius, not merely its X/Z projection. The same check also avoids distant
+            // vertical spawns when an anchor sits on steep terrain.
+            double allowedDistance = maximumRadius + 1.0D;
+            if (location.distanceSquared(origin) > allowedDistance * allowedDistance) continue;
             if (!world.getWorldBorder().isInside(location)) continue;
             Block feet = location.getBlock(), head = feet.getRelative(0, 1, 0), below = feet.getRelative(0, -1, 0);
             if (!feet.isPassable() || !head.isPassable() || below.isPassable()
