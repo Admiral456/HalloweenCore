@@ -212,7 +212,6 @@ public final class HalloweenCore extends JavaPlugin {
 
         getConfig().set("special-mobs.enabled", true);
         setConfigDefaultIfMissing("special-mobs.chance", 0.04D);
-        setConfigDefaultIfMissing("special-mobs.phase-bonus-chance", 0.005D);
         setConfigDefaultIfMissing("special-mobs.event-chance-multiplier", 1.5D);
         setConfigDefaultIfMissing("special-mobs.bonus-fragments", 12L);
         // The cleanup build forced this to zero; restore a restrained candy drop.
