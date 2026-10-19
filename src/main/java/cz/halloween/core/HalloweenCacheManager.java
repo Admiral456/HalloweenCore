@@ -1,7 +1,6 @@
 package cz.halloween.core;
 
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
@@ -127,18 +126,15 @@ public final class HalloweenCacheManager implements Listener {
 
     public boolean spawnTestCache(Player creator) {
         if (creator == null || !creator.isOnline() || !isEnabled()) return false;
-        LocationSearch:
-        {
-            Vector facing = creator.getLocation().getDirection().setY(0.0D);
-            if (facing.lengthSquared() < 0.0001D) facing = new Vector(0.0D, 0.0D, 1.0D);
-            facing.normalize();
-            for (int distance = 2; distance <= 5; distance++) {
-                Block target = creator.getLocation().clone().add(facing.clone().multiply(distance)).getBlock();
-                if (!target.getType().isAir() || !target.getRelative(0, -1, 0).getType().isSolid()) continue;
-                if (target.getState() instanceof TileState) continue;
-                if (createLockedCache(target, new Random())) {
-                    return true;
-                }
+        Vector facing = creator.getLocation().getDirection().setY(0.0D);
+        if (facing.lengthSquared() < 0.0001D) facing = new Vector(0.0D, 0.0D, 1.0D);
+        facing.normalize();
+        for (int distance = 2; distance <= 5; distance++) {
+            Block target = creator.getLocation().clone().add(facing.clone().multiply(distance)).getBlock();
+            if (!target.getType().isAir() || !target.getRelative(0, -1, 0).getType().isSolid()) continue;
+            if (target.getState() instanceof TileState) continue;
+            if (createLockedCache(target, new Random())) {
+                return true;
             }
         }
         return false;
@@ -172,13 +168,13 @@ public final class HalloweenCacheManager implements Listener {
         return true;
     }
 
-    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onInventoryOpen(InventoryOpenEvent event) {
         if (!(event.getPlayer() instanceof Player player)) return;
         Chest cache = findLockedCache(event.getInventory().getHolder());
         if (cache == null) return;
 
-        if (!isEnabled() || !plugin.isEventEnabled()) {
+        if (!plugin.isEventEnabled()) {
             event.setCancelled(true);
             player.sendMessage(plugin.color("&8[&6Halloween&8] &7Tato schránka je momentálně zapečetěna."));
             return;
