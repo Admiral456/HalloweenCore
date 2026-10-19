@@ -362,6 +362,13 @@ jobs:
               raise SystemExit("Mob-kill rewards must use the common per-minute limiter")
           if '"mob-kill".equalsIgnoreCase(source) ? 60 : 0' not in activity_listener:
               raise SystemExit("Legacy configs missing the mob-kill limit must use the safe default")
+          for limit_guard in (
+              'plugin.getConfig().contains(limitPath, true)',
+              'if (!explicitlyConfigured && fallbackLimit <= 0) return true;',
+              'if (limit < 1 || limit > 600) return false;',
+          ):
+              if limit_guard not in activity_listener:
+                  raise SystemExit(f"Invalid explicit fragment rate limits must fail closed: {limit_guard}")
 
           if "onEntityDeath(EntityDeathEvent event)" in core_source:
               raise SystemExit("Mob-kill rewards must not bypass the shared activity limiter")
