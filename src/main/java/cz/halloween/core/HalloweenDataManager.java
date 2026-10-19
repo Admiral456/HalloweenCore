@@ -84,15 +84,15 @@ public final class HalloweenDataManager {
         }
 
         int storedSchemaVersion = data.getInt("meta.schema-version", 0);
-        if (data.isSet("meta.schema-version") && !(data.get("meta.schema-version") instanceof Number)) {
-            return failLoadSafely("meta.schema-version must be numeric");
+        if (!isIntIfPresent(data, "meta.schema-version")) {
+            return failLoadSafely("meta.schema-version must be an integer");
         }
         if (storedSchemaVersion > CURRENT_SCHEMA_VERSION) {
             return failLoadSafely("data.yml schema version " + storedSchemaVersion
                     + " is newer than supported version " + CURRENT_SCHEMA_VERSION
                     + "; upgrade HalloweenCore before using this data");
         }
-        if (!hasTypeIfPresent(data, "server.total-fragments", Number.class)
+        if (!isLongIfPresent(data, "server.total-fragments")
                 || !hasTypeIfPresent(data, "server.finale-unlocked", Boolean.class)
                 || !hasTypeIfPresent(data, "server.vampire-defeated", Boolean.class)) {
             return failLoadSafely("server state contains a value with an unexpected YAML type");
@@ -112,12 +112,12 @@ public final class HalloweenDataManager {
                     UUID uuid = UUID.fromString(key);
                     String base = "players." + key;
 
-                    if (!hasTypeIfPresent(data, base + ".fragments", Number.class)
-                            || !hasTypeIfPresent(data, base + ".lifetime-fragments", Number.class)
-                            || !hasTypeIfPresent(data, base + ".last-join", Number.class)
-                            || !hasTypeIfPresent(data, base + ".streak", Number.class)
-                            || !hasTypeIfPresent(data, base + ".challenge.progress", Number.class)
-                            || !hasTypeIfPresent(data, base + ".story-quest.progress", Number.class)
+                    if (!isLongIfPresent(data, base + ".fragments")
+                            || !isLongIfPresent(data, base + ".lifetime-fragments")
+                            || !isLongIfPresent(data, base + ".last-join")
+                            || !isIntIfPresent(data, base + ".streak")
+                            || !isIntIfPresent(data, base + ".challenge.progress")
+                            || !isIntIfPresent(data, base + ".story-quest.progress")
                             || !hasTypeIfPresent(data, base + ".challenge.claimed", Boolean.class)
                             || !hasTypeIfPresent(data, base + ".haunted-village-discovered", Boolean.class)
                             || !hasTypeIfPresent(data, base + ".challenge.day", String.class)
@@ -183,6 +183,29 @@ public final class HalloweenDataManager {
 
     private boolean hasTypeIfPresent(YamlConfiguration data, String path, Class<?> expectedType) {
         return !data.isSet(path) || expectedType.isInstance(data.get(path));
+    }
+
+    private boolean isLongIfPresent(YamlConfiguration data, String path) {
+        return !data.isSet(path) || exactIntegralLong(data.get(path)) != null;
+    }
+
+    private boolean isIntIfPresent(YamlConfiguration data, String path) {
+        if (!data.isSet(path)) return true;
+        Long value = exactIntegralLong(data.get(path));
+        return value != null && value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE;
+    }
+
+    /**
+     * YAML numbers must be exact integers in the signed 64-bit range; silently
+     * truncating decimals or overflowing values could alter saved player progress.
+     */
+    private Long exactIntegralLong(Object value) {
+        if (!(value instanceof Number number)) return null;
+        try {
+            return new java.math.BigDecimal(number.toString()).longValueExact();
+        } catch (NumberFormatException | ArithmeticException ex) {
+            return null;
+        }
     }
 
     private boolean isStringListIfPresent(YamlConfiguration data, String path) {
