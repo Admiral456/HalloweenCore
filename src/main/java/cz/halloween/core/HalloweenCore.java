@@ -36,6 +36,7 @@ public final class HalloweenCore extends JavaPlugin {
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
     private HalloweenPumpkinVillagerManager pumpkinVillagerManager;
+    private HalloweenCacheManager cacheManager;
     private HalloweenVillageDiscoveryManager villageDiscoveryManager;
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
@@ -66,6 +67,7 @@ public final class HalloweenCore extends JavaPlugin {
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
         pumpkinVillagerManager = new HalloweenPumpkinVillagerManager(this);
+        cacheManager = new HalloweenCacheManager(this);
         villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
@@ -80,6 +82,7 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new HalloweenRewardMenuListener(this), this);
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
         getServer().getPluginManager().registerEvents(pumpkinVillagerManager, this);
+        getServer().getPluginManager().registerEvents(cacheManager, this);
         // Legacy mob, quest, discovery, atmosphere and world-generation listeners
         // remain unregistered while the replacement vanilla systems are developed.
 
@@ -247,6 +250,10 @@ public final class HalloweenCore extends JavaPlugin {
 
     public HalloweenPumpkinVillagerManager getPumpkinVillagerManager() {
         return pumpkinVillagerManager;
+    }
+
+    public HalloweenCacheManager getCacheManager() {
+        return cacheManager;
     }
 
     public HalloweenQuestManager getQuestManager() {
