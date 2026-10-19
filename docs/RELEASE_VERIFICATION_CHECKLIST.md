@@ -88,11 +88,11 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 ## 8. Vanilla final boss
 
 - [ ] In a staging world, run `/halloween boss status` and confirm the command reports that no boss is active.
-- [ ] Run `/halloween boss spawn` as an administrator from a safe location. Confirm the Wither Skeleton appears in a safe position, wears a carved pumpkin, uses a vanilla netherite sword, has 240 health by default, and displays a boss bar.
+- [ ] First confirm /halloween boss spawn is rejected before the server finale is unlocked. After unlocking the global goal on the staging copy, run it as an administrator from a safe location. Confirm the Wither Skeleton appears in a safe position, wears a carved pumpkin, uses a vanilla netherite sword, has 240 health by default, and displays a boss bar.
 - [ ] Confirm the boss is never spawned automatically and that `vanilla-boss.enabled: false` disables the encounter.
 - [ ] Test all three health phases and the marked blood pulse. The target must take damage only if it remains inside the marked circle after the warning period.
-- [ ] Deal damage with two eligible test players and defeat the boss. Verify each contributor gets the participation reward and the largest contributor also receives the top-contributor bonus.
-- [ ] Confirm the boss drops no normal equipment or XP and the configured rewards are saved. Environmental damage or creative-mode participation must not count.
+- [ ] Use two eligible players to test the reward gate: a player who deals damage but stays under 120 seconds or below 2.5% max health receives no reward; a player meeting both requirements receives the participation reward; the highest-damage qualified player also receives the top-contributor bonus.
+- [ ] Confirm the boss drops no normal equipment or XP, the finale completion flag saves, and PlaceholderAPI boss placeholders report the vanilla boss state. Environmental damage or creative-mode participation must not count.
 - [ ] Run `/halloween boss stop` and verify the boss and boss bar are removed. Restart the staging server while a boss is active and verify shutdown cleanup.
 - [ ] Test an older config without `migrations.vanilla-boss-v1`. Missing settings should be added once without changing existing values; a deliberately disabled boss must remain disabled after the migration has been recorded.
 
