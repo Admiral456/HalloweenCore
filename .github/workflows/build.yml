@@ -149,6 +149,390 @@ jobs:
                   raise SystemExit(f"ItemsAdder custom-item detection missing: {itemsadder_guard}")
           if '"warriorland_halloween:cursed_candy"' not in item_listener:
               raise SystemExit("Cursed candy listener points to the wrong ItemsAdder ID")
+          reward_manager_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenRewardManager.java"
+          ).read_text(encoding="utf-8")
+          if '"cursed-candy".equals(normalizedId)' not in reward_manager_source:
+              raise SystemExit("Claimed cursed candy must receive its consumable marker")
+          if 'set(relicKey, PersistentDataType.STRING, "cursed-candy-2026")' not in reward_manager_source:
+              raise SystemExit("Vanilla fallback candy must still trigger its effects")
+          candy_config = Path(
+              "itemsadder/contents/warriorland_halloween/configs/items.yml"
+          ).read_text(encoding="utf-8")
+          if "cursed_candy:" not in candy_config or "texture: item/cursed_candy" not in candy_config:
+              raise SystemExit("ItemsAdder cursed candy definition or texture link is missing")
+          if not re.search(
+              r'(?ms)^    cursed-candy:\n      cost: 500\n      min-curse: 0\n      itemsadder-id: "warriorland_halloween:cursed_candy"\n      material: PUMPKIN_PIE\n      amount: 1
+          command_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenCommand.java"
+          ).read_text(encoding="utf-8")
+          for active_command in (
+              'private boolean stats(CommandSender sender)',
+              'private boolean rewards(CommandSender sender)',
+              'private boolean claim(CommandSender sender, String[] args)',
+              'private boolean challenge(CommandSender sender)',
+              'private boolean reload(CommandSender sender)',
+              'private boolean give(CommandSender sender, String[] args)',
+          ):
+              if active_command not in command_source:
+                  raise SystemExit(f"Required progression command method missing: {active_command}")
+
+          plugin_yml = Path("src/main/resources/plugin.yml").read_text(encoding="utf-8")
+          if "softdepend: [ItemsAdder, PlaceholderAPI]" not in plugin_yml:
+              raise SystemExit("Only the retained optional integrations should be soft dependencies")
+          for retired_dependency in ("MythicMobs", "ModelEngine", "BattlePass", "WorldGuard"):
+              if retired_dependency in plugin_yml:
+                  raise SystemExit(f"Retired integration must not remain in plugin metadata: {retired_dependency}")
+
+          print("Runtime lifecycle, retained item behavior and command surface checks passed.")
+
+          data_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenDataManager.java"
+          ).read_text(encoding="utf-8")
+          if "data.load(file);" not in data_manager or "InvalidConfigurationException" not in data_manager:
+              raise SystemExit("Persistent data must be parsed with explicit error handling")
+          if "if (loadFailed)" not in data_manager or "Refusing to overwrite data.yml" not in data_manager:
+              raise SystemExit("Persistence must refuse saves after a failed data load")
+          if "File.createTempFile(\"data-invalid-\"" not in data_manager:
+              raise SystemExit("Invalid player data must be preserved to a backup")
+          if "if (!dataManager.load())" not in core_source:
+              raise SystemExit("Plugin startup must stop when persistent data cannot be loaded safely")
+          if "CURRENT_SCHEMA_VERSION = 1" not in data_manager:
+              raise SystemExit("Persistent data schema version must be explicit")
+          if 'data.getInt("meta.schema-version", 0)' not in data_manager:
+              raise SystemExit("Legacy data without a schema version must remain readable")
+          if "storedSchemaVersion > CURRENT_SCHEMA_VERSION" not in data_manager:
+              raise SystemExit("Unknown future data schema must be rejected safely")
+          for data_type_guard in (
+              'private boolean hasTypeIfPresent(YamlConfiguration data, String path, Class<?> expectedType)',
+              'private boolean isStringListIfPresent(YamlConfiguration data, String path)',
+              'hasTypeIfPresent(data, "server.finale-unlocked", Boolean.class)',
+              'isLongIfPresent(data, base + ".fragments")',
+              'isIntIfPresent(data, base + ".challenge.progress")',
+              'new java.math.BigDecimal(number.toString()).longValueExact()',
+              'value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE',
+              'isStringListIfPresent(data, base + ".claimed-rewards")',
+          ):
+              if data_type_guard not in data_manager:
+                  raise SystemExit(f"Persisted data type guard missing: {data_type_guard}")
+          if 'data.set("meta.schema-version", CURRENT_SCHEMA_VERSION)' not in data_manager:
+              raise SystemExit("Saved player data must include the current schema version")
+          if "lifetimeFragments.getOrDefault(uuid, current)" in data_manager:
+              raise SystemExit("Admin-only balances must not be converted into lifetime-earned fragments")
+          if "lifetimeFragments.getOrDefault(uuid, 0L)" not in data_manager:
+              raise SystemExit("Missing lifetime-earned totals must default to zero after load")
+          if 'data.getLong(base + ".lifetime-fragments", amount)' not in data_manager:
+              raise SystemExit("Legacy records without lifetime totals must migrate from their prior balance")
+
+          for data_guard in (
+              'if (data.isSet("players") && !data.isConfigurationSection("players"))',
+              'if (!data.isConfigurationSection(playerPath))',
+              'return failLoadSafely("player data entry must be a YAML section: " + key)',
+              'if (data.isSet("server") && !data.isConfigurationSection("server"))',
+              'if (!isIntIfPresent(data, "meta.schema-version"))',
+              'return failLoadSafely("invalid player UUID key in data.yml: " + key)',
+          ):
+              if data_guard not in data_manager:
+                  raise SystemExit(f"Persistent data structural validation missing: {data_guard}")
+          if "Ignoring invalid player UUID in data.yml" in data_manager:
+              raise SystemExit("Invalid UUID rows must fail safely instead of being silently discarded")
+
+          print("Persistent data failure-safety checks passed.")
+
+          reward_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenRewardManager.java"
+          ).read_text(encoding="utf-8")
+          capacity_check = "if (!canFitInInventory(player, item))"
+          charge_call = "removeFragments(player.getUniqueId(), cost)"
+          if capacity_check not in reward_manager:
+              raise SystemExit("Reward claims must check inventory capacity before charging")
+          if "dropped.setOwner(player.getUniqueId());" not in reward_manager:
+              raise SystemExit("Unexpected reward overflow must remain owner-locked")
+          if reward_manager.index(capacity_check) > reward_manager.index(charge_call):
+              raise SystemExit("Inventory capacity must be checked before subtracting fragments")
+
+          passive_effects = Path(
+              "src/main/java/cz/halloween/core/HalloweenPassiveEffectManager.java"
+          ).read_text(encoding="utf-8")
+          if 'getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D)' not in passive_effects:
+              raise SystemExit("Missing talisman health must default safely to one heart (+2 health)")
+
+          join_listener = Path(
+              "src/main/java/cz/halloween/core/HalloweenJoinListener.java"
+          ).read_text(encoding="utf-8")
+          if "plugin.getDataManager().save();" not in join_listener:
+              raise SystemExit("Daily reward state must be persisted immediately")
+
+          challenge_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenChallengeManager.java"
+          ).read_text(encoding="utf-8")
+          if "plugin.getDataManager().save();" not in challenge_manager:
+              raise SystemExit("Completed daily challenge claims must be persisted immediately")
+
+          print("Reward safety regression checks passed.")
+
+          if not re.search(
+              r"(?ms)^  mob-kill:\n    enabled: true\n    fragments: 1\n    max-fragment-rewards-per-minute: 60$",
+              config,
+          ):
+              raise SystemExit("Mob-kill rewards must have a default rate cap of 60 per minute")
+
+          activity_listener = Path(
+              "src/main/java/cz/halloween/core/HalloweenActivityListener.java"
+          ).read_text(encoding="utf-8")
+          if "public void onMobKill(EntityDeathEvent event)" not in activity_listener:
+              raise SystemExit("Mob-kill rewards must pass through the shared activity listener")
+          if "event.getEntity() instanceof Player" not in activity_listener:
+              raise SystemExit("PvP deaths must not award mob-kill fragments")
+          if 'allowFragmentReward(killer, "mob-kill")' not in activity_listener:
+              raise SystemExit("Mob-kill rewards must use the common per-minute limiter")
+          if '"mob-kill".equalsIgnoreCase(source) ? 60 : 0' not in activity_listener:
+              raise SystemExit("Legacy configs missing the mob-kill limit must use the safe default")
+
+          if "onEntityDeath(EntityDeathEvent event)" in core_source:
+              raise SystemExit("Mob-kill rewards must not bypass the shared activity limiter")
+          if 'List.of("mob-kill", "mining", "farming", "fishing")' not in validator:
+              raise SystemExit("Mob-kill limits must be validated with other activity limits")
+
+          if "rewardTimes.remove(playerId)" in activity_listener:
+              raise SystemExit("Disconnecting must not reset a player's rolling anti-farm limit")
+          if "pruneExpiredRewardTimes(now);" not in activity_listener or "private void pruneExpiredRewardTimes(long now)" not in activity_listener:
+              raise SystemExit("Reconnect-safe rate history must be pruned after the rolling minute expires")
+          if "if (now - lastGlobalPruneAt >= 10_000L)" not in activity_listener:
+              raise SystemExit("Global rate-history cleanup must be throttled for main-thread performance")
+          if "long cutoff = now - RATE_WINDOW_MILLIS;" not in activity_listener:
+              raise SystemExit("The active player's rolling rate window must be pruned on each activity")
+          print("Reconnect-safe anti-farming regression checks passed.")
+
+          print("Mob-kill anti-farming regression checks passed.")
+
+          npc_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenPumpkinVillagerManager.java"
+          ).read_text(encoding="utf-8")
+          for required_npc_behavior in (
+              'new NamespacedKey(plugin, "pumpkin_villager")',
+              'villager.setPersistent(true);',
+              'villager.setInvulnerable(true);',
+              'villager.setAI(false);',
+              'new ItemStack(Material.CARVED_PUMPKIN)',
+              "findSafeSpawnLocation(creator)",
+              "private Location findSafeSpawnLocation(Player creator)",
+              "!feet.isPassable() || !head.isPassable() || !floor.getType().isSolid()",
+              "if (feet.isLiquid() || head.isLiquid() || floor.isLiquid()) continue;",
+              "event.setCancelled(true);",
+              'ClickEvent.runCommand(command)',
+          ):
+              if required_npc_behavior not in npc_manager:
+                  raise SystemExit(f"Pumpkin villager missing required vanilla behavior: {required_npc_behavior}")
+
+          interaction_start = npc_manager.index("public void onInteract(PlayerInteractEntityEvent event)")
+          interaction_end = npc_manager.index("@EventHandler", interaction_start + 1)
+          interaction_handler = npc_manager[interaction_start:interaction_end]
+          if interaction_handler.index("if (!isEnabled()) return;") > interaction_handler.index("event.setCancelled(true);"):
+              raise SystemExit("Disabled pumpkin villager must not intercept vanilla interactions")
+
+          if "registerEvents(pumpkinVillagerManager, this)" not in core_source:
+              raise SystemExit("Pumpkin villager manager must be registered")
+          command_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenCommand.java"
+          ).read_text(encoding="utf-8")
+          if 'if (args[0].equalsIgnoreCase("npc")) return npc(sender, args);' not in command_source:
+              raise SystemExit("Pumpkin villager admin command is not connected")
+          if "private boolean npc(CommandSender sender, String[] args)" not in command_source:
+              raise SystemExit("Pumpkin villager admin command handler is missing")
+          if not re.search(
+              r"(?ms)^pumpkin-villager:\n  enabled: true\n  interact-cooldown-millis: 2000$",
+              config,
+          ):
+              raise SystemExit("Pumpkin villager default config is missing or malformed")
+
+          print("Pumpkin villager lifecycle and command checks passed.")
+
+          cache_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenCacheManager.java"
+          ).read_text(encoding="utf-8")
+          for cache_guard in (
+              "event.isNewChunk()",
+              "World.Environment.NORMAL",
+              "random.nextInt(1, 15)",
+              "chunk.getBlock(localX, y, localZ)",
+              "int localX = target.getX() & 15;",
+              "if (localX < 1 || localX > 14 || localZ < 1 || localZ > 14) continue;",
+              "NATURAL_STONE.contains(target.getType())",
+              "hasTileStateInNeighborhood(target)",
+              "private boolean hasTileStateInNeighborhood(Block target)",
+              "if (!isEnabled()) {",
+              "return !hasTileStateInNeighborhood(target);",
+              "new NamespacedKey(plugin, \"locked_underground_cache\")",
+              "new NamespacedKey(plugin, \"underground_cache_key\")",
+              "marker != null && marker == (byte) 1",
+              "public void onInventoryOpen(InventoryOpenEvent event)",
+              "public void onCacheBreak(BlockBreakEvent event)",
+              "public void onEntityExplode(EntityExplodeEvent event)",
+              "public void onBlockExplode(BlockExplodeEvent event)",
+              "public void onInventoryMove(InventoryMoveItemEvent event)",
+              "public void onPistonExtend(BlockPistonExtendEvent event)",
+              "public void onPistonRetract(BlockPistonRetractEvent event)",
+              "event.getDrops().add(createKey(1));",
+          ):
+              if cache_guard not in cache_manager:
+                  raise SystemExit(f"Underground cache protection missing: {cache_guard}")
+
+          if "registerEvents(cacheManager, this)" not in core_source:
+              raise SystemExit("Underground cache manager must be registered")
+          if 'if (args[0].equalsIgnoreCase("cache")) return cache(sender, args);' not in command_source:
+              raise SystemExit("Underground cache admin commands are not connected")
+          if "private boolean cache(CommandSender sender, String[] args)" not in command_source:
+              raise SystemExit("Underground cache admin command handler is missing")
+          if not re.search(
+              r"(?ms)^underground-caches:\n  enabled: true\n  generation:\n    enabled: true\n    chance-per-new-chunk: 0\.10\n    min-y: -48\n    max-y: 24\n    attempts-per-chunk: 32\n  key-drop:\n    enabled: true\n    chance-per-hostile-kill: 0\.006$",
+              config,
+          ):
+              raise SystemExit("Underground cache configuration is missing or malformed")
+
+          cache_validator = validator
+          for cache_validation in (
+              'boolean cachesEnabled = plugin.getConfig().getBoolean("underground-caches.enabled", true);',
+              'if (minY >= maxY)',
+              'if (keyChance < 0.0D || keyChance > 0.05D)',
+          ):
+              if cache_validation not in cache_validator:
+                  raise SystemExit(f"Underground cache config validation missing: {cache_validation}")
+
+          print("Underground cache generation, key and anti-grief checks passed.")
+
+          world_features = Path(
+              "src/main/java/cz/halloween/core/HalloweenWorldFeatureManager.java"
+          ).read_text(encoding="utf-8")
+          for feature_guard in (
+              "event.isNewChunk()",
+              "World.Environment.NORMAL",
+              'new NamespacedKey(plugin, "vanilla_world_features_v1")',
+              "random.nextInt(3, 13)",
+              "random.nextInt(1, 15)",
+              "PUMPKIN_BIOMES.contains(centerGround.getBiome().name())",
+              "if (!headspace.getType().isAir() && !headspace.isPassable()) return false;",
+              "target.setType(pumpkin, false);",
+              "target.setType(Material.COBWEB, false);",
+              "private boolean hasTileStateInNeighborhood(Block target)",
+              "List<Block> placedBlocks = new ArrayList<>();",
+              "for (Block placedBlock : placedBlocks)",
+          ):
+              if feature_guard not in world_features:
+                  raise SystemExit(f"Vanilla world feature safety check missing: {feature_guard}")
+          if "above.getType() == Material.PUMPKIN" in world_features:
+              raise SystemExit("World feature rollback must never delete naturally generated pumpkins")
+          if "registerEvents(worldFeatureManager, this)" not in core_source:
+              raise SystemExit("Vanilla world feature manager must be registered")
+          if not re.search(
+              r"(?ms)^world-features:\n  enabled: true\n  generation:\n    enabled: true\n    pumpkin-patch-chance-per-chunk: 0\.06\n    cave-web-patch-chance-per-chunk: 0\.04\n    attempts-per-feature: 24\n    max-pumpkins-per-patch: 4\n    max-cave-webs-per-patch: 2\n    cave-webs-min-y: -48\n    cave-webs-max-y: 24$",
+              config,
+          ):
+              raise SystemExit("Vanilla world feature configuration is missing or malformed")
+          for feature_validation in (
+              'boolean worldFeaturesEnabled = plugin.getConfig().getBoolean("world-features.enabled", true);',
+              'if (pumpkinChance < 0.0D || pumpkinChance > 1.0D)',
+              'if (webChance < 0.0D || webChance > 1.0D)',
+              'if (caveMinY >= caveMaxY)',
+          ):
+              if feature_validation not in validator:
+                  raise SystemExit(f"World feature config validation missing: {feature_validation}")
+
+          print("Vanilla world generation and non-destructive rollback checks passed.")
+
+          vanilla_events = Path(
+              "src/main/java/cz/halloween/core/HalloweenVanillaEventManager.java"
+          ).read_text(encoding="utf-8")
+          event_ids_start = vanilla_events.find("EVENT_IDS = List.of(")
+          event_ids_end = vanilla_events.find(");", event_ids_start)
+          if event_ids_start < 0 or event_ids_end < 0:
+              raise SystemExit("Vanilla event ID list is missing")
+          event_ids_source = vanilla_events[event_ids_start:event_ids_end]
+          for required_event_id in ('"pumpkin-harvest"', '"witching-hour"', '"blood-moon"'):
+              if required_event_id not in event_ids_source:
+                  raise SystemExit(f"Vanilla event ID missing from EVENT_IDS: {required_event_id}")
+
+          for event_guard in (
+              "private BukkitTask tickerTask;",
+              "tickerTask.cancel();",
+              "runTaskTimer(plugin, this::tick, 20L, 20L)",
+              "public boolean startEventNow(String requestedId)",
+              "public boolean stopActiveEventNow()",
+              "public void onBloodMoonDamage(EntityDamageByEntityEvent event)",
+              '"vanilla-events.blood-moon.hostile-damage-multiplier"',
+              '"vanilla-events.pumpkin-harvest.farming-fragment-multiplier"',
+              '"vanilla-events.witching-hour.mob-kill-fragment-multiplier"',
+              "projectile.getShooter() instanceof LivingEntity",
+          ):
+              if event_guard not in vanilla_events:
+                  raise SystemExit(f"Vanilla event safety/control missing: {event_guard}")
+
+          if "registerEvents(vanillaEventManager, this)" not in core_source:
+              raise SystemExit("Vanilla event manager must be registered")
+          if "vanillaEventManager.start();" not in core_source or "vanillaEventManager.stop();" not in core_source:
+              raise SystemExit("Vanilla event manager must follow plugin startup and shutdown")
+          if "vanillaEventManager.restart();" not in core_source:
+              raise SystemExit("Config reload must restart the vanilla event scheduler")
+
+          if ".filter(plugin::isEligibleGameplayPlayer)" not in vanilla_events or "plugin.isEligibleGameplayWorld(player.getWorld())" not in vanilla_events:
+              raise SystemExit("Timed events must require an eligible player in an eligible gameplay world")
+          if "getVanillaEventManager().getMultiplier" not in Path(
+              "src/main/java/cz/halloween/core/HalloweenServiceImpl.java"
+          ).read_text(encoding="utf-8"):
+              raise SystemExit("Fragment service must apply vanilla event multipliers")
+
+          if 'if (args[0].equalsIgnoreCase("event")) return vanillaEvent(sender, args);' not in command_source:
+              raise SystemExit("Vanilla event command is not connected")
+          if "private boolean vanillaEvent(CommandSender sender, String[] args)" not in command_source:
+              raise SystemExit("Vanilla event command handler is missing")
+          placeholders = Path(
+              "src/main/java/cz/halloween/core/HalloweenPlaceholderExpansion.java"
+          ).read_text(encoding="utf-8")
+          if "getVanillaEventManager().getActiveEventId()" not in placeholders:
+              raise SystemExit("PlaceholderAPI must expose the active vanilla event")
+          if not re.search(
+              r"(?ms)^vanilla-events:\n  enabled: true\n  first-delay-seconds: 300\n  interval-minutes:\n    min: 20\n    max: 35\n  duration-minutes: 6\n  pumpkin-harvest:\n    farming-fragment-multiplier: 2\.0\n  witching-hour:\n    mob-kill-fragment-multiplier: 1\.5\n  blood-moon:\n    mob-kill-fragment-multiplier: 1\.25\n    hostile-damage-multiplier: 1\.5$",
+              config,
+          ):
+              raise SystemExit("Vanilla event configuration is missing or malformed")
+          for event_validation in (
+              'boolean vanillaEventsEnabled = plugin.getConfig().getBoolean("vanilla-events.enabled", true);',
+              'if (eventIntervalMin < 5 || eventIntervalMax < eventIntervalMin || eventIntervalMax > 180)',
+              'if (bloodMoonDamage < 1.0D || bloodMoonDamage > 3.0D)',
+          ):
+              if event_validation not in validator:
+                  raise SystemExit(f"Vanilla event config validation missing: {event_validation}")
+
+          print("Vanilla event scheduling, effects and command checks passed.")
+          print("Cleanup invariants and retired-feature checks passed.")
+          PY
+
+      - name: Package retained candy and pumpkin villager textures
+        run: |
+          mkdir -p target
+          cd itemsadder/contents
+          zip -qr ../../target/HalloweenCore-Candy-Pumpkin-ItemsAdder.zip warriorland_halloween
+          unzip -t ../../target/HalloweenCore-Candy-Pumpkin-ItemsAdder.zip
+
+      - name: Upload retained ItemsAdder content
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-Candy-Pumpkin-ItemsAdder
+          path: target/HalloweenCore-Candy-Pumpkin-ItemsAdder.zip
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload plugin JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: HalloweenCore-jar
+          path: target/HalloweenCore.jar
+          if-no-files-found: error
+          retention-days: 14
+,
+              config,
+          ):
+              raise SystemExit("Cursed candy limited reward is missing or malformed")
 
           command_source = Path(
               "src/main/java/cz/halloween/core/HalloweenCommand.java"
