@@ -224,6 +224,38 @@ jobs:
               raise SystemExit("Mob-kill limits must be validated with other activity limits")
 
           print("Mob-kill anti-farming regression checks passed.")
+
+          npc_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenPumpkinVillagerManager.java"
+          ).read_text(encoding="utf-8")
+          for required_npc_behavior in (
+              'new NamespacedKey(plugin, "pumpkin_villager")',
+              'villager.setPersistent(true);',
+              'villager.setInvulnerable(true);',
+              'villager.setAI(false);',
+              'new ItemStack(Material.CARVED_PUMPKIN)',
+              "event.setCancelled(true);",
+              'ClickEvent.runCommand(command)',
+          ):
+              if required_npc_behavior not in npc_manager:
+                  raise SystemExit(f"Pumpkin villager missing required vanilla behavior: {required_npc_behavior}")
+
+          if "registerEvents(pumpkinVillagerManager, this)" not in core_source:
+              raise SystemExit("Pumpkin villager manager must be registered")
+          command_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenCommand.java"
+          ).read_text(encoding="utf-8")
+          if 'if (args[0].equalsIgnoreCase("npc")) return npc(sender, args);' not in command_source:
+              raise SystemExit("Pumpkin villager admin command is not connected")
+          if "private boolean npc(CommandSender sender, String[] args)" not in command_source:
+              raise SystemExit("Pumpkin villager admin command handler is missing")
+          if not re.search(
+              r"(?ms)^pumpkin-villager:\n  enabled: true\n  interact-cooldown-millis: 2000$",
+              config,
+          ):
+              raise SystemExit("Pumpkin villager default config is missing or malformed")
+
+          print("Pumpkin villager lifecycle and command checks passed.")
           print("Cleanup invariants and retired-feature checks passed.")
           PY
 
