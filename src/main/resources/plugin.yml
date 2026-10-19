@@ -3,12 +3,12 @@ version: 0.1.0-SNAPSHOT
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
-description: Halloween event core for Purpur/Paper 1.21.10.
+description: Halloween progression core; legacy custom assets and event systems disabled during rebuild.
 softdepend: [ItemsAdder, MythicMobs, ModelEngine, BattlePass, WorldGuard, PlaceholderAPI]
 commands:
   halloween:
-    description: Halloween event statistics and administration.
-    usage: /halloween [stats|progress|curse|event|challenge|quests [reset <hráč>]|rewards|claim|top|reload|debug|shader|setvillage|setvampirearena|buildvampirearena|setsecret|secrets|boss|bosseffects|modelpreview|give|on|off]
+    description: Halloween progression, rewards and administration.
+    usage: /halloween [stats|progress|curse|challenge|rewards|claim|top|reload|debug|give|on|off]
     aliases: [hallow]
     permission: halloweencore.use
 permissions:
