@@ -32,7 +32,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     "stats", "progress", "curse", "challenge", "rewards", "claim", "top"
             ));
             if (sender.hasPermission("halloweencore.admin")) {
-                subcommands.addAll(List.of("reload", "debug", "give", "on", "off", "npc"));
+                subcommands.addAll(List.of("reload", "debug", "give", "on", "off", "npc", "cache"));
             }
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -50,6 +50,29 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return section.getKeys(false).stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .sorted()
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("cache")
+                && sender.hasPermission("halloweencore.admin")) {
+            return List.of("spawn", "key").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("cache")
+                && args[1].equalsIgnoreCase("key")
+                && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT)
+                            .startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted()
+                    .toList();
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("cache")
+                && args[1].equalsIgnoreCase("key")
+                && sender.hasPermission("halloweencore.admin")) {
+            return List.of("1", "8", "16", "32", "64").stream()
+                    .filter(value -> value.startsWith(args[3]))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("give")
@@ -77,6 +100,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args[0].equalsIgnoreCase("npc")) return npc(sender, args);
+        if (args[0].equalsIgnoreCase("cache")) return cache(sender, args);
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
         if (args[0].equalsIgnoreCase("curse")) return curse(sender);
@@ -100,6 +124,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí progresu"));
         sender.sendMessage(plugin.color("&6/halloween npc spawn <jméno>|remove &7- správa dýňového vesničana (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween cache spawn|key <hráč> [počet] &7- podzemní schránky (admin)"));
         sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, hudba, dekorace, vesnice a příběhové úkoly jsou odstavené."));
         return true;
     }
@@ -353,6 +378,68 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         sender.sendMessage(plugin.color("&cPoužití: /halloween npc spawn <jméno> nebo /halloween npc remove"));
+        return true;
+    }
+
+    private boolean cache(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cSpráva schránek je dostupná jen hráči."));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween cache spawn nebo /halloween cache key <hráč> [počet]"));
+            return true;
+        }
+
+        HalloweenCacheManager manager = plugin.getCacheManager();
+        if (manager == null) {
+            sender.sendMessage(plugin.color("&cSprávce podzemních schránek není dostupný."));
+            return true;
+        }
+
+        if (args[1].equalsIgnoreCase("spawn")) {
+            if (!manager.isEnabled()) {
+                sender.sendMessage(plugin.color("&cPodzemní schránky jsou vypnuté v konfiguraci."));
+                return true;
+            }
+            if (manager.spawnTestCache(player)) {
+                sender.sendMessage(plugin.color("&aTestovací uzamčená schránka byla vytvořena před tebou."));
+            } else {
+                sender.sendMessage(plugin.color("&cSchránku se nepodařilo bezpečně umístit. Zkus rovnější místo s volným prostorem."));
+            }
+            return true;
+        }
+
+        if (args[1].equalsIgnoreCase("key")) {
+            if (args.length < 3) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween cache key <hráč> [počet]"));
+                return true;
+            }
+            Player target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                sender.sendMessage(plugin.color("&cCílový hráč není online."));
+                return true;
+            }
+            int amount = 1;
+            if (args.length >= 4) {
+                try {
+                    amount = Integer.parseInt(args[3]);
+                } catch (NumberFormatException ex) {
+                    sender.sendMessage(plugin.color("&cPočet klíčů musí být celé číslo 1–64."));
+                    return true;
+                }
+            }
+            if (!manager.giveKey(target, amount)) {
+                sender.sendMessage(plugin.color("&cPočet klíčů musí být v rozsahu 1–64."));
+                return true;
+            }
+            sender.sendMessage(plugin.color("&aHráč &f" + target.getName() + " &adostal &e" + amount + " &dklíčů ke starým schránkám."));
+            target.sendMessage(plugin.color("&dZískal jsi &e" + amount + " &dklíčů ke starým schránkám."));
+            return true;
+        }
+
+        sender.sendMessage(plugin.color("&cPoužití: /halloween cache spawn nebo /halloween cache key <hráč> [počet]"));
         return true;
     }
 
