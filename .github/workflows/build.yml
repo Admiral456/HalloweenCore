@@ -265,6 +265,7 @@ jobs:
           for reward_config_guard in (
               'if (amount < 1 || amount > 64)',
               'fallbackMaterial.getMaxStackSize()',
+              'fallbackMaterial.isAir() || !fallbackMaterial.isItem()',
               'Material.valueOf(material.toUpperCase(Locale.ROOT))',
               'itemsAdderId.matches("[a-z0-9._-]+:[a-z0-9._-]+")',
           ):
