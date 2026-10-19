@@ -444,7 +444,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         boolean secretsEnabled = plugin.getSecretDiscoveryManager() != null
                 && plugin.getConfig().getBoolean("secret-discoveries.enabled", false);
-        sender.sendMessage(plugin.color("&7Skrytá místa: 
+        sender.sendMessage(plugin.color("&7Skrytá místa: "
                 + (secretsEnabled ? "&aZAPNUTÉ" : "&cVYPNUTÉ")
                 + " &8• nastavená místa: &e" + configuredSecretCount + "&8/&e" + totalSecretCount));
         sender.sendMessage(plugin.color("&7Staré náhodné eventy, soundtrack a dekorace: &eODSTAVENY &8• &7vanilla questy a elitní mobové: &aAKTIVNÍ"));
