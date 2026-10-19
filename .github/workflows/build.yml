@@ -643,6 +643,24 @@ jobs:
           ):
               if ambience_validation not in validator:
                   raise SystemExit(f"Vanilla ambience config validation missing: {ambience_validation}")
+          atmosphere_command = Path(
+              "src/main/java/cz/halloween/core/HalloweenCommand.java"
+          ).read_text(encoding="utf-8")
+          for atmosphere_command_guard in (
+              'if (args[0].equalsIgnoreCase("ambience")) return ambience(sender, args);',
+              'private boolean ambience(CommandSender sender, String[] args)',
+              'plugin.setVanillaAtmosphereEnabled(enabled);',
+              'manager.getMinimumIntervalSeconds()',
+              'manager.getMaximumIntervalSeconds()',
+              'List.of("status", "on", "off")',
+          ):
+              if atmosphere_command_guard not in atmosphere_command:
+                  raise SystemExit(f"Vanilla ambience command missing: {atmosphere_command_guard}")
+          if "public void setVanillaAtmosphereEnabled(boolean enabled)" not in core_source:
+              raise SystemExit("Core must persist and apply ambience on/off commands")
+          if "public boolean isRunning()" not in ambience:
+              raise SystemExit("Ambience status must report actual scheduler state")
+
           for ambience_config_line in (
               "vanilla-atmosphere:",
               "  enabled: true",
