@@ -238,7 +238,6 @@ random-events:
 special-mobs:
   enabled: true
   chance: 0.04
-  phase-bonus-chance: 0.005
   event-chance-multiplier: 1.5
   bonus-fragments: 12
   custom-models:
