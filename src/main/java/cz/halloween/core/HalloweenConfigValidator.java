@@ -443,6 +443,19 @@ public final class HalloweenConfigValidator {
             }
         }
 
+        long claimDelayHours = plugin.getConfig().getLong("return-rewards.claim-delay-hours", 20L);
+        long streakWindowHours = plugin.getConfig().getLong("return-rewards.streak-window-hours", 48L);
+        long comebackAfterHours = plugin.getConfig().getLong("return-rewards.comeback-after-hours", 72L);
+        if (claimDelayHours < 1L || claimDelayHours > 87_600L) {
+            errors.add("return-rewards.claim-delay-hours must be between 1 and 87600");
+        }
+        if (streakWindowHours < 1L || streakWindowHours > 87_600L) {
+            errors.add("return-rewards.streak-window-hours must be between 1 and 87600");
+        }
+        if (comebackAfterHours < 1L || comebackAfterHours > 87_600L) {
+            errors.add("return-rewards.comeback-after-hours must be between 1 and 87600");
+        }
+
         return List.copyOf(errors);
     }
 }
