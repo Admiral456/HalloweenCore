@@ -120,6 +120,15 @@ rewards:
 
 
 
+vanilla-atmosphere:
+  enabled: true
+  min-interval-seconds: 90
+  max-interval-seconds: 180
+  player-chance: 0.35
+  particles-enabled: true
+  sounds-enabled: true
+  sound-volume: 0.55
+
 vanilla-events:
   enabled: true
   first-delay-seconds: 300
