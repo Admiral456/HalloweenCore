@@ -28,6 +28,7 @@ public final class HalloweenActivityListener implements Listener {
     private final HalloweenCore plugin;
     private final Map<UUID, Map<String, Deque<Long>>> rewardTimes = new HashMap<>();
     private final Map<UUID, Map<String, Long>> lastLimitNotice = new HashMap<>();
+    private long lastGlobalPruneAt;
 
     public HalloweenActivityListener(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -120,11 +121,24 @@ public final class HalloweenActivityListener implements Listener {
 
         long now = System.currentTimeMillis();
         UUID playerId = player.getUniqueId();
-        pruneExpiredRewardTimes(now);
-        // Re-fetch after pruning: pruning may have removed this player's old source bucket.
-        Deque<Long> activeTimestamps = rewardTimes
-                .computeIfAbsent(playerId, ignored -> new HashMap<>())
-                .computeIfAbsent(source, ignored -> new ArrayDeque<>());
+        // The global cleanup is intentionally throttled: walking every online/offline
+        // player's history on every block break would multiply main-thread work.
+        if (now - lastGlobalPruneAt >= 10_000L) {
+            pruneExpiredRewardTimes(now);
+            lastGlobalPruneAt = now;
+        }
+
+        Map<String, Deque<Long>> bySource = rewardTimes
+                .computeIfAbsent(playerId, ignored -> new HashMap<>());
+        Deque<Long> activeTimestamps = bySource.computeIfAbsent(source, ignored -> new ArrayDeque<>());
+        long cutoff = now - RATE_WINDOW_MILLIS;
+        while (!activeTimestamps.isEmpty() && activeTimestamps.peekFirst() <= cutoff) {
+            activeTimestamps.removeFirst();
+        }
+        if (activeTimestamps.isEmpty()) {
+            bySource.remove(source);
+            activeTimestamps = bySource.computeIfAbsent(source, ignored -> new ArrayDeque<>());
+        }
         if (activeTimestamps.size() >= limit) {
             Map<String, Long> notices = lastLimitNotice.computeIfAbsent(playerId, ignored -> new HashMap<>());
             long lastNotice = notices.getOrDefault(source, 0L);
