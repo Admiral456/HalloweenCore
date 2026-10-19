@@ -326,7 +326,7 @@ story-quests:
 haunted-village:
   enabled: false
 
-# Vanilla-only hidden Easter eggs. Admins set each real location with /halloween setsecret <id>.
+# Vanilla-only hidden discoveries. Admins set each real location with /halloween setsecret <id>.
 # Players see the name and clue, never the configured coordinates.
 secret-discoveries:
   enabled: true
