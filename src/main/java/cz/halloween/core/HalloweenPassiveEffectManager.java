@@ -86,8 +86,11 @@ public final class HalloweenPassiveEffectManager implements Listener {
         AttributeInstance maxHealth = player.getAttribute(Attribute.MAX_HEALTH);
         if (maxHealth == null) return;
 
-        double bonusHealth = Math.max(0.0D,
-                plugin.getConfig().getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D));
+        double configuredBonusHealth =
+                plugin.getConfig().getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D);
+        double bonusHealth = Double.isFinite(configuredBonusHealth)
+                ? Math.max(0.0D, Math.min(20.0D, configuredBonusHealth))
+                : 2.0D;
         AttributeModifier existing = maxHealth.getModifiers().stream()
                 .filter(modifier -> modifier.getKey().equals(talismanHealthKey))
                 .findFirst()
