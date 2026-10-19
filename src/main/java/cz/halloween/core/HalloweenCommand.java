@@ -29,7 +29,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = new ArrayList<>(List.of(
-                    "stats", "progress", "curse", "challenge", "rewards", "claim", "top", "event", "ambience", "secrets"
+                    "stats", "progress", "curse", "challenge", "quests", "rewards", "claim", "top", "event", "ambience", "secrets"
             ));
             if (sender.hasPermission("halloweencore.admin")) {
                 subcommands.addAll(List.of("reload", "debug", "give", "on", "off", "npc", "cache", "setsecret"));
@@ -75,6 +75,21 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 && sender.hasPermission("halloweencore.admin")) {
             return List.of("spawn", "remove").stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
+                && sender.hasPermission("halloweencore.admin")) {
+            return List.of("reset").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
+                && args[1].equalsIgnoreCase("reset") && sender.hasPermission("halloweencore.admin")) {
+            return Bukkit.getOnlinePlayers().stream()
+                    .map(Player::getName)
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT)
+                            .startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted()
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("claim")) {
@@ -125,7 +140,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 0 || args[0].equalsIgnoreCase("stats")) return stats(sender);
 
         String requested = args[0].toLowerCase(java.util.Locale.ROOT);
-        if (List.of("quests", "quest", "shader", "setvillage", "setvampirearena",
+        if (requested.equals("quests") || requested.equals("quest")) return quests(sender, args);
+        if (List.of("shader", "setvillage", "setvampirearena",
                 "buildvampirearena", "boss", "bosseffects", "modelpreview")
                 .contains(requested)) {
             sender.sendMessage(plugin.color("&eTato stará Halloween funkce byla odstavena a bude nahrazena novým vanilla systémem."));
@@ -153,6 +169,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
         sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní výzva"));
+        sender.sendMessage(plugin.color("&6/halloween quests &7- devítikapitolový vanilla Halloween příběh"));
+        sender.sendMessage(plugin.color("&6/halloween quests reset <hráč> &7- restart příběhu hráče (admin)"));
         sender.sendMessage(plugin.color("&6/halloween rewards &7- odměny za fragmenty"));
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
@@ -167,6 +185,40 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween npc spawn <jméno>|remove &7- správa dýňového vesničana (admin)"));
         sender.sendMessage(plugin.color("&6/halloween cache spawn|key <hráč> [počet] &7- podzemní schránky (admin)"));
         sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, hudba, dekorace, vesnice a příběhové úkoly jsou odstavené; nové události používají vanilla systém."));
+        return true;
+    }
+
+    private boolean quests(CommandSender sender, String[] args) {
+        if (args.length >= 2 && args[1].equalsIgnoreCase("reset")) {
+            if (!sender.hasPermission("halloweencore.admin")) {
+                sender.sendMessage(plugin.color("&cK tomuto příkazu potřebuješ oprávnění halloweencore.admin."));
+                return true;
+            }
+            if (args.length != 3) {
+                sender.sendMessage(plugin.color("&ePoužití: /halloween quests reset <online hráč>"));
+                return true;
+            }
+            Player target = Bukkit.getPlayerExact(args[2]);
+            if (target == null) {
+                sender.sendMessage(plugin.color("&cHráč musí být online, aby šel jeho příběh resetovat."));
+                return true;
+            }
+            plugin.getDataManager().resetStoryQuests(target.getUniqueId());
+            plugin.getDataManager().save();
+            sender.sendMessage(plugin.color("&aPříběhové questy hráče &e" + target.getName() + " &abyly resetovány."));
+            target.sendMessage(plugin.color("&eTvůj Halloween příběh byl resetován administrátorem."));
+            return true;
+        }
+        if (args.length != 1) {
+            sender.sendMessage(plugin.color("&ePoužití: /halloween quests [reset <online hráč>]"));
+            return true;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cPříběhové questy si může zobrazit jen hráč."));
+            return true;
+        }
+        if (!checkUse(player) || !checkEnabled(player)) return true;
+        plugin.getQuestManager().show(player);
         return true;
     }
 
