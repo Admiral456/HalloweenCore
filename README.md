@@ -14,7 +14,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 
 ## Disabled or removed during the rebuild
 
-- The old random event lineup and old story quests; the replacement uses three vanilla-only events described below.
+- The old random-event lineup and custom-mob story objectives; the retained nine-chapter campaign now uses vanilla gameplay actions only.
 - The old special-mob system and its MythicMobs/ModelEngine model pack, including Pumpkin Wraith.
 - The old Haunted Village discovery/map system is disabled. Three vanilla-only hidden discoveries (Easter eggs) are retained separately, without custom models or audio.
 - The old automatic Halloween world-decoration engine; the replacement below only modifies newly generated Overworld chunks.
@@ -30,7 +30,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 
 The three pumpkin files are intentionally retained as the requested pumpkin-themed exception. Because they override vanilla Minecraft pumpkin block textures, they affect those pumpkins anywhere in the generated resource pack. The implemented NPC is a vanilla villager wearing a vanilla carved-pumpkin helmet, with no custom mob model. The retained block-texture overrides do not change the helmet's carved-pumpkin item texture.
 
-The existing Java classes for retired custom-content systems are kept temporarily for migration safety, but their listeners are not registered and their timers are not started. Active gameplay listeners include the vanilla secret-discovery system, pumpkin villager, locked caches, new-chunk world features, timed events, and ambient cues. The fragment/progression core, daily rewards, shop, and vanilla reward perks remain active. Cursed candy's consume effect remains active; retired Haunted Village map behavior was removed.
+The existing Java classes for retired custom-content systems are kept temporarily for migration safety, but their listeners are not registered and their timers are not started. The story campaign is active and listens only for vanilla gameplay actions. Other active gameplay listeners include the vanilla secret-discovery system, pumpkin villager, locked caches, new-chunk world features, timed events, and ambient cues. The fragment/progression core, daily rewards, shop, and vanilla reward perks remain active. Cursed candy's consume effect remains active; retired Haunted Village map behavior was removed.
 
 ## Commands
 
@@ -38,6 +38,8 @@ The existing Java classes for retired custom-content systems are kept temporaril
 - `/halloween progress`
 - `/halloween curse`
 - `/halloween challenge`
+- `/halloween quests` — resumes the nine-chapter vanilla story campaign
+- `/halloween quests reset <player>` (admin; online players only) — resets a player's story progress
 - `/halloween rewards`
 - `/halloween claim <id>`
 - `/halloween top`
@@ -55,6 +57,12 @@ The existing Java classes for retired custom-content systems are kept temporaril
 - `/halloween on|off`
 
 Legacy commands for the old random events, story quests, Haunted Village map/loot system, shader editing, custom mobs, and vampire model encounter remain retired. The vanilla-only `secrets` and `setsecret` commands are active.
+
+## Nine-chapter vanilla story campaign
+
+The original nine-chapter story is retained without requiring retired MythicMobs/ModelEngine creatures. `/halloween quests` shows the active chapter, objective progress, and fragment reward. Chapters use real vanilla actions: hostile-mob kills, configured mining blocks, mature crop harvests, fishing, discovering a configured hidden location, and unlocking a real protected underground cache. Secret-discovery chapters do not progress on unconfigured placeholder locations, and cache chapters progress only after the cache has been successfully unlocked. Progress and completed chapter IDs use the existing player-data store and survive restarts. Admins can reset an online player's progress with `/halloween quests reset <player>`.
+
+The campaign is controlled by `story-quests.enabled` in `config.yml`. Existing cleanup-branch configs are migrated once to enable it; after that, administrators can disable it without the startup migration turning it back on. The campaign needs no custom mob models, custom audio, or additional textures.
 
 ## Vanilla timed events
 
