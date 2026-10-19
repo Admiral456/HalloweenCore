@@ -394,6 +394,7 @@ jobs:
           for cache_guard in (
               "event.isNewChunk()",
               "World.Environment.NORMAL",
+              "!plugin.isEligibleGameplayWorld(chunk.getWorld())",
               "random.nextInt(1, 15)",
               "chunk.getBlock(localX, y, localZ)",
               "int localX = target.getX() & 15;",
@@ -447,6 +448,7 @@ jobs:
           for feature_guard in (
               "event.isNewChunk()",
               "World.Environment.NORMAL",
+              "!plugin.isEligibleGameplayWorld(chunk.getWorld())",
               'new NamespacedKey(plugin, "vanilla_world_features_v1")',
               "random.nextInt(3, 13)",
               "random.nextInt(1, 15)",
