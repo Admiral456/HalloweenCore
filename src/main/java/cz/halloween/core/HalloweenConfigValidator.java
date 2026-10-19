@@ -59,7 +59,7 @@ public final class HalloweenConfigValidator {
             errors.add("gameplay.worlds.mode must be BLACKLIST or WHITELIST");
         }
 
-        for (String source : List.of("mining", "farming", "fishing")) {
+        for (String source : List.of("mob-kill", "mining", "farming", "fishing")) {
             String key = "rewards." + source + ".max-fragment-rewards-per-minute";
             if (plugin.getConfig().contains(key)) {
                 int limit = plugin.getConfig().getInt(key, -1);
