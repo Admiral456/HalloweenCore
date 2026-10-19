@@ -94,11 +94,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
-        // Retired atmosphere, world decoration and boss systems are not started on this branch.
+        // Retired ambience, world decoration, and boss systems remain stopped on this branch.
         worldDecorator.stop();
         atmosphere.stopPlayback();
         vampireEncounterManager.stopNaturalSummoningMonitor();
-        worldDecorator.start();
         passiveEffectManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -185,14 +184,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         disableLegacyContentSystems();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
-        if (eventManager != null) {
-            if (eventEnabled && getConfig().getBoolean("random-events.enabled", true)) {
-                // Make the refreshed state visible shortly after /halloween reload.
-                eventManager.scheduleFirstEvent();
-            } else {
-                eventManager.stop();
-            }
-        }
+        if (eventManager != null) eventManager.stop();
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
