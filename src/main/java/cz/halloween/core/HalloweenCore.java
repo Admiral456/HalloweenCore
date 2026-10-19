@@ -153,6 +153,7 @@ public final class HalloweenCore extends JavaPlugin {
      */
     private void disableLegacyContentSystems() {
         getConfig().set("random-events.enabled", false);
+        migrateVanillaBloodMoonInvasion();
         migrateVanillaEliteMobs();
         // Custom mob models and Haunted Village maps stay retired even when vanilla
         // elite creatures are enabled. Nothing here requires MythicMobs or ModelEngine.
@@ -208,6 +209,25 @@ public final class HalloweenCore extends JavaPlugin {
         saveConfig();
     }
 
+
+    /**
+     * Migrates the old invasion tuning onto the vanilla Blood Moon scheduler. The
+     * retired random-event engine itself remains disabled and is never started.
+     */
+    private void migrateVanillaBloodMoonInvasion() {
+        if (getConfig().getBoolean("migrations.vanilla-blood-moon-invasion-v1", false)) return;
+        int oldWaveSize = Math.max(1, Math.min(8,
+                getConfig().getInt("random-events.invasion-mobs-per-surge", 4)));
+        int oldMobCap = Math.max(1, Math.min(80,
+                getConfig().getInt("random-events.max-event-mobs", 48)));
+        setConfigDefaultIfMissing("vanilla-events.blood-moon.invasion.enabled", true);
+        setConfigDefaultIfMissing("vanilla-events.blood-moon.invasion.wave-interval-seconds", 25);
+        setConfigDefaultIfMissing("vanilla-events.blood-moon.invasion.mobs-per-wave", oldWaveSize);
+        setConfigDefaultIfMissing("vanilla-events.blood-moon.invasion.max-event-mobs", oldMobCap);
+        setConfigDefaultIfMissing("vanilla-events.blood-moon.invasion.captain-enabled", true);
+        setConfigDefaultIfMissing("vanilla-events.blood-moon.invasion.captain-final-seconds", 60);
+        getConfig().set("migrations.vanilla-blood-moon-invasion-v1", true);
+    }
 
     /**
      * Adds defaults for the optional vanilla final boss while keeping the old
