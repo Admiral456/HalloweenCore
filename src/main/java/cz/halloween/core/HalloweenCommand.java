@@ -161,7 +161,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí progresu"));
         sender.sendMessage(plugin.color("&6/halloween event [status|start <id>|stop] &7- vanilla Halloween události"));
-        sender.sendMessage(plugin.color("&6/halloween ambience [status|on|off] &7- ambientní Halloween efekty"));
+        sender.sendMessage(plugin.color("&6/halloween ambience [status|on|off|test] &7- ambientní Halloween efekty"));
         sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy k tajným objevům (easter eggům)"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit polohu skrytého místa (admin)"));
         sender.sendMessage(plugin.color("&6/halloween npc spawn <jméno>|remove &7- správa dýňového vesničana (admin)"));
