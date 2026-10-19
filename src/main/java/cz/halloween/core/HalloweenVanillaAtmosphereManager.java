@@ -119,6 +119,19 @@ public final class HalloweenVanillaAtmosphereManager {
             if (ThreadLocalRandom.current().nextBoolean()) {
                 world.spawnParticle(Particle.SOUL, cueLocation, 2, 0.18D, 0.25D, 0.18D, 0.01D);
             }
+
+            // Give each timed event a small visual signature using only vanilla particles.
+            HalloweenVanillaEventManager events = plugin.getVanillaEventManager();
+            String activeEvent = events == null ? null : events.getActiveEventId();
+            switch (activeEvent == null ? "" : activeEvent) {
+                case "pumpkin-harvest" ->
+                        world.spawnParticle(Particle.HAPPY_VILLAGER, cueLocation, 4, 0.3D, 0.3D, 0.3D, 0.01D);
+                case "witching-hour" ->
+                        world.spawnParticle(Particle.WITCH, cueLocation, 5, 0.25D, 0.3D, 0.25D, 0.01D);
+                case "blood-moon" ->
+                        world.spawnParticle(Particle.SOUL_FIRE_FLAME, cueLocation, 5, 0.25D, 0.3D, 0.25D, 0.005D);
+                default -> { }
+            }
         }
 
         if (soundsEnabled) {
