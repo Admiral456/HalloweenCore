@@ -528,6 +528,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage(plugin.color("&cTento příkaz použij ve hře přímo na místě tajného objevu."));
             return true;
         }
+        if (!plugin.isEligibleGameplayWorld(player.getWorld())) {
+            sender.sendMessage(plugin.color("&cTajný objev musí být umístěn v herním světě povoleném v gameplay.worlds."));
+            return true;
+        }
         if (args.length != 2) {
             sender.sendMessage(plugin.color("&cPoužití: /halloween setsecret <id>"));
             sender.sendMessage(plugin.color("&7ID: &eblood-altar, witch-den, forgotten-grave"));
