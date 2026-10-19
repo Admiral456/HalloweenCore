@@ -215,9 +215,10 @@ public final class HalloweenWorldFeatureManager implements Listener {
             for (int dz = -2; dz <= 2; dz++) {
                 Block ground = world.getHighestBlockAt(centerX + dx, centerZ + dz);
                 if (!isSafeOpenGround(ground)) return false;
-                // The actual placement sites get the full tile-entity safety scan.
-                // Here we only verify a natural, open 5x5 terrain patch to keep
-                // chunk-generation work bounded on the main thread.
+                Block headspace = ground.getRelative(0, 1, 0);
+                // Passable grass and flowers may surround a patch; actual pumpkin
+                // placement still requires air and checks tile entities separately.
+                if (!headspace.getType().isAir() && !headspace.isPassable()) return false;
             }
         }
         return true;
@@ -226,7 +227,6 @@ public final class HalloweenWorldFeatureManager implements Listener {
     private boolean isSafeOpenGround(Block ground) {
         return ground != null
                 && SAFE_GROUND.contains(ground.getType())
-                && ground.getRelative(0, 1, 0).getType().isAir()
                 && ground.getY() > ground.getWorld().getMinHeight()
                 && ground.getY() < ground.getWorld().getMaxHeight() - 3;
     }
