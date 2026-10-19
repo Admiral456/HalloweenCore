@@ -105,6 +105,11 @@ rewards:
         - "&7Vanilla památeční předmět."
         - "&8Limitovaná odměna."
 
+
+pumpkin-villager:
+  enabled: true
+  interact-cooldown-millis: 2000
+
 notifications:
   fragment-gain: true
 
