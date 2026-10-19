@@ -304,6 +304,25 @@ jobs:
           if "plugin.getDataManager().save();" not in challenge_manager:
               raise SystemExit("Completed daily challenge claims must be persisted immediately")
 
+          join_listener_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenJoinListener.java"
+          ).read_text(encoding="utf-8")
+          for return_reward_guard in (
+              "private long boundedHours(String path, long fallback)",
+              "Math.min(87_600L, plugin.getConfig().getLong(path, fallback))",
+              "Math.addExact(reward, comebackBonus)",
+              "total = Long.MAX_VALUE;",
+          ):
+              if return_reward_guard not in join_listener_source:
+                  raise SystemExit(f"Return reward overflow guard missing: {return_reward_guard}")
+          for return_reward_validation in (
+              'if (claimDelayHours < 1L || claimDelayHours > 87_600L)',
+              'if (streakWindowHours < 1L || streakWindowHours > 87_600L)',
+              'if (comebackAfterHours < 1L || comebackAfterHours > 87_600L)',
+          ):
+              if return_reward_validation not in validator:
+                  raise SystemExit(f"Return reward config validation missing: {return_reward_validation}")
+
           print("Reward safety regression checks passed.")
 
           if not re.search(
