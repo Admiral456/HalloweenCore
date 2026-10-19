@@ -29,13 +29,30 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = new ArrayList<>(List.of(
-                    "stats", "progress", "curse", "challenge", "rewards", "claim", "top"
+                    "stats", "progress", "curse", "challenge", "rewards", "claim", "top", "event"
             ));
             if (sender.hasPermission("halloweencore.admin")) {
                 subcommands.addAll(List.of("reload", "debug", "give", "on", "off", "npc", "cache"));
             }
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("event")) {
+            List<String> options = new ArrayList<>(List.of("status"));
+            if (sender.hasPermission("halloweencore.admin")) {
+                options.addAll(List.of("start", "stop"));
+            }
+            return options.stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 3 && args[0].equalsIgnoreCase("event")
+                && args[1].equalsIgnoreCase("start")
+                && sender.hasPermission("halloweencore.admin")
+                && plugin.getVanillaEventManager() != null) {
+            return plugin.getVanillaEventManager().getKnownEventIds().stream()
+                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("npc")
@@ -92,7 +109,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (args.length == 0 || args[0].equalsIgnoreCase("stats")) return stats(sender);
 
         String requested = args[0].toLowerCase(java.util.Locale.ROOT);
-        if (List.of("event", "quests", "quest", "shader", "setvillage", "setvampirearena",
+        if (List.of("quests", "quest", "shader", "setvillage", "setvampirearena",
                 "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview")
                 .contains(requested)) {
             sender.sendMessage(plugin.color("&eTato stará Halloween funkce byla odstavena a bude nahrazena novým vanilla systémem."));
@@ -100,6 +117,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         if (args[0].equalsIgnoreCase("npc")) return npc(sender, args);
+        if (args[0].equalsIgnoreCase("event")) return vanillaEvent(sender, args);
         if (args[0].equalsIgnoreCase("cache")) return cache(sender, args);
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
@@ -123,9 +141,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí progresu"));
+        sender.sendMessage(plugin.color("&6/halloween event [status|start <id>|stop] &7- vanilla Halloween události"));
         sender.sendMessage(plugin.color("&6/halloween npc spawn <jméno>|remove &7- správa dýňového vesničana (admin)"));
         sender.sendMessage(plugin.color("&6/halloween cache spawn|key <hráč> [počet] &7- podzemní schránky (admin)"));
-        sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, hudba, dekorace, vesnice a příběhové úkoly jsou odstavené."));
+        sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, hudba, dekorace, vesnice a příběhové úkoly jsou odstavené; nové události používají vanilla systém."));
         return true;
     }
 
@@ -150,14 +169,16 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7Prokletí: &e" + curse + " &8(" + curseName + "&8)"));
         sender.sendMessage(plugin.color("&7Denní streak: &e" + streak + "&7/7"));
         sender.sendMessage(plugin.color("&7Tvůj násobič fragmentů: &e" + String.format("%.2f", plugin.getService().getFragmentMultiplier(player.getUniqueId(), "mob-kill")) + "x"));
-        String active = plugin.getEventManager() == null ? null : plugin.getEventManager().getActiveEventId();
+        HalloweenVanillaEventManager vanillaEvents = plugin.getVanillaEventManager();
+        String active = vanillaEvents == null ? null : vanillaEvents.getActiveEventId();
         if (active != null) {
-            String eventName = plugin.getConfig().getString("random-events.types." + active + ".name", active);
-            sender.sendMessage(plugin.color("&7Aktivní událost: &6" + eventName + " &7(" + plugin.getEventManager().getRemainingSeconds() + " s)"));
+            sender.sendMessage(plugin.color("&7Aktivní událost: &6" + vanillaEvents.getDisplayName(active)
+                    + " &7(" + vanillaEvents.getRemainingSeconds() + " s)"));
         } else {
-            long nextEventSeconds = plugin.getEventManager().getNextEventSeconds();
-            if (!plugin.getConfig().getBoolean("random-events.enabled", false) || nextEventSeconds < 0L) {
-                sender.sendMessage(plugin.color("&7Automatické eventy: &eVYPNUTÉ"));
+            long nextEventSeconds = vanillaEvents == null ? -1L : vanillaEvents.getNextEventSeconds();
+            if (vanillaEvents == null || !vanillaEvents.isEnabled()
+                    || !plugin.isEventEnabled() || nextEventSeconds < 0L) {
+                sender.sendMessage(plugin.color("&7Vanilla události: &eVYPNUTÉ"));
             } else {
                 sender.sendMessage(plugin.color("&7Další událost přibližně za: &e" + nextEventSeconds + " s"));
             }
@@ -440,6 +461,62 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         sender.sendMessage(plugin.color("&cPoužití: /halloween cache spawn nebo /halloween cache key <hráč> [počet]"));
+        return true;
+    }
+
+    private boolean vanillaEvent(CommandSender sender, String[] args) {
+        if (!checkUse(sender)) return true;
+        HalloweenVanillaEventManager manager = plugin.getVanillaEventManager();
+        if (manager == null) {
+            sender.sendMessage(plugin.color("&cSprávce vanilla událostí není dostupný."));
+            return true;
+        }
+
+        if (args.length == 1 || args[1].equalsIgnoreCase("status")) {
+            String active = manager.getActiveEventId();
+            if (active != null) {
+                sender.sendMessage(plugin.color("&6&lHALLOWEEN UDÁLOST"));
+                sender.sendMessage(plugin.color("&7Aktivní: &e" + manager.getDisplayName(active)));
+                sender.sendMessage(plugin.color("&7Zbývá: &e" + manager.getRemainingSeconds() + " &7s"));
+            } else {
+                long next = manager.getNextEventSeconds();
+                boolean running = manager.isEnabled() && plugin.isEventEnabled() && next >= 0L;
+                sender.sendMessage(plugin.color("&6&lHALLOWEEN UDÁLOST"));
+                sender.sendMessage(plugin.color("&7Automatické události: " + (running ? "&aZAPNUTÉ" : "&cVYPNUTÉ")));
+                if (running) sender.sendMessage(plugin.color("&7Další událost přibližně za: &e" + next + " &7s"));
+                sender.sendMessage(plugin.color("&7Dostupné typy: &epumpkin-harvest, witching-hour, blood-moon"));
+            }
+            return true;
+        }
+
+        if (!checkAdmin(sender)) return true;
+        if (args[1].equalsIgnoreCase("start")) {
+            if (args.length < 3) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween event start <pumpkin-harvest|witching-hour|blood-moon>"));
+                return true;
+            }
+            if (manager.startEventNow(args[2])) {
+                sender.sendMessage(plugin.color("&aSpustil jsi událost &e" + manager.getDisplayName(args[2]) + "&a."));
+            } else if (!manager.isEnabled() || !plugin.isEventEnabled()) {
+                sender.sendMessage(plugin.color("&cUdálosti nebo Halloween progres jsou vypnuté v konfiguraci."));
+            } else if (manager.getActiveEventId() != null) {
+                sender.sendMessage(plugin.color("&cJiná událost už běží. Nejdřív použij /halloween event stop."));
+            } else {
+                sender.sendMessage(plugin.color("&cNeznámý typ události. Použij pumpkin-harvest, witching-hour nebo blood-moon."));
+            }
+            return true;
+        }
+
+        if (args[1].equalsIgnoreCase("stop")) {
+            if (manager.stopActiveEventNow()) {
+                sender.sendMessage(plugin.color("&aAktivní vanilla událost byla ukončena."));
+            } else {
+                sender.sendMessage(plugin.color("&7Momentálně neběží žádná událost."));
+            }
+            return true;
+        }
+
+        sender.sendMessage(plugin.color("&cPoužití: /halloween event [status|start <id>|stop]"));
         return true;
     }
 
