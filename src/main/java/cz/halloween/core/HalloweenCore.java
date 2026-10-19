@@ -75,15 +75,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new HalloweenActivityListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenJoinListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenQuitListener(this), this);
-        getServer().getPluginManager().registerEvents(new HalloweenItemListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenRewardMenuListener(this), this);
-        getServer().getPluginManager().registerEvents(villageDiscoveryManager, this);
-        getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
-        getServer().getPluginManager().registerEvents(vampireEncounterManager, this);
-        getServer().getPluginManager().registerEvents(mobManager, this);
-        getServer().getPluginManager().registerEvents(questManager, this);
-        getServer().getPluginManager().registerEvents(worldDecorator, this);
-        getServer().getPluginManager().registerEvents(passiveEffectManager, this);
+        // Only the fragment/progression core is active during the rebuild. Retired
+        // item, mob, quest, discovery, atmosphere and world-generation listeners
+        // are intentionally not registered.
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
@@ -95,10 +90,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
         // Retired ambience, world decoration, and boss systems remain stopped on this branch.
+        // Retired ambience, world decoration, and boss systems remain stopped.
         worldDecorator.stop();
         atmosphere.stopPlayback();
         vampireEncounterManager.stopNaturalSummoningMonitor();
-        passiveEffectManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
