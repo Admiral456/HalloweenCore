@@ -68,7 +68,25 @@ jobs:
           if list(content_root.rglob("sky.fsh")):
               raise SystemExit("Retired sky shader remains in the ItemsAdder content")
 
-          print("Cleanup invariants passed; only candy and the three intended pumpkin textures remain.")
+          challenge_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenChallengeManager.java"
+          ).read_text(encoding="utf-8")
+          if '"special-mob"' in challenge_source:
+              raise SystemExit("Daily challenges must not require the retired special-mob system")
+
+          validator = Path(
+              "src/main/java/cz/halloween/core/HalloweenConfigValidator.java"
+          ).read_text(encoding="utf-8")
+          for required_guard in (
+              'if (randomEventsEnabled) {',
+              'if (secretDiscoveriesEnabled && secrets != null) {',
+              'if (specialMobsEnabled && specialMobTypes != null) {',
+              'if (vampire != null && vampire.getBoolean("enabled", false)) {',
+          ):
+              if required_guard not in validator:
+                  raise SystemExit(f"Missing disabled-system validation guard: {required_guard}")
+
+          print("Cleanup invariants and retired-feature checks passed.")
           PY
 
       - name: Package retained candy and pumpkin villager textures
