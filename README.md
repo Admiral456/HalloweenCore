@@ -30,7 +30,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 
 The three pumpkin files are intentionally retained as the requested pumpkin-themed exception. Because they override vanilla Minecraft pumpkin block textures, they affect those pumpkins anywhere in the generated resource pack. The implemented NPC is a vanilla villager wearing a vanilla carved-pumpkin helmet, with no custom mob model. The retained block-texture overrides do not change the helmet's carved-pumpkin item texture.
 
-The existing Java classes for retired systems are kept temporarily for migration safety, but their listeners are not registered and their timers are not started. The random-event manager now schedules no ticker while events are disabled, and task-owning managers cancel their tasks on stop. The fragment/progression core, daily rewards, shop, and vanilla reward perks remain active. Cursed candy's consume effect remains active; retired Haunted Village map behavior was removed.
+The existing Java classes for retired custom-content systems are kept temporarily for migration safety, but their listeners are not registered and their timers are not started. Active gameplay listeners include the vanilla secret-discovery system, pumpkin villager, locked caches, new-chunk world features, timed events, and ambient cues. The fragment/progression core, daily rewards, shop, and vanilla reward perks remain active. Cursed candy's consume effect remains active; retired Haunted Village map behavior was removed.
 
 ## Commands
 
