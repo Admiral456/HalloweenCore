@@ -308,6 +308,44 @@ jobs:
                   raise SystemExit(f"Underground cache config validation missing: {cache_validation}")
 
           print("Underground cache generation, key and anti-grief checks passed.")
+
+          world_features = Path(
+              "src/main/java/cz/halloween/core/HalloweenWorldFeatureManager.java"
+          ).read_text(encoding="utf-8")
+          for feature_guard in (
+              "event.isNewChunk()",
+              "World.Environment.NORMAL",
+              'new NamespacedKey(plugin, "vanilla_world_features_v1")',
+              "random.nextInt(3, 13)",
+              "random.nextInt(1, 15)",
+              "PUMPKIN_BIOMES.contains(centerGround.getBiome().name())",
+              "target.setType(pumpkin, false);",
+              "target.setType(Material.COBWEB, false);",
+              "private boolean hasTileStateInNeighborhood(Block target)",
+              "List<Block> placedBlocks = new ArrayList<>();",
+              "for (Block placedBlock : placedBlocks)",
+          ):
+              if feature_guard not in world_features:
+                  raise SystemExit(f"Vanilla world feature safety check missing: {feature_guard}")
+          if "above.getType() == Material.PUMPKIN" in world_features:
+              raise SystemExit("World feature rollback must never delete naturally generated pumpkins")
+          if "registerEvents(worldFeatureManager, this)" not in core_source:
+              raise SystemExit("Vanilla world feature manager must be registered")
+          if not re.search(
+              r"(?ms)^world-features:\n  enabled: true\n  generation:\n    enabled: true\n    pumpkin-patch-chance-per-chunk: 0\.06\n    cave-web-patch-chance-per-chunk: 0\.04\n    attempts-per-feature: 24\n    max-pumpkins-per-patch: 4\n    max-cave-webs-per-patch: 2\n    cave-webs-min-y: -48\n    cave-webs-max-y: 24$",
+              config,
+          ):
+              raise SystemExit("Vanilla world feature configuration is missing or malformed")
+          for feature_validation in (
+              'boolean worldFeaturesEnabled = plugin.getConfig().getBoolean("world-features.enabled", true);',
+              'if (pumpkinChance < 0.0D || pumpkinChance > 1.0D)',
+              'if (webChance < 0.0D || webChance > 1.0D)',
+              'if (caveMinY >= caveMaxY)',
+          ):
+              if feature_validation not in validator:
+                  raise SystemExit(f"World feature config validation missing: {feature_validation}")
+
+          print("Vanilla world generation and non-destructive rollback checks passed.")
           print("Cleanup invariants and retired-feature checks passed.")
           PY
 
