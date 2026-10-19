@@ -58,6 +58,9 @@ public final class HalloweenJoinListener implements Listener {
         plugin.getService().addFragments(player.getUniqueId(), total, "daily");
 
         plugin.getDataManager().recordJoin(player.getUniqueId(), System.currentTimeMillis(), streak);
+        // Persist the reward and its next-eligible timestamp together. This reduces
+        // duplicate daily rewards if the server stops before the periodic save.
+        plugin.getDataManager().save();
 
         if (comeback) {
             player.sendMessage(plugin.color("&6HALLOWEEN &8» &fTma tě po delší době zase našla. &e+" + total + " &ffragmentů."));
