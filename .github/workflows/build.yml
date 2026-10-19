@@ -69,6 +69,46 @@ jobs:
           ).read_text(encoding="utf-8"):
               raise SystemExit("Vanilla elite mob listener must be registered")
 
+          boss_config_match = re.search(r"(?m)^vanilla-boss:\n  enabled: true$", config)
+          if not boss_config_match:
+              raise SystemExit("Admin-triggered vanilla boss must be enabled by default")
+          boss_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenVanillaBossManager.java"
+          ).read_text(encoding="utf-8")
+          for boss_guard in (
+              "private static final String BOSS_ID = \"vanilla-vampire-king\"",
+              "Bukkit.createBossBar(",
+              "vanilla-boss.pulse.interval-seconds",
+              "vanilla-boss.pulse.dodge-radius-blocks",
+              "contributorDamage.merge(",
+              "rewardContributors(event.getEntity())",
+              "event.getDrops().clear();",
+              "event.setDroppedExp(0);",
+              "event.blockList().clear();",
+          ):
+              if boss_guard not in boss_source:
+                  raise SystemExit(f"Vanilla boss encounter behavior/safety missing: {boss_guard}")
+          if any(dependency in boss_source for dependency in ("MythicMobs", "ModelEngine", "spawnMythicModelMob")):
+              raise SystemExit("Vanilla boss must not use retired custom-model integrations")
+          core_for_boss = Path(
+              "src/main/java/cz/halloween/core/HalloweenCore.java"
+          ).read_text(encoding="utf-8")
+          for boss_lifecycle in (
+              "migrateVanillaBossConfig();",
+              "registerEvents(vanillaBossManager, this)",
+              "vanillaBossManager.shutdown()",
+          ):
+              if boss_lifecycle not in core_for_boss:
+                  raise SystemExit(f"Vanilla boss lifecycle missing: {boss_lifecycle}")
+          command_for_boss = Path(
+              "src/main/java/cz/halloween/core/HalloweenCommand.java"
+          ).read_text(encoding="utf-8")
+          if 'if (requested.equals("boss")) return vanillaBoss(sender, args);' not in command_for_boss:
+              raise SystemExit("The vanilla boss command must not stay in the retired-command guard")
+          for boss_command in ('manager.spawnBoss(player);', 'manager.stopBoss(sender);', 'manager.sendStatus(sender);'):
+              if boss_command not in command_for_boss:
+                  raise SystemExit(f"Vanilla boss command action missing: {boss_command}")
+
           if not re.search(r"(?m)^\s+bonus-health: 2\.0$", config):
               raise SystemExit("Cursed talisman must grant one heart (+2 health)")
           if '+1 srdce maximálního zdraví při držení.' not in config:
