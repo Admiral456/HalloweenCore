@@ -28,6 +28,11 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Run /halloween off. Confirm fragment progression and new events pause. Run /halloween on and confirm a fresh event schedule starts without duplicate timers.
 - [ ] Run /halloween reload several times and verify there are no duplicate event announcements/tickers or errors.
 
+- [ ] Leave vanilla-atmosphere enabled on a staging server and wait through one configured pulse interval (90–180 seconds by default). Verify occasional ash/soul particles and one of the built-in cave, witch, or phantom ambience sounds appear near eligible players without stopping normal Minecraft music.
+- [ ] Confirm cues are not forced on players in excluded worlds or unsupported gamemodes. Test that sounds-enabled and particles-enabled can each be switched off independently.
+- [ ] Run /halloween off, wait past a due pulse, and verify no new ambience cues occur. Run /halloween on and /halloween reload and confirm ambience resumes without duplicate timers.
+
+## 3. Fragment and save safety
 ## 3. Fragment and save safety
 
 - [ ] Earn fragments by mob kills, mining, farming, and fishing. Confirm configured reward values, allowed gamemodes/worlds, and per-minute caps.
