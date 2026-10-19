@@ -40,7 +40,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("ambience")) {
             List<String> options = new ArrayList<>(List.of("status"));
-            if (sender.hasPermission("halloweencore.admin")) options.addAll(List.of("on", "off"));
+            if (sender.hasPermission("halloweencore.admin")) options.addAll(List.of("on", "off", "test"));
             return options.stream()
                     .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
@@ -519,8 +519,22 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (action.equals("test")) {
+            if (!checkAdmin(sender)) return true;
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(plugin.color("&cTest ambientních efektů musí spustit hráč přímo ve hře."));
+                return true;
+            }
+            if (manager.testPulse(player)) {
+                sender.sendMessage(plugin.color("&aTestovací ambientní pulz byl přehrán. Zkontroluj částice a zvuk poblíž."));
+            } else {
+                sender.sendMessage(plugin.color("&cPulz nelze přehrát. Zkontroluj, že Halloween i vanilla atmosféra jsou zapnuté a že jsi v povoleném světě/herním režimu."));
+            }
+            return true;
+        }
+
         if (!action.equals("on") && !action.equals("off")) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween ambience [status|on|off]"));
+            sender.sendMessage(plugin.color("&cPoužití: /halloween ambience [status|on|off|test]"));
             return true;
         }
         if (!checkAdmin(sender)) return true;
