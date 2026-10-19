@@ -225,6 +225,12 @@ jobs:
           if 'List.of("mob-kill", "mining", "farming", "fishing")' not in validator:
               raise SystemExit("Mob-kill limits must be validated with other activity limits")
 
+          if "rewardTimes.remove(playerId)" in activity_listener:
+              raise SystemExit("Disconnecting must not reset a player's rolling anti-farm limit")
+          if "pruneExpiredRewardTimes(now);" not in activity_listener or "private void pruneExpiredRewardTimes(long now)" not in activity_listener:
+              raise SystemExit("Reconnect-safe rate history must be pruned after the rolling minute expires")
+          print("Reconnect-safe anti-farming regression checks passed.")
+
           print("Mob-kill anti-farming regression checks passed.")
 
           npc_manager = Path(
