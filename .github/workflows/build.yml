@@ -147,6 +147,20 @@ jobs:
                   raise SystemExit(f"Required progression command method missing: {active_command}")
 
           print("Runtime lifecycle, retained item behavior and command surface checks passed.")
+
+          data_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenDataManager.java"
+          ).read_text(encoding="utf-8")
+          if "data.load(file);" not in data_manager or "InvalidConfigurationException" not in data_manager:
+              raise SystemExit("Persistent data must be parsed with explicit error handling")
+          if "if (loadFailed)" not in data_manager or "Refusing to overwrite data.yml" not in data_manager:
+              raise SystemExit("Persistence must refuse saves after a failed data load")
+          if "File.createTempFile(\"data-invalid-\"" not in data_manager:
+              raise SystemExit("Invalid player data must be preserved to a backup")
+          if "if (!dataManager.load())" not in core_source:
+              raise SystemExit("Plugin startup must stop when persistent data cannot be loaded safely")
+
+          print("Persistent data failure-safety checks passed.")
           print("Cleanup invariants and retired-feature checks passed.")
           PY
 
