@@ -215,9 +215,9 @@ public final class HalloweenWorldFeatureManager implements Listener {
             for (int dz = -2; dz <= 2; dz++) {
                 Block ground = world.getHighestBlockAt(centerX + dx, centerZ + dz);
                 if (!isSafeOpenGround(ground)) return false;
-                Block headspace = ground.getRelative(0, 1, 0);
-                if (!headspace.getType().isAir() && !headspace.isPassable()) return false;
-                if (hasTileStateInNeighborhood(headspace)) return false;
+                // The actual placement sites get the full tile-entity safety scan.
+                // Here we only verify a natural, open 5x5 terrain patch to keep
+                // chunk-generation work bounded on the main thread.
             }
         }
         return true;
