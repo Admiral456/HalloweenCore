@@ -123,10 +123,14 @@ public final class HalloweenPumpkinVillagerManager implements Listener {
     public void onInteract(PlayerInteractEntityEvent event) {
         if (!(event.getRightClicked() instanceof Villager villager) || !isPumpkinVillager(villager)) return;
 
+        // If the NPC feature is disabled, do not intercept the click: the existing
+        // villager can fall back to vanilla interaction instead of swallowing input.
+        if (!isEnabled()) return;
+
         // Cancel both hands to prevent the vanilla trade window; only the main hand
         // renders a single dialogue if the client sends an event for each hand.
         event.setCancelled(true);
-        if (event.getHand() != EquipmentSlot.HAND || !isEnabled()) return;
+        if (event.getHand() != EquipmentSlot.HAND) return;
 
         Player player = event.getPlayer();
         if (!plugin.isEventEnabled()) {
