@@ -579,7 +579,7 @@ jobs:
           if "registerEvents(worldFeatureManager, this)" not in core_source:
               raise SystemExit("Vanilla world feature manager must be registered")
           if not re.search(
-              r"(?ms)^world-features:\\n  enabled: true\\n  generation:\\n    enabled: true\\n    pumpkin-patch-chance-per-chunk: 0\\.06\\n    cave-web-patch-chance-per-chunk: 0\\.04\\n    ancient-altar-chance-per-chunk: 0\\.02\\n    attempts-per-feature: 24\\n    altar-attempts-per-feature: 16\\n    max-pumpkins-per-patch: 4\\n    max-cave-webs-per-patch: 2\\n    cave-webs-min-y: -48\\n    cave-webs-max-y: 24$",
+              r"(?ms)^world-features:\n  enabled: true\n  generation:\n    enabled: true\n    pumpkin-patch-chance-per-chunk: 0\.06\n    cave-web-patch-chance-per-chunk: 0\.04\n    ancient-altar-chance-per-chunk: 0\.02\n    attempts-per-feature: 24\n    altar-attempts-per-feature: 16\n    max-pumpkins-per-patch: 4\n    max-cave-webs-per-patch: 2\n    cave-webs-min-y: -48\n    cave-webs-max-y: 24$",
               config,
           ):
               raise SystemExit("Vanilla world feature configuration is missing or malformed")
