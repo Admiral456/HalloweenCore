@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 from pathlib import Path
+import hashlib
+import json
 import struct
 
 root = Path(__file__).resolve().parents[1]
@@ -24,6 +26,28 @@ if not header.startswith(b"\x89PNG\r\n\x1a\n"):
     raise SystemExit("secret_key.png is not a PNG file")
 if struct.unpack(">II", header[16:24]) != (32, 32):
     raise SystemExit("secret_key.png must be 32x32")
+
+# Ensure the imported candy art remains unchanged and that its license manifest is still accurate.
+manifest_path = root / "third-party-assets/stevs-halloween/asset-source-manifest.json"
+manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+assets = manifest.get("assets", [])
+if len(assets) != 13:
+    raise SystemExit(f"Expected 13 licensed candy manifest entries, got {len(assets)}")
+for asset in assets:
+    relative_target = Path(asset["target_path"])
+    target = root / relative_target
+    if not target.is_file():
+        raise SystemExit(f"Missing licensed target: {relative_target}")
+    actual_hash = hashlib.sha256(target.read_bytes()).hexdigest()
+    if actual_hash != asset["sha256"]:
+        raise SystemExit(f"Imported candy texture hash changed: {relative_target}")
+    with target.open("rb") as stream:
+        png_header = stream.read(24)
+    if not png_header.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+        raise SystemExit(f"Invalid PNG: {relative_target}")
+    if struct.unpack(">II", png_header[16:24]) != (16, 16):
+        raise SystemExit(f"Expected a 16x16 candy sprite: {relative_target}")
+
 items = (base / "configs/items.yml").read_text(encoding="utf-8")
 for name in ("stev_apple_core", "stev_candy_apple", "stev_candy_bag", "stev_caramel",
              "stev_caramel_apple", "stev_chocolate_bar", "stev_frosted_sugar_cookie",
