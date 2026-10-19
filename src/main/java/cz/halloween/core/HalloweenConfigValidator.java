@@ -71,6 +71,23 @@ public final class HalloweenConfigValidator {
             }
         }
 
+        boolean vanillaAtmosphereEnabled = plugin.getConfig().getBoolean("vanilla-atmosphere.enabled", true);
+        if (vanillaAtmosphereEnabled) {
+            int ambientMin = plugin.getConfig().getInt("vanilla-atmosphere.min-interval-seconds", 90);
+            int ambientMax = plugin.getConfig().getInt("vanilla-atmosphere.max-interval-seconds", 180);
+            double playerChance = plugin.getConfig().getDouble("vanilla-atmosphere.player-chance", 0.35D);
+            double soundVolume = plugin.getConfig().getDouble("vanilla-atmosphere.sound-volume", 0.55D);
+            if (ambientMin < 30 || ambientMax < ambientMin || ambientMax > 600) {
+                errors.add("vanilla-atmosphere interval must be ordered between 30 and 600 seconds");
+            }
+            if (!Double.isFinite(playerChance) || playerChance < 0.0D || playerChance > 1.0D) {
+                errors.add("vanilla-atmosphere.player-chance must be between 0 and 1");
+            }
+            if (!Double.isFinite(soundVolume) || soundVolume < 0.0D || soundVolume > 1.5D) {
+                errors.add("vanilla-atmosphere.sound-volume must be between 0 and 1.5");
+            }
+        }
+
         boolean vanillaEventsEnabled = plugin.getConfig().getBoolean("vanilla-events.enabled", true);
         if (vanillaEventsEnabled) {
             int firstDelay = plugin.getConfig().getInt("vanilla-events.first-delay-seconds", 300);
