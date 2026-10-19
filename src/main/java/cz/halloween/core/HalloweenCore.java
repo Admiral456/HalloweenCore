@@ -92,8 +92,9 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(worldFeatureManager, this);
         getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vanillaEventManager, this);
-        // Legacy mob, quest, discovery, ambience and decoration listeners remain
-        // unregistered; only the safe vanilla cache and new-chunk feature managers run.
+        // Legacy mob, story-quest, village, custom ambience and decoration listeners remain
+        // unregistered. The vanilla cache, hidden Easter-egg discoveries, new-chunk
+        // features, timed events, and vanilla atmosphere are the active replacements.
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
