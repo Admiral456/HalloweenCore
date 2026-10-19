@@ -172,6 +172,15 @@ jobs:
               raise SystemExit("Legacy data without a schema version must remain readable")
           if "storedSchemaVersion > CURRENT_SCHEMA_VERSION" not in data_manager:
               raise SystemExit("Unknown future data schema must be rejected safely")
+          for data_type_guard in (
+              'private boolean hasTypeIfPresent(YamlConfiguration data, String path, Class<?> expectedType)',
+              'private boolean isStringListIfPresent(YamlConfiguration data, String path)',
+              'hasTypeIfPresent(data, "server.finale-unlocked", Boolean.class)',
+              'hasTypeIfPresent(data, base + ".fragments", Number.class)',
+              'isStringListIfPresent(data, base + ".claimed-rewards")',
+          ):
+              if data_type_guard not in data_manager:
+                  raise SystemExit(f"Persisted data type guard missing: {data_type_guard}")
           if 'data.set("meta.schema-version", CURRENT_SCHEMA_VERSION)' not in data_manager:
               raise SystemExit("Saved player data must include the current schema version")
 
