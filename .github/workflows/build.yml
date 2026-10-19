@@ -659,7 +659,9 @@ jobs:
               'manager.getMinimumIntervalSeconds()',
               'manager.getMaximumIntervalSeconds()',
               'List.of("status")',
-              'options.addAll(List.of("on", "off"))',
+              'options.addAll(List.of("on", "off", "test"))',
+              'action.equals("test")',
+              'manager.testPulse(player)',
           ):
               if atmosphere_command_guard not in atmosphere_command:
                   raise SystemExit(f"Vanilla ambience command missing: {atmosphere_command_guard}")
@@ -667,6 +669,8 @@ jobs:
               raise SystemExit("Core must persist and apply ambience on/off commands")
           if "public boolean isRunning()" not in ambience:
               raise SystemExit("Ambience status must report actual scheduler state")
+          if "public boolean testPulse(Player player)" not in ambience:
+              raise SystemExit("Vanilla ambience must expose a targeted preview pulse for staging checks")
           if 'sender.sendMessage(plugin.color("&7Vanilla atmosféra: " + ambienceStatus' not in command_source:
               raise SystemExit("Admin debug output must report vanilla ambience runtime status")
 
