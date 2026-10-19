@@ -201,7 +201,9 @@ public final class HalloweenCore extends JavaPlugin {
      * preserving any administrator-defined locations and coordinates.
      */
     private void migrateVanillaSecretDiscoveries() {
-        if (getConfig().getBoolean("migrations.vanilla-secret-discoveries-v1", false)) return;
+        // v2 intentionally runs even when v1 was already marked: it merges missing
+        // stock entries into configurations that previously contained only custom IDs.
+        if (getConfig().getBoolean("migrations.vanilla-secret-discoveries-v2", false)) return;
 
         getConfig().set("secret-discoveries.enabled", true);
         setConfigDefaultIfMissing("secret-discoveries.default-radius-blocks", 4.5D);
@@ -215,6 +217,7 @@ public final class HalloweenCore extends JavaPlugin {
                 "Za posledním náhrobkem může něco čekat pod zemí.", 350L);
 
         getConfig().set("migrations.vanilla-secret-discoveries-v1", true);
+        getConfig().set("migrations.vanilla-secret-discoveries-v2", true);
     }
 
     private void addDefaultSecret(String id, String name, String hint, long reward) {
