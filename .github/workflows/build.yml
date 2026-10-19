@@ -30,7 +30,7 @@ jobs:
           config = Path("src/main/resources/config.yml").read_text(encoding="utf-8")
           disabled_sections = [
               "random-events", "special-mobs", "story-quests", "haunted-village",
-              "secret-discoveries", "world-decorations", "atmosphere"
+              "world-decorations", "atmosphere"
           ]
           for section in disabled_sections:
               pattern = rf"(?m)^{re.escape(section)}:\n  enabled: false$"
@@ -106,9 +106,53 @@ jobs:
           ):
               if candy_migration_guard not in core_source:
                   raise SystemExit(f"Cursed candy config migration missing: {candy_migration_guard}")
+          if 'getConfig().set("secret-discoveries.enabled", false);' in core_source:
+              raise SystemExit("Vanilla secret discoveries must not be disabled by legacy cleanup")
+          for secret_migration_guard in (
+              "migrateVanillaSecretDiscoveries();",
+              'private void migrateVanillaSecretDiscoveries()',
+              'migrations.vanilla-secret-discoveries-v1',
+              'private void addDefaultSecret(String id, String name, String hint, long reward)',
+              'getConfig().set("migrations.vanilla-secret-discoveries-v1", true)',
+              "registerEvents(secretDiscoveryManager, this)",
+          ):
+              if secret_migration_guard not in core_source:
+                  raise SystemExit(f"Vanilla secret discovery migration/lifecycle missing: {secret_migration_guard}")
+
+          for secret_id in ("blood-altar:", "witch-den:", "forgotten-grave:"):
+              if secret_id not in config:
+                  raise SystemExit(f"Default Easter egg location missing: {secret_id}")
+          if not re.search(r"(?m)^secret-discoveries:\n  enabled: true$", config):
+              raise SystemExit("Vanilla secret discoveries must be enabled by default")
+          secret_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenSecretDiscoveryManager.java"
+          ).read_text(encoding="utf-8")
+          for secret_behavior in (
+              "plugin.getDataManager().markSecretDiscovered(",
+              'plugin.getService().addFragments(player.getUniqueId(), reward, "secret-discovery")',
+              "plugin.getDataManager().save();",
+              "player.playSound(",
+              "world.spawnParticle(Particle.SOUL",
+              "player.getWorld()",
+          ):
+              if secret_behavior not in secret_manager:
+                  raise SystemExit(f"Vanilla secret discovery behavior missing: {secret_behavior}")
+          secret_command = Path(
+              "src/main/java/cz/halloween/core/HalloweenCommand.java"
+          ).read_text(encoding="utf-8")
+          for secret_command_guard in (
+              'if (args[0].equalsIgnoreCase("setsecret")) return setSecret(sender, args);',
+              'if (args[0].equalsIgnoreCase("secrets")) return showSecrets(sender);',
+              "private boolean setSecret(CommandSender sender, String[] args)",
+              "private boolean showSecrets(CommandSender sender)",
+          ):
+              if secret_command_guard not in secret_command:
+                  raise SystemExit(f"Vanilla Easter egg command missing: {secret_command_guard}")
+          if '"setsecret", "secrets", "boss"' in secret_command:
+              raise SystemExit("Vanilla Easter egg commands must not remain in the retired-command guard")
+
           retired_registrations = (
               "registerEvents(villageDiscoveryManager",
-              "registerEvents(secretDiscoveryManager",
               "registerEvents(vampireEncounterManager",
               "registerEvents(mobManager",
               "registerEvents(questManager",
