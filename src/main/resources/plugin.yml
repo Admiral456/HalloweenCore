@@ -4,7 +4,7 @@ main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
 description: Halloween progression with vanilla events, pumpkin villager and underground caches.
-softdepend: [ItemsAdder, MythicMobs, ModelEngine, BattlePass, WorldGuard, PlaceholderAPI]
+softdepend: [ItemsAdder, PlaceholderAPI]
 commands:
   halloween:
     description: Halloween progression, rewards and administration.
