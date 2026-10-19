@@ -35,7 +35,10 @@ public final class HalloweenItemListener implements Listener {
 
         String relicId = item.getItemMeta().getPersistentDataContainer()
                 .get(relicKey, PersistentDataType.STRING);
-        if (!"cursed-candy-2026".equalsIgnoreCase(relicId)) return;
+        boolean taggedCandy = "cursed-candy-2026".equalsIgnoreCase(relicId);
+        boolean itemsAdderCandy = plugin.getItemManager().isItemsAdderItem(
+                item, "warriorland_halloween:cursed_candy");
+        if (!taggedCandy && !itemsAdderCandy) return;
 
         player.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 20, 0, true, true, true));
         player.addPotionEffect(new PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 45, 0, true, true, true));
