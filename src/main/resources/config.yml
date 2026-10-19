@@ -106,6 +106,20 @@ rewards:
         - "&8Limitovaná odměna."
 
 
+
+underground-caches:
+  enabled: true
+  generation:
+    enabled: true
+    chance-per-new-chunk: 0.10
+    min-y: -48
+    max-y: 24
+    attempts-per-chunk: 32
+  key-drop:
+    enabled: true
+    chance-per-hostile-kill: 0.006
+
+
 pumpkin-villager:
   enabled: true
   interact-cooldown-millis: 2000
