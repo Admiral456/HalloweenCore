@@ -306,6 +306,15 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7Vanilla události: "
                 + status(vanillaEvents != null && vanillaEvents.isEnabled() && plugin.isEventEnabled())
                 + (activeVanillaEvent == null ? "" : " &8• běží: &e" + vanillaEvents.getDisplayName(activeVanillaEvent))));
+        HalloweenVanillaAtmosphereManager vanillaAmbience = plugin.getVanillaAtmosphereManager();
+        String ambienceStatus = vanillaAmbience == null ? "&cNENÍ"
+                : !vanillaAmbience.isEnabled() ? "&cVYPNUTÁ"
+                : vanillaAmbience.isRunning() ? "&aAKTIVNÍ"
+                : "&ePOZASTAVENÁ";
+        sender.sendMessage(plugin.color("&7Vanilla atmosféra: " + ambienceStatus
+                + " &8• pulz: "
+                + (vanillaAmbience == null ? "—" : vanillaAmbience.getMinimumIntervalSeconds()
+                + "–" + vanillaAmbience.getMaximumIntervalSeconds() + " s")));
         sender.sendMessage(plugin.color("&7Dýňový vesničan: "
                 + status(plugin.getPumpkinVillagerManager() != null && plugin.getPumpkinVillagerManager().isEnabled())
                 + " &8• podzemní schránky: "
