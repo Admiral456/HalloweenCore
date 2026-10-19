@@ -29,7 +29,7 @@ jobs:
 
           config = Path("src/main/resources/config.yml").read_text(encoding="utf-8")
           disabled_sections = [
-              "random-events", "special-mobs", "haunted-village",
+              "random-events", "haunted-village",
               "world-decorations", "atmosphere"
           ]
           for section in disabled_sections:
@@ -38,6 +38,36 @@ jobs:
                   raise SystemExit(f"Expected {section}.enabled to be false")
           if not re.search(r"(?m)^story-quests:\n  enabled: true$", config):
               raise SystemExit("The vanilla story campaign must be enabled by default")
+          if not re.search(r"(?m)^special-mobs:\n  enabled: true$", config):
+              raise SystemExit("Rare vanilla elite mobs must be enabled by default")
+          if "custom-models:\n    enabled: false" not in config:
+              raise SystemExit("Vanilla elite mobs must not require custom models")
+          for elite_id in (
+              "cursed-zombie:", "void-reaper:", "gravekeeper:", "frost-stalker:",
+              "blood-spider:", "nightmare:", "pumpkin-wraith:", "hex-witch:"
+          ):
+              if elite_id not in config:
+                  raise SystemExit(f"Vanilla elite profile missing: {elite_id}")
+
+          elite_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenMobManager.java"
+          ).read_text(encoding="utf-8")
+          for elite_guard in (
+              'plugin.getConfig().getBoolean("special-mobs.enabled", true)',
+              'configureSpecialMob(entity, mobId);',
+              'event.blockList().clear();',
+              'event.setYield(0.0F);',
+              'Particle.SOUL_FIRE_FLAME',
+              'PotionEffectType.DARKNESS',
+          ):
+              if elite_guard not in elite_source:
+                  raise SystemExit(f"Vanilla elite behavior/safety missing: {elite_guard}")
+          if any(dependency in elite_source for dependency in ("MythicMobs", "ModelEngine", "spawnMythicModelMob")):
+              raise SystemExit("Elite mobs must not access retired custom model APIs")
+          if "registerEvents(mobManager, this)" not in Path(
+              "src/main/java/cz/halloween/core/HalloweenCore.java"
+          ).read_text(encoding="utf-8"):
+              raise SystemExit("Vanilla elite mob listener must be registered")
 
           if not re.search(r"(?m)^\s+bonus-health: 2\.0$", config):
               raise SystemExit("Cursed talisman must grant one heart (+2 health)")
@@ -179,6 +209,12 @@ jobs:
                   raise SystemExit(f"Retired listener must remain unregistered: {registration}")
           if "registerEvents(questManager, this)" not in core_source:
               raise SystemExit("Vanilla story quest listener must be registered")
+          if "registerEvents(mobManager, this)" not in core_source:
+              raise SystemExit("Vanilla elite mob listener must be registered")
+          if "migrateVanillaEliteMobs();" not in core_source:
+              raise SystemExit("Existing server configs must receive the vanilla elite migration")
+          if 'getConfig().set("special-mobs.custom-models.enabled", false);' not in core_source:
+              raise SystemExit("Custom elite models must remain disabled")
           if 'getConfig().set("story-quests.enabled", false);' in core_source:
               raise SystemExit("The vanilla campaign must not be disabled by legacy cleanup")
           if "registerEvents(passiveEffectManager, this)" not in core_source:
