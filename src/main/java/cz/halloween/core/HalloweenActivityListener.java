@@ -124,11 +124,16 @@ public final class HalloweenActivityListener implements Listener {
                 .computeIfAbsent(playerId, ignored -> new HashMap<>())
                 .computeIfAbsent(source, ignored -> new ArrayDeque<>());
 
-        while (!timestamps.isEmpty() && timestamps.peekFirst() <= now - RATE_WINDOW_MILLIS) {
-            timestamps.removeFirst();
+        pruneExpiredRewardTimes(now);
+        // Re-fetch after pruning: pruning may have removed this player's old source bucket.
+        Deque<Long> activeTimestamps = rewardTimes
+                .computeIfAbsent(playerId, ignored -> new HashMap<>())
+                .computeIfAbsent(source, ignored -> new ArrayDeque<>());
+        while (!activeTimestamps.isEmpty() && activeTimestamps.peekFirst() <= now - RATE_WINDOW_MILLIS) {
+            activeTimestamps.removeFirst();
         }
 
-        if (timestamps.size() >= limit) {
+        if (activeTimestamps.size() >= limit) {
             Map<String, Long> notices = lastLimitNotice.computeIfAbsent(playerId, ignored -> new HashMap<>());
             long lastNotice = notices.getOrDefault(source, 0L);
             if (now - lastNotice >= NOTICE_COOLDOWN_MILLIS) {
@@ -138,15 +143,31 @@ public final class HalloweenActivityListener implements Listener {
             return false;
         }
 
-        timestamps.addLast(now);
+        activeTimestamps.addLast(now);
         return true;
     }
 
     @EventHandler
     public void onQuit(PlayerQuitEvent event) {
-        UUID playerId = event.getPlayer().getUniqueId();
-        rewardTimes.remove(playerId);
-        lastLimitNotice.remove(playerId);
+        // Keep the rolling one-minute history across reconnects so quitting cannot reset anti-farm limits.
+        lastLimitNotice.remove(event.getPlayer().getUniqueId());
+    }
+
+    private void pruneExpiredRewardTimes(long now) {
+        long cutoff = now - RATE_WINDOW_MILLIS;
+        var playerIterator = rewardTimes.entrySet().iterator();
+        while (playerIterator.hasNext()) {
+            Map<String, Deque<Long>> bySource = playerIterator.next().getValue();
+            var sourceIterator = bySource.entrySet().iterator();
+            while (sourceIterator.hasNext()) {
+                Deque<Long> timestamps = sourceIterator.next().getValue();
+                while (!timestamps.isEmpty() && timestamps.peekFirst() <= cutoff) {
+                    timestamps.removeFirst();
+                }
+                if (timestamps.isEmpty()) sourceIterator.remove();
+            }
+            if (bySource.isEmpty()) playerIterator.remove();
+        }
     }
 
     private boolean isConfiguredBlock(Material material, String path) {
