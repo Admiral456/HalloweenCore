@@ -65,6 +65,7 @@ public final class HalloweenActivityListener implements Listener {
 
         if (isConfiguredBlock(block.getType(), "rewards.mining.blocks")
                 && plugin.getConfig().getBoolean("rewards.mining.enabled", true)) {
+            plugin.getQuestManager().recordAction(player, "mining");
             long reward = plugin.getConfig().getLong("rewards.mining.fragments", 1L);
             if (allowFragmentReward(player, "mining")) {
                 if (reward > 0L) plugin.getService().addFragments(player.getUniqueId(), reward, "mining");
@@ -84,6 +85,7 @@ public final class HalloweenActivityListener implements Listener {
             return;
         }
 
+        plugin.getQuestManager().recordAction(player, "farming");
         long reward = plugin.getConfig().getLong("rewards.farming.fragments", 2L);
         if (allowFragmentReward(player, "farming")) {
             if (reward > 0L) plugin.getService().addFragments(player.getUniqueId(), reward, "farming");
@@ -98,6 +100,7 @@ public final class HalloweenActivityListener implements Listener {
         if (event.getState() != PlayerFishEvent.State.CAUGHT_FISH) return;
         if (!plugin.getConfig().getBoolean("rewards.fishing.enabled", true)) return;
 
+        plugin.getQuestManager().recordAction(event.getPlayer(), "fishing");
         long reward = plugin.getConfig().getLong("rewards.fishing.fragments", 2L);
         if (allowFragmentReward(event.getPlayer(), "fishing")) {
             if (reward > 0L) plugin.getService().addFragments(event.getPlayer().getUniqueId(), reward, "fishing");
