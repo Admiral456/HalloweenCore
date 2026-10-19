@@ -109,9 +109,14 @@ public final class HalloweenActivityListener implements Listener {
         // Old server configs may not yet contain the newly introduced mob-kill limit.
         // Keep legacy sources unlimited when their limit is omitted, but never let
         // a missing mob-kill key silently bypass the new anti-farming guard.
+        String limitPath = basePath + ".max-fragment-rewards-per-minute";
         int fallbackLimit = "mob-kill".equalsIgnoreCase(source) ? 60 : 0;
-        int limit = plugin.getConfig().getInt(basePath + ".max-fragment-rewards-per-minute", fallbackLimit);
-        if (limit <= 0) return true; // Backward-compatible for the legacy activity sources.
+        boolean explicitlyConfigured = plugin.getConfig().contains(limitPath, true);
+        int limit = plugin.getConfig().getInt(limitPath, fallbackLimit);
+        // Keep old configs without legacy-source limits compatible, but an explicitly
+        // invalid value must fail closed rather than disable anti-farming protection.
+        if (!explicitlyConfigured && fallbackLimit <= 0) return true;
+        if (limit < 1 || limit > 600) return false;
 
         long now = System.currentTimeMillis();
         UUID playerId = player.getUniqueId();
