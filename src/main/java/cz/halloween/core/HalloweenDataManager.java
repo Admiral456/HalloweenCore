@@ -72,7 +72,20 @@ public final class HalloweenDataManager {
             return failLoadSafely("YAML parsing failed: " + ex.getMessage());
         }
 
+        if (data.isSet("players") && !data.isConfigurationSection("players")) {
+            return failLoadSafely("players must be a YAML section");
+        }
+        if (data.isSet("server") && !data.isConfigurationSection("server")) {
+            return failLoadSafely("server must be a YAML section");
+        }
+        if (data.isSet("meta") && !data.isConfigurationSection("meta")) {
+            return failLoadSafely("meta must be a YAML section");
+        }
+
         int storedSchemaVersion = data.getInt("meta.schema-version", 0);
+        if (data.isSet("meta.schema-version") && !(data.get("meta.schema-version") instanceof Number)) {
+            return failLoadSafely("meta.schema-version must be numeric");
+        }
         if (storedSchemaVersion > CURRENT_SCHEMA_VERSION) {
             return failLoadSafely("data.yml schema version " + storedSchemaVersion
                     + " is newer than supported version " + CURRENT_SCHEMA_VERSION
@@ -129,8 +142,8 @@ public final class HalloweenDataManager {
                     if (!completedQuests.isEmpty()) {
                         completedStoryQuests.put(uuid, new HashSet<>(completedQuests));
                     }
-                } catch (IllegalArgumentException ignored) {
-                    plugin.getLogger().warning("Ignoring invalid player UUID in data.yml: " + key);
+                } catch (IllegalArgumentException invalidUuid) {
+                    return failLoadSafely("invalid player UUID key in data.yml: " + key);
                 }
             }
         }
