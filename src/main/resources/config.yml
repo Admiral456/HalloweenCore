@@ -72,6 +72,17 @@ rewards:
     enabled: true
     hunter-mask-night-vision-seconds: 5
   shop:
+    cursed-candy:
+      cost: 500
+      min-curse: 0
+      itemsadder-id: "warriorland_halloween:cursed_candy"
+      material: PUMPKIN_PIE
+      amount: 1
+      name: "&6&lProkleté cukroví &8[Halloween 2026]"
+      lore:
+        - "&7Limitovaná sladkost pro Halloween."
+        - "&7Po snězení získáš krátké posílení."
+        - "&8Jednorázová odměna."
     hunter-mask:
       cost: 4000
       min-curse: 3
