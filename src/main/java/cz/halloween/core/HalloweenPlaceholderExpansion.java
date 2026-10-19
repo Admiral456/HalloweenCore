@@ -59,11 +59,18 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
             return Boolean.toString(plugin.getDataManager().isFinaleUnlocked());
         }
         if (key.equals("event")) {
-            String active = plugin.getEventManager() == null ? null : plugin.getEventManager().getActiveEventId();
+            String active = plugin.getVanillaEventManager() == null
+                    ? null : plugin.getVanillaEventManager().getActiveEventId();
             return active == null ? "none" : active;
         }
         if (key.equals("event_remaining")) {
-            return Long.toString(plugin.getEventManager() == null ? 0L : plugin.getEventManager().getRemainingSeconds());
+            return Long.toString(plugin.getVanillaEventManager() == null
+                    ? 0L : plugin.getVanillaEventManager().getRemainingSeconds());
+        }
+        if (key.equals("event_name")) {
+            String active = plugin.getVanillaEventManager() == null
+                    ? null : plugin.getVanillaEventManager().getActiveEventId();
+            return active == null ? "Žádná událost" : plugin.getVanillaEventManager().getDisplayName(active);
         }
 
         if (player == null) return null;
