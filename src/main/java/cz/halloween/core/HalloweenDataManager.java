@@ -16,6 +16,8 @@ import java.util.Set;
 import java.util.UUID;
 
 public final class HalloweenDataManager {
+    private static final int CURRENT_SCHEMA_VERSION = 1;
+
     private final HalloweenCore plugin;
     private final File file;
     private final Map<UUID, Long> fragments = new HashMap<>();
@@ -67,20 +69,16 @@ public final class HalloweenDataManager {
         try {
             data.load(file);
         } catch (IOException | InvalidConfigurationException ex) {
-            loadFailed = true;
-            String backupName = "unavailable";
-            try {
-                File backup = File.createTempFile("data-invalid-", ".yml.bak", plugin.getDataFolder());
-                Files.copy(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                backupName = backup.getName();
-            } catch (IOException backupFailure) {
-                plugin.getLogger().severe("Could not back up invalid data.yml: " + backupFailure.getMessage());
-            }
-            plugin.getLogger().severe("Refusing to start with invalid data.yml to protect player progress. "
-                    + "Original file was not modified; backup: " + backupName + ". Parse error: "
-                    + ex.getMessage());
-            return false;
+            return failLoadSafely("YAML parsing failed: " + ex.getMessage());
         }
+
+        int storedSchemaVersion = data.getInt("meta.schema-version", 0);
+        if (storedSchemaVersion > CURRENT_SCHEMA_VERSION) {
+            return failLoadSafely("data.yml schema version " + storedSchemaVersion
+                    + " is newer than supported version " + CURRENT_SCHEMA_VERSION
+                    + "; upgrade HalloweenCore before using this data");
+        }
+
         serverFragments = Math.max(0L, data.getLong("server.total-fragments", 0L));
         finaleUnlocked = data.getBoolean("server.finale-unlocked", false);
         vampireDefeated = data.getBoolean("server.vampire-defeated", false);
@@ -139,12 +137,28 @@ public final class HalloweenDataManager {
         return true;
     }
 
+    private boolean failLoadSafely(String reason) {
+        loadFailed = true;
+        String backupName = "unavailable";
+        try {
+            File backup = File.createTempFile("data-invalid-", ".yml.bak", plugin.getDataFolder());
+            Files.copy(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            backupName = backup.getName();
+        } catch (IOException backupFailure) {
+            plugin.getLogger().severe("Could not back up data.yml after load failure: " + backupFailure.getMessage());
+        }
+        plugin.getLogger().severe("Refusing to start with unreadable or unsupported data.yml to protect player progress. "
+                + "Original file was not modified; backup: " + backupName + ". Reason: " + reason);
+        return false;
+    }
+
     public void save() {
         if (loadFailed) {
             plugin.getLogger().severe("Refusing to overwrite data.yml because its previous load failed.");
             return;
         }
         YamlConfiguration data = new YamlConfiguration();
+        data.set("meta.schema-version", CURRENT_SCHEMA_VERSION);
         data.set("server.total-fragments", serverFragments);
         data.set("server.finale-unlocked", finaleUnlocked);
         data.set("server.vampire-defeated", vampireDefeated);
