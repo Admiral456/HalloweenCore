@@ -47,6 +47,7 @@ public final class HalloweenVanillaBossManager implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey bossKey;
     private final Map<UUID, Double> contributorDamage = new HashMap<>();
+    private final Map<UUID, Integer> participationSeconds = new HashMap<>();
 
     private WitherSkeleton boss;
     private BossBar bossBar;
@@ -67,6 +68,14 @@ public final class HalloweenVanillaBossManager implements Listener {
         }
         if (!plugin.isEventEnabled()) {
             administrator.sendMessage(plugin.color("&cNejdřív zapni Halloween pomocí /halloween on."));
+            return false;
+        }
+        if (!plugin.getDataManager().isFinaleUnlocked()) {
+            administrator.sendMessage(plugin.color("&cServerové finále ještě není odemčené. Nejdřív musí být splněn globální Halloween cíl."));
+            return false;
+        }
+        if (plugin.getDataManager().isVampireDefeated()) {
+            administrator.sendMessage(plugin.color("&eKrál upírů už byl poražen. Finále je dokončeno."));
             return false;
         }
         if (!plugin.isEligibleGameplayPlayer(administrator)
@@ -133,6 +142,10 @@ public final class HalloweenVanillaBossManager implements Listener {
             sender.sendMessage(plugin.color("&7Vanilla boss: &cVYPNUTÝ V KONFIGURACI"));
             return;
         }
+        if (plugin.getDataManager().isVampireDefeated()) {
+            sender.sendMessage(plugin.color("&7Král upírů: &aPORAŽENÝ — finále dokončeno"));
+            return;
+        }
         if (!adoptExistingBoss()) {
             sender.sendMessage(plugin.color("&7Král upírů: &eŽádný aktivní boss."));
             sender.sendMessage(plugin.color("&7Administrátor může použít &f/halloween boss spawn&7."));
@@ -188,8 +201,12 @@ public final class HalloweenVanillaBossManager implements Listener {
         if (!isBoss(event.getEntity())) return;
         event.getDrops().clear();
         event.setDroppedExp(0);
-        if (plugin.isEventEnabled() && plugin.getConfig().getBoolean("vanilla-boss.enabled", true)) {
+        boolean eligibleVictory = plugin.isEventEnabled()
+                && plugin.getConfig().getBoolean("vanilla-boss.enabled", true);
+        if (eligibleVictory) {
             rewardContributors(event.getEntity());
+            plugin.getDataManager().markVampireDefeated();
+            plugin.getDataManager().save();
         }
         for (Player player : event.getEntity().getWorld().getPlayers()) {
             player.sendMessage(plugin.color("&6&lHALLOWEEN &8» &aKrál upírů byl poražen!"));
@@ -242,6 +259,7 @@ public final class HalloweenVanillaBossManager implements Listener {
         cleanup(false);
         boss = activeBoss;
         contributorDamage.clear();
+        participationSeconds.clear();
         phase = 1;
         secondsUntilPulse = (int) boundedConfig(
                 "vanilla-boss.pulse.interval-seconds", 18.0D, 8.0D, 60.0D);
@@ -263,6 +281,7 @@ public final class HalloweenVanillaBossManager implements Listener {
         }
 
         updateBossBar();
+        recordPresenceSeconds();
         updatePhase();
 
         secondsUntilPulse--;
@@ -271,6 +290,50 @@ public final class HalloweenVanillaBossManager implements Listener {
             secondsUntilPulse = (int) boundedConfig(
                     "vanilla-boss.pulse.interval-seconds", 18.0D, 8.0D, 60.0D);
         }
+    }
+
+    private void recordPresenceSeconds() {
+        if (boss == null || !boss.isValid()) return;
+        double trackingRadius = boundedConfig("vanilla-boss.tracking-radius-blocks", 96.0D, 16.0D, 192.0D);
+        double radiusSquared = trackingRadius * trackingRadius;
+        for (Player player : boss.getWorld().getPlayers()) {
+            if (plugin.isEligibleGameplayPlayer(player)
+                    && plugin.isEligibleGameplayWorld(player.getWorld())
+                    && player.getLocation().distanceSquared(boss.getLocation()) <= radiusSquared) {
+                participationSeconds.merge(player.getUniqueId(), 1, (previous, increment) ->
+                        Math.min(3600, previous + increment));
+            }
+        }
+    }
+
+    private boolean qualifiesForReward(UUID playerId, double maxHealth) {
+        int minimumSeconds = Math.max(1, Math.min(3600,
+                plugin.getConfig().getInt("vanilla-boss.rewards.minimum-participation-seconds", 120)));
+        double damagePercent = plugin.getConfig().getDouble(
+                "vanilla-boss.rewards.minimum-damage-percent", 0.025D);
+        if (!Double.isFinite(damagePercent)) damagePercent = 0.025D;
+        damagePercent = Math.max(0.0D, Math.min(1.0D, damagePercent));
+        double dealt = contributorDamage.getOrDefault(playerId, 0.0D);
+        return participationSeconds.getOrDefault(playerId, 0) >= minimumSeconds
+                && maxHealth > 0.0D && dealt / maxHealth >= damagePercent;
+    }
+
+    public int getPhase() {
+        return phase;
+    }
+
+    public double getHealthPercent() {
+        if (!adoptExistingBoss() || boss == null || !boss.isValid()) return 0.0D;
+        return Math.max(0.0D, Math.min(100.0D, boss.getHealth()
+                / Math.max(1.0D, boss.getMaxHealth()) * 100.0D));
+    }
+
+    public int getParticipantCount() {
+        if (!adoptExistingBoss() || boss == null || !boss.isValid()) return 0;
+        double maxHealth = boss.getMaxHealth();
+        return (int) contributorDamage.keySet().stream()
+                .filter(id -> qualifiesForReward(id, maxHealth))
+                .count();
     }
 
     private void updateBossBar() {
@@ -370,14 +433,22 @@ public final class HalloweenVanillaBossManager implements Listener {
 
     private void rewardContributors(LivingEntity defeatedBoss) {
         if (contributorDamage.isEmpty()) return;
-        UUID topContributor = contributorDamage.entrySet().stream()
+        double maxHealth = Math.max(1.0D, defeatedBoss.getMaxHealth());
+        List<Map.Entry<UUID, Double>> qualified = contributorDamage.entrySet().stream()
+                .filter(entry -> qualifiesForReward(entry.getKey(), maxHealth))
+                .toList();
+        if (qualified.isEmpty()) {
+            plugin.getLogger().info("Vanilla vampire boss was defeated without a qualified reward participant.");
+            return;
+        }
+        UUID topContributor = qualified.stream()
                 .max(Map.Entry.comparingByValue())
                 .map(Map.Entry::getKey).orElse(null);
         long participationReward = Math.max(0L, Math.min(5000L,
                 plugin.getConfig().getLong("vanilla-boss.rewards.participation-fragments", 300L)));
         long topBonus = Math.max(0L, Math.min(5000L,
                 plugin.getConfig().getLong("vanilla-boss.rewards.top-contributor-bonus-fragments", 250L)));
-        for (Map.Entry<UUID, Double> entry : contributorDamage.entrySet()) {
+        for (Map.Entry<UUID, Double> entry : qualified) {
             if (entry.getValue() <= 0.0D) continue;
             UUID contributorId = entry.getKey();
             if (participationReward > 0L) {
