@@ -92,6 +92,8 @@ public final class HalloweenWorldFeatureManager implements Listener {
                 "world-features.generation.pumpkin-patch-chance-per-chunk", 0.06D), 0.0D, 1.0D);
         double webChance = clamp(plugin.getConfig().getDouble(
                 "world-features.generation.cave-web-patch-chance-per-chunk", 0.04D), 0.0D, 1.0D);
+        double altarChance = clamp(plugin.getConfig().getDouble(
+                "world-features.generation.ancient-altar-chance-per-chunk", 0.02D), 0.0D, 1.0D);
         long seed = chunk.getWorld().getSeed()
                 ^ ((long) chunk.getX() * 341873128712L)
                 ^ ((long) chunk.getZ() * 132897987541L)
@@ -103,6 +105,9 @@ public final class HalloweenWorldFeatureManager implements Listener {
         }
         if (webChance > 0.0D && random.nextDouble() < webChance) {
             createCaveWebPatch(chunk, random);
+        }
+        if (altarChance > 0.0D && random.nextDouble() < altarChance) {
+            createAncientAltar(chunk, random);
         }
     }
 
@@ -168,6 +173,88 @@ public final class HalloweenWorldFeatureManager implements Listener {
             for (Block placedBlock : placedBlocks) {
                 placedBlock.setType(Material.AIR, false);
             }
+        }
+        return false;
+    }
+
+    /**
+     * Builds a small ruined altar entirely in clear space above natural ground.
+     * It never replaces terrain blocks and never reads neighboring chunks.
+     */
+    private boolean createAncientAltar(Chunk chunk, Random random) {
+        int attempts = boundedInt(
+                "world-features.generation.altar-attempts-per-feature", 16, 1, 32);
+        World world = chunk.getWorld();
+        List<int[]> offsets = List.of(
+                new int[]{0, 0},
+                new int[]{-1, 0},
+                new int[]{1, 0},
+                new int[]{0, -1},
+                new int[]{0, 1}
+        );
+        List<Material> stones = List.of(
+                Material.MOSSY_COBBLESTONE,
+                Material.MOSSY_COBBLESTONE,
+                Material.CRACKED_STONE_BRICKS,
+                Material.MOSSY_COBBLESTONE,
+                Material.MOSSY_COBBLESTONE
+        );
+
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            int centerLocalX = random.nextInt(3, 13);
+            int centerLocalZ = random.nextInt(3, 13);
+            int centerX = (chunk.getX() << 4) + centerLocalX;
+            int centerZ = (chunk.getZ() << 4) + centerLocalZ;
+            Block centerGround = world.getHighestBlockAt(centerX, centerZ);
+            if (!isSafeOpenGround(centerGround)
+                    || !PUMPKIN_BIOMES.contains(centerGround.getBiome().name())
+                    || !isOpenNaturalArea(world, centerX, centerZ)) continue;
+
+            List<Block> targets = new ArrayList<>();
+            boolean valid = true;
+            for (int[] offset : offsets) {
+                int x = centerX + offset[0];
+                int z = centerZ + offset[1];
+                Block ground = world.getHighestBlockAt(x, z);
+                if (!isSafeOpenGround(ground)
+                        || Math.abs(ground.getY() - centerGround.getY()) > 1
+                        || !PUMPKIN_BIOMES.contains(ground.getBiome().name())) {
+                    valid = false;
+                    break;
+                }
+                Block target = ground.getRelative(0, 1, 0);
+                if (!target.getType().isAir() || hasTileStateInNeighborhood(target)) {
+                    valid = false;
+                    break;
+                }
+                targets.add(target);
+            }
+            if (!valid) continue;
+
+            Block lanternTarget = targets.get(0).getRelative(0, 1, 0);
+            if (!lanternTarget.getType().isAir()
+                    || hasTileStateInNeighborhood(lanternTarget)) continue;
+
+            List<Block> placedBlocks = new ArrayList<>();
+            try {
+                for (int i = 0; i < targets.size(); i++) {
+                    Block target = targets.get(i);
+                    target.setType(stones.get(i), false);
+                    placedBlocks.add(target);
+                }
+                lanternTarget.setType(Material.SOUL_LANTERN, false);
+                placedBlocks.add(lanternTarget);
+            } catch (RuntimeException ex) {
+                // Roll back only the air blocks placed by this failed attempt.
+                for (Block placed : placedBlocks) {
+                    placed.setType(Material.AIR, false);
+                }
+                throw ex;
+            }
+
+            plugin.getLogger().fine("Generated vanilla ancient altar at "
+                    + world.getName() + " chunk " + chunk.getX() + "," + chunk.getZ());
+            return true;
         }
         return false;
     }
