@@ -15,7 +15,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 ## Disabled or removed during the rebuild
 
 - The old random-event lineup and custom-mob story objectives; the retained nine-chapter campaign now uses vanilla gameplay actions only.
-- The old special-mob system and its MythicMobs/ModelEngine model pack, including Pumpkin Wraith.
+- The old custom model pack; eight rare elite variants now use vanilla zombies, husks, skeletons, strays, spiders, creepers, witches, and phantoms, with built-in particle/sound effects and no MythicMobs/ModelEngine dependency.
 - The old Haunted Village discovery/map system is disabled. Three vanilla-only hidden discoveries (Easter eggs) are retained separately, without custom models or audio.
 - The old automatic Halloween world-decoration engine; the replacement below only modifies newly generated Overworld chunks.
 - The custom soundtrack, ItemsAdder sound definitions, and sky shader.
@@ -30,7 +30,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 
 The three pumpkin files are intentionally retained as the requested pumpkin-themed exception. Because they override vanilla Minecraft pumpkin block textures, they affect those pumpkins anywhere in the generated resource pack. The implemented NPC is a vanilla villager wearing a vanilla carved-pumpkin helmet, with no custom mob model. The retained block-texture overrides do not change the helmet's carved-pumpkin item texture.
 
-The existing Java classes for retired custom-content systems are kept temporarily for migration safety, but their listeners are not registered and their timers are not started. The story campaign is active and listens only for vanilla gameplay actions. Other active gameplay listeners include the vanilla secret-discovery system, pumpkin villager, locked caches, new-chunk world features, timed events, and ambient cues. The fragment/progression core, daily rewards, shop, and vanilla reward perks remain active. Cursed candy's consume effect remains active; retired Haunted Village map behavior was removed.
+Old custom-content classes are kept only where still needed for compatibility; the elite-mob manager is active but uses vanilla entities exclusively. The story campaign listens only for vanilla gameplay actions. Other active gameplay listeners include the vanilla secret-discovery system, pumpkin villager, locked caches, new-chunk world features, timed events, and ambient cues. The fragment/progression core, daily rewards, shop, and vanilla reward perks remain active. Cursed candy's consume effect remains active; retired Haunted Village map behavior was removed.
 
 ## Commands
 
@@ -57,6 +57,12 @@ The existing Java classes for retired custom-content systems are kept temporaril
 - `/halloween on|off`
 
 Legacy commands for the old random events, story quests, Haunted Village map/loot system, shader editing, custom mobs, and vampire model encounter remain retired. The vanilla-only `secrets` and `setsecret` commands are active.
+
+## Rare vanilla Halloween elite mobs
+
+The plugin can mark a small percentage of naturally spawned hostile mobs as rare elite variants: Cursed Zombie, Void Reaper, Gravekeeper, Frost Stalker, Blood Spider, Nightmare, Pumpkin Wraith, and Hex Witch. They remain ordinary vanilla entity types with a themed name, glow outline, bounded health/speed/strength boosts, and selected abilities using potion effects, particles, and built-in Minecraft sounds. Pumpkin Wraith explosions clear the block-damage list so they do not grief builds. Defeating an elite gives a small bonus-fragment reward and has a low chance to drop Cursed Candy; when ItemsAdder is absent, the vanilla pumpkin-pie fallback still works.
+
+The defaults are a 4% elite chance and an 8% Cursed Candy drop chance. During Witching Hour and Blood Moon the elite chance is multiplied by `special-mobs.event-chance-multiplier` (default 1.5, bounded in code to 1–3). Admins may turn the feature off with `special-mobs.enabled: false`. Custom models are forcibly kept off and Haunted Village maps remain disabled. Existing server configs get a one-time `migrations.vanilla-elite-mobs-v1` migration that adds missing profiles while preserving defined profile settings. No MythicMobs, ModelEngine, additional mob textures, or custom sounds are required.
 
 ## Nine-chapter vanilla story campaign
 
