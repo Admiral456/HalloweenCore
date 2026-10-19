@@ -1,5 +1,6 @@
 package cz.halloween.core;
 
+import org.bukkit.configuration.InvalidConfigurationException;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
@@ -34,13 +35,15 @@ public final class HalloweenDataManager {
     private long serverFragments;
     private boolean finaleUnlocked;
     private boolean vampireDefeated;
+    private boolean loadFailed;
 
     public HalloweenDataManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.file = new File(plugin.getDataFolder(), "data.yml");
     }
 
-    public void load() {
+    public boolean load() {
+        loadFailed = false;
         fragments.clear();
         lifetimeFragments.clear();
         lastJoin.clear();
@@ -58,9 +61,26 @@ public final class HalloweenDataManager {
         serverFragments = 0L;
         finaleUnlocked = false;
         vampireDefeated = false;
-        if (!file.exists()) return;
+        if (!file.exists()) return true;
 
-        YamlConfiguration data = YamlConfiguration.loadConfiguration(file);
+        YamlConfiguration data = new YamlConfiguration();
+        try {
+            data.load(file);
+        } catch (IOException | InvalidConfigurationException ex) {
+            loadFailed = true;
+            String backupName = "unavailable";
+            try {
+                File backup = File.createTempFile("data-invalid-", ".yml.bak", plugin.getDataFolder());
+                Files.copy(file.toPath(), backup.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                backupName = backup.getName();
+            } catch (IOException backupFailure) {
+                plugin.getLogger().severe("Could not back up invalid data.yml: " + backupFailure.getMessage());
+            }
+            plugin.getLogger().severe("Refusing to start with invalid data.yml to protect player progress. "
+                    + "Original file was not modified; backup: " + backupName + ". Parse error: "
+                    + ex.getMessage());
+            return false;
+        }
         serverFragments = Math.max(0L, data.getLong("server.total-fragments", 0L));
         finaleUnlocked = data.getBoolean("server.finale-unlocked", false);
         vampireDefeated = data.getBoolean("server.vampire-defeated", false);
@@ -116,9 +136,14 @@ public final class HalloweenDataManager {
                 }
             }
         }
+        return true;
     }
 
     public void save() {
+        if (loadFailed) {
+            plugin.getLogger().severe("Refusing to overwrite data.yml because its previous load failed.");
+            return;
+        }
         YamlConfiguration data = new YamlConfiguration();
         data.set("server.total-fragments", serverFragments);
         data.set("server.finale-unlocked", finaleUnlocked);
