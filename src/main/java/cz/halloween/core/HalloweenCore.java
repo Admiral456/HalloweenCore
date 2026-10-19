@@ -90,6 +90,7 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(pumpkinVillagerManager, this);
         getServer().getPluginManager().registerEvents(cacheManager, this);
         getServer().getPluginManager().registerEvents(worldFeatureManager, this);
+        getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vanillaEventManager, this);
         // Legacy mob, quest, discovery, ambience and decoration listeners remain
         // unregistered; only the safe vanilla cache and new-chunk feature managers run.
@@ -150,7 +151,8 @@ public final class HalloweenCore extends JavaPlugin {
         getConfig().set("special-mobs.map-drop-chance", 0.0D);
         getConfig().set("story-quests.enabled", false);
         getConfig().set("haunted-village.enabled", false);
-        getConfig().set("secret-discoveries.enabled", false);
+        // Keep the vanilla-only hidden Easter eggs while retiring the old village system.
+        migrateVanillaSecretDiscoveries();
         getConfig().set("world-decorations.enabled", false);
         getConfig().set("atmosphere.enabled", false);
         getConfig().set("atmosphere.send-title-on-join", false);
@@ -191,6 +193,43 @@ public final class HalloweenCore extends JavaPlugin {
         saveConfig();
     }
 
+
+    /**
+     * One-time restore of the vanilla-only hidden discovery system. Previous cleanup
+     * versions disabled this feature; preserve any server-defined locations, and only
+     * add the stock Easter-egg definitions if the old config has none.
+     */
+    private void migrateVanillaSecretDiscoveries() {
+        if (getConfig().getBoolean("migrations.vanilla-secret-discoveries-v1", false)) return;
+
+        getConfig().set("secret-discoveries.enabled", true);
+        var locations = getConfig().getConfigurationSection("secret-discoveries.locations");
+        if (locations == null || locations.getKeys(false).isEmpty()) {
+            getConfig().set("secret-discoveries.default-radius-blocks", 4.5D);
+            getConfig().set("secret-discoveries.default-reward-fragments", 250L);
+
+            addDefaultSecret("blood-altar", "Krvavý oltář",
+                    "Někde poblíž starých kamenů se v noci ozývá tlukot.", 250L);
+            addDefaultSecret("witch-den", "Doupě hexové čarodějky",
+                    "Hledej místo, kde popel zůstává teplý i po dešti.", 300L);
+            addDefaultSecret("forgotten-grave", "Zapomenutý hrob",
+                    "Za posledním náhrobkem může něco čekat pod zemí.", 350L);
+        }
+        getConfig().set("migrations.vanilla-secret-discoveries-v1", true);
+    }
+
+    private void addDefaultSecret(String id, String name, String hint, long reward) {
+        String path = "secret-discoveries.locations." + id;
+        getConfig().set(path + ".name", name);
+        getConfig().set(path + ".hint", hint);
+        getConfig().set(path + ".configured", false);
+        getConfig().set(path + ".world", "");
+        getConfig().set(path + ".x", 0.0D);
+        getConfig().set(path + ".y", 0.0D);
+        getConfig().set(path + ".z", 0.0D);
+        getConfig().set(path + ".radius-blocks", 4.5D);
+        getConfig().set(path + ".reward-fragments", reward);
+    }
 
     /**
      * Reload runtime state after config edits. This cannot load changed Java classes;
