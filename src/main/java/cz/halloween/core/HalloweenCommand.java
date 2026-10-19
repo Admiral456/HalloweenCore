@@ -36,51 +36,6 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
-        if (args.length == 2 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
-                && sender.hasPermission("halloweencore.admin")) {
-            return List.of("reset").stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
-        if (args.length == 3 && (args[0].equalsIgnoreCase("quests") || args[0].equalsIgnoreCase("quest"))
-                && args[1].equalsIgnoreCase("reset") && sender.hasPermission("halloweencore.admin")) {
-            return Bukkit.getOnlinePlayers().stream()
-                    .map(Player::getName)
-                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
-                    .sorted()
-                    .toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("event") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("status", "start", "stop", "soulstorm", "witching-hour",
-                    "cursed-harvest", "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising", "random").stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
-        if (args.length == 3 && args[0].equalsIgnoreCase("event")
-                && args[1].equalsIgnoreCase("start") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("random", "soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion",
-                    "pumpkin-apocalypse", "graveyard-rising").stream()
-                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("shader") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("on", "off", "reload").stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("buildvampirearena") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("confirm").stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("setsecret") && sender.hasPermission("halloweencore.admin")) {
-            var secrets = plugin.getConfig().getConfigurationSection("secret-discoveries.locations");
-            if (secrets == null) return List.of();
-            return secrets.getKeys(false).stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
-                    .sorted()
-                    .toList();
-        }
         if (args.length == 2 && args[0].equalsIgnoreCase("claim")) {
             var section = plugin.getConfig().getConfigurationSection("rewards.shop");
             if (section == null) return List.of();
@@ -89,41 +44,12 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     .sorted()
                     .toList();
         }
-        if (args.length == 2 && args[0].equalsIgnoreCase("modelpreview") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("idle", "walk", "attack", "fly", "false_sigil", "blood_pulse", "mirror_strike", "nightfall")
-                    .stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("bosseffects") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("1", "2", "3", "4").stream()
-                    .filter(value -> value.startsWith(args[1]))
-                    .toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("event") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("status", "start", "stop", "soulstorm", "witching-hour", "cursed-harvest",
-                    "blood-moon-invasion", "pumpkin-apocalypse", "graveyard-rising", "random")
-                    .stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
-        if (args.length == 3 && args[0].equalsIgnoreCase("event") && args[1].equalsIgnoreCase("start")
+        if (args.length == 2 && args[0].equalsIgnoreCase("give")
                 && sender.hasPermission("halloweencore.admin")) {
-            return List.of("soulstorm", "witching-hour", "cursed-harvest", "blood-moon-invasion",
-                    "pumpkin-apocalypse", "graveyard-rising", "random")
-                    .stream()
-                    .filter(value -> value.startsWith(args[2].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("boss") && sender.hasPermission("halloweencore.admin")) {
-            return List.of("status", "start", "test", "stop").stream()
-                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
-                    .toList();
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("give") && sender.hasPermission("halloweencore.admin")) {
             return Bukkit.getOnlinePlayers().stream()
                     .map(Player::getName)
-                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .filter(value -> value.toLowerCase(java.util.Locale.ROOT)
+                            .startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .sorted()
                     .toList();
         }
@@ -205,7 +131,12 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             String eventName = plugin.getConfig().getString("random-events.types." + active + ".name", active);
             sender.sendMessage(plugin.color("&7Aktivní událost: &6" + eventName + " &7(" + plugin.getEventManager().getRemainingSeconds() + " s)"));
         } else {
-            sender.sendMessage(plugin.color("&7Další událost přibližně za: &e" + plugin.getEventManager().getNextEventSeconds() + " s"));
+            long nextEventSeconds = plugin.getEventManager().getNextEventSeconds();
+            if (!plugin.getConfig().getBoolean("random-events.enabled", false) || nextEventSeconds < 0L) {
+                sender.sendMessage(plugin.color("&7Automatické eventy: &eVYPNUTÉ"));
+            } else {
+                sender.sendMessage(plugin.color("&7Další událost přibližně za: &e" + nextEventSeconds + " s"));
+            }
         }
         sender.sendMessage(plugin.color("&7Serverový progress: &e" + total + " &7/ &e" + goal));
         sender.sendMessage(plugin.color("&7Progress: &e" + String.format("%.1f", plugin.getService().getGlobalProgressPercent()) + "%"));
@@ -404,79 +335,35 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         if (!checkAdmin(sender)) return true;
 
         boolean itemsAdder = plugin.getServer().getPluginManager().getPlugin("ItemsAdder") != null;
-        boolean mythicMobs = plugin.getServer().getPluginManager().getPlugin("MythicMobs") != null;
-        boolean modelEngine = plugin.getServer().getPluginManager().getPlugin("ModelEngine") != null;
-        boolean battlePass = plugin.getServer().getPluginManager().getPlugin("BattlePass") != null;
-        boolean worldGuard = plugin.getServer().getPluginManager().getPlugin("WorldGuard") != null;
-        boolean papi = plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
         boolean itemsAdderVersion = itemsAdder && plugin.getItemManager().isSupportedVersion();
-        boolean hunterMask = plugin.getItemManager().isCustomItemAvailable(
-                plugin.getConfig().getString("rewards.shop.hunter-mask.itemsadder-id", ""));
-        boolean cursedTalisman = plugin.getItemManager().isCustomItemAvailable(
-                plugin.getConfig().getString("rewards.shop.cursed-talisman.itemsadder-id", ""));
-        boolean halloweenToken = plugin.getItemManager().isCustomItemAvailable(
-                plugin.getConfig().getString("rewards.shop.halloween-token.itemsadder-id", ""));
-        boolean cursedCandy = plugin.getItemManager().isCustomItemAvailable(
-                plugin.getConfig().getString("special-mobs.relic-item-id", ""));
-        boolean hauntedMap = plugin.getItemManager().isCustomItemAvailable(
-                plugin.getConfig().getString("special-mobs.map-item-id", ""));
+        boolean cursedCandy = itemsAdder
+                && plugin.getItemManager().isCustomItemAvailable("warriorland_halloween:cursed_candy");
+        boolean papi = plugin.getServer().getPluginManager().getPlugin("PlaceholderAPI") != null;
 
         long total = plugin.getService().getServerFragments();
         long goal = plugin.getService().getGlobalGoal();
         double progress = plugin.getService().getGlobalProgressPercent();
-        HalloweenBossManager.VampireSpec vampire = plugin.getBossManager().getVampireSpec();
+        var configErrors = HalloweenConfigValidator.validate(plugin);
 
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
-        sender.sendMessage(plugin.color("&6&lHALLOWEEN DIAGNOSTIKA"));
-        sender.sendMessage(plugin.color("&7Event: " + (plugin.isEventEnabled() ? "&aON" : "&cOFF")));
-        sender.sendMessage(plugin.color("&7Random events: " + (plugin.getConfig().getBoolean("random-events.enabled", true) ? "&aON" : "&cOFF")));
-        sender.sendMessage(plugin.color("&7Server progress: &e" + total + " &7/ &e" + goal + " &8(" + String.format("%.1f", progress) + "%)"));
+        sender.sendMessage(plugin.color("&6&lHALLOWEENCORE — DIAGNOSTIKA"));
+        sender.sendMessage(plugin.color("&7Progres: " + (plugin.isEventEnabled() ? "&aZAPNUTÝ" : "&cVYPNUTÝ")));
+        sender.sendMessage(plugin.color("&7Serverové fragmenty: &e" + total + " &7/ &e" + goal
+                + " &8(" + String.format(java.util.Locale.ROOT, "%.1f", progress) + "%)"));
         sender.sendMessage(plugin.color("&7Online hráči: &e" + Bukkit.getOnlinePlayers().size()));
-        sender.sendMessage(plugin.color("&7ItemsAdder: " + status(itemsAdder) + " &8• verze: " + status(itemsAdderVersion)));
-        String musicId = plugin.getConfig().getString("atmosphere.sound", "");
-        sender.sendMessage(plugin.color("&7Halloween soundtrack: " + (!musicId.isBlank() && itemsAdder ? "&aNAKONFIGUROVÁN" : "&cNEDOSTUPNÝ")
-                + (musicId.isBlank() ? "" : " &8• " + musicId)));
-        sender.sendMessage(plugin.color("&7Vanilla hudba: &a31 override definic + watchdog MUSIC &8• klientský pack musí být přijat"));
-        sender.sendMessage(plugin.color("&7Speciální mobové: " + (mythicMobs && modelEngine ? "&aMythicMobs + ModelEngine nalezeny" : "&evanilla fallback; pro vlastní 3D modely je potřeba MythicMobs + ModelEngine")));
-        sender.sendMessage(plugin.color("&7Krvavý měsíc: &c" + plugin.getConfig().getDouble("random-events.blood-moon-damage-multiplier", 3.0D)
-                + "× poškození od monster &8• vlna " + plugin.getConfig().getInt("random-events.invasion-mobs-per-surge", 4)));
-        sender.sendMessage(plugin.color("&7  hunter_mask: " + status(hunterMask)));
-        sender.sendMessage(plugin.color("&7  cursed_talisman: " + status(cursedTalisman)));
-        sender.sendMessage(plugin.color("&7  halloween_token: " + status(halloweenToken)));
-        sender.sendMessage(plugin.color("&7  cursed_candy: " + status(cursedCandy)));
-        sender.sendMessage(plugin.color("&7  haunted_map: " + status(hauntedMap)));
-        sender.sendMessage(plugin.color("&7MythicMobs: " + status(mythicMobs)));
-        sender.sendMessage(plugin.color("&7ModelEngine: " + status(modelEngine)));
-        sender.sendMessage(plugin.color("&7BattlePass: " + status(battlePass)));
-        sender.sendMessage(plugin.color("&7WorldGuard: " + status(worldGuard)));
+        sender.sendMessage(plugin.color("&7ItemsAdder: " + status(itemsAdder)
+                + " &8• podporovaná verze: " + status(itemsAdderVersion)));
+        sender.sendMessage(plugin.color("&7Vlastní předmět cursed_candy: " + status(cursedCandy)));
         sender.sendMessage(plugin.color("&7PlaceholderAPI: " + status(papi)));
-        boolean villageConfigured = plugin.getConfig().getBoolean("haunted-village.enabled", false)
-                && !plugin.getConfig().getString("haunted-village.world", "").isBlank();
-        sender.sendMessage(plugin.color("&7Haunted Village: " + (villageConfigured ? "&aKONFIGUROVÁNA" : "&eČEKÁ NA SOUŘADNICE")));
-        var configErrors = HalloweenConfigValidator.validate(plugin);
-        sender.sendMessage(plugin.color("&7Config preflight: " + (configErrors.isEmpty() ? "&aOK" : "&c" + configErrors.size() + " chyba/chyb")));
-        if (!configErrors.isEmpty()) {
-            for (String error : configErrors) {
-                sender.sendMessage(plugin.color("&c  • " + error));
-            }
+        sender.sendMessage(plugin.color("&7Staré eventy, questy, vlastní mobové, soundtrack a dekorace: &eODSTAVENY"));
+        sender.sendMessage(plugin.color("&7Bonus talismanu: &e+"
+                + plugin.getConfig().getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D)
+                + " zdraví &8(1 srdce = 2 body)"));
+        sender.sendMessage(plugin.color("&7Kontrola konfigurace: "
+                + (configErrors.isEmpty() ? "&aOK" : "&c" + configErrors.size() + " problémů")));
+        for (String error : configErrors) {
+            sender.sendMessage(plugin.color("&c  • " + error));
         }
-        sender.sendMessage(plugin.color("&7Finále odemčeno: " + (plugin.getDataManager().isFinaleUnlocked() ? "&aANO" : "&cNE")));
-        String arenaWorld = plugin.getConfig().getString("bosses.vampire.arena.world", "");
-        boolean arenaConfigured = plugin.getConfig().getBoolean("bosses.vampire.arena.configured", false);
-        boolean arenaWorldLoaded = !arenaWorld.isBlank() && Bukkit.getWorld(arenaWorld) != null;
-        sender.sendMessage(plugin.color("&7Upíří boss: &e" + vampire.id()
-                + " &7min. &e" + vampire.minHeightBlocks() + " &7h / &e" + vampire.minWidthWithWingsBlocks()
-                + " &7w+křídla " + (plugin.getBossManager().isVampireSpecificationValid() ? "&aOK" : "&cNE")
-                + " &8• připravenost: " + (plugin.getBossManager().isVampireReady() ? "&aANO" : "&eČEKÁ")));
-        sender.sendMessage(plugin.color("&7Upíří aréna: " + (arenaConfigured ? "&aNASTAVENA" : "&eNENÍ")
-                + (arenaConfigured ? " &8• svět: " + (arenaWorldLoaded ? "&aNAČTEN" : "&cNENAČTEN") : "")));
-        var modelSection = plugin.getConfig().getConfigurationSection("bosses.vampire.model");
-        boolean modelRequired = modelSection == null || modelSection.getBoolean("required", true);
-        boolean modelReady = modelSection != null && modelSection.getBoolean("ready", false);
-        String modelId = modelSection == null ? "" : modelSection.getString("id", "");
-        sender.sendMessage(plugin.color("&7Model: " + (modelRequired ? (modelReady ? "&aPŘIPRAVEN" : "&eČEKÁ") : "&7VOLITELNÝ")
-                + (modelId.isBlank() ? "" : " &8• " + modelId)));
-        sender.sendMessage(plugin.color("&7Boss bar: " + (plugin.getBossManager().isVampireBossBarActive() ? "&aAKTIVNÍ" : "&eČEKÁ NA BOSSE")));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
         return true;
     }
