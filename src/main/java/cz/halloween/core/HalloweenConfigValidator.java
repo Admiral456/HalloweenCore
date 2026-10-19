@@ -133,8 +133,12 @@ public final class HalloweenConfigValidator {
                     "world-features.generation.pumpkin-patch-chance-per-chunk", 0.06D);
             double webChance = plugin.getConfig().getDouble(
                     "world-features.generation.cave-web-patch-chance-per-chunk", 0.04D);
+            double altarChance = plugin.getConfig().getDouble(
+                    "world-features.generation.ancient-altar-chance-per-chunk", 0.02D);
             int featureAttempts = plugin.getConfig().getInt(
                     "world-features.generation.attempts-per-feature", 24);
+            int altarAttempts = plugin.getConfig().getInt(
+                    "world-features.generation.altar-attempts-per-feature", 16);
             int pumpkinsPerPatch = plugin.getConfig().getInt(
                     "world-features.generation.max-pumpkins-per-patch", 4);
             int websPerPatch = plugin.getConfig().getInt(
@@ -147,6 +151,12 @@ public final class HalloweenConfigValidator {
             }
             if (!Double.isFinite(webChance) || webChance < 0.0D || webChance > 1.0D) {
                 errors.add("world-features.generation.cave-web-patch-chance-per-chunk must be between 0 and 1");
+            }
+            if (!Double.isFinite(altarChance) || altarChance < 0.0D || altarChance > 1.0D) {
+                errors.add("world-features.generation.ancient-altar-chance-per-chunk must be between 0 and 1");
+            }
+            if (altarAttempts < 1 || altarAttempts > 32) {
+                errors.add("world-features.generation.altar-attempts-per-feature must be between 1 and 32");
             }
             if (featureAttempts < 1 || featureAttempts > 64) {
                 errors.add("world-features.generation.attempts-per-feature must be between 1 and 64");
