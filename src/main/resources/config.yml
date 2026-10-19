@@ -247,8 +247,43 @@ story-quests:
 haunted-village:
   enabled: false
 
+# Vanilla-only hidden Easter eggs. Admins set each real location with /halloween setsecret <id>.
+# Players see the name and clue, never the configured coordinates.
 secret-discoveries:
-  enabled: false
+  enabled: true
+  default-radius-blocks: 4.5
+  default-reward-fragments: 250
+  locations:
+    blood-altar:
+      name: "Krvavý oltář"
+      hint: "Někde poblíž starých kamenů se v noci ozývá tlukot."
+      configured: false
+      world: ""
+      x: 0
+      y: 0
+      z: 0
+      radius-blocks: 4.5
+      reward-fragments: 250
+    witch-den:
+      name: "Doupě hexové čarodějky"
+      hint: "Hledej místo, kde popel zůstává teplý i po dešti."
+      configured: false
+      world: ""
+      x: 0
+      y: 0
+      z: 0
+      radius-blocks: 4.5
+      reward-fragments: 300
+    forgotten-grave:
+      name: "Zapomenutý hrob"
+      hint: "Za posledním náhrobkem může něco čekat pod zemí."
+      configured: false
+      world: ""
+      x: 0
+      y: 0
+      z: 0
+      radius-blocks: 4.5
+      reward-fragments: 350
 
 bosses:
   vampire:
