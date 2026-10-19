@@ -263,7 +263,7 @@ public final class HalloweenVanillaEventManager implements Listener {
         int spawnedTotal = 0;
         for (World world : Bukkit.getWorlds()) {
             if (!plugin.isEligibleGameplayWorld(world)) continue;
-            List<Player> targets = world.getPlayers().stream()
+            var targets = world.getPlayers().stream()
                     .filter(plugin::isEligibleGameplayPlayer)
                     .toList();
             if (targets.isEmpty()) continue;
