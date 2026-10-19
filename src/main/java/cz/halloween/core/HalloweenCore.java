@@ -37,6 +37,7 @@ public final class HalloweenCore extends JavaPlugin {
     private HalloweenPassiveEffectManager passiveEffectManager;
     private HalloweenPumpkinVillagerManager pumpkinVillagerManager;
     private HalloweenCacheManager cacheManager;
+    private HalloweenWorldFeatureManager worldFeatureManager;
     private HalloweenVillageDiscoveryManager villageDiscoveryManager;
     private HalloweenSecretDiscoveryManager secretDiscoveryManager;
     private HalloweenVampireEncounterManager vampireEncounterManager;
@@ -68,6 +69,7 @@ public final class HalloweenCore extends JavaPlugin {
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
         pumpkinVillagerManager = new HalloweenPumpkinVillagerManager(this);
         cacheManager = new HalloweenCacheManager(this);
+        worldFeatureManager = new HalloweenWorldFeatureManager(this);
         villageDiscoveryManager = new HalloweenVillageDiscoveryManager(this);
         secretDiscoveryManager = new HalloweenSecretDiscoveryManager(this);
         vampireEncounterManager = new HalloweenVampireEncounterManager(this);
@@ -83,8 +85,9 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(passiveEffectManager, this);
         getServer().getPluginManager().registerEvents(pumpkinVillagerManager, this);
         getServer().getPluginManager().registerEvents(cacheManager, this);
-        // Legacy mob, quest, discovery, atmosphere and world-generation listeners
-        // remain unregistered while the replacement vanilla systems are developed.
+        getServer().getPluginManager().registerEvents(worldFeatureManager, this);
+        // Legacy mob, quest, discovery, ambience and decoration listeners remain
+        // unregistered; only the safe vanilla cache and new-chunk feature managers run.
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
@@ -254,6 +257,10 @@ public final class HalloweenCore extends JavaPlugin {
 
     public HalloweenCacheManager getCacheManager() {
         return cacheManager;
+    }
+
+    public HalloweenWorldFeatureManager getWorldFeatureManager() {
+        return worldFeatureManager;
     }
 
     public HalloweenQuestManager getQuestManager() {
