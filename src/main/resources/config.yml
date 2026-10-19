@@ -364,6 +364,24 @@ secret-discoveries:
       radius-blocks: 4.5
       reward-fragments: 350
 
+# Admin-triggered final boss encounter using a vanilla Wither Skeleton only.
+# It never spawns automatically; an administrator must run /halloween boss spawn.
+vanilla-boss:
+  enabled: true
+  max-health: 240.0
+  tracking-radius-blocks: 96.0
+  pulse:
+    interval-seconds: 18
+    radius-blocks: 8.0
+    damage: 4.0
+    windup-ticks: 30
+    dodge-radius-blocks: 2.0
+    wither-ticks: 60
+  rewards:
+    participation-fragments: 300
+    top-contributor-bonus-fragments: 250
+
+# Retired model-required boss configuration; stays disabled.
 bosses:
   vampire:
     enabled: false
