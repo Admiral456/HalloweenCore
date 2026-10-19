@@ -33,7 +33,6 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Run /halloween off, wait past a due pulse, and verify no new ambience cues occur. Run /halloween on and /halloween reload and confirm ambience resumes without duplicate timers.
 
 ## 3. Fragment and save safety
-## 3. Fragment and save safety
 
 - [ ] Earn fragments by mob kills, mining, farming, and fishing. Confirm configured reward values, allowed gamemodes/worlds, and per-minute caps.
 - [ ] Reach a mob-kill cap, disconnect/reconnect within the same minute, and verify reconnecting does not reset the cap.
