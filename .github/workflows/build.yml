@@ -159,6 +159,14 @@ jobs:
               raise SystemExit("Invalid player data must be preserved to a backup")
           if "if (!dataManager.load())" not in core_source:
               raise SystemExit("Plugin startup must stop when persistent data cannot be loaded safely")
+          if "CURRENT_SCHEMA_VERSION = 1" not in data_manager:
+              raise SystemExit("Persistent data schema version must be explicit")
+          if 'data.getInt("meta.schema-version", 0)' not in data_manager:
+              raise SystemExit("Legacy data without a schema version must remain readable")
+          if "storedSchemaVersion > CURRENT_SCHEMA_VERSION" not in data_manager:
+              raise SystemExit("Unknown future data schema must be rejected safely")
+          if 'data.set("meta.schema-version", CURRENT_SCHEMA_VERSION)' not in data_manager:
+              raise SystemExit("Saved player data must include the current schema version")
 
           print("Persistent data failure-safety checks passed.")
           print("Cleanup invariants and retired-feature checks passed.")
