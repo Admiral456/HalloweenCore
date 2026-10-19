@@ -652,7 +652,8 @@ jobs:
               'plugin.setVanillaAtmosphereEnabled(enabled);',
               'manager.getMinimumIntervalSeconds()',
               'manager.getMaximumIntervalSeconds()',
-              'List.of("status", "on", "off")',
+              'List.of("status")',
+              'options.addAll(List.of("on", "off"))',
           ):
               if atmosphere_command_guard not in atmosphere_command:
                   raise SystemExit(f"Vanilla ambience command missing: {atmosphere_command_guard}")
