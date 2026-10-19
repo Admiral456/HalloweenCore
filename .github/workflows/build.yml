@@ -535,10 +535,10 @@ jobs:
           checklist_text = checklist.read_text(encoding="utf-8")
           for checklist_guard in (
               "not directly on the production world",
-              "migrations",
+              "migration",
               "cursed-candy",
               "blood-moon",
-              "does not replace a live-server test",
+              "do not replace a live-server test",
           ):
               if checklist_guard not in checklist_text:
                   raise SystemExit(f"Release checklist is missing required coverage: {checklist_guard}")
