@@ -55,9 +55,14 @@ public final class HalloweenChallengeManager {
 
     private void ensureToday(Player player) {
         String day = LocalDate.now().toString();
-        String stored = plugin.getDataManager().getChallengeDay(player.getUniqueId());
-        if (day.equals(stored)) return;
+        String storedDay = plugin.getDataManager().getChallengeDay(player.getUniqueId());
+        String storedType = plugin.getDataManager().getChallengeType(player.getUniqueId());
+        boolean knownChallenge = challenges.stream()
+                .anyMatch(challenge -> challenge.id().equalsIgnoreCase(storedType));
+        if (day.equals(storedDay) && knownChallenge) return;
 
+        // Reassign invalid/retired challenge IDs as well as a new day. This avoids
+        // silently treating old "rare-hunt" progress as an ordinary hunt challenge.
         int index = Math.floorMod(LocalDate.now().getDayOfYear() + player.getUniqueId().hashCode(), challenges.size());
         Challenge challenge = challenges.get(index);
         plugin.getDataManager().setChallenge(player.getUniqueId(), day, challenge.id());
@@ -65,7 +70,7 @@ public final class HalloweenChallengeManager {
 
     private Challenge getChallenge(Player player) {
         String id = plugin.getDataManager().getChallengeType(player.getUniqueId());
-        return challenges.stream().filter(c -> c.id().equalsIgnoreCase(id)).findFirst().orElse(challenges.get(0));
+        return challenges.stream().filter(c -> c.id().equalsIgnoreCase(id)).findFirst().orElse(null);
     }
 
     private void claim(Player player, Challenge challenge) {
