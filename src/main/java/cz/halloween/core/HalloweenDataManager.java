@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -91,6 +92,11 @@ public final class HalloweenDataManager {
                     + " is newer than supported version " + CURRENT_SCHEMA_VERSION
                     + "; upgrade HalloweenCore before using this data");
         }
+        if (!hasTypeIfPresent(data, "server.total-fragments", Number.class)
+                || !hasTypeIfPresent(data, "server.finale-unlocked", Boolean.class)
+                || !hasTypeIfPresent(data, "server.vampire-defeated", Boolean.class)) {
+            return failLoadSafely("server state contains a value with an unexpected YAML type");
+        }
 
         serverFragments = Math.max(0L, data.getLong("server.total-fragments", 0L));
         finaleUnlocked = data.getBoolean("server.finale-unlocked", false);
@@ -105,6 +111,27 @@ public final class HalloweenDataManager {
                 try {
                     UUID uuid = UUID.fromString(key);
                     String base = "players." + key;
+
+                    if (!hasTypeIfPresent(data, base + ".fragments", Number.class)
+                            || !hasTypeIfPresent(data, base + ".lifetime-fragments", Number.class)
+                            || !hasTypeIfPresent(data, base + ".last-join", Number.class)
+                            || !hasTypeIfPresent(data, base + ".streak", Number.class)
+                            || !hasTypeIfPresent(data, base + ".challenge.progress", Number.class)
+                            || !hasTypeIfPresent(data, base + ".story-quest.progress", Number.class)
+                            || !hasTypeIfPresent(data, base + ".challenge.claimed", Boolean.class)
+                            || !hasTypeIfPresent(data, base + ".haunted-village-discovered", Boolean.class)
+                            || !hasTypeIfPresent(data, base + ".challenge.day", String.class)
+                            || !hasTypeIfPresent(data, base + ".challenge.type", String.class)
+                            || !hasTypeIfPresent(data, base + ".story-quest.active", String.class)
+                            || !isStringListIfPresent(data, base + ".claimed-rewards")
+                            || !isStringListIfPresent(data, base + ".secret-discoveries")
+                            || !isStringListIfPresent(data, base + ".story-quest.completed")
+                            || (data.isSet(base + ".challenge")
+                                && !data.isConfigurationSection(base + ".challenge"))
+                            || (data.isSet(base + ".story-quest")
+                                && !data.isConfigurationSection(base + ".story-quest"))) {
+                        return failLoadSafely("player data contains a value with an unexpected YAML type: " + key);
+                    }
 
                     long amount = Math.max(0L, data.getLong(base + ".fragments", 0L));
                     long lifetime = Math.max(0L, data.getLong(base + ".lifetime-fragments", amount));
@@ -152,6 +179,17 @@ public final class HalloweenDataManager {
             }
         }
         return true;
+    }
+
+    private boolean hasTypeIfPresent(YamlConfiguration data, String path, Class<?> expectedType) {
+        return !data.isSet(path) || expectedType.isInstance(data.get(path));
+    }
+
+    private boolean isStringListIfPresent(YamlConfiguration data, String path) {
+        if (!data.isSet(path)) return true;
+        Object value = data.get(path);
+        if (!(value instanceof List<?> values)) return false;
+        return values.stream().allMatch(String.class::isInstance);
     }
 
     private boolean failLoadSafely(String reason) {
