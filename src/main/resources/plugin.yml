@@ -3,12 +3,12 @@ version: 0.1.0-SNAPSHOT
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
-description: Halloween progression, vanilla story quests, events, pumpkin villager and underground caches.
+description: Halloween progression, vanilla elite mobs and boss, story quests, events and rewards.
 softdepend: [ItemsAdder, PlaceholderAPI]
 commands:
   halloween:
     description: Halloween progression, rewards and administration.
-    usage: /halloween [stats|progress|curse|challenge|quests|rewards|claim|top|event|ambience|secrets|setsecret|npc|cache|reload|debug|give|on|off] (quests: reset <online player>; ambience: status|on|off|test)
+    usage: /halloween [stats|progress|curse|challenge|quests|boss|rewards|claim|top|event|ambience|secrets|setsecret|npc|cache|reload|debug|give|on|off] (boss: status|spawn|stop; quests: reset <online player>; ambience: status|on|off|test)
     aliases: [hallow]
     permission: halloweencore.use
 permissions:
