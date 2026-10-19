@@ -87,7 +87,8 @@ public final class HalloweenCacheManager implements Listener {
                 || !event.isNewChunk()) return;
 
         Chunk chunk = event.getChunk();
-        if (chunk.getWorld().getEnvironment() != World.Environment.NORMAL) return;
+        if (chunk.getWorld().getEnvironment() != World.Environment.NORMAL
+                || !plugin.isEligibleGameplayWorld(chunk.getWorld())) return;
 
         double chance = clamp(plugin.getConfig().getDouble(
                 "underground-caches.generation.chance-per-new-chunk", 0.10D), 0.0D, 1.0D);
