@@ -148,6 +148,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getConfig().set("special-mobs.custom-models.enabled", false);
         getConfig().set("special-mobs.relic-item-id", "warriorland_halloween:cursed_candy");
         getConfig().set("special-mobs.relic-drop-chance", 0.0D);
+        getConfig().set("special-mobs.map-drop-chance", 0.0D);
+        getConfig().set("special-mobs.map-item-id", "minecraft:map");
         getConfig().set("story-quests.enabled", false);
         getConfig().set("haunted-village.enabled", false);
         getConfig().set("secret-discoveries.enabled", false);
