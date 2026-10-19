@@ -161,8 +161,21 @@ jobs:
           ).read_text(encoding="utf-8")
           if "cursed_candy:" not in candy_config or "texture: item/cursed_candy" not in candy_config:
               raise SystemExit("ItemsAdder cursed candy definition or texture link is missing")
-          if not re.search(
-              r'(?ms)^    cursed-candy:\n      cost: 500\n      min-curse: 0\n      itemsadder-id: "warriorland_halloween:cursed_candy"\n      material: PUMPKIN_PIE\n      amount: 1
+          candy_reward_start = config.find("    cursed-candy:")
+          candy_reward_end = config.find("    hunter-mask:", candy_reward_start)
+          if candy_reward_start < 0 or candy_reward_end < 0:
+              raise SystemExit("Cursed candy limited reward is missing")
+          candy_reward_section = config[candy_reward_start:candy_reward_end]
+          for required_candy_line in (
+              "      cost: 500",
+              "      min-curse: 0",
+              '      itemsadder-id: "warriorland_halloween:cursed_candy"',
+              "      material: PUMPKIN_PIE",
+              "      amount: 1",
+          ):
+              if required_candy_line not in candy_reward_section:
+                  raise SystemExit(f"Cursed candy reward is missing: {required_candy_line}")
+
           command_source = Path(
               "src/main/java/cz/halloween/core/HalloweenCommand.java"
           ).read_text(encoding="utf-8")
