@@ -26,6 +26,7 @@ rewards:
   mob-kill:
     enabled: true
     fragments: 1
+    max-fragment-rewards-per-minute: 60
   mining:
     enabled: true
     fragments: 1
