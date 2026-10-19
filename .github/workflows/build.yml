@@ -135,6 +135,20 @@ jobs:
               raise SystemExit("Retired Haunted Village map behavior must not remain in the active item listener")
           if '"cursed-candy-2026"' not in item_listener:
               raise SystemExit("Retained cursed candy consume behavior is missing")
+          if 'plugin.getItemManager().isItemsAdderItem(' not in item_listener:
+              raise SystemExit("Cursed candy must be detected by its ItemsAdder registry ID")
+          item_manager_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenItemManager.java"
+          ).read_text(encoding="utf-8")
+          for itemsadder_guard in (
+              'getMethod("byItemStack", ItemStack.class)',
+              'getMethod("getNamespacedID")',
+              'id.equalsIgnoreCase(namespacedId)',
+          ):
+              if itemsadder_guard not in item_manager_source:
+                  raise SystemExit(f"ItemsAdder custom-item detection missing: {itemsadder_guard}")
+          if '"warriorland_halloween:cursed_candy"' not in item_listener:
+              raise SystemExit("Cursed candy listener points to the wrong ItemsAdder ID")
 
           command_source = Path(
               "src/main/java/cz/halloween/core/HalloweenCommand.java"
