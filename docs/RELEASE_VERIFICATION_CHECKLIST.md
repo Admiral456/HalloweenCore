@@ -64,7 +64,7 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] When an ancient altar appears, verify it consists of a few mossy/cracked stone blocks and a soul lantern above untouched natural terrain. Confirm it is only generated in a clear natural area and never overwrites blocks or tile entities.
 - [ ] With underground-caches.enabled: false, verify an existing locked cache becomes a normal accessible chest on its next open instead of trapping its loot.
 
-## 6. Vanilla story campaign
+## 7. Vanilla story campaign
 
 - [ ] Run /halloween quests on a fresh staging player. Confirm chapter 1 of 9 appears with an objective, progress, and fragment reward.
 - [ ] Complete a chapter, restart the server, and confirm the next chapter and completion count persist without duplicate rewards.
@@ -74,7 +74,7 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Run /halloween quests reset <online player> as an admin and verify progress is cleared. Confirm a non-admin cannot reset anyone's campaign.
 - [ ] Test an older config without migrations.vanilla-story-quests-v1. Startup should enable the vanilla campaign once; after an admin disables it and saves the config, a reload/restart must keep it disabled.
 
-## 7. Release artifacts
+## 8. Release artifacts
 
 - [ ] Confirm GitHub Actions passes the Maven build, smoke checks, ItemsAdder ZIP package test, and both artifact uploads.
 - [ ] Inspect the ItemsAdder ZIP. It should contain only the cursed-candy content and the three retained Minecraft pumpkin block texture overrides. There should be no retired shader, OGG files, or old MythicMobs content.
