@@ -63,6 +63,12 @@ The replacement event scheduler uses existing Minecraft assets only. Automatic e
 
 Use `/halloween event stop` to end the current event early. `/halloween off` stops the event scheduler along with fragment progression; `/halloween on` starts a fresh schedule. Event multipliers and timing can be adjusted under `vanilla-events` in `config.yml`. The retired custom-mob events remain disabled and are not reactivated by this scheduler.
 
+## Vanilla ambient atmosphere
+
+The replacement ambience adds occasional, localized cues using only Minecraft's built-in ash and soul particles plus vanilla cave, witch, and phantom sounds. It is deliberately sparse: each pulse chooses eligible players individually, uses a randomized location nearby, and never stops or replaces Minecraft's normal background music. No custom sound files, ItemsAdder sound registration, resource pack, shader, or model is required.
+
+Tune `vanilla-atmosphere` in `config.yml`: `min-interval-seconds` and `max-interval-seconds` set the interval between pulses (default 90–180 seconds), `player-chance` sets the probability a given eligible player receives a cue on each pulse (default 0.35), `particles-enabled` and `sounds-enabled` can be switched off independently, and `sound-volume` controls ambience volume. It pauses when Halloween is turned off and restarts cleanly after `/halloween reload`.
+
 ## Vanilla world features
 
 On newly generated Overworld chunks only, the plugin can very rarely add small natural pumpkin patches in open grassland/forest biomes and a few cobwebs inside naturally enclosed cave pockets. It uses vanilla blocks only, does not add custom mobs or custom models, and does not scan older chunks. Surface placement requires a patch of natural ground with clear space; local tile-entity checks guard each placement. Cave-web placement is limited by configured Y levels and requires natural stone around the candidate.
