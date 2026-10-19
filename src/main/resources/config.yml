@@ -108,6 +108,22 @@ rewards:
 
 
 
+
+vanilla-events:
+  enabled: true
+  first-delay-seconds: 300
+  interval-minutes:
+    min: 20
+    max: 35
+  duration-minutes: 6
+  pumpkin-harvest:
+    farming-fragment-multiplier: 2.0
+  witching-hour:
+    mob-kill-fragment-multiplier: 1.5
+  blood-moon:
+    mob-kill-fragment-multiplier: 1.25
+    hostile-damage-multiplier: 1.5
+
 world-features:
   enabled: true
   generation:
