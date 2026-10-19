@@ -27,6 +27,7 @@ public final class HalloweenCore extends JavaPlugin {
     private HalloweenServiceImpl service;
     private boolean eventEnabled;
     private HalloweenEventManager eventManager;
+    private HalloweenVanillaEventManager vanillaEventManager;
     private HalloweenRewardManager rewardManager;
     private HalloweenAtmosphere atmosphere;
     private HalloweenMobManager mobManager;
@@ -59,6 +60,7 @@ public final class HalloweenCore extends JavaPlugin {
         eventEnabled = getConfig().getBoolean("enabled", true);
         service = new HalloweenServiceImpl(this);
         eventManager = new HalloweenEventManager(this);
+        vanillaEventManager = new HalloweenVanillaEventManager(this);
         rewardManager = new HalloweenRewardManager(this);
         atmosphere = new HalloweenAtmosphere(this);
         mobManager = new HalloweenMobManager(this);
@@ -86,6 +88,7 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(pumpkinVillagerManager, this);
         getServer().getPluginManager().registerEvents(cacheManager, this);
         getServer().getPluginManager().registerEvents(worldFeatureManager, this);
+        getServer().getPluginManager().registerEvents(vanillaEventManager, this);
         // Legacy mob, quest, discovery, ambience and decoration listeners remain
         // unregistered; only the safe vanilla cache and new-chunk feature managers run.
 
@@ -98,6 +101,7 @@ public final class HalloweenCore extends JavaPlugin {
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
+        vanillaEventManager.start();
         // Retired ambience, world decoration, and boss systems remain stopped.
         worldDecorator.stop();
         atmosphere.stopPlayback();
@@ -118,6 +122,7 @@ public final class HalloweenCore extends JavaPlugin {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
+        if (vanillaEventManager != null) vanillaEventManager.stop();
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
@@ -181,6 +186,7 @@ public final class HalloweenCore extends JavaPlugin {
         if (worldDecorator != null) worldDecorator.stop();
 
         logConfigValidationIssues();
+        if (vanillaEventManager != null) vanillaEventManager.restart();
         getLogger().info("HalloweenCore runtime state reloaded. enabled=" + eventEnabled
                 + ", random-events=" + getConfig().getBoolean("random-events.enabled", false)
                 + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", false)
@@ -203,6 +209,11 @@ public final class HalloweenCore extends JavaPlugin {
             vampireEncounterManager.stopEncounter();
         }
         if (bossManager != null) bossManager.stopVampireBossBar();
+
+        if (vanillaEventManager != null) {
+            if (enabled) vanillaEventManager.start();
+            else vanillaEventManager.stop();
+        }
 
         if (changed) {
             Bukkit.broadcastMessage(color(enabled
@@ -233,6 +244,10 @@ public final class HalloweenCore extends JavaPlugin {
 
     public HalloweenEventManager getEventManager() {
         return eventManager;
+    }
+
+    public HalloweenVanillaEventManager getVanillaEventManager() {
+        return vanillaEventManager;
     }
 
     public HalloweenRewardManager getRewardManager() {
