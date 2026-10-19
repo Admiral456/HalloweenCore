@@ -82,11 +82,13 @@ All three locations ship as unconfigured, so nothing rewards players at a placeh
 
 ## Vanilla world features
 
-On newly generated Overworld chunks only, the plugin can very rarely add small natural pumpkin patches in open grassland/forest biomes and a few cobwebs inside naturally enclosed cave pockets. It uses vanilla blocks only, does not add custom mobs or custom models, and does not scan older chunks. Surface placement requires a patch of natural ground with clear space; local tile-entity checks guard each placement. Cave-web placement is limited by configured Y levels and requires natural stone around the candidate.
+On newly generated Overworld chunks only, the plugin can rarely add small natural pumpkin patches in open grassland/forest biomes, a few cobwebs inside naturally enclosed cave pockets, and a tiny ruined ancient altar made from mossy cobblestone, cracked stone bricks, and a soul lantern. The altar chance defaults to 2% per new chunk. It uses vanilla blocks only, does not add custom mobs or custom models, and does not scan older chunks or replace terrain blocks. Surface placement requires natural ground with a clear 5×5 area; local tile-entity checks guard each placement. Cave-web placement is limited by configured Y levels and requires natural stone around the candidate.
 
 Settings live under `world-features` in `config.yml`:
 - `pumpkin-patch-chance-per-chunk`: chance to try a small pumpkin patch per newly generated Overworld chunk (default 6%).
 - `cave-web-patch-chance-per-chunk`: chance to try a cave-web patch (default 4%).
+- `ancient-altar-chance-per-chunk`: chance to try a tiny ruined altar on a newly generated chunk (default 2%).
+- `altar-attempts-per-feature`: bounded number of safe surface locations to check for an altar.
 - `max-pumpkins-per-patch` and `max-cave-webs-per-patch`: strict placement caps.
 - `cave-webs-min-y` / `cave-webs-max-y`: depth range for cave cobwebs.
 
