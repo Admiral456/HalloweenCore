@@ -89,7 +89,6 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
-        // Retired ambience, world decoration, and boss systems remain stopped on this branch.
         // Retired ambience, world decoration, and boss systems remain stopped.
         worldDecorator.stop();
         atmosphere.stopPlayback();
@@ -204,17 +203,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             saveConfig();
         }
 
-        if (eventManager != null) {
-            if (enabled) {
-                // Even if the switch was already ON, give the administrator a visible,
-                // near-term event instead of silently retaining a 20–35 minute timer.
-                eventManager.scheduleFirstEvent();
-            } else {
-                eventManager.stop();
-                if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
-                if (bossManager != null) bossManager.stopVampireBossBar();
-            }
-        }
+        if (eventManager != null) eventManager.stop();
         if (atmosphere != null) atmosphere.stopPlayback();
         if (worldDecorator != null) worldDecorator.stop();
         if (vampireEncounterManager != null) {
