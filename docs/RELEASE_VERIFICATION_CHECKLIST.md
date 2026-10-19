@@ -34,7 +34,17 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Run /halloween ambience off and /halloween ambience on as an administrator. Status must reflect the configured/running state; toggling must persist across restart and remain separate from /halloween on|off.
 - [ ] Run /halloween off, wait past a due pulse, and verify no new ambience cues occur. Run /halloween on and /halloween reload and confirm ambience resumes without duplicate timers.
 
-## 3. Fragment and save safety
+## 3. Hidden discoveries and Easter eggs
+
+- [ ] Confirm the config contains the three default IDs: blood-altar, witch-den, and forgotten-grave; all are unconfigured before an admin places them.
+- [ ] In a staging world, stand at each desired location and run /halloween setsecret <id>. Confirm the world and location are saved in config.yml and the plugin reports the name of the configured secret.
+- [ ] Run /halloween secrets as a normal player. It should show discovered count and clue text, never coordinates. Unconfigured locations should not count as discoverable locations.
+- [ ] Visit a configured discovery with one player. Verify the one-time fragment reward, title, chime, and vanilla particles. Leave and re-enter the radius and confirm there is no second reward.
+- [ ] Visit the same location with a second player. That player should receive their own one-time reward, independent of other players' discoveries.
+- [ ] Restart after discovering a location. Verify the discovery stays marked in data.yml and cannot be farmed again.
+- [ ] Test a copy of a config from the previous cleanup build with secret-discoveries disabled and no locations. The one-time migration should restore the three definitions without overwriting any custom locations already present.
+
+## 4. Fragment and save safety
 
 - [ ] Earn fragments by mob kills, mining, farming, and fishing. Confirm configured reward values, allowed gamemodes/worlds, and per-minute caps.
 - [ ] Reach a mob-kill cap, disconnect/reconnect within the same minute, and verify reconnecting does not reset the cap.
@@ -42,7 +52,7 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Earn ordinary fragments and complete/claim a daily challenge. Restart the server and verify balance, lifetime totals, curse level, challenge claim state, and claimed reward state are preserved.
 - [ ] On a disposable test copy only, test malformed data.yml and unsupported schema versions. Startup must refuse to overwrite the original data and must report a backup.
 
-## 4. Pumpkin villager and underground caches
+## 5. Pumpkin villager and underground caches
 
 - [ ] Run /halloween npc spawn <name> in a clear area. Verify the villager wears a carved-pumpkin helmet, remains persistent through restart, cannot be damaged, and does not open the vanilla trading interface while enabled.
 - [ ] Right-click the NPC and test all clickable dialogue links: rewards, daily challenge, and server progress.
@@ -52,7 +62,7 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] On a new test world, explore newly generated Overworld chunks. The pumpkin patches, cave cobwebs, and generated locked caches are intentionally sparse and only generated for new chunks; existing chunks are not retroactively scanned. Do not use the absence of a structure in one chunk as a failed test.
 - [ ] With underground-caches.enabled: false, verify an existing locked cache becomes a normal accessible chest on its next open instead of trapping its loot.
 
-## 5. Release artifacts
+## 6. Release artifacts
 
 - [ ] Confirm GitHub Actions passes the Maven build, smoke checks, ItemsAdder ZIP package test, and both artifact uploads.
 - [ ] Inspect the ItemsAdder ZIP. It should contain only the cursed-candy content and the three retained Minecraft pumpkin block texture overrides. There should be no retired shader, OGG files, or old MythicMobs content.
