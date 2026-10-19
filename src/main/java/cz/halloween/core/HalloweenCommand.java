@@ -29,8 +29,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = List.of(
-                    "stats", "progress", "curse", "event", "challenge", "quests",
-                    "rewards", "claim", "top", "reload", "debug", "setvillage", "setvampirearena", "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview", "give", "shader", "on", "off"
+                    "stats", "progress", "curse", "challenge", "rewards", "claim",
+                    "top", "reload", "debug", "give", "on", "off"
             );
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
@@ -133,6 +133,15 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (args.length == 0 || args[0].equalsIgnoreCase("stats")) return stats(sender);
+
+        String requested = args[0].toLowerCase(java.util.Locale.ROOT);
+        if (List.of("event", "quests", "quest", "shader", "setvillage", "setvampirearena",
+                "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview")
+                .contains(requested)) {
+            sender.sendMessage(plugin.color("&eTato stará Halloween funkce byla odstavena a bude nahrazena novým vanilla systémem."));
+            return true;
+        }
+
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
         if (args[0].equalsIgnoreCase("curse")) return curse(sender);
@@ -158,26 +167,15 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween &7- tvoje Halloween statistiky"));
         sender.sendMessage(plugin.color("&6/halloween progress &7- společný progress serveru"));
         sender.sendMessage(plugin.color("&6/halloween curse &7- tvoje úroveň prokletí"));
-        sender.sendMessage(plugin.color("&6/halloween event [start|stop] &7- stav a testovací spuštění eventu (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween rewards &7- limitované odměny 2026"));
-        sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní Halloween lov"));
-        sender.sendMessage(plugin.color("&6/halloween quests &7- příběhová řada Halloween questů"));
-        sender.sendMessage(plugin.color("&6/halloween quests reset <hráč> &7- restart příběhu hráče (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní výzva"));
+        sender.sendMessage(plugin.color("&6/halloween rewards &7- odměny za fragmenty"));
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
-        sender.sendMessage(plugin.color("&6/halloween reload &7- reload configu"));
-        sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika integrací (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween shader <on|off|reload> &7- upraví shader a znovu sestaví ItemsAdder pack"));
-        sender.sendMessage(plugin.color("&6/halloween setvillage &7- nastavit Haunted Village na pozici hráče (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit tajné místo (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy a postup tajných objevů"));
-        sender.sendMessage(plugin.color("&6/halloween setvampirearena &7- nastavit arénu Krále upírů na pozici hráče (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween buildvampirearena [confirm] &7- náhled a bezpečná stavba arény (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween boss <status|start|test|stop> &7- finále nebo bezpečný test bosse (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween bosseffects <1|2|3|4> &7- bezpečný vizuální náhled útoků bosse (admin)"));
-        sender.sendMessage(plugin.color("&6/halloween modelpreview <animace> &7- bezpečný 10s náhled modelu a animace (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween reload &7- načtení configu"));
+        sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
-        sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí eventu"));
+        sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí progresu"));
+        sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, hudba, dekorace, vesnice a příběhové úkoly jsou odstavené."));
         return true;
     }
 
@@ -776,25 +774,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
         plugin.reloadEventConfig();
         sender.sendMessage(plugin.message("messages.reloaded"));
-        sender.sendMessage(plugin.color(plugin.isEventEnabled()
-                ? "&6HALLOWEEN &8» &aKonfigurace načtena. Hudba a dekorace obnoveny; první event je naplánovaný přibližně za "
-                    + Math.max(5, plugin.getConfig().getInt("random-events.start-delay-seconds", 30)) + " sekund."
-                : "&6HALLOWEEN &8» &eKonfigurace načtena, ale Halloween je vypnutý v config.yml."));
-
-        var itemsAdder = Bukkit.getPluginManager().getPlugin("ItemsAdder");
-        if (itemsAdder != null && itemsAdder.isEnabled()) {
-            Bukkit.getScheduler().runTask(plugin, () -> {
-                boolean started = Bukkit.dispatchCommand(Bukkit.getConsoleSender(), "iazip");
-                if (started) {
-                    sender.sendMessage(plugin.color("&aItemsAdder: /iazip byl spuštěn pro sestavení aktuálního resource packu."));
-                    sender.sendMessage(plugin.color("&7Doručení packu hráčům závisí na funkčním hostingu ItemsAdderu. Pro shader změny se znovu připoj do Minecraftu."));
-                } else {
-                    sender.sendMessage(plugin.color("&cItemsAdder pack se nepodařilo spustit. Spusť /iazip ručně v konzoli."));
-                }
-            });
-        } else {
-            sender.sendMessage(plugin.color("&eItemsAdder není zapnutý; plugin a event konfigurace se načetly, ale resource pack se nesestavil."));
-        }
+        sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, soundtrack, dekorace, vesnice a původní příběhové questy zůstávají vypnuté."));
         return true;
     }
 
