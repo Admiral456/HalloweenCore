@@ -576,6 +576,23 @@ jobs:
                   raise SystemExit(f"Vanilla world feature safety check missing: {feature_guard}")
           if "above.getType() == Material.PUMPKIN" in world_features:
               raise SystemExit("World feature rollback must never delete naturally generated pumpkins")
+          altar_start = world_features.find("private boolean createAncientAltar(Chunk chunk, Random random)")
+          altar_end = world_features.find("private boolean createCaveWebPatch(Chunk chunk, Random random)", altar_start)
+          if altar_start < 0 or altar_end < 0:
+              raise SystemExit("Ancient altar generator is missing")
+          altar_source = world_features[altar_start:altar_end]
+          for altar_guard in (
+              "isOpenNaturalArea(world, centerX, centerZ)",
+              "!PUMPKIN_BIOMES.contains(centerGround.getBiome().name())",
+              "Math.abs(ground.getY() - centerGround.getY()) > 1",
+              "!target.getType().isAir() || hasTileStateInNeighborhood(target)",
+              "!lanternTarget.getType().isAir()",
+              "target.setType(stones.get(i), false)",
+              "lanternTarget.setType(Material.SOUL_LANTERN, false)",
+              "placed.setType(Material.AIR, false)",
+          ):
+              if altar_guard not in altar_source:
+                  raise SystemExit(f"Ancient altar safety check missing: {altar_guard}")
           if "registerEvents(worldFeatureManager, this)" not in core_source:
               raise SystemExit("Vanilla world feature manager must be registered")
           if not re.search(
