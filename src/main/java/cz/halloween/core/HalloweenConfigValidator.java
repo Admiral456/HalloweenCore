@@ -210,7 +210,9 @@ public final class HalloweenConfigValidator {
                 if (!material.isBlank()) {
                     try {
                         Material fallbackMaterial = Material.valueOf(material.toUpperCase(Locale.ROOT));
-                        if (amount >= 1 && amount > fallbackMaterial.getMaxStackSize()) {
+                        if (fallbackMaterial.isAir() || !fallbackMaterial.isItem()) {
+                            errors.add("reward " + id + " fallback material must be a valid inventory item: " + fallbackMaterial);
+                        } else if (amount >= 1 && amount > fallbackMaterial.getMaxStackSize()) {
                             errors.add("reward " + id + " amount exceeds the stack size of fallback material " + fallbackMaterial);
                         }
                     } catch (IllegalArgumentException ex) {
