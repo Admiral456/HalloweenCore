@@ -16,7 +16,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 
 - The old random-event lineup and custom-mob story objectives; the retained nine-chapter campaign now uses vanilla gameplay actions only.
 - The old custom model pack; eight rare elite variants now use vanilla zombies, husks, skeletons, strays, spiders, creepers, witches, and phantoms, with built-in particle/sound effects and no MythicMobs/ModelEngine dependency.
-- The old Haunted Village discovery/map system is disabled. Three vanilla-only hidden discoveries (Easter eggs) are retained separately, without custom models or audio.
+- The old Haunted Village discovery/map system is disabled. Three vanilla-only hidden discoveries are retained separately, without custom models or audio.
 - The old automatic Halloween world-decoration engine; the replacement below only modifies newly generated Overworld chunks.
 - The custom soundtrack, ItemsAdder sound definitions, and sky shader.
 - Crimson Warden custom armor/weapons and other old custom item textures.
@@ -86,7 +86,7 @@ The replacement ambience adds occasional, localized cues using only Minecraft's 
 
 Tune `vanilla-atmosphere` in `config.yml`: `min-interval-seconds` and `max-interval-seconds` set the interval between pulses (default 90–180 seconds), `player-chance` sets the probability a given eligible player receives a cue on each pulse (default 0.35), `particles-enabled` and `sounds-enabled` can be switched off independently, and `sound-volume` controls ambience volume. It pauses when Halloween is turned off and restarts cleanly after `/halloween reload`. Both sound and particle cues respond to the running event: happy-villager sparkles and occasional composter sounds during Pumpkin Harvest, witch particles/sounds during Witching Hour, and soul-fire flames with phantom/Wither ambience during Blood Moon.
 
-## Hidden discoveries and Easter eggs
+## Hidden discoveries
 
 The vanilla discovery system preserves three hidden locations from the original plugin: `blood-altar` (Krvavý oltář), `witch-den` (Doupě hexové čarodějky), and `forgotten-grave` (Zapomenutý hrob). They use only built-in particles and sounds—no custom mobs, models, shader, or resource-pack assets.
 
