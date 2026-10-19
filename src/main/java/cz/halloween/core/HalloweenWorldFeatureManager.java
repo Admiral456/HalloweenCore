@@ -261,6 +261,7 @@ public final class HalloweenWorldFeatureManager implements Listener {
     }
 
     private double clamp(double value, double min, double max) {
+        if (!Double.isFinite(value)) return min;
         return Math.max(min, Math.min(max, value));
     }
 }
