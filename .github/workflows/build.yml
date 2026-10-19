@@ -620,6 +620,12 @@ jobs:
               '"minecraft:ambient.cave"',
               '"minecraft:entity.witch.ambient"',
               '"minecraft:entity.phantom.ambient"',
+              '"minecraft:entity.wither.ambient"',
+              '"minecraft:block.composter.ready"',
+              'events.getActiveEventId()',
+              '"witching-hour"',
+              '"blood-moon"',
+              '"pumpkin-harvest"',
               "plugin.isEligibleGameplayPlayer(player)",
               "plugin.isEligibleGameplayWorld(player.getWorld())",
           ):
