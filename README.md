@@ -42,7 +42,7 @@ Získávání klíčů není automaticky přiřazeno k žádnému úkolu. Když 
 - Truhlu nelze otevřít ani rozbít bez speciálního klíče; chrání ji také kontrola výbuchu. Použití klíče ji trvale odemkne a spotřebuje jeden klíč.
 - Truhly se automaticky neplní žádným lootem. Obsah a získávání klíčů zůstanou prázdné, dokud je společně nedomluvíme.
 
-Nastavení je v config.yml v sekci secret-rooms. Svět Spawn je ve výchozím stavu vyloučen.
+Nastavení je v config.yml v sekci secret-rooms. Název hlavního herního světa není předpokládán: doplň jeho skutečný název do secret-rooms.worlds. Dokud je seznam prázdný, nic se negeneruje. Svět Spawn zůstává vyloučený i tehdy, když ho někdo omylem přidá do seznamu.
 
 ## Zachovaný ItemsAdder obsah
 

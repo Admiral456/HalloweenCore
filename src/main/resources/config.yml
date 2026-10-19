@@ -4,8 +4,8 @@
 # Tajné podzemní místnosti vznikají výhradně v nově generovaných chunkech.
 secret-rooms:
   enabled: true
-  worlds:
-    - "*"
+  # Doplň přesný název běžného herního světa. Prázdný seznam znamená bezpečně vypnuté generování.
+  worlds: []
   excluded-worlds:
     - "Spawn"
   chance-per-new-chunk: 0.01

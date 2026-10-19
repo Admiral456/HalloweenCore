@@ -39,6 +39,9 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         questManager = new DialogQuestManager(this);
         secretRoomManager = new SecretRoomManager(this, keyItemFactory);
         getServer().getPluginManager().registerEvents(secretRoomManager, this);
+        if (getConfig().getStringList("secret-rooms.worlds").isEmpty()) {
+            getLogger().warning("Generování tajných místností je bezpečně vypnuté: nastav secret-rooms.worlds na přesný název herního světa. Svět Spawn je vždy vyloučen.");
+        }
         if (getCommand("halloween") != null) {
             getCommand("halloween").setExecutor(this);
             getCommand("halloween").setTabCompleter(this);
@@ -52,7 +55,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
     private void installDefaults() {
         getConfig().addDefault("secret-rooms.enabled", true);
-        getConfig().addDefault("secret-rooms.worlds", List.of("*"));
+        getConfig().addDefault("secret-rooms.worlds", List.of());
         getConfig().addDefault("secret-rooms.excluded-worlds", List.of("Spawn"));
         getConfig().addDefault("secret-rooms.chance-per-new-chunk", 0.01);
         getConfig().addDefault("secret-rooms.min-depth-below-surface", 16);
