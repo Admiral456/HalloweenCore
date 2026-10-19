@@ -1,6 +1,5 @@
 package cz.halloween.core;
 
-import org.bukkit.NamespacedKey;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.entity.EnderDragon;
@@ -14,51 +13,48 @@ import org.bukkit.entity.Wither;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.persistence.PersistentDataType;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.UUID;
 
 public final class HalloweenQuestManager implements Listener {
     private record Quest(String id, String title, String description, String objective,
                          int target, long reward) {}
 
-    private final HalloweenCore plugin;
-    private final NamespacedKey cursedMobKey;
     private final List<Quest> quests = List.of(
             new Quest("fog-patrol", "Znamení v mlze",
                     "Zabij 10 nepřátelských tvorů a zjisti, co se děje po setmění.",
                     "mob-kill", 10, 150),
             new Quest("gravekeepers-debt", "Dluh hrobníkovi",
-                    "Najdi a poraz 2 hrobníky na toulkách světem.",
-                    "special:gravekeeper", 2, 250),
+                    "Vytěž 20 bloků z nastaveného seznamu těžebních odměn.",
+                    "mining", 20, 250),
             new Quest("blood-silk", "Krvavé hedvábí",
-                    "Připrav krvavé pavouky o jejich kořist — poraz 3 kusy.",
-                    "special:blood-spider", 3, 300),
+                    "Ulovi 10 ryb v temných vodách a připrav se na další stopu.",
+                    "fishing", 10, 300),
             new Quest("cursed-harvest", "Sklizeň za úplňku",
-                    "Sklid 20 zralých plodin a posil svou výbavu.",
+                    "Sklid 20 zralých plodin a doplň zásoby před nocí.",
                     "farming", 20, 200),
             new Quest("witching-hour", "Čarodějnická hodina",
-                    "Najdi a poraz 2 hexové čarodějky.",
-                    "special:hex-witch", 2, 400),
+                    "Objev jedno skutečně nastavené tajné místo.",
+                    "secret-discovery", 1, 400),
             new Quest("pumpkin-wraith", "Dýňové prokletí",
-                    "Znič 2 dýňové přízraky, než jejich popel zahalí okolí.",
-                    "special:pumpkin-wraith", 2, 450),
+                    "Poraz 25 nepřátelských tvorů a zastav šíření kletby.",
+                    "mob-kill", 25, 450),
             new Quest("void-reaper", "Ženec z prázdnoty",
-                    "Vypátrej a poraz 2 Žence prázdnoty.",
-                    "special:void-reaper", 2, 600),
+                    "Odemkni jednu zamčenou podzemní Halloween schránku.",
+                    "cache-open", 1, 600),
             new Quest("frost-stalker", "Ledová stopa",
-                    "Přemoz 2 Ledové stopaře v chladných krajích.",
-                    "special:frost-stalker", 2, 650),
+                    "Vytěž dalších 40 bloků z nastaveného seznamu těžebních odměn.",
+                    "mining", 40, 650),
             new Quest("nightmare", "Poslední noční můra",
-                    "Přežij noc a poraz Noční můru.",
-                    "special:nightmare", 1, 900)
+                    "Poraz 50 nepřátelských tvorů a dokonči letošní příběh.",
+                    "mob-kill", 50, 900)
     );
+
+    private final HalloweenCore plugin;
 
     public HalloweenQuestManager(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.cursedMobKey = new NamespacedKey(plugin, "cursed_mob");
     }
 
     public void recordAction(Player player, String source) {
@@ -74,29 +70,12 @@ public final class HalloweenQuestManager implements Listener {
         Player killer = event.getEntity().getKiller();
         if (!isEligible(killer)) return;
 
-        String specialMob = event.getEntity().getPersistentDataContainer()
-                .get(cursedMobKey, PersistentDataType.STRING);
         var dead = event.getEntity();
         boolean hostile = dead instanceof Monster || dead instanceof EnderDragon || dead instanceof Wither
                 || dead instanceof Ghast || dead instanceof Phantom || dead instanceof Shulker
                 || dead instanceof Slime;
         if (!hostile) return;
-
-        Quest active = ensureActiveQuest(killer);
-        if (active == null) return;
-        if (specialMob != null && !specialMob.isBlank()) {
-            String specialObjective = "special:" + normalizeMobId(specialMob);
-            // One kill may advance only the currently active chapter. Do not also
-            // apply a generic-kill increment after unlocking the next chapter.
-            if (active.objective().equalsIgnoreCase(specialObjective)
-                    || active.objective().equalsIgnoreCase("mob-kill")) {
-                addProgress(killer, active, 1);
-            }
-            return;
-        }
-        if (active.objective().equalsIgnoreCase("mob-kill")) {
-            addProgress(killer, active, 1);
-        }
+        recordAction(killer, "mob-kill");
     }
 
     public void show(Player player) {
@@ -189,9 +168,5 @@ public final class HalloweenQuestManager implements Listener {
                 && plugin.isEligibleGameplayPlayer(player)
                 && plugin.isEligibleGameplayWorld(player.getWorld())
                 && plugin.getConfig().getBoolean("story-quests.enabled", true);
-    }
-
-    private String normalizeMobId(String mobId) {
-        return mobId.trim().toLowerCase(Locale.ROOT).replace('_', '-');
     }
 }
