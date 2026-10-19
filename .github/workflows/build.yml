@@ -563,7 +563,11 @@ jobs:
               "if (!headspace.getType().isAir() && !headspace.isPassable()) return false;",
               "target.setType(pumpkin, false);",
               "target.setType(Material.COBWEB, false);",
-              "private boolean hasTileStateInNeighborhood(Block target)",
+              "private boolean createAncientAltar(Chunk chunk, Random random)",
+              "Material.SOUL_LANTERN",
+              "Material.MOSSY_COBBLESTONE",
+              "Material.CRACKED_STONE_BRICKS",
+              "altar-attempts-per-feature",
               "if (!Double.isFinite(value)) return min;",
               "List<Block> placedBlocks = new ArrayList<>();",
               "for (Block placedBlock : placedBlocks)",
@@ -575,7 +579,7 @@ jobs:
           if "registerEvents(worldFeatureManager, this)" not in core_source:
               raise SystemExit("Vanilla world feature manager must be registered")
           if not re.search(
-              r"(?ms)^world-features:\n  enabled: true\n  generation:\n    enabled: true\n    pumpkin-patch-chance-per-chunk: 0\.06\n    cave-web-patch-chance-per-chunk: 0\.04\n    attempts-per-feature: 24\n    max-pumpkins-per-patch: 4\n    max-cave-webs-per-patch: 2\n    cave-webs-min-y: -48\n    cave-webs-max-y: 24$",
+              r"(?ms)^world-features:\\n  enabled: true\\n  generation:\\n    enabled: true\\n    pumpkin-patch-chance-per-chunk: 0\\.06\\n    cave-web-patch-chance-per-chunk: 0\\.04\\n    ancient-altar-chance-per-chunk: 0\\.02\\n    attempts-per-feature: 24\\n    altar-attempts-per-feature: 16\\n    max-pumpkins-per-patch: 4\\n    max-cave-webs-per-patch: 2\\n    cave-webs-min-y: -48\\n    cave-webs-max-y: 24$",
               config,
           ):
               raise SystemExit("Vanilla world feature configuration is missing or malformed")
@@ -583,6 +587,8 @@ jobs:
               'boolean worldFeaturesEnabled = plugin.getConfig().getBoolean("world-features.enabled", true);',
               'if (!Double.isFinite(pumpkinChance) || pumpkinChance < 0.0D || pumpkinChance > 1.0D)',
               'if (!Double.isFinite(webChance) || webChance < 0.0D || webChance > 1.0D)',
+              'if (!Double.isFinite(altarChance) || altarChance < 0.0D || altarChance > 1.0D)',
+              'if (altarAttempts < 1 || altarAttempts > 32)',
               'if (caveMinY >= caveMaxY)',
           ):
               if feature_validation not in validator:
