@@ -2,6 +2,7 @@ package cz.halloween.core;
 
 import org.bukkit.Bukkit;
 import org.bukkit.SoundCategory;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Monster;
@@ -30,6 +31,9 @@ public final class HalloweenVanillaEventManager implements Listener {
     private String activeEventId;
     private long activeUntil;
     private long nextEventAt;
+    private long nextInvasionWaveAt;
+    private int invasionWaveNumber;
+    private boolean invasionCaptainSpawned;
 
     public HalloweenVanillaEventManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -54,6 +58,7 @@ public final class HalloweenVanillaEventManager implements Listener {
             tickerTask.cancel();
             tickerTask = null;
         }
+        cleanupBloodMoonInvasion();
         activeEventId = null;
         activeUntil = 0L;
         nextEventAt = 0L;
@@ -146,6 +151,8 @@ public final class HalloweenVanillaEventManager implements Listener {
             String id = EVENT_IDS.get(ThreadLocalRandom.current().nextInt(EVENT_IDS.size()));
             beginEvent(id);
         }
+
+        if ("blood-moon".equals(activeEventId)) tickBloodMoonInvasion(now);
     }
 
     private void scheduleFirstEvent() {
@@ -170,6 +177,15 @@ public final class HalloweenVanillaEventManager implements Listener {
                 Math.min(30, plugin.getConfig().getInt("vanilla-events.duration-minutes", 6)));
         activeUntil = System.currentTimeMillis() + durationMinutes * 60_000L;
         nextEventAt = 0L;
+        nextInvasionWaveAt = 0L;
+        invasionWaveNumber = 0;
+        invasionCaptainSpawned = false;
+        if ("blood-moon".equals(id)
+                && plugin.getConfig().getBoolean("vanilla-events.blood-moon.invasion.enabled", true)) {
+            int waveInterval = Math.max(10, Math.min(180,
+                    plugin.getConfig().getInt("vanilla-events.blood-moon.invasion.wave-interval-seconds", 25)));
+            nextInvasionWaveAt = System.currentTimeMillis() + waveInterval * 1000L;
+        }
 
         String name = getDisplayName(id);
         Bukkit.broadcastMessage(plugin.color("&6&lHALLOWEEN &8» &eZačíná událost &6&l" + name
@@ -194,6 +210,7 @@ public final class HalloweenVanillaEventManager implements Listener {
 
     private void finishActiveEvent(boolean announce, boolean scheduleNext) {
         String finished = activeEventId;
+        if ("blood-moon".equals(finished)) cleanupBloodMoonInvasion();
         activeEventId = null;
         activeUntil = 0L;
         if (announce && finished != null) {
@@ -202,6 +219,80 @@ public final class HalloweenVanillaEventManager implements Listener {
         }
         if (scheduleNext && isEnabled() && plugin.isEventEnabled()) scheduleNextEvent();
         else nextEventAt = 0L;
+    }
+
+    private void tickBloodMoonInvasion(long now) {
+        if (activeEventId == null || !"blood-moon".equals(activeEventId)
+                || !plugin.getConfig().getBoolean("vanilla-events.blood-moon.invasion.enabled", true)
+                || !plugin.getConfig().getBoolean("special-mobs.enabled", true)
+                || plugin.getMobManager() == null) return;
+
+        if (nextInvasionWaveAt > 0L && now >= nextInvasionWaveAt) {
+            spawnBloodMoonWave();
+            int interval = Math.max(10, Math.min(180,
+                    plugin.getConfig().getInt("vanilla-events.blood-moon.invasion.wave-interval-seconds", 25)));
+            nextInvasionWaveAt = now + interval * 1000L;
+        }
+
+        if (invasionCaptainSpawned
+                || !plugin.getConfig().getBoolean("vanilla-events.blood-moon.invasion.captain-enabled", true)) return;
+        int finalSeconds = Math.max(15, Math.min(180, plugin.getConfig().getInt(
+                "vanilla-events.blood-moon.invasion.captain-final-seconds", 60)));
+        if (activeUntil - now > finalSeconds * 1000L) return;
+
+        List<Player> eligiblePlayers = Bukkit.getOnlinePlayers().stream()
+                .filter(plugin::isEligibleGameplayPlayer)
+                .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
+                .toList();
+        if (eligiblePlayers.isEmpty()) return;
+        Player target = eligiblePlayers.get(ThreadLocalRandom.current().nextInt(eligiblePlayers.size()));
+        if (plugin.getMobManager().spawnInvasionCaptain(target)) {
+            invasionCaptainSpawned = true;
+            for (Player player : target.getWorld().getPlayers()) {
+                if (!plugin.isEligibleGameplayPlayer(player)
+                        || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
+                player.sendMessage(plugin.color("&4&lKAPITÁN KRVAVÉ INVAZE &8» &cPoslední obrana Krvavého měsíce dorazila!"));
+                player.playSound(player.getLocation(), "minecraft:entity.wither.spawn", SoundCategory.HOSTILE, 0.9F, 0.7F);
+            }
+        }
+    }
+
+    private void spawnBloodMoonWave() {
+        int mobsPerWave = Math.max(1, Math.min(8,
+                plugin.getConfig().getInt("vanilla-events.blood-moon.invasion.mobs-per-wave", 4)));
+        int spawnedTotal = 0;
+        for (World world : Bukkit.getWorlds()) {
+            if (!plugin.isEligibleGameplayWorld(world)) continue;
+            List<Player> targets = world.getPlayers().stream()
+                    .filter(plugin::isEligibleGameplayPlayer)
+                    .toList();
+            if (targets.isEmpty()) continue;
+
+            int spawnedHere = 0;
+            for (int i = 0; i < mobsPerWave; i++) {
+                Player target = targets.get(ThreadLocalRandom.current().nextInt(targets.size()));
+                if (plugin.getMobManager().spawnEventMob(target)) {
+                    spawnedHere++;
+                    spawnedTotal++;
+                }
+            }
+            if (spawnedHere > 0) {
+                for (Player player : targets) {
+                    player.sendMessage(plugin.color("&5&lKRVAVÝ MĚSÍC &8» &cDorazila vlna &e"
+                            + (invasionWaveNumber + 1) + "&c! &7Nepřátelé se blíží z temnoty."));
+                    player.getWorld().playSound(player.getLocation(), "minecraft:entity.phantom.flap",
+                            SoundCategory.HOSTILE, 0.6F, 0.6F);
+                }
+            }
+        }
+        if (spawnedTotal > 0) invasionWaveNumber++;
+    }
+
+    private void cleanupBloodMoonInvasion() {
+        if (plugin.getMobManager() != null) plugin.getMobManager().cleanupEventMobs();
+        nextInvasionWaveAt = 0L;
+        invasionWaveNumber = 0;
+        invasionCaptainSpawned = false;
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
