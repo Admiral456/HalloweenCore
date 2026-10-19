@@ -78,7 +78,7 @@ The vanilla discovery system preserves three hidden locations from the original 
 
 An administrator stands at each intended spot and runs `/halloween setsecret <id>`. The coordinates are saved in the plugin config, but players never see them. Players use `/halloween secrets` to see how many places they have found and read the hints for undiscovered places. Entering the configured radius grants that player the location's one-time fragment reward (250, 300, or 350 by default). The find and reward are saved immediately to `plugins/HalloweenCore/data.yml`.
 
-All three locations ship as unconfigured, so nothing rewards players at a placeholder coordinate. A one-time migration restores these definitions on existing servers whose config was stripped by the previous cleanup version; it preserves any custom secret locations that are already configured.
+All three locations ship as unconfigured, so nothing rewards players at a placeholder coordinate. Migration v2 merges any missing stock definitions into existing server configurations—even if the previous migration flag is already set—while preserving custom locations and their configured coordinates, names, radii, and rewards.
 
 ## Vanilla world features
 
