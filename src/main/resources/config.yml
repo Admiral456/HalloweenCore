@@ -243,8 +243,9 @@ special-mobs:
   map-drop-chance: 0.0
   map-item-id: "minecraft:map"
 
+# Nine-chapter story campaign rewritten to use only vanilla gameplay actions.
 story-quests:
-  enabled: false
+  enabled: true
 
 haunted-village:
   enabled: false
