@@ -54,13 +54,17 @@ public final class HalloweenSecretDiscoveryManager implements Listener {
             if (world == null || !world.getUID().equals(playerLocation.getWorld().getUID())) continue;
             if (plugin.getDataManager().hasDiscoveredSecret(player.getUniqueId(), id)) continue;
 
-            Location target = new Location(world,
-                    plugin.getConfig().getDouble(path + ".x"),
-                    plugin.getConfig().getDouble(path + ".y"),
-                    plugin.getConfig().getDouble(path + ".z"));
-            double radius = Math.max(1.0D,
-                    plugin.getConfig().getDouble(path + ".radius-blocks",
-                            plugin.getConfig().getDouble("secret-discoveries.default-radius-blocks", 4.5D)));
+            double x = plugin.getConfig().getDouble(path + ".x", Double.NaN);
+            double y = plugin.getConfig().getDouble(path + ".y", Double.NaN);
+            double z = plugin.getConfig().getDouble(path + ".z", Double.NaN);
+            double radius = plugin.getConfig().getDouble(path + ".radius-blocks",
+                    plugin.getConfig().getDouble("secret-discoveries.default-radius-blocks", 4.5D));
+            // Fail closed: NaN/Infinity in YAML makes distance comparisons unreliable and
+            // could otherwise let any player in this world claim a configured secret.
+            if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)
+                    || !Double.isFinite(radius) || radius < 1.0D || radius > 32.0D) continue;
+
+            Location target = new Location(world, x, y, z);
             if (playerLocation.distanceSquared(target) > radius * radius) continue;
 
             // Persist the flag before awarding fragments, so the same location cannot pay twice.
