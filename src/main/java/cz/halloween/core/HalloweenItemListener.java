@@ -32,6 +32,7 @@ public final class HalloweenItemListener implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onConsume(PlayerItemConsumeEvent event) {
+        if (!plugin.isEventEnabled()) return;
         ItemStack item = event.getItem();
         if (item == null || item.getItemMeta() == null) return;
 
