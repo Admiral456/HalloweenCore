@@ -37,7 +37,7 @@ jobs:
               if not re.search(pattern, config):
                   raise SystemExit(f"Expected {section}.enabled to be false")
 
-          if not re.search(r"(?m)^  bonus-health: 2\.0$", config):
+          if not re.search(r"(?m)^\s+bonus-health: 2\.0$", config):
               raise SystemExit("Cursed talisman must grant one heart (+2 health)")
           if '+1 srdce maximálního zdraví při držení.' not in config:
               raise SystemExit("Cursed talisman lore does not describe one heart")
