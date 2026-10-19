@@ -69,6 +69,42 @@ public final class HalloweenConfigValidator {
             }
         }
 
+        boolean worldFeaturesEnabled = plugin.getConfig().getBoolean("world-features.enabled", true);
+        if (worldFeaturesEnabled
+                && plugin.getConfig().getBoolean("world-features.generation.enabled", true)) {
+            double pumpkinChance = plugin.getConfig().getDouble(
+                    "world-features.generation.pumpkin-patch-chance-per-chunk", 0.06D);
+            double webChance = plugin.getConfig().getDouble(
+                    "world-features.generation.cave-web-patch-chance-per-chunk", 0.04D);
+            int featureAttempts = plugin.getConfig().getInt(
+                    "world-features.generation.attempts-per-feature", 24);
+            int pumpkinsPerPatch = plugin.getConfig().getInt(
+                    "world-features.generation.max-pumpkins-per-patch", 4);
+            int websPerPatch = plugin.getConfig().getInt(
+                    "world-features.generation.max-cave-webs-per-patch", 2);
+            int caveMinY = plugin.getConfig().getInt("world-features.generation.cave-webs-min-y", -48);
+            int caveMaxY = plugin.getConfig().getInt("world-features.generation.cave-webs-max-y", 24);
+
+            if (pumpkinChance < 0.0D || pumpkinChance > 1.0D) {
+                errors.add("world-features.generation.pumpkin-patch-chance-per-chunk must be between 0 and 1");
+            }
+            if (webChance < 0.0D || webChance > 1.0D) {
+                errors.add("world-features.generation.cave-web-patch-chance-per-chunk must be between 0 and 1");
+            }
+            if (featureAttempts < 1 || featureAttempts > 64) {
+                errors.add("world-features.generation.attempts-per-feature must be between 1 and 64");
+            }
+            if (pumpkinsPerPatch < 2 || pumpkinsPerPatch > 6) {
+                errors.add("world-features.generation.max-pumpkins-per-patch must be between 2 and 6");
+            }
+            if (websPerPatch < 1 || websPerPatch > 3) {
+                errors.add("world-features.generation.max-cave-webs-per-patch must be between 1 and 3");
+            }
+            if (caveMinY >= caveMaxY) {
+                errors.add("world-features.generation.cave-webs-min-y must be below cave-webs-max-y");
+            }
+        }
+
         boolean cachesEnabled = plugin.getConfig().getBoolean("underground-caches.enabled", true);
         if (cachesEnabled) {
             if (plugin.getConfig().getBoolean("underground-caches.generation.enabled", true)) {
