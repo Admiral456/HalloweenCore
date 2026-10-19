@@ -123,6 +123,20 @@ public final class HalloweenVanillaAtmosphereManager {
     }
 
     private String chooseSound(World world) {
+        HalloweenVanillaEventManager events = plugin.getVanillaEventManager();
+        String activeEvent = events == null ? null : events.getActiveEventId();
+        if ("witching-hour".equals(activeEvent)) {
+            return "minecraft:entity.witch.ambient";
+        }
+        if ("blood-moon".equals(activeEvent)) {
+            return ThreadLocalRandom.current().nextBoolean()
+                    ? "minecraft:entity.phantom.ambient"
+                    : "minecraft:entity.wither.ambient";
+        }
+        if ("pumpkin-harvest".equals(activeEvent) && ThreadLocalRandom.current().nextBoolean()) {
+            return "minecraft:block.composter.ready";
+        }
+
         long time = world.getTime();
         boolean night = time >= 13_000L && time <= 23_000L;
         if (night && ThreadLocalRandom.current().nextBoolean()) {
