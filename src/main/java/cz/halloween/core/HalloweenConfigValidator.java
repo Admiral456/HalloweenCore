@@ -1,9 +1,11 @@
 package cz.halloween.core;
 
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public final class HalloweenConfigValidator {
     private HalloweenConfigValidator() {
@@ -192,13 +194,28 @@ public final class HalloweenConfigValidator {
                     errors.add("reward " + id + " min-curse must be between 0 and 5");
                 }
 
-                String itemsAdderId = reward.getString("itemsadder-id", "");
+                String itemsAdderId = plugin.getConfig().getString("rewards.shop." + id + ".itemsadder-id", "");
                 String material = reward.getString("material", "");
+                int amount = reward.getInt("amount", 1);
                 if (itemsAdderId.isBlank() && material.isBlank()) {
                     errors.add("reward " + id + " needs itemsadder-id or material");
                 }
-                if (!itemsAdderId.isBlank() && !itemsAdderId.contains(":")) {
-                    errors.add("reward " + id + " itemsadder-id should use namespace:id");
+                if (!itemsAdderId.isBlank()
+                        && !itemsAdderId.matches("[a-z0-9._-]+:[a-z0-9._-]+")) {
+                    errors.add("reward " + id + " itemsadder-id must use a valid lowercase namespace:id");
+                }
+                if (amount < 1 || amount > 64) {
+                    errors.add("reward " + id + " amount must be between 1 and 64");
+                }
+                if (!material.isBlank()) {
+                    try {
+                        Material fallbackMaterial = Material.valueOf(material.toUpperCase(Locale.ROOT));
+                        if (amount >= 1 && amount > fallbackMaterial.getMaxStackSize()) {
+                            errors.add("reward " + id + " amount exceeds the stack size of fallback material " + fallbackMaterial);
+                        }
+                    } catch (IllegalArgumentException ex) {
+                        errors.add("reward " + id + " has an invalid fallback material: " + material);
+                    }
                 }
             }
         }
