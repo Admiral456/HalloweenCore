@@ -254,7 +254,7 @@ public final class HalloweenConfigValidator {
         boolean secretDiscoveriesEnabled = plugin.getConfig().getBoolean("secret-discoveries.enabled", false);
         ConfigurationSection secrets = plugin.getConfig().getConfigurationSection("secret-discoveries.locations");
         if (secretDiscoveriesEnabled && (secrets == null || secrets.getKeys(false).isEmpty())) {
-            errors.add("secret-discoveries.locations must contain at least one configured secret definition");
+            errors.add("secret-discoveries.locations must contain at least one secret definition");
         }
         if (secretDiscoveriesEnabled && secrets != null) {
             for (String id : secrets.getKeys(false)) {
