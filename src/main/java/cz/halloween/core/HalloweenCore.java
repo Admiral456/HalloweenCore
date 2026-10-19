@@ -223,6 +223,8 @@ public final class HalloweenCore extends JavaPlugin {
         setConfigDefaultIfMissing("vanilla-boss.pulse.windup-ticks", 30);
         setConfigDefaultIfMissing("vanilla-boss.pulse.dodge-radius-blocks", 2.0D);
         setConfigDefaultIfMissing("vanilla-boss.pulse.wither-ticks", 60);
+        setConfigDefaultIfMissing("vanilla-boss.rewards.minimum-participation-seconds", 120);
+        setConfigDefaultIfMissing("vanilla-boss.rewards.minimum-damage-percent", 0.025D);
         setConfigDefaultIfMissing("vanilla-boss.rewards.participation-fragments", 300L);
         setConfigDefaultIfMissing("vanilla-boss.rewards.top-contributor-bonus-fragments", 250L);
         getConfig().set("migrations.vanilla-boss-v1", true);
