@@ -378,6 +378,8 @@ vanilla-boss:
     dodge-radius-blocks: 2.0
     wither-ticks: 60
   rewards:
+    minimum-participation-seconds: 120
+    minimum-damage-percent: 0.025
     participation-fragments: 300
     top-contributor-bonus-fragments: 250
 
