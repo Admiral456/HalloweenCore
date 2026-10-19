@@ -85,9 +85,6 @@ public final class HalloweenVanillaAtmosphereManager {
         double chance = Double.isFinite(configuredChance)
                 ? Math.max(0.0D, Math.min(1.0D, configuredChance))
                 : 0.35D;
-        boolean particlesEnabled = plugin.getConfig().getBoolean("vanilla-atmosphere.particles-enabled", true);
-        boolean soundsEnabled = plugin.getConfig().getBoolean("vanilla-atmosphere.sounds-enabled", true);
-        if (!particlesEnabled && !soundsEnabled) return;
 
         for (Player player : plugin.getServer().getOnlinePlayers()) {
             if (!plugin.isEligibleGameplayPlayer(player)
@@ -95,23 +92,42 @@ public final class HalloweenVanillaAtmosphereManager {
                     || ThreadLocalRandom.current().nextDouble() >= chance) {
                 continue;
             }
+            emitCue(player);
+        }
+    }
 
-            Location cueLocation = nearbyLocation(player);
-            World world = player.getWorld();
-            if (particlesEnabled) {
-                world.spawnParticle(Particle.ASH, cueLocation, 5, 0.28D, 0.35D, 0.28D, 0.005D);
-                if (ThreadLocalRandom.current().nextBoolean()) {
-                    world.spawnParticle(Particle.SOUL, cueLocation, 2, 0.18D, 0.25D, 0.18D, 0.01D);
-                }
-            }
+    /**
+     * Plays a one-player preview for admins so effects can be tested without
+     * waiting for the randomized ambient interval.
+     */
+    public boolean testPulse(Player player) {
+        if (player == null || !player.isOnline() || !isEnabled() || !plugin.isEventEnabled()) return false;
+        if (!plugin.isEligibleGameplayPlayer(player)
+                || !plugin.isEligibleGameplayWorld(player.getWorld())) return false;
+        return emitCue(player);
+    }
 
-            if (soundsEnabled) {
-                String sound = chooseSound(world);
-                float volume = boundedFloat("vanilla-atmosphere.sound-volume", 0.55F, 0.0F, 1.5F);
-                float pitch = (float) ThreadLocalRandom.current().nextDouble(0.65D, 1.05D);
-                player.playSound(cueLocation, sound, SoundCategory.AMBIENT, volume, pitch);
+    private boolean emitCue(Player player) {
+        boolean particlesEnabled = plugin.getConfig().getBoolean("vanilla-atmosphere.particles-enabled", true);
+        boolean soundsEnabled = plugin.getConfig().getBoolean("vanilla-atmosphere.sounds-enabled", true);
+        if (!particlesEnabled && !soundsEnabled) return false;
+
+        Location cueLocation = nearbyLocation(player);
+        World world = player.getWorld();
+        if (particlesEnabled) {
+            world.spawnParticle(Particle.ASH, cueLocation, 5, 0.28D, 0.35D, 0.28D, 0.005D);
+            if (ThreadLocalRandom.current().nextBoolean()) {
+                world.spawnParticle(Particle.SOUL, cueLocation, 2, 0.18D, 0.25D, 0.18D, 0.01D);
             }
         }
+
+        if (soundsEnabled) {
+            String sound = chooseSound(world);
+            float volume = boundedFloat("vanilla-atmosphere.sound-volume", 0.55F, 0.0F, 1.5F);
+            float pitch = (float) ThreadLocalRandom.current().nextDouble(0.65D, 1.05D);
+            player.playSound(cueLocation, sound, SoundCategory.AMBIENT, volume, pitch);
+        }
+        return true;
     }
 
     private Location nearbyLocation(Player player) {
