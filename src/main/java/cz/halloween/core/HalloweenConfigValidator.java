@@ -34,21 +34,24 @@ public final class HalloweenConfigValidator {
             errors.add("curse.bonus-per-level must be between 0 and 1");
         }
 
-        int intervalMin = plugin.getConfig().getInt("random-events.interval-minutes.min", -1);
-        int intervalMax = plugin.getConfig().getInt("random-events.interval-minutes.max", -1);
-        if (intervalMin < 1 || intervalMax < intervalMin) {
-            errors.add("random-events.interval-minutes is invalid");
-        }
+        boolean randomEventsEnabled = plugin.getConfig().getBoolean("random-events.enabled", false);
+        if (randomEventsEnabled) {
+            int intervalMin = plugin.getConfig().getInt("random-events.interval-minutes.min", -1);
+            int intervalMax = plugin.getConfig().getInt("random-events.interval-minutes.max", -1);
+            if (intervalMin < 1 || intervalMax < intervalMin) {
+                errors.add("random-events.interval-minutes is invalid");
+            }
 
-        int duration = plugin.getConfig().getInt("random-events.duration-minutes", -1);
-        long surgeInterval = plugin.getConfig().getLong("random-events.surge-interval-seconds", -1L);
-        int maxEventMobs = plugin.getConfig().getInt("random-events.max-event-mobs", -1);
-        if (duration < 1) errors.add("random-events.duration-minutes must be >= 1");
-        if (surgeInterval < 10L) errors.add("random-events.surge-interval-seconds must be >= 10");
-        if (maxEventMobs < 1) errors.add("random-events.max-event-mobs must be >= 1");
-        int invasionMobsPerSurge = plugin.getConfig().getInt("random-events.invasion-mobs-per-surge", 2);
-        if (invasionMobsPerSurge < 1 || invasionMobsPerSurge > 4) {
-            errors.add("random-events.invasion-mobs-per-surge must be between 1 and 4");
+            int duration = plugin.getConfig().getInt("random-events.duration-minutes", -1);
+            long surgeInterval = plugin.getConfig().getLong("random-events.surge-interval-seconds", -1L);
+            int maxEventMobs = plugin.getConfig().getInt("random-events.max-event-mobs", -1);
+            if (duration < 1) errors.add("random-events.duration-minutes must be >= 1");
+            if (surgeInterval < 10L) errors.add("random-events.surge-interval-seconds must be >= 10");
+            if (maxEventMobs < 1) errors.add("random-events.max-event-mobs must be >= 1");
+            int invasionMobsPerSurge = plugin.getConfig().getInt("random-events.invasion-mobs-per-surge", 2);
+            if (invasionMobsPerSurge < 1 || invasionMobsPerSurge > 4) {
+                errors.add("random-events.invasion-mobs-per-surge must be between 1 and 4");
+            }
         }
 
         String worldMode = plugin.getConfig().getString("gameplay.worlds.mode", "BLACKLIST");
@@ -97,12 +100,12 @@ public final class HalloweenConfigValidator {
             }
         }
 
-        boolean secretDiscoveriesEnabled = plugin.getConfig().getBoolean("secret-discoveries.enabled", true);
+        boolean secretDiscoveriesEnabled = plugin.getConfig().getBoolean("secret-discoveries.enabled", false);
         ConfigurationSection secrets = plugin.getConfig().getConfigurationSection("secret-discoveries.locations");
         if (secretDiscoveriesEnabled && (secrets == null || secrets.getKeys(false).isEmpty())) {
             errors.add("secret-discoveries.locations must contain at least one configured secret definition");
         }
-        if (secrets != null) {
+        if (secretDiscoveriesEnabled && secrets != null) {
             for (String id : secrets.getKeys(false)) {
                 ConfigurationSection secret = secrets.getConfigurationSection(id);
                 if (secret == null) {
@@ -138,12 +141,13 @@ public final class HalloweenConfigValidator {
         if (villageEnabled && villageWorld.isBlank()) {
             errors.add("haunted-village.world must be configured when Haunted Village is enabled");
         }
+        boolean specialMobsEnabled = plugin.getConfig().getBoolean("special-mobs.enabled", false);
         double mapChance = plugin.getConfig().getDouble("special-mobs.map-drop-chance", -1.0D);
-        if (mapChance < 0.0D || mapChance > 1.0D) {
+        if (specialMobsEnabled && (mapChance < 0.0D || mapChance > 1.0D)) {
             errors.add("special-mobs.map-drop-chance must be between 0 and 1");
         }
         ConfigurationSection specialMobTypes = plugin.getConfig().getConfigurationSection("special-mobs.types");
-        if (specialMobTypes != null) {
+        if (specialMobsEnabled && specialMobTypes != null) {
             for (String id : specialMobTypes.getKeys(false)) {
                 ConfigurationSection mob = specialMobTypes.getConfigurationSection(id);
                 if (mob == null) continue;
@@ -171,7 +175,7 @@ public final class HalloweenConfigValidator {
         }
 
         String mapItemId = plugin.getConfig().getString("special-mobs.map-item-id", "");
-        if (mapItemId.isBlank() || !mapItemId.contains(":")) {
+        if (specialMobsEnabled && (mapItemId.isBlank() || !mapItemId.contains(":"))) {
             errors.add("special-mobs.map-item-id should use namespace:id");
         }
 
@@ -187,7 +191,7 @@ public final class HalloweenConfigValidator {
         }
 
         ConfigurationSection vampire = plugin.getConfig().getConfigurationSection("bosses.vampire");
-        if (vampire != null) {
+        if (vampire != null && vampire.getBoolean("enabled", false)) {
             if (vampire.getInt("min-height-blocks", 0) < 10) {
                 errors.add("vampire min-height-blocks must be >= 10");
             }
