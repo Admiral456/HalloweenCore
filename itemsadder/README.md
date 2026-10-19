@@ -1,15 +1,5 @@
-# HalloweenCore / ItemsAdder assets
+# HalloweenCore ItemsAdder content
 
-The Java core is intentionally kept independent from the ItemsAdder compile-time API.
+This folder retains only three vanilla pumpkin block textures for the planned pumpkin-headed villager and one custom item texture for `warriorland_halloween:cursed_candy`.
 
-Place this content under:
-plugins/ItemsAdder/contents/warriorland_halloween/
-
-The current ItemsAdder layout expects item textures under:
-plugins/ItemsAdder/contents/warriorland_halloween/textures/item/
-
-The seasonal sky shader lives under the content pack resourcepack folder and is merged into the generated pack.
-
-After adding or changing the content, run /iazip and make sure the generated resource pack is delivered to clients.
-
-See configs/items.yml, ASSETS.md and SKY.md for the asset definitions.
+No shader, custom soundtrack, custom armor/weapon textures, or MythicMobs models are included. Import `contents/warriorland_halloween` into ItemsAdder and run `/iazip` to rebuild the server-generated resource pack.
