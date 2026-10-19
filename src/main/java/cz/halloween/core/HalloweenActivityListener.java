@@ -7,6 +7,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 
@@ -30,6 +31,29 @@ public final class HalloweenActivityListener implements Listener {
 
     public HalloweenActivityListener(HalloweenCore plugin) {
         this.plugin = plugin;
+    }
+
+    @EventHandler
+    public void onMobKill(EntityDeathEvent event) {
+        if (!plugin.isEventEnabled()) return;
+        // Player-versus-player deaths must never mint gameplay currency.
+        if (event.getEntity() instanceof Player) return;
+        if (plugin.getVampireEncounterManager() != null
+                && plugin.getVampireEncounterManager().isTrackedVampireBoss(event.getEntity())) return;
+
+        Player killer = event.getEntity().getKiller();
+        if (killer == null
+                || !plugin.isEligibleGameplayPlayer(killer)
+                || !plugin.isEligibleGameplayWorld(killer.getWorld())
+                || !plugin.getConfig().getBoolean("rewards.mob-kill.enabled", true)) return;
+
+        long reward = plugin.getConfig().getLong("rewards.mob-kill.fragments", 1L);
+        if (reward <= 0L || !allowFragmentReward(killer, "mob-kill")) return;
+
+        if (plugin.getQuestManager() != null) {
+            plugin.getQuestManager().recordAction(killer, "mob-kill");
+        }
+        plugin.getService().addFragments(killer.getUniqueId(), reward, "mob-kill");
     }
 
     @EventHandler(ignoreCancelled = true)
