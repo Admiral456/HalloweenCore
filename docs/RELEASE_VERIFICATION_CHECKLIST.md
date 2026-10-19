@@ -42,7 +42,8 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Visit a configured discovery with one player. Verify the one-time fragment reward, title, chime, and vanilla particles. Leave and re-enter the radius and confirm there is no second reward.
 - [ ] Visit the same location with a second player. That player should receive their own one-time reward, independent of other players' discoveries.
 - [ ] Restart after discovering a location. Verify the discovery stays marked in data.yml and cannot be farmed again.
-- [ ] Test a copy of a config from the previous cleanup build with secret-discoveries disabled and no locations. The one-time migration should restore the three definitions without overwriting any custom locations already present.
+- [ ] Test a copy of a config from the previous cleanup build with secret-discoveries disabled and no locations. The migration should restore the three definitions.
+- [ ] Test a copy with one custom secret location and migrations.vanilla-secret-discoveries-v1 already set to true. Migration v2 should add any missing stock definitions while preserving the custom location's world, coordinates, name, radius, and reward.
 
 ## 4. Fragment and save safety
 
