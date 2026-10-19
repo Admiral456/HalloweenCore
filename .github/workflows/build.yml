@@ -98,6 +98,14 @@ jobs:
           core_source = Path(
               "src/main/java/cz/halloween/core/HalloweenCore.java"
           ).read_text(encoding="utf-8")
+          for candy_migration_guard in (
+              'if (!getConfig().getBoolean("migrations.cursed-candy-reward-v1", false))',
+              'getConfig().contains("rewards.shop.cursed-candy", true)',
+              'getConfig().set("rewards.shop.cursed-candy.itemsadder-id",',
+              'getConfig().set("migrations.cursed-candy-reward-v1", true)',
+          ):
+              if candy_migration_guard not in core_source:
+                  raise SystemExit(f"Cursed candy config migration missing: {candy_migration_guard}")
           retired_registrations = (
               "registerEvents(villageDiscoveryManager",
               "registerEvents(secretDiscoveryManager",
