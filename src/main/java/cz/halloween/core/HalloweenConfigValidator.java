@@ -204,6 +204,18 @@ public final class HalloweenConfigValidator {
                         && !itemsAdderId.matches("[a-z0-9._-]+:[a-z0-9._-]+")) {
                     errors.add("reward " + id + " itemsadder-id must use a valid lowercase namespace:id");
                 }
+                if (reward.contains("bonus-multiplier")) {
+                    double bonusMultiplier = reward.getDouble("bonus-multiplier", 0.0D);
+                    if (!Double.isFinite(bonusMultiplier) || bonusMultiplier < 0.0D || bonusMultiplier > 5.0D) {
+                        errors.add("reward " + id + " bonus-multiplier must be finite and between 0 and 5");
+                    }
+                }
+                if (reward.contains("bonus-health")) {
+                    double bonusHealth = reward.getDouble("bonus-health", 2.0D);
+                    if (!Double.isFinite(bonusHealth) || bonusHealth < 0.0D || bonusHealth > 20.0D) {
+                        errors.add("reward " + id + " bonus-health must be finite and between 0 and 20");
+                    }
+                }
                 if (amount < 1 || amount > 64) {
                     errors.add("reward " + id + " amount must be between 1 and 64");
                 }
