@@ -17,9 +17,7 @@ public final class HalloweenJoinListener implements Listener {
         if (!plugin.isEventEnabled()) return;
 
         Player player = event.getPlayer();
-        if (plugin.getAtmosphere() != null) {
-            plugin.getAtmosphere().onJoin(player);
-        }
+        // Legacy ambience and custom-asset join effects are not part of this release.
         if (plugin.getDataManager().isFinaleUnlocked()) {
             player.sendMessage(plugin.color(plugin.getConfig().getString(
                     "messages.finale-unlocked",
