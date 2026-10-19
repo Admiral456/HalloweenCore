@@ -265,7 +265,9 @@ public final class HalloweenDataManager {
 
             if (amount > 0L) data.set(base + ".fragments", amount);
             long lifetime = lifetimeFragments.getOrDefault(uuid, 0L);
-            if (lifetime > 0L) data.set(base + ".lifetime-fragments", lifetime);
+            // Persist explicit zero too. Omitting it would make the legacy loader
+            // mistake an admin-granted balance for lifetime-earned fragments on restart.
+            data.set(base + ".lifetime-fragments", lifetime);
             if (join > 0L) data.set(base + ".last-join", join);
             if (streak > 0) data.set(base + ".streak", streak);
 
