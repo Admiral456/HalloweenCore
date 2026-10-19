@@ -1,10 +1,11 @@
 # HalloweenCore
 
-HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces the previous custom-asset Halloween implementation with a vanilla-first foundation: a pumpkin villager NPC, locked underground caches, and sparse new-chunk Halloween features.
+HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces the previous custom-asset Halloween implementation with a vanilla-first foundation: timed vanilla events, a pumpkin villager NPC, locked underground caches, and sparse new-chunk Halloween features.
 
 ## Kept in the core
 
 - Server-wide fragment progress and milestones.
+- Three vanilla-only timed events, with fragment multipliers and a hostile-damage modifier during Blood Moon.
 - Fragment rewards for eligible gameplay actions such as mob kills, mining, farming, and fishing.
 - Curse progression, player statistics, daily challenge and return rewards.
 - Reward shop backed by vanilla item fallbacks.
@@ -13,7 +14,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 
 ## Disabled or removed during the rebuild
 
-- The old random event lineup and old story quests.
+- The old random event lineup and old story quests; the replacement uses three vanilla-only events described below.
 - The old special-mob system and its MythicMobs/ModelEngine model pack, including Pumpkin Wraith.
 - Haunted Village and old secret-discovery locations tied to graves/ritual sites.
 - The old automatic Halloween world-decoration engine; the replacement below only modifies newly generated Overworld chunks.
@@ -40,6 +41,7 @@ The existing Java classes for retired systems are kept temporarily for migration
 - `/halloween rewards`
 - `/halloween claim <id>`
 - `/halloween top`
+- `/halloween event [status|start <id>|stop]` — status is public; start/stop are admin-only.
 - `/halloween reload`
 - `/halloween debug`
 - `/halloween give <hráč> <počet>` (admin)
@@ -50,6 +52,16 @@ The existing Java classes for retired systems are kept temporarily for migration
 - `/halloween on|off`
 
 Legacy commands for random events, story quests, the old village/discovery system, shader editing, custom mobs, and the vampire model encounter are retired pending replacement.
+
+## Vanilla timed events
+
+The replacement event scheduler uses existing Minecraft assets only. Automatic events begin after `vanilla-events.first-delay-seconds`, then repeat at a random interval between `interval-minutes.min` and `interval-minutes.max`. Each event lasts `duration-minutes`. Admins can test one without waiting using `/halloween event start <id>`; `/halloween event status` shows the active event and time remaining.
+
+- `pumpkin-harvest` (**Dýňová sklizeň**) multiplies farming fragment rewards.
+- `witching-hour` (**Čarodějná hodina**) multiplies mob-kill fragment rewards and plays a vanilla witch ambience sound at event start.
+- `blood-moon` (**Krvavý měsíc**) multiplies mob-kill fragment rewards and increases damage from hostile mobs against eligible players.
+
+Use `/halloween event stop` to end the current event early. `/halloween off` stops the event scheduler along with fragment progression; `/halloween on` starts a fresh schedule. Event multipliers and timing can be adjusted under `vanilla-events` in `config.yml`. The retired custom-mob events remain disabled and are not reactivated by this scheduler.
 
 ## Vanilla world features
 
