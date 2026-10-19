@@ -96,24 +96,22 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
         if (key.equals("village_discovered")) {
             return Boolean.toString(plugin.getDataManager().hasDiscoveredVillage(player.getUniqueId()));
         }
-        if (key.equals("vampire_boss_phase")) {
-            return Integer.toString(plugin.getVampireEncounterManager() == null
-                    ? 0 : plugin.getVampireEncounterManager().getPhase());
+        HalloweenVanillaBossManager vanillaBoss = plugin.getVanillaBossManager();
+        if (key.equals("vampire_boss_phase") || key.equals("vanilla_boss_phase")) {
+            return Integer.toString(vanillaBoss == null ? 0 : vanillaBoss.getPhase());
         }
-        if (key.equals("vampire_boss_hp_percent")) {
-            double health = plugin.getBossManager() == null ? 0.0D : plugin.getBossManager().getVampireBossHealthPercent();
-            return String.format(Locale.ROOT, "%.1f", health * 100.0D);
+        if (key.equals("vampire_boss_hp_percent") || key.equals("vanilla_boss_hp_percent")) {
+            double healthPercent = vanillaBoss == null ? 0.0D : vanillaBoss.getHealthPercent();
+            return String.format(Locale.ROOT, "%.1f", healthPercent);
         }
-        if (key.equals("vampire_boss_participants")) {
-            return Integer.toString(plugin.getVampireEncounterManager() == null
-                    ? 0 : plugin.getVampireEncounterManager().getParticipantCount());
+        if (key.equals("vampire_boss_participants") || key.equals("vanilla_boss_participants")) {
+            return Integer.toString(vanillaBoss == null ? 0 : vanillaBoss.getParticipantCount());
         }
-        if (key.equals("vampire_boss_defeated")) {
+        if (key.equals("vampire_boss_defeated") || key.equals("vanilla_boss_defeated")) {
             return Boolean.toString(plugin.getDataManager().isVampireDefeated());
         }
-        if (key.equals("vampire_boss_active")) {
-            return Boolean.toString(plugin.getVampireEncounterManager() != null
-                    && plugin.getVampireEncounterManager().isActive());
+        if (key.equals("vampire_boss_active") || key.equals("vanilla_boss_active")) {
+            return Boolean.toString(vanillaBoss != null && vanillaBoss.isActive());
         }
 
         return null;
