@@ -15,10 +15,12 @@ import java.util.Locale;
 public final class HalloweenRewardManager {
     private final HalloweenCore plugin;
     private final NamespacedKey rewardKey;
+    private final NamespacedKey relicKey;
 
     public HalloweenRewardManager(HalloweenCore plugin) {
         this.plugin = plugin;
         this.rewardKey = new NamespacedKey(plugin, "halloween_reward");
+        this.relicKey = new NamespacedKey(plugin, "halloween_relic");
     }
 
     public void openMenu(Player player) {
@@ -270,6 +272,10 @@ public final class HalloweenRewardManager {
             }
             meta.setLore(lore);
             meta.getPersistentDataContainer().set(rewardKey, PersistentDataType.STRING, normalizedId);
+            // Preserve the consumable effect on both the ItemsAdder item and its vanilla fallback.
+            if ("cursed-candy".equals(normalizedId)) {
+                meta.getPersistentDataContainer().set(relicKey, PersistentDataType.STRING, "cursed-candy-2026");
+            }
             item.setItemMeta(meta);
         }
 
