@@ -120,19 +120,11 @@ public final class HalloweenActivityListener implements Listener {
 
         long now = System.currentTimeMillis();
         UUID playerId = player.getUniqueId();
-        Deque<Long> timestamps = rewardTimes
-                .computeIfAbsent(playerId, ignored -> new HashMap<>())
-                .computeIfAbsent(source, ignored -> new ArrayDeque<>());
-
         pruneExpiredRewardTimes(now);
         // Re-fetch after pruning: pruning may have removed this player's old source bucket.
         Deque<Long> activeTimestamps = rewardTimes
                 .computeIfAbsent(playerId, ignored -> new HashMap<>())
                 .computeIfAbsent(source, ignored -> new ArrayDeque<>());
-        while (!activeTimestamps.isEmpty() && activeTimestamps.peekFirst() <= now - RATE_WINDOW_MILLIS) {
-            activeTimestamps.removeFirst();
-        }
-
         if (activeTimestamps.size() >= limit) {
             Map<String, Long> notices = lastLimitNotice.computeIfAbsent(playerId, ignored -> new HashMap<>());
             long lastNotice = notices.getOrDefault(source, 0L);
