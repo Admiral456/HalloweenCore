@@ -196,40 +196,48 @@ public final class HalloweenCore extends JavaPlugin {
 
 
     /**
-     * One-time restore of the vanilla-only hidden discovery system. Previous cleanup
-     * versions disabled this feature; preserve any server-defined locations, and only
-     * add the stock Easter-egg definitions if the old config has none.
+     * One-time restore of the vanilla-only hidden discovery system. The migration
+     * merges the three stock Easter eggs into existing configurations while
+     * preserving any administrator-defined locations and coordinates.
      */
     private void migrateVanillaSecretDiscoveries() {
         if (getConfig().getBoolean("migrations.vanilla-secret-discoveries-v1", false)) return;
 
         getConfig().set("secret-discoveries.enabled", true);
-        var locations = getConfig().getConfigurationSection("secret-discoveries.locations");
-        if (locations == null || locations.getKeys(false).isEmpty()) {
-            getConfig().set("secret-discoveries.default-radius-blocks", 4.5D);
-            getConfig().set("secret-discoveries.default-reward-fragments", 250L);
+        setConfigDefaultIfMissing("secret-discoveries.default-radius-blocks", 4.5D);
+        setConfigDefaultIfMissing("secret-discoveries.default-reward-fragments", 250L);
 
-            addDefaultSecret("blood-altar", "Krvavý oltář",
-                    "Někde poblíž starých kamenů se v noci ozývá tlukot.", 250L);
-            addDefaultSecret("witch-den", "Doupě hexové čarodějky",
-                    "Hledej místo, kde popel zůstává teplý i po dešti.", 300L);
-            addDefaultSecret("forgotten-grave", "Zapomenutý hrob",
-                    "Za posledním náhrobkem může něco čekat pod zemí.", 350L);
-        }
+        addDefaultSecret("blood-altar", "Krvavý oltář",
+                "Někde poblíž starých kamenů se v noci ozývá tlukot.", 250L);
+        addDefaultSecret("witch-den", "Doupě hexové čarodějky",
+                "Hledej místo, kde popel zůstává teplý i po dešti.", 300L);
+        addDefaultSecret("forgotten-grave", "Zapomenutý hrob",
+                "Za posledním náhrobkem může něco čekat pod zemí.", 350L);
+
         getConfig().set("migrations.vanilla-secret-discoveries-v1", true);
     }
 
     private void addDefaultSecret(String id, String name, String hint, long reward) {
         String path = "secret-discoveries.locations." + id;
-        getConfig().set(path + ".name", name);
-        getConfig().set(path + ".hint", hint);
-        getConfig().set(path + ".configured", false);
-        getConfig().set(path + ".world", "");
-        getConfig().set(path + ".x", 0.0D);
-        getConfig().set(path + ".y", 0.0D);
-        getConfig().set(path + ".z", 0.0D);
-        getConfig().set(path + ".radius-blocks", 4.5D);
-        getConfig().set(path + ".reward-fragments", reward);
+        // Fill only missing values. If an existing server already configured
+        // this ID or added custom coordinates, its values must never be reset.
+        setConfigDefaultIfMissing(path + ".name", name);
+        setConfigDefaultIfMissing(path + ".hint", hint);
+        setConfigDefaultIfMissing(path + ".configured", false);
+        setConfigDefaultIfMissing(path + ".world", "");
+        setConfigDefaultIfMissing(path + ".x", 0.0D);
+        setConfigDefaultIfMissing(path + ".y", 0.0D);
+        setConfigDefaultIfMissing(path + ".z", 0.0D);
+        setConfigDefaultIfMissing(path + ".radius-blocks", 4.5D);
+        setConfigDefaultIfMissing(path + ".reward-fragments", reward);
+    }
+
+    private void setConfigDefaultIfMissing(String path, Object value) {
+        // ignoreDefault=true checks the server's explicit config rather than values
+        // inherited from the plugin JAR; this is what makes the migration safe.
+        if (!getConfig().contains(path, true)) {
+            getConfig().set(path, value);
+        }
     }
 
     /**
