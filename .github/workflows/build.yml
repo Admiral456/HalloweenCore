@@ -346,6 +346,60 @@ jobs:
                   raise SystemExit(f"World feature config validation missing: {feature_validation}")
 
           print("Vanilla world generation and non-destructive rollback checks passed.")
+
+          vanilla_events = Path(
+              "src/main/java/cz/halloween/core/HalloweenVanillaEventManager.java"
+          ).read_text(encoding="utf-8")
+          for event_guard in (
+              'List.of("pumpkin-harvest", "witching-hour", "blood-moon")',
+              "private BukkitTask tickerTask;",
+              "tickerTask.cancel();",
+              "runTaskTimer(plugin, this::tick, 20L, 20L)",
+              "public boolean startEventNow(String requestedId)",
+              "public boolean stopActiveEventNow()",
+              "public void onBloodMoonDamage(EntityDamageByEntityEvent event)",
+              '"vanilla-events.blood-moon.hostile-damage-multiplier"',
+              '"vanilla-events.pumpkin-harvest.farming-fragment-multiplier"',
+              '"vanilla-events.witching-hour.mob-kill-fragment-multiplier"',
+              "projectile.getShooter() instanceof LivingEntity",
+          ):
+              if event_guard not in vanilla_events:
+                  raise SystemExit(f"Vanilla event safety/control missing: {event_guard}")
+
+          if "registerEvents(vanillaEventManager, this)" not in core_source:
+              raise SystemExit("Vanilla event manager must be registered")
+          if "vanillaEventManager.start();" not in core_source or "vanillaEventManager.stop();" not in core_source:
+              raise SystemExit("Vanilla event manager must follow plugin startup and shutdown")
+          if "vanillaEventManager.restart();" not in core_source:
+              raise SystemExit("Config reload must restart the vanilla event scheduler")
+          if "getVanillaEventManager().getMultiplier" not in Path(
+              "src/main/java/cz/halloween/core/HalloweenServiceImpl.java"
+          ).read_text(encoding="utf-8"):
+              raise SystemExit("Fragment service must apply vanilla event multipliers")
+
+          if 'if (args[0].equalsIgnoreCase("event")) return vanillaEvent(sender, args);' not in command_source:
+              raise SystemExit("Vanilla event command is not connected")
+          if "private boolean vanillaEvent(CommandSender sender, String[] args)" not in command_source:
+              raise SystemExit("Vanilla event command handler is missing")
+          placeholders = Path(
+              "src/main/java/cz/halloween/core/HalloweenPlaceholderExpansion.java"
+          ).read_text(encoding="utf-8")
+          if "getVanillaEventManager().getActiveEventId()" not in placeholders:
+              raise SystemExit("PlaceholderAPI must expose the active vanilla event")
+          if not re.search(
+              r"(?ms)^vanilla-events:\n  enabled: true\n  first-delay-seconds: 300\n  interval-minutes:\n    min: 20\n    max: 35\n  duration-minutes: 6\n  pumpkin-harvest:\n    farming-fragment-multiplier: 2\.0\n  witching-hour:\n    mob-kill-fragment-multiplier: 1\.5\n  blood-moon:\n    mob-kill-fragment-multiplier: 1\.25\n    hostile-damage-multiplier: 1\.5$",
+              config,
+          ):
+              raise SystemExit("Vanilla event configuration is missing or malformed")
+          for event_validation in (
+              'boolean vanillaEventsEnabled = plugin.getConfig().getBoolean("vanilla-events.enabled", true);',
+              'if (eventIntervalMin < 5 || eventIntervalMax < eventIntervalMin || eventIntervalMax > 180)',
+              'if (bloodMoonDamage < 1.0D || bloodMoonDamage > 3.0D)',
+          ):
+              if event_validation not in validator:
+                  raise SystemExit(f"Vanilla event config validation missing: {event_validation}")
+
+          print("Vanilla event scheduling, effects and command checks passed.")
           print("Cleanup invariants and retired-feature checks passed.")
           PY
 
