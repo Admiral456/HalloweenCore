@@ -292,6 +292,17 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 + " &8• podporovaná verze: " + status(itemsAdderVersion)));
         sender.sendMessage(plugin.color("&7Vlastní předmět cursed_candy: " + status(cursedCandy)));
         sender.sendMessage(plugin.color("&7PlaceholderAPI: " + status(papi)));
+        HalloweenVanillaEventManager vanillaEvents = plugin.getVanillaEventManager();
+        String activeVanillaEvent = vanillaEvents == null ? null : vanillaEvents.getActiveEventId();
+        sender.sendMessage(plugin.color("&7Vanilla události: "
+                + status(vanillaEvents != null && vanillaEvents.isEnabled() && plugin.isEventEnabled())
+                + (activeVanillaEvent == null ? "" : " &8• běží: &e" + vanillaEvents.getDisplayName(activeVanillaEvent))));
+        sender.sendMessage(plugin.color("&7Dýňový vesničan: "
+                + status(plugin.getPumpkinVillagerManager() != null && plugin.getPumpkinVillagerManager().isEnabled())
+                + " &8• podzemní schránky: "
+                + status(plugin.getCacheManager() != null && plugin.getCacheManager().isEnabled())
+                + " &8• světové prvky: "
+                + status(plugin.getWorldFeatureManager() != null && plugin.getWorldFeatureManager().isEnabled())));
         sender.sendMessage(plugin.color("&7Staré eventy, questy, vlastní mobové, soundtrack a dekorace: &eODSTAVENY"));
         sender.sendMessage(plugin.color("&7Bonus talismanu: &e+"
                 + plugin.getConfig().getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D)
