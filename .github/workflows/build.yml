@@ -180,7 +180,10 @@ jobs:
               'private boolean hasTypeIfPresent(YamlConfiguration data, String path, Class<?> expectedType)',
               'private boolean isStringListIfPresent(YamlConfiguration data, String path)',
               'hasTypeIfPresent(data, "server.finale-unlocked", Boolean.class)',
-              'hasTypeIfPresent(data, base + ".fragments", Number.class)',
+              'isLongIfPresent(data, base + ".fragments")',
+              'isIntIfPresent(data, base + ".challenge.progress")',
+              'new java.math.BigDecimal(number.toString()).longValueExact()',
+              'value >= Integer.MIN_VALUE && value <= Integer.MAX_VALUE',
               'isStringListIfPresent(data, base + ".claimed-rewards")',
           ):
               if data_type_guard not in data_manager:
@@ -193,7 +196,7 @@ jobs:
               'if (!data.isConfigurationSection(playerPath))',
               'return failLoadSafely("player data entry must be a YAML section: " + key)',
               'if (data.isSet("server") && !data.isConfigurationSection("server"))',
-              'if (data.isSet("meta.schema-version") && !(data.get("meta.schema-version") instanceof Number))',
+              'if (!isIntIfPresent(data, "meta.schema-version"))',
               'return failLoadSafely("invalid player UUID key in data.yml: " + key)',
           ):
               if data_guard not in data_manager:
