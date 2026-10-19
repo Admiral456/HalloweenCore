@@ -94,8 +94,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         long saveInterval = 20L * 60L * 5L;
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
-        vampireEncounterManager.startNaturalSummoningMonitor();
-        atmosphere.start();
+        // Retired atmosphere, world decoration and boss systems are not started on this branch.
+        worldDecorator.stop();
+        atmosphere.stopPlayback();
+        vampireEncounterManager.stopNaturalSummoningMonitor();
         worldDecorator.start();
         passiveEffectManager.start();
 
@@ -129,27 +131,11 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
      * config cannot silently reactivate the systems while they are being replaced.
      */
     private void disableLegacyContentSystems() {
-        for (String root : List.of("random-events", "special-mobs", "story-quests",
-                "haunted-village", "secret-discoveries", "world-decorations", "atmosphere")) {
-            getConfig().set(root, null);
-        }
         getConfig().set("random-events.enabled", false);
-        getConfig().set("random-events.start-delay-seconds", 30);
-        getConfig().set("random-events.interval-minutes.min", 15);
-        getConfig().set("random-events.interval-minutes.max", 24);
-        getConfig().set("random-events.duration-minutes", 6);
-        getConfig().set("random-events.surge-interval-seconds", 25);
-        getConfig().set("random-events.max-event-mobs", 48);
-        getConfig().set("random-events.event-mobs-enabled", false);
-        getConfig().set("random-events.invasion-mobs-per-surge", 4);
-        getConfig().set("random-events.blood-moon-damage-multiplier", 3.0D);
-        getConfig().set("random-events.special-mob-chance-multiplier", 2.0D);
         getConfig().set("special-mobs.enabled", false);
         getConfig().set("special-mobs.custom-models.enabled", false);
-        getConfig().set("special-mobs.relic-item-id", "warriorland_halloween:cursed_candy");
         getConfig().set("special-mobs.relic-drop-chance", 0.0D);
         getConfig().set("special-mobs.map-drop-chance", 0.0D);
-        getConfig().set("special-mobs.map-item-id", "minecraft:map");
         getConfig().set("story-quests.enabled", false);
         getConfig().set("haunted-village.enabled", false);
         getConfig().set("secret-discoveries.enabled", false);
@@ -157,6 +143,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         getConfig().set("atmosphere.enabled", false);
         getConfig().set("atmosphere.send-title-on-join", false);
         getConfig().set("bosses.vampire.enabled", false);
+        getConfig().set("bosses.vampire.summoning.automatic", false);
+
         for (String id : List.of("crimson-warden-helmet", "crimson-warden-chestplate",
                 "crimson-warden-leggings", "crimson-warden-boots", "crimson-warden-sword",
                 "crimson-warden-pickaxe", "crimson-warden-axe", "crimson-warden-shovel",
@@ -205,23 +193,20 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 eventManager.stop();
             }
         }
-        if (vampireEncounterManager != null) vampireEncounterManager.stopEncounter();
-        if (bossManager != null) bossManager.stopVampireBossBar();
-
-        if (atmosphere != null) atmosphere.refreshPlayback();
-        if (worldDecorator != null) {
-            worldDecorator.stop();
-            if (eventEnabled && getConfig().getBoolean("world-decorations.enabled", true)) {
-                worldDecorator.scanLoadedChunks();
-            }
+        if (vampireEncounterManager != null) {
+            vampireEncounterManager.stopNaturalSummoningMonitor();
+            vampireEncounterManager.stopEncounter();
         }
+        if (bossManager != null) bossManager.stopVampireBossBar();
+        if (atmosphere != null) atmosphere.stopPlayback();
+        if (worldDecorator != null) worldDecorator.stop();
 
         logConfigValidationIssues();
         if (bossManager != null) bossManager.validateConfiguration();
         getLogger().info("HalloweenCore runtime state reloaded. enabled=" + eventEnabled
-                + ", random-events=" + getConfig().getBoolean("random-events.enabled", true)
-                + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", true)
-                + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", true));
+                + ", random-events=" + getConfig().getBoolean("random-events.enabled", false)
+                + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", false)
+                + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", false));
     }
 
     public void setEventEnabled(boolean enabled) {
@@ -243,8 +228,13 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 if (bossManager != null) bossManager.stopVampireBossBar();
             }
         }
-        if (atmosphere != null) atmosphere.refreshPlayback();
-        if (worldDecorator != null && enabled) worldDecorator.scanLoadedChunks();
+        if (atmosphere != null) atmosphere.stopPlayback();
+        if (worldDecorator != null) worldDecorator.stop();
+        if (vampireEncounterManager != null) {
+            vampireEncounterManager.stopNaturalSummoningMonitor();
+            vampireEncounterManager.stopEncounter();
+        }
+        if (bossManager != null) bossManager.stopVampireBossBar();
 
         if (changed) {
             Bukkit.broadcastMessage(color(enabled
@@ -255,77 +245,6 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         }
     }
 
-
-    private void migrateAtmospherePlaylistDefaults() {
-        if (getConfig().getBoolean("migrations.atmosphere-playlist-v1", false)) return;
-
-        try (InputStream input = getResource("config.yml")) {
-            if (input == null) {
-                getLogger().warning("Packaged config.yml unavailable; atmosphere playlist migration was skipped.");
-                return;
-            }
-            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(input, StandardCharsets.UTF_8));
-            for (String sectionPath : List.of("atmosphere.playlist", "atmosphere.track-loop-milliseconds")) {
-                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
-                if (section == null) continue;
-                for (String key : section.getKeys(false)) {
-                    String path = sectionPath + "." + key;
-                    if (!getConfig().contains(path)) {
-                        getConfig().set(path, defaults.get(path));
-                    }
-                }
-            }
-            getConfig().set("migrations.atmosphere-playlist-v1", true);
-            saveConfig();
-            getLogger().info("Halloween night/cave audio playlist settings applied; existing atmosphere settings were preserved.");
-        } catch (IOException ex) {
-            getLogger().warning("Atmosphere playlist migration failed: " + ex.getClass().getSimpleName());
-        }
-    }
-
-    private void migrateAdditionalMobAndQuestDefaults() {
-        if (getConfig().getBoolean("migrations.additional-mobs-quests-v1", false)) return;
-
-        try (InputStream input = getResource("config.yml")) {
-            if (input == null) {
-                getLogger().warning("Packaged config.yml unavailable; additional mob/quest migration was skipped.");
-                return;
-            }
-            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
-                    new InputStreamReader(input, StandardCharsets.UTF_8));
-            for (String sectionPath : List.of(
-                    "story-quests",
-                    "special-mobs.types.void-reaper",
-                    "special-mobs.types.frost-stalker",
-                    "special-mobs.types.nightmare")) {
-                ConfigurationSection section = defaults.getConfigurationSection(sectionPath);
-                if (section == null) continue;
-                for (String key : section.getKeys(true)) {
-                    if (section.isConfigurationSection(key)) continue;
-                    String path = sectionPath + "." + key;
-                    if (!getConfig().contains(path)) getConfig().set(path, section.get(key));
-                }
-            }
-            getConfig().set("migrations.additional-mobs-quests-v1", true);
-            saveConfig();
-            getLogger().info("Additional Halloween mob and story-quest defaults applied without overwriting existing settings.");
-        } catch (IOException ex) {
-            getLogger().warning("Additional mob/quest migration failed: " + ex.getClass().getSimpleName());
-        }
-    }
-
-    private void migrateAtmosphereVolume() {
-        // One-time migration for servers that already have the older 0.35/1.0 settings.
-        // Do not overwrite an administrator's deliberate custom value above 1.0.
-        if (getConfig().getBoolean("atmosphere.volume-tripled-v2-migrated", false)) return;
-        double existing = getConfig().getDouble("atmosphere.volume", 0.35D);
-        if (existing <= 1.0D) getConfig().set("atmosphere.volume", 3.0D);
-        getConfig().set("atmosphere.volume-tripled-v2-migrated", true);
-        saveConfig();
-        getLogger().info("Halloween soundtrack gain migration complete; volume=" +
-                getConfig().getDouble("atmosphere.volume", 3.0D) + ".");
-    }
 
     /**
      * Existing plugin configs are deliberately not replaced by saveDefaultConfig().
