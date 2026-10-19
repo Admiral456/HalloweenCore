@@ -97,6 +97,7 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(vanillaEventManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
         getServer().getPluginManager().registerEvents(vanillaBossManager, this);
+        vanillaBossManager.resumeLoadedBosses();
         // Custom mob models, Haunted Village, custom ambience, and decoration listeners
         // remain retired. The elite mob listener now only marks existing vanilla entity
         // types and supplies particle/effect abilities, with all model APIs removed.
