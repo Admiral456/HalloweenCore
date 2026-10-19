@@ -82,6 +82,7 @@ public final class HalloweenCacheManager implements Listener {
     @EventHandler
     public void onChunkLoad(org.bukkit.event.world.ChunkLoadEvent event) {
         if (!isEnabled()
+                || !plugin.isEventEnabled()
                 || !plugin.getConfig().getBoolean("underground-caches.generation.enabled", true)
                 || !event.isNewChunk()) return;
 
@@ -178,9 +179,14 @@ public final class HalloweenCacheManager implements Listener {
         Chest cache = findLockedCache(event.getInventory().getHolder());
         if (cache == null) return;
 
-        if (!plugin.isEventEnabled()) {
-            event.setCancelled(true);
-            player.sendMessage(plugin.color("&8[&6Halloween&8] &7Tato schránka je momentálně zapečetěna."));
+        // Disabling the cache feature must never leave existing containers
+        // permanently inaccessible. When disabled, remove the lock and let the
+        // chest behave like an ordinary vanilla chest without consuming a key.
+        if (!isEnabled()) {
+            if (!unlockCache(cache)) {
+                event.setCancelled(true);
+                player.sendMessage(plugin.color("&8[&6Halloween&8] &cSchránku se nepodařilo bezpečně odemknout."));
+            }
             return;
         }
 
