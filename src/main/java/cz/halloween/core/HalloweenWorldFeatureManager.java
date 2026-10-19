@@ -114,8 +114,8 @@ public final class HalloweenWorldFeatureManager implements Listener {
 
         for (int attempt = 0; attempt < attempts; attempt++) {
             // A 5x5 local ground check stays inside this chunk even at the edges.
-            int centerLocalX = random.nextInt(2, 14);
-            int centerLocalZ = random.nextInt(2, 14);
+            int centerLocalX = random.nextInt(3, 13);
+            int centerLocalZ = random.nextInt(3, 13);
             int centerX = (chunk.getX() << 4) + centerLocalX;
             int centerZ = (chunk.getZ() << 4) + centerLocalZ;
             Block centerGround = world.getHighestBlockAt(centerX, centerZ);
@@ -131,6 +131,7 @@ public final class HalloweenWorldFeatureManager implements Listener {
             java.util.Collections.shuffle(offsets, random);
 
             int placed = 0;
+            List<Block> placedBlocks = new ArrayList<>();
             boolean placedLantern = false;
             for (int[] offset : offsets) {
                 if (placed >= maxPumpkins) break;
@@ -153,6 +154,7 @@ public final class HalloweenWorldFeatureManager implements Listener {
                     placedLantern = true;
                 }
                 target.setType(pumpkin, false);
+                placedBlocks.add(target);
                 placed++;
             }
             if (placed >= 2) {
@@ -160,17 +162,10 @@ public final class HalloweenWorldFeatureManager implements Listener {
                         + world.getName() + " chunk " + chunk.getX() + "," + chunk.getZ());
                 return true;
             }
-            // If fewer than two safe sites were found, undo only this failed tiny patch.
-            for (int[] offset : offsets) {
-                int localX = centerLocalX + offset[0];
-                int localZ = centerLocalZ + offset[1];
-                Block ground = world.getHighestBlockAt(
-                        (chunk.getX() << 4) + localX,
-                        (chunk.getZ() << 4) + localZ);
-                Block above = ground.getRelative(0, 1, 0);
-                if (above.getType() == Material.PUMPKIN || above.getType() == Material.JACK_O_LANTERN) {
-                    above.setType(Material.AIR, false);
-                }
+            // If fewer than two safe sites were found, undo only blocks this
+            // attempt placed; never remove naturally generated pumpkins.
+            for (Block placedBlock : placedBlocks) {
+                placedBlock.setType(Material.AIR, false);
             }
         }
         return false;
