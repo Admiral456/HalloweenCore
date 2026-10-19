@@ -93,6 +93,12 @@ jobs:
                       f"Missing disabled-system validation guard: {required_guard}. "
                       "Validator structure changed unexpectedly."
                   )
+          for secret_validation_guard in (
+              'if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z))',
+              'if (!Double.isFinite(radius) || radius < 1.0D || radius > 32.0D)',
+          ):
+              if secret_validation_guard not in validator:
+                  raise SystemExit(f"Hidden discovery config validation missing: {secret_validation_guard}")
           print("Disabled-system validator guards verified.")
 
           core_source = Path(
@@ -134,6 +140,8 @@ jobs:
               "player.playSound(",
               "world.spawnParticle(Particle.SOUL",
               "player.getWorld()",
+              "!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)",
+              "!Double.isFinite(radius) || radius < 1.0D || radius > 32.0D",
           ):
               if secret_behavior not in secret_manager:
                   raise SystemExit(f"Vanilla secret discovery behavior missing: {secret_behavior}")
