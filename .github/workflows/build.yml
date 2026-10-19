@@ -58,6 +58,7 @@ jobs:
               raise SystemExit(
                   f"Unexpected retained PNG set. Expected {sorted(expected_pngs)}, got {sorted(actual_pngs)}"
               )
+          print(f"Retained PNG set verified: {sorted(actual_pngs)}")
 
           for retired_path in (Path("mythicmobs"), Path("scripts")):
               if retired_path.exists():
@@ -84,8 +85,11 @@ jobs:
               'if (vampire != null && vampire.getBoolean("enabled", false)) {',
           ):
               if required_guard not in validator:
-                  raise SystemExit(f"Missing disabled-system validation guard: {required_guard}")
-
+                  raise SystemExit(
+                      f"Missing disabled-system validation guard: {required_guard}. "
+                      "Validator structure changed unexpectedly."
+                  )
+          print("Disabled-system validator guards verified.")
           print("Cleanup invariants and retired-feature checks passed.")
           PY
 
