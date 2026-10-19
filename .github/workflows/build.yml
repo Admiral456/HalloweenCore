@@ -118,6 +118,8 @@ jobs:
               "migrateVanillaSecretDiscoveries();",
               'private void migrateVanillaSecretDiscoveries()',
               'migrations.vanilla-secret-discoveries-v1',
+              'migrations.vanilla-secret-discoveries-v2',
+              'getConfig().set("migrations.vanilla-secret-discoveries-v2", true)',
               'private void addDefaultSecret(String id, String name, String hint, long reward)',
               'getConfig().set("migrations.vanilla-secret-discoveries-v1", true)',
               'getConfig().set("secret-discoveries.enabled", true)',
