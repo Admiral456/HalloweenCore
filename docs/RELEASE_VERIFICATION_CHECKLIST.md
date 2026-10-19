@@ -85,7 +85,18 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Run /halloween quests reset <online player> as an admin and verify progress is cleared. Confirm a non-admin cannot reset anyone's campaign.
 - [ ] Test an older config without migrations.vanilla-story-quests-v1. Startup should enable the vanilla campaign once; after an admin disables it and saves the config, a reload/restart must keep it disabled.
 
-## 8. Release artifacts
+## 8. Vanilla final boss
+
+- [ ] In a staging world, run `/halloween boss status` and confirm the command reports that no boss is active.
+- [ ] Run `/halloween boss spawn` as an administrator from a safe location. Confirm the Wither Skeleton appears in a safe position, wears a carved pumpkin, uses a vanilla netherite sword, has 240 health by default, and displays a boss bar.
+- [ ] Confirm the boss is never spawned automatically and that `vanilla-boss.enabled: false` disables the encounter.
+- [ ] Test all three health phases and the marked blood pulse. The target must take damage only if it remains inside the marked circle after the warning period.
+- [ ] Deal damage with two eligible test players and defeat the boss. Verify each contributor gets the participation reward and the largest contributor also receives the top-contributor bonus.
+- [ ] Confirm the boss drops no normal equipment or XP and the configured rewards are saved. Environmental damage or creative-mode participation must not count.
+- [ ] Run `/halloween boss stop` and verify the boss and boss bar are removed. Restart the staging server while a boss is active and verify shutdown cleanup.
+- [ ] Test an older config without `migrations.vanilla-boss-v1`. Missing settings should be added once without changing existing values; a deliberately disabled boss must remain disabled after the migration has been recorded.
+
+## 9. Release artifacts
 
 - [ ] Confirm GitHub Actions passes the Maven build, smoke checks, ItemsAdder ZIP package test, and both artifact uploads.
 - [ ] Inspect the ItemsAdder ZIP. It should contain only the cursed-candy content and the three retained Minecraft pumpkin block texture overrides. There should be no retired shader, OGG files, or old MythicMobs content.
