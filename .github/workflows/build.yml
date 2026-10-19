@@ -414,6 +414,7 @@ jobs:
               "event.isNewChunk()",
               "World.Environment.NORMAL",
               "!plugin.isEligibleGameplayWorld(chunk.getWorld())",
+              "if (!Double.isFinite(value)) return min;",
               "random.nextInt(1, 15)",
               "chunk.getBlock(localX, y, localZ)",
               "int localX = target.getX() & 15;",
@@ -454,7 +455,7 @@ jobs:
           for cache_validation in (
               'boolean cachesEnabled = plugin.getConfig().getBoolean("underground-caches.enabled", true);',
               'if (minY >= maxY)',
-              'if (keyChance < 0.0D || keyChance > 0.05D)',
+              'if (!Double.isFinite(keyChance) || keyChance < 0.0D || keyChance > 0.05D)',
           ):
               if cache_validation not in cache_validator:
                   raise SystemExit(f"Underground cache config validation missing: {cache_validation}")
@@ -476,6 +477,7 @@ jobs:
               "target.setType(pumpkin, false);",
               "target.setType(Material.COBWEB, false);",
               "private boolean hasTileStateInNeighborhood(Block target)",
+              "if (!Double.isFinite(value)) return min;",
               "List<Block> placedBlocks = new ArrayList<>();",
               "for (Block placedBlock : placedBlocks)",
           ):
@@ -492,8 +494,8 @@ jobs:
               raise SystemExit("Vanilla world feature configuration is missing or malformed")
           for feature_validation in (
               'boolean worldFeaturesEnabled = plugin.getConfig().getBoolean("world-features.enabled", true);',
-              'if (pumpkinChance < 0.0D || pumpkinChance > 1.0D)',
-              'if (webChance < 0.0D || webChance > 1.0D)',
+              'if (!Double.isFinite(pumpkinChance) || pumpkinChance < 0.0D || pumpkinChance > 1.0D)',
+              'if (!Double.isFinite(webChance) || webChance < 0.0D || webChance > 1.0D)',
               'if (caveMinY >= caveMaxY)',
           ):
               if feature_validation not in validator:
@@ -521,6 +523,8 @@ jobs:
               "public boolean stopActiveEventNow()",
               "public void onBloodMoonDamage(EntityDamageByEntityEvent event)",
               '"vanilla-events.blood-moon.hostile-damage-multiplier"',
+              'if (!Double.isFinite(multiplier)) return 1.0D;',
+              'if (!Double.isFinite(multiplier)) multiplier = 1.5D;',
               '"vanilla-events.pumpkin-harvest.farming-fragment-multiplier"',
               '"vanilla-events.witching-hour.mob-kill-fragment-multiplier"',
               "projectile.getShooter() instanceof LivingEntity",
@@ -559,11 +563,14 @@ jobs:
           for event_validation in (
               'boolean vanillaEventsEnabled = plugin.getConfig().getBoolean("vanilla-events.enabled", true);',
               'if (eventIntervalMin < 5 || eventIntervalMax < eventIntervalMin || eventIntervalMax > 180)',
-              'if (bloodMoonDamage < 1.0D || bloodMoonDamage > 3.0D)',
+              'if (!Double.isFinite(bloodMoonDamage) || bloodMoonDamage < 1.0D || bloodMoonDamage > 3.0D)',
           ):
               if event_validation not in validator:
                   raise SystemExit(f"Vanilla event config validation missing: {event_validation}")
 
+          if 'if (!Double.isFinite(curseBonus) || curseBonus < 0.0D || curseBonus > 1.0D)' not in validator:
+              raise SystemExit("Curse multiplier must reject NaN and infinity")
+          
           print("Vanilla event scheduling, effects and command checks passed.")
           checklist = Path("docs/RELEASE_VERIFICATION_CHECKLIST.md")
           if not checklist.is_file():
