@@ -174,12 +174,18 @@ public final class HalloweenRewardManager {
         if (shop == null) return 1.0D;
 
         if (isEquippedReward(player, "hunter-mask")) {
-            bonus += Math.max(0.0D, shop.getDouble("hunter-mask.bonus-multiplier", 0.05D));
+            bonus += safeBonusMultiplier(shop.getDouble("hunter-mask.bonus-multiplier", 0.05D));
         }
         if (isHeldReward(player, "cursed-talisman")) {
-            bonus += Math.max(0.0D, shop.getDouble("cursed-talisman.bonus-multiplier", 0.10D));
+            bonus += safeBonusMultiplier(shop.getDouble("cursed-talisman.bonus-multiplier", 0.10D));
         }
-        return Math.max(1.0D, 1.0D + bonus);
+        return Math.min(10.0D, 1.0D + bonus);
+    }
+
+    private double safeBonusMultiplier(double configured) {
+        // Invalid config must never multiply a gameplay reward to Long.MAX_VALUE.
+        if (!Double.isFinite(configured)) return 0.0D;
+        return Math.max(0.0D, Math.min(5.0D, configured));
     }
 
     private boolean isHeldReward(Player player, String rewardId) {
