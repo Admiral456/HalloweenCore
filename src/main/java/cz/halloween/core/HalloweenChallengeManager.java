@@ -72,6 +72,9 @@ public final class HalloweenChallengeManager {
         long reward = Math.max(1L, plugin.getConfig().getLong("daily-challenge.reward-fragments", 60L));
         plugin.getService().addFragments(player.getUniqueId(), reward, "challenge");
         plugin.getDataManager().markChallengeClaimed(player.getUniqueId());
+        // Save the earned reward and claimed flag together so a restart cannot
+        // normally award the same completed daily challenge a second time.
+        plugin.getDataManager().save();
 
         player.sendTitle(
                 plugin.color("&6&lDENNÍ LOV SPLNĚN"),
