@@ -75,10 +75,12 @@ public final class HalloweenChallengeManager {
 
     private void claim(Player player, Challenge challenge) {
         long reward = Math.max(1L, plugin.getConfig().getLong("daily-challenge.reward-fragments", 60L));
-        plugin.getService().addFragments(player.getUniqueId(), reward, "challenge");
+        // Mark first: addFragments can persist immediately when the global goal is
+        // reached. That save must already contain the claimed flag, or a crash at
+        // the goal transition could let the same daily reward be claimed again.
         plugin.getDataManager().markChallengeClaimed(player.getUniqueId());
-        // Save the earned reward and claimed flag together so a restart cannot
-        // normally award the same completed daily challenge a second time.
+        plugin.getService().addFragments(player.getUniqueId(), reward, "challenge");
+        // Persist the reward and claimed flag together when no intermediate save was needed.
         plugin.getDataManager().save();
 
         player.sendTitle(
