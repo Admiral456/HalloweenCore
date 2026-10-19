@@ -6,9 +6,9 @@ UplineDialogues 3.0.0 poskytuje editor NPC dialogů, volby, větvení a příkaz
 
 1. V editoru UplineDialogues vytvoř dialog u vybraného vesničana.
 2. Přidej odpovědi a příběhové větve v UplineDialogues.
-3. Akci přijetí úkolu spusť jako hráč: /halloween quest start <id>.
-4. Akci posunu postupu spusť jako hráč: /halloween quest progress <id> [množství].
-5. Po splnění dialogových podmínek spusť: /halloween quest complete <id>.
+3. Akci přijetí úkolu spusť jako OP: /halloween quest start <id>.
+4. Akci posunu postupu spusť jako OP: /halloween quest progress <id> [množství].
+5. Po splnění dialogových podmínek spusť jako OP: /halloween quest complete <id>.
 6. Pokud je nainstalovaný PlaceholderAPI, v podmínkách lze použít %halloween_fragments%, %halloween_quest_progress_<id>%, %halloween_quest_started_<id>% a %halloween_quest_completed_<id>%.
 
 ID v příkladech jsou zástupné. Skutečný příběh, názvy questů a jejich odměny se touto změnou předem nedefinují.

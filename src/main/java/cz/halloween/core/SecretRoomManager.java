@@ -23,8 +23,10 @@ import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 
 public final class SecretRoomManager implements Listener {
     private final HalloweenCore plugin;
@@ -170,6 +172,18 @@ public final class SecretRoomManager implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockExplosion(BlockExplodeEvent event) {
         event.blockList().removeIf(this::isLockedChest);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onLockedChestAutomation(InventoryMoveItemEvent event) {
+        if (isLockedChestInventory(event.getSource()) || isLockedChestInventory(event.getDestination())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean isLockedChestInventory(Inventory inventory) {
+        Object holder = inventory.getHolder();
+        return holder instanceof org.bukkit.block.Chest chest && isLockedChest(chest.getBlock());
     }
 
     private boolean isLockedChest(Block block) {

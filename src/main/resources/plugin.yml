@@ -21,3 +21,6 @@ permissions:
   halloweencore.key.give:
     description: Administrátorské vydávání speciálních klíčů.
     default: op
+  halloweencore.quest.dialogue:
+    description: Oprávnění pro změnu questu z akce UplineDialogues.
+    default: op

@@ -27,6 +27,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        installDefaults();
         if (!getDataFolder().exists() && !getDataFolder().mkdirs()) {
             getLogger().severe("Nelze vytvořit datovou složku HalloweenCore.");
             getServer().getPluginManager().disablePlugin(this);
@@ -47,6 +48,18 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         }
         getLogger().info("Načtena nová verze: dialogové questy, fragmenty a zamčené tajné místnosti.");
         getLogger().info("Staré Halloween eventy, mobové, bossové a staré struktury nejsou součástí této verze.");
+    }
+
+    private void installDefaults() {
+        getConfig().addDefault("secret-rooms.enabled", true);
+        getConfig().addDefault("secret-rooms.worlds", List.of("*"));
+        getConfig().addDefault("secret-rooms.excluded-worlds", List.of("Spawn"));
+        getConfig().addDefault("secret-rooms.chance-per-new-chunk", 0.01);
+        getConfig().addDefault("secret-rooms.min-depth-below-surface", 16);
+        getConfig().addDefault("secret-rooms.max-depth-below-surface", 28);
+        getConfig().addDefault("quest-rewards", java.util.Collections.emptyMap());
+        getConfig().options().copyDefaults(true);
+        saveConfig();
     }
 
     @Override
@@ -108,6 +121,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
                     return true;
                 }
                 reloadConfig();
+                installDefaults();
                 sender.sendMessage(ChatColor.GREEN + "Konfigurace načtena. Již vytvořené místnosti se nemění.");
             }
             default -> sendHelp(sender);
@@ -127,6 +141,12 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
             return;
         }
         String action = args[1].toLowerCase(Locale.ROOT);
+        if (List.of("start", "progress", "step", "complete", "finish").contains(action)
+                && !player.hasPermission("halloweencore.quest.dialogue")) {
+            player.sendMessage(ChatColor.RED
+                    + "Tuto akci smí spustit jen nakonfigurovaný dialog. V UplineDialogues použij běh příkazu jako OP.");
+            return;
+        }
         if (action.equals("list") || (action.equals("status") && args.length < 3)) {
             questManager.sendQuestList(player);
             return;
@@ -197,7 +217,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
             sender.sendMessage(ChatColor.RED + "Počet klíčů musí být v rozsahu 1 až 64.");
             return;
         }
-        ItemStack key = new KeyItemFactory(this).createKey(amount);
+        ItemStack key = keyItemFactory.createKey(amount);
         Map<Integer, ItemStack> leftovers = target.getInventory().addItem(key);
         for (ItemStack leftover : leftovers.values()) {
             target.getWorld().dropItemNaturally(target.getLocation(), leftover);

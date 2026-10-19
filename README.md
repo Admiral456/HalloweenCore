@@ -19,12 +19,12 @@ Tato pracovní verze je omezená na dohodnutý rozsah: dialogové questy s Uplin
 UplineDialogues zajišťuje editor NPC rozhovorů, volby odpovědí, větvení a akce příkazů. HalloweenCore používá jeho akce jako rozhraní do questové evidence; nevytváří vlastní dialogové GUI.
 
 Příklady příkazů pro dialog (ID jsou jen ukázky, nejsou to předem definované questy):
-- Spustit jako hráč: /halloween quest start archivist_intro
-- Posunout postup: /halloween quest progress archivist_intro 1
-- Dokončit: /halloween quest complete archivist_intro
+- Spustit jako OP: /halloween quest start archivist_intro
+- Posunout postup jako OP: /halloween quest progress archivist_intro 1
+- Dokončit jako OP: /halloween quest complete archivist_intro
 - Zobrazit stav: /halloween quest status archivist_intro
 
-Při vytváření akcí v UplineDialogues použij spuštění jako hráč, aby se ukládal stav správného hráče. Volitelné PlaceholderAPI zástupné hodnoty pro větvení:
+Při změně stavu úkolu v UplineDialogues použij spuštění příkazu jako OP. Příkaz se stále provede pro hráče, který vede dialog, ale běžný hráč nemůže ručně dokončit quest v chatu. Volitelné PlaceholderAPI zástupné hodnoty pro větvení:
 - %halloween_fragments%
 - %halloween_quest_progress_archivist_intro%
 - %halloween_quest_started_archivist_intro%
