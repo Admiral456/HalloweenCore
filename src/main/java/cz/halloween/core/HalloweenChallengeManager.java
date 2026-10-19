@@ -11,10 +11,9 @@ public final class HalloweenChallengeManager {
     private final HalloweenCore plugin;
     private final List<Challenge> challenges = List.of(
             new Challenge("hunt", "Noční lov", "mob-kill", 25),
-            new Challenge("miner", "Hřbitovní těžba", "mining", 50),
+            new Challenge("miner", "Těžba", "mining", 50),
             new Challenge("harvest", "Prokletá sklizeň", "farming", 35),
-            new Challenge("angler", "Rybaření duší", "fishing", 5),
-            new Challenge("rare-hunt", "Lov prokletých", "special-mob", 2)
+            new Challenge("angler", "Rybaření", "fishing", 5)
     );
 
     public HalloweenChallengeManager(HalloweenCore plugin) {
