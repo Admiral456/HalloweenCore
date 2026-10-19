@@ -62,8 +62,9 @@ public final class HalloweenMobManager implements Listener {
         };
         if (mobId == null) return;
 
-        double chance = Math.max(0.0D, Math.min(1.0D,
-                plugin.getConfig().getDouble("special-mobs.chance", 0.04D)));
+        double chance = plugin.getConfig().getDouble("special-mobs.chance", 0.04D);
+        if (!Double.isFinite(chance)) chance = 0.04D;
+        chance = Math.max(0.0D, Math.min(1.0D, chance));
         HalloweenVanillaEventManager vanillaEvents = plugin.getVanillaEventManager();
         String activeEvent = vanillaEvents == null ? null : vanillaEvents.getActiveEventId();
         if ("witching-hour".equals(activeEvent) || "blood-moon".equals(activeEvent)) {
@@ -98,7 +99,9 @@ public final class HalloweenMobManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onSpecialMobAttack(EntityDamageByEntityEvent event) {
-        if (!plugin.isEventEnabled() || !(event.getEntity() instanceof Player target)) return;
+        if (!plugin.isEventEnabled()
+                || !plugin.getConfig().getBoolean("special-mobs.enabled", true)
+                || !(event.getEntity() instanceof Player target)) return;
         if (!plugin.isEligibleGameplayPlayer(target) || !plugin.isEligibleGameplayWorld(target.getWorld())) return;
 
         LivingEntity attacker = resolveLivingAttacker(event.getDamager());
@@ -276,6 +279,9 @@ public final class HalloweenMobManager implements Listener {
         event.blockList().clear();
         event.setYield(0.0F);
 
+        // Even when the feature is disabled, already-spawned pumpkin wraiths must not grief.
+        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("special-mobs.enabled", true)) return;
+
         Location origin = event.getLocation().clone();
         var section = plugin.getConfig().getConfigurationSection("special-mobs.types.pumpkin-wraith");
         double radius = Math.max(2.0D,
@@ -301,7 +307,7 @@ public final class HalloweenMobManager implements Listener {
     @EventHandler(ignoreCancelled = true)
     public void onHexWitchPotionSplash(PotionSplashEvent event) {
         if (!(event.getPotion().getShooter() instanceof LivingEntity attacker)) return;
-        if (!plugin.isEventEnabled()) return;
+        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("special-mobs.enabled", true)) return;
         String mobId = attacker.getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
         if (!"hex-witch".equals(mobId)) return;
 
@@ -333,7 +339,9 @@ public final class HalloweenMobManager implements Listener {
 
     @EventHandler(ignoreCancelled = true)
     public void onDeath(EntityDeathEvent event) {
-        if (!plugin.isEventEnabled() || !isSpecial(event.getEntity())) return;
+        if (!plugin.isEventEnabled()
+                || !plugin.getConfig().getBoolean("special-mobs.enabled", true)
+                || !isSpecial(event.getEntity())) return;
 
         String mobId = event.getEntity().getPersistentDataContainer().get(cursedKey, PersistentDataType.STRING);
         if (mobId == null) return;
@@ -352,7 +360,7 @@ public final class HalloweenMobManager implements Listener {
         }
 
         double dropChance = Math.max(0.0D, Math.min(1.0D, plugin.getConfig().getDouble("special-mobs.relic-drop-chance", 0.12D)));
-        if (ThreadLocalRandom.current().nextDouble() <= dropChance) {
+        if (ThreadLocalRandom.current().nextDouble() < dropChance) {
             String configuredItemId = plugin.getConfig().getString("special-mobs.relic-item-id", "");
             ItemStack item = plugin.getItemManager().getItemsAdderItem(configuredItemId, 1);
             if (item == null) {
@@ -496,17 +504,23 @@ public final class HalloweenMobManager implements Listener {
         entity.setCustomNameVisible(true);
         entity.setGlowing(section.getBoolean("glowing", true));
 
-        double maxHealthMultiplier = Math.max(1.0D, section.getDouble("health-multiplier", 1.35D));
-        entity.setMaxHealth(entity.getMaxHealth() * maxHealthMultiplier);
-        entity.setHealth(entity.getMaxHealth());
+        double maxHealthMultiplier = section.getDouble("health-multiplier", 1.35D);
+        if (!Double.isFinite(maxHealthMultiplier)) maxHealthMultiplier = 1.35D;
+        maxHealthMultiplier = Math.max(1.0D, Math.min(3.0D, maxHealthMultiplier));
+        double newMaxHealth = entity.getMaxHealth() * maxHealthMultiplier;
+        if (!Double.isFinite(newMaxHealth) || newMaxHealth <= 0.0D) return;
+        entity.setMaxHealth(newMaxHealth);
+        entity.setHealth(newMaxHealth);
 
         if (entity instanceof Monster monster) {
-            monster.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, Math.max(0, section.getInt("speed-level", 0)), true, false, false));
-            monster.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, Math.max(0, section.getInt("strength-level", 0)), true, false, false));
+            int speedLevel = Math.max(0, Math.min(2, section.getInt("speed-level", 0)));
+            int strengthLevel = Math.max(0, Math.min(2, section.getInt("strength-level", 0)));
+            monster.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, speedLevel, true, false, false));
+            monster.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, Integer.MAX_VALUE, strengthLevel, true, false, false));
         }
 
         if (entity instanceof Creeper creeper) {
-            creeper.setExplosionRadius(Math.max(1, section.getInt("explosion-radius", 3)));
+            creeper.setExplosionRadius(Math.max(1, Math.min(4, section.getInt("explosion-radius", 3))));
         }
         playMobSpawnVfx(entity, mobId);
     }
