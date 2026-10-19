@@ -240,7 +240,7 @@ public final class HalloweenVanillaEventManager implements Listener {
                 "vanilla-events.blood-moon.invasion.captain-final-seconds", 60)));
         if (activeUntil - now > finalSeconds * 1000L) return;
 
-        List<Player> eligiblePlayers = Bukkit.getOnlinePlayers().stream()
+        var eligiblePlayers = Bukkit.getOnlinePlayers().stream()
                 .filter(plugin::isEligibleGameplayPlayer)
                 .filter(player -> plugin.isEligibleGameplayWorld(player.getWorld()))
                 .toList();
