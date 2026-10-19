@@ -59,7 +59,8 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Run /halloween npc remove and verify only a managed pumpkin villager nearby is removed.
 - [ ] Run /halloween cache spawn, then /halloween cache key <player> 1. Verify an ordinary renamed Tripwire Hook does not unlock it, a real plugin key does, and the key is consumed only once.
 - [ ] Confirm a locked cache cannot be broken, blown up, moved by pistons, or accessed by hoppers before unlocking. Confirm it can be opened normally after unlocking.
-- [ ] On a new test world, explore newly generated Overworld chunks. The pumpkin patches, cave cobwebs, and generated locked caches are intentionally sparse and only generated for new chunks; existing chunks are not retroactively scanned. Do not use the absence of a structure in one chunk as a failed test.
+- [ ] On a new test world, explore newly generated Overworld chunks. Pumpkin patches (6%), cave cobwebs (4%), and ancient altars (2%) are intentionally sparse, and only generated for new chunks; existing chunks are not retroactively scanned. Do not use the absence of a structure in one chunk as a failed test.
+- [ ] When an ancient altar appears, verify it consists of a few mossy/cracked stone blocks and a soul lantern above untouched natural terrain. Confirm it is only generated in a clear natural area and never overwrites blocks or tile entities.
 - [ ] With underground-caches.enabled: false, verify an existing locked cache becomes a normal accessible chest on its next open instead of trapping its loot.
 
 ## 6. Release artifacts
