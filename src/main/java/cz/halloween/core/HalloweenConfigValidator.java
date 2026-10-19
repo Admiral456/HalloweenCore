@@ -399,6 +399,10 @@ public final class HalloweenConfigValidator {
             int windupTicks = plugin.getConfig().getInt("vanilla-boss.pulse.windup-ticks", -1);
             double dodgeRadius = plugin.getConfig().getDouble("vanilla-boss.pulse.dodge-radius-blocks", Double.NaN);
             int witherTicks = plugin.getConfig().getInt("vanilla-boss.pulse.wither-ticks", -1);
+            int minimumParticipationSeconds = plugin.getConfig().getInt(
+                    "vanilla-boss.rewards.minimum-participation-seconds", -1);
+            double minimumDamagePercent = plugin.getConfig().getDouble(
+                    "vanilla-boss.rewards.minimum-damage-percent", Double.NaN);
             long participationReward = plugin.getConfig().getLong(
                     "vanilla-boss.rewards.participation-fragments", -1L);
             long topBonus = plugin.getConfig().getLong(
@@ -427,6 +431,13 @@ public final class HalloweenConfigValidator {
             }
             if (witherTicks < 20 || witherTicks > 200) {
                 errors.add("vanilla-boss.pulse.wither-ticks must be between 20 and 200");
+            }
+            if (minimumParticipationSeconds < 1 || minimumParticipationSeconds > 3600) {
+                errors.add("vanilla-boss.rewards.minimum-participation-seconds must be between 1 and 3600");
+            }
+            if (!Double.isFinite(minimumDamagePercent)
+                    || minimumDamagePercent < 0.0D || minimumDamagePercent > 1.0D) {
+                errors.add("vanilla-boss.rewards.minimum-damage-percent must be finite and between 0 and 1");
             }
             if (participationReward < 0L || participationReward > 5000L) {
                 errors.add("vanilla-boss.rewards.participation-fragments must be between 0 and 5000");
