@@ -85,13 +85,13 @@ rewards:
       cost: 1000000
       min-curse: 5
       bonus-multiplier: 0.10
-      bonus-health: 20.0
+      bonus-health: 2.0
       material: NETHER_STAR
       amount: 1
       name: "&5&lProkletý talisman"
       lore:
         - "&7Vanilla relikvie."
-        - "&d+20 maximálního zdraví při držení."
+        - "&d+1 srdce maximálního zdraví při držení."
         - "&5+10 % Halloween fragmentů."
         - "&8Cena: 1 000 000 fragmentů."
     halloween-token:
