@@ -201,6 +201,29 @@ jobs:
               raise SystemExit("Completed daily challenge claims must be persisted immediately")
 
           print("Reward safety regression checks passed.")
+
+          if not re.search(
+              r"(?ms)^  mob-kill:\n    enabled: true\n    fragments: 1\n    max-fragment-rewards-per-minute: 60$",
+              config,
+          ):
+              raise SystemExit("Mob-kill rewards must have a default rate cap of 60 per minute")
+
+          activity_listener = Path(
+              "src/main/java/cz/halloween/core/HalloweenActivityListener.java"
+          ).read_text(encoding="utf-8")
+          if "public void onMobKill(EntityDeathEvent event)" not in activity_listener:
+              raise SystemExit("Mob-kill rewards must pass through the shared activity listener")
+          if "event.getEntity() instanceof Player" not in activity_listener:
+              raise SystemExit("PvP deaths must not award mob-kill fragments")
+          if 'allowFragmentReward(killer, "mob-kill")' not in activity_listener:
+              raise SystemExit("Mob-kill rewards must use the common per-minute limiter")
+
+          if "onEntityDeath(EntityDeathEvent event)" in core_source:
+              raise SystemExit("Mob-kill rewards must not bypass the shared activity limiter")
+          if 'List.of("mob-kill", "mining", "farming", "fishing")' not in validator:
+              raise SystemExit("Mob-kill limits must be validated with other activity limits")
+
+          print("Mob-kill anti-farming regression checks passed.")
           print("Cleanup invariants and retired-feature checks passed.")
           PY
 
