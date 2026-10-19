@@ -91,8 +91,8 @@ public final class HalloweenServiceImpl implements HalloweenService {
 
         double multiplier = 1.0D;
 
-        if (plugin.getEventManager() != null) {
-            multiplier *= plugin.getEventManager().getMultiplier(source == null ? "unknown" : source);
+        if (plugin.getVanillaEventManager() != null) {
+            multiplier *= plugin.getVanillaEventManager().getMultiplier(source == null ? "unknown" : source);
         }
 
         Player onlinePlayer = plugin.getServer().getPlayer(playerId);
