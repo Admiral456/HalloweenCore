@@ -35,6 +35,7 @@ public final class HalloweenCore extends JavaPlugin {
     private HalloweenChallengeManager challengeManager;
     private HalloweenQuestManager questManager;
     private HalloweenBossManager bossManager;
+    private HalloweenVanillaBossManager vanillaBossManager;
     private HalloweenItemManager itemManager;
     private HalloweenPassiveEffectManager passiveEffectManager;
     private HalloweenPumpkinVillagerManager pumpkinVillagerManager;
@@ -69,6 +70,7 @@ public final class HalloweenCore extends JavaPlugin {
         challengeManager = new HalloweenChallengeManager(this);
         questManager = new HalloweenQuestManager(this);
         bossManager = new HalloweenBossManager(this);
+        vanillaBossManager = new HalloweenVanillaBossManager(this);
         itemManager = new HalloweenItemManager(this);
         passiveEffectManager = new HalloweenPassiveEffectManager(this);
         pumpkinVillagerManager = new HalloweenPumpkinVillagerManager(this);
@@ -94,6 +96,7 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vanillaEventManager, this);
         getServer().getPluginManager().registerEvents(mobManager, this);
+        getServer().getPluginManager().registerEvents(vanillaBossManager, this);
         // Custom mob models, Haunted Village, custom ambience, and decoration listeners
         // remain retired. The elite mob listener now only marks existing vanilla entity
         // types and supplies particle/effect abilities, with all model APIs removed.
@@ -129,6 +132,7 @@ public final class HalloweenCore extends JavaPlugin {
     @Override
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
+        if (vanillaBossManager != null) vanillaBossManager.shutdown();
         if (vanillaEventManager != null) vanillaEventManager.stop();
         if (vanillaAtmosphereManager != null) vanillaAtmosphereManager.stop();
         if (vampireEncounterManager != null) {
@@ -167,6 +171,7 @@ public final class HalloweenCore extends JavaPlugin {
         getConfig().set("atmosphere.send-title-on-join", false);
         getConfig().set("bosses.vampire.enabled", false);
         getConfig().set("bosses.vampire.summoning.automatic", false);
+        migrateVanillaBossConfig();
 
         // One-time migration for servers that already have a config.yml from an
         // older release. saveDefaultConfig() does not merge new reward entries.
@@ -202,6 +207,26 @@ public final class HalloweenCore extends JavaPlugin {
         saveConfig();
     }
 
+
+    /**
+     * Adds defaults for the optional vanilla final boss while keeping the old
+     * model-required Vampire King encounter permanently disabled.
+     */
+    private void migrateVanillaBossConfig() {
+        if (getConfig().getBoolean("migrations.vanilla-boss-v1", false)) return;
+        setConfigDefaultIfMissing("vanilla-boss.enabled", true);
+        setConfigDefaultIfMissing("vanilla-boss.max-health", 240.0D);
+        setConfigDefaultIfMissing("vanilla-boss.tracking-radius-blocks", 96.0D);
+        setConfigDefaultIfMissing("vanilla-boss.pulse.interval-seconds", 18);
+        setConfigDefaultIfMissing("vanilla-boss.pulse.radius-blocks", 8.0D);
+        setConfigDefaultIfMissing("vanilla-boss.pulse.damage", 4.0D);
+        setConfigDefaultIfMissing("vanilla-boss.pulse.windup-ticks", 30);
+        setConfigDefaultIfMissing("vanilla-boss.pulse.dodge-radius-blocks", 2.0D);
+        setConfigDefaultIfMissing("vanilla-boss.pulse.wither-ticks", 60);
+        setConfigDefaultIfMissing("vanilla-boss.rewards.participation-fragments", 300L);
+        setConfigDefaultIfMissing("vanilla-boss.rewards.top-contributor-bonus-fragments", 250L);
+        getConfig().set("migrations.vanilla-boss-v1", true);
+    }
 
     /**
      * Restores rare elite variants of vanilla hostile mobs without reactivating any
@@ -443,6 +468,10 @@ public final class HalloweenCore extends JavaPlugin {
 
     public HalloweenBossManager getBossManager() {
         return bossManager;
+    }
+
+    public HalloweenVanillaBossManager getVanillaBossManager() {
+        return vanillaBossManager;
     }
 
     public HalloweenItemManager getItemManager() {
