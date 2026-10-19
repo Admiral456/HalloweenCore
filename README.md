@@ -84,9 +84,9 @@ The replacement event scheduler uses existing Minecraft assets only. Automatic e
 
 - `pumpkin-harvest` (**Dýňová sklizeň**) multiplies farming fragment rewards.
 - `witching-hour` (**Čarodějná hodina**) multiplies mob-kill fragment rewards and plays a vanilla witch ambience sound at event start.
-- `blood-moon` (**Krvavý měsíc**) multiplies mob-kill fragment rewards and increases damage from hostile mobs against eligible players.
+- `blood-moon` (**Krvavý měsíc**) multiplies mob-kill fragment rewards, increases damage from hostile mobs against eligible players, and can launch waves of vanilla elite mobs plus one stronger captain near the end. Event mobs are capped and are removed when the event ends, is stopped, or Halloween is switched off.
 
-Use `/halloween event stop` to end the current event early. `/halloween off` stops the event scheduler along with fragment progression; `/halloween on` starts a fresh schedule. Event multipliers and timing can be adjusted under `vanilla-events` in `config.yml`. The retired custom-mob events remain disabled and are not reactivated by this scheduler.
+Use `/halloween event stop` to end the current event early. `/halloween off` stops the event scheduler along with fragment progression; `/halloween on` starts a fresh schedule. Event multipliers and timing can be adjusted under `vanilla-events` in `config.yml`. The Blood Moon invasion is controlled by `vanilla-events.blood-moon.invasion`: waves default to four mobs every 25 seconds, with a per-world cap of 24. A stronger Captain Blood Moon may appear during the final 60 seconds. Existing configs receive a one-time `migrations.vanilla-blood-moon-invasion-v1` migration. The retired custom-mob event engine remains disabled; the active invasion uses only the eight vanilla elite profiles.
 
 ## Vanilla ambient atmosphere
 
