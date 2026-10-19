@@ -9,6 +9,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.data.Ageable;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
 
 import java.util.Locale;
 import java.util.concurrent.ThreadLocalRandom;
@@ -19,6 +20,7 @@ public final class HalloweenEventManager {
     private long activeUntil;
     private long nextEventAt;
     private boolean started;
+    private BukkitTask tickerTask;
     private long lastSurgeAt;
     private boolean invasionCaptainSpawned;
 
@@ -29,10 +31,20 @@ public final class HalloweenEventManager {
     public void start() {
         if (started) return;
         started = true;
-        if (plugin.getConfig().getBoolean("random-events.enabled", true) && plugin.isEventEnabled()) {
-            scheduleFirstEvent();
+
+        // During the rebuild this manager is retained only as a compatibility
+        // seam for progression lookups. Do not schedule a per-second ticker when
+        // the retired random-event system is disabled.
+        if (!plugin.isEventEnabled()
+                || !plugin.getConfig().getBoolean("random-events.enabled", false)) {
+            nextEventAt = 0L;
+            return;
         }
-        plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
+
+        scheduleFirstEvent();
+        tickerTask = plugin.getServer().getScheduler().runTaskTimer(
+                plugin, this::tick, 20L, 20L
+        );
     }
 
     public void reloadSchedule() {
@@ -90,6 +102,10 @@ public final class HalloweenEventManager {
     }
 
     public void stop() {
+        if (tickerTask != null) {
+            tickerTask.cancel();
+            tickerTask = null;
+        }
         if (activeEventId != null && plugin.getMobManager() != null) {
             plugin.getMobManager().cleanupEventMobs();
         }
@@ -98,6 +114,7 @@ public final class HalloweenEventManager {
         nextEventAt = 0L;
         lastSurgeAt = 0L;
         invasionCaptainSpawned = false;
+        started = false;
     }
 
     private void tick() {
