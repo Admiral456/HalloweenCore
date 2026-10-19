@@ -111,10 +111,14 @@ public final class HalloweenCacheManager implements Listener {
         }
 
         for (int i = 0; i < attempts; i++) {
-            int x = (chunk.getX() << 4) + random.nextInt(16);
-            int z = (chunk.getZ() << 4) + random.nextInt(16);
+            // Keep the candidate at least one block inside the chunk edge. The
+            // 3x3x3 safety scan then cannot trigger neighbor-chunk loads.
+            int localX = random.nextInt(1, 15);
+            int localZ = random.nextInt(1, 15);
+            int x = (chunk.getX() << 4) + localX;
+            int z = (chunk.getZ() << 4) + localZ;
             int y = random.nextInt(minY, maxY + 1);
-            Block target = chunk.getBlock(x & 15, y, z & 15);
+            Block target = chunk.getBlock(localX, y, localZ);
             if (!isNaturalCacheTarget(target)) continue;
             if (createLockedCache(target, random)) {
                 plugin.getLogger().fine("Generated locked Halloween cache at "
