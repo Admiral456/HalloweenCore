@@ -262,6 +262,15 @@ jobs:
           if "Ignoring invalid player UUID in data.yml" in data_manager:
               raise SystemExit("Invalid UUID rows must fail safely instead of being silently discarded")
 
+          for reward_config_guard in (
+              'if (amount < 1 || amount > 64)',
+              'fallbackMaterial.getMaxStackSize()',
+              'Material.valueOf(material.toUpperCase(Locale.ROOT))',
+              'itemsAdderId.matches("[a-z0-9._-]+:[a-z0-9._-]+")',
+          ):
+              if reward_config_guard not in validator:
+                  raise SystemExit(f"Reward config validation missing: {reward_config_guard}")
+
           print("Persistent data failure-safety checks passed.")
 
           reward_manager = Path(
