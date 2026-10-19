@@ -120,6 +120,8 @@ jobs:
               'migrations.vanilla-secret-discoveries-v1',
               'private void addDefaultSecret(String id, String name, String hint, long reward)',
               'getConfig().set("migrations.vanilla-secret-discoveries-v1", true)',
+              'getConfig().set("secret-discoveries.enabled", true)',
+              'if (locations == null || locations.getKeys(false).isEmpty())',
               "registerEvents(secretDiscoveryManager, this)",
           ):
               if secret_migration_guard not in core_source:
