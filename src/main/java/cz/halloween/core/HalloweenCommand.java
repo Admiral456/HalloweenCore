@@ -29,13 +29,20 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = new ArrayList<>(List.of(
-                    "stats", "progress", "curse", "challenge", "rewards", "claim", "top", "event"
+                    "stats", "progress", "curse", "challenge", "rewards", "claim", "top", "event", "ambience"
             ));
             if (sender.hasPermission("halloweencore.admin")) {
                 subcommands.addAll(List.of("reload", "debug", "give", "on", "off", "npc", "cache"));
             }
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("ambience")) {
+            List<String> options = new ArrayList<>(List.of("status"));
+            if (sender.hasPermission("halloweencore.admin")) options.addAll(List.of("on", "off"));
+            return options.stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("event")) {
@@ -118,6 +125,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
         if (args[0].equalsIgnoreCase("npc")) return npc(sender, args);
         if (args[0].equalsIgnoreCase("event")) return vanillaEvent(sender, args);
+        if (args[0].equalsIgnoreCase("ambience")) return ambience(sender, args);
         if (args[0].equalsIgnoreCase("cache")) return cache(sender, args);
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
@@ -142,6 +150,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí progresu"));
         sender.sendMessage(plugin.color("&6/halloween event [status|start <id>|stop] &7- vanilla Halloween události"));
+        sender.sendMessage(plugin.color("&6/halloween ambience [status|on|off] &7- ambientní Halloween efekty"));
         sender.sendMessage(plugin.color("&6/halloween npc spawn <jméno>|remove &7- správa dýňového vesničana (admin)"));
         sender.sendMessage(plugin.color("&6/halloween cache spawn|key <hráč> [počet] &7- podzemní schránky (admin)"));
         sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, hudba, dekorace, vesnice a příběhové úkoly jsou odstavené; nové události používají vanilla systém."));
@@ -472,6 +481,49 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         sender.sendMessage(plugin.color("&cPoužití: /halloween cache spawn nebo /halloween cache key <hráč> [počet]"));
+        return true;
+    }
+
+    private boolean ambience(CommandSender sender, String[] args) {
+        if (!checkUse(sender)) return true;
+        HalloweenVanillaAtmosphereManager manager = plugin.getVanillaAtmosphereManager();
+        if (manager == null) {
+            sender.sendMessage(plugin.color("&cSprávce ambientních efektů není dostupný."));
+            return true;
+        }
+
+        String action = args.length < 2 ? "status" : args[1].toLowerCase(java.util.Locale.ROOT);
+        if (action.equals("status")) {
+            boolean configured = manager.isEnabled();
+            boolean running = manager.isRunning();
+            String status = !configured ? "&cVYPNUTO"
+                    : running ? "&aAKTIVNÍ"
+                    : "&ePOZASTAVENO (Halloween je vypnutý)";
+            sender.sendMessage(plugin.color("&6&lHALLOWEEN ATMOSFÉRA"));
+            sender.sendMessage(plugin.color("&7Vanilla ambience: " + status));
+            sender.sendMessage(plugin.color("&7Zvuky: "
+                    + (plugin.getConfig().getBoolean("vanilla-atmosphere.sounds-enabled", true) ? "&aZAPNUTÉ" : "&cVYPNUTÉ")
+                    + " &8• &7částice: "
+                    + (plugin.getConfig().getBoolean("vanilla-atmosphere.particles-enabled", true) ? "&aZAPNUTÉ" : "&cVYPNUTÉ")));
+            sender.sendMessage(plugin.color("&7Další pulz: náhodně každých "
+                    + manager.getMinimumIntervalSeconds() + "–" + manager.getMaximumIntervalSeconds() + " sekund."));
+            return true;
+        }
+
+        if (!action.equals("on") && !action.equals("off")) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween ambience [status|on|off]"));
+            return true;
+        }
+        if (!checkAdmin(sender)) return true;
+
+        boolean enabled = action.equals("on");
+        plugin.setVanillaAtmosphereEnabled(enabled);
+        sender.sendMessage(plugin.color(enabled
+                ? "&aVanilla Halloween atmosféra zapnuta."
+                : "&eVanilla Halloween atmosféra vypnuta."));
+        if (enabled && !plugin.isEventEnabled()) {
+            sender.sendMessage(plugin.color("&7Efekty se spustí po opětovném zapnutí Halloween systému."));
+        }
         return true;
     }
 
