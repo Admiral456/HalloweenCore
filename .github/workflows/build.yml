@@ -329,6 +329,11 @@ jobs:
               raise SystemExit("The active player's rolling rate window must be pruned on each activity")
           print("Reconnect-safe anti-farming regression checks passed.")
 
+          if "getQuestManager().recordAction" in activity_listener:
+              raise SystemExit("Retired story quest callbacks must not remain in the live activity reward listener")
+          if "getChallengeManager().recordAction" in activity_listener:
+              raise SystemExit("Daily challenge progress must not be incremented a second time in the activity listener")
+
           print("Mob-kill anti-farming regression checks passed.")
 
           npc_manager = Path(
