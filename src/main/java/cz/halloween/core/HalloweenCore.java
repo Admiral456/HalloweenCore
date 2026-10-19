@@ -7,9 +7,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.GameMode;
 import org.bukkit.World;
@@ -25,7 +22,7 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class HalloweenCore extends JavaPlugin implements Listener {
+public final class HalloweenCore extends JavaPlugin {
     private HalloweenDataManager dataManager;
     private HalloweenServiceImpl service;
     private boolean eventEnabled;
@@ -74,7 +71,6 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         logConfigValidationIssues();
 
-        getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new HalloweenActivityListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenJoinListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenQuitListener(this), this);
@@ -156,23 +152,6 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         saveConfig();
     }
 
-    @EventHandler(ignoreCancelled = true)
-    public void onEntityDeath(EntityDeathEvent event) {
-        if (!eventEnabled) return;
-        if (vampireEncounterManager != null && vampireEncounterManager.isTrackedVampireBoss(event.getEntity())) return;
-
-        Player killer = event.getEntity().getKiller();
-        if (killer == null) return;
-        if (!isEligibleGameplayPlayer(killer)) return;
-        if (!isEligibleGameplayWorld(killer.getWorld())) return;
-
-        if (!getConfig().getBoolean("rewards.mob-kill.enabled", true)) return;
-
-        long reward = getConfig().getLong("rewards.mob-kill.fragments", 1L);
-        if (reward <= 0L) return;
-
-        service.addFragments(killer.getUniqueId(), reward, "mob-kill");
-    }
 
     /**
      * Reload runtime state after config edits. This cannot load changed Java classes;
