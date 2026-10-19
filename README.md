@@ -8,7 +8,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 - Three vanilla-only timed events, with fragment multipliers and a hostile-damage modifier during Blood Moon.
 - Fragment rewards for eligible gameplay actions such as mob kills, mining, farming, and fishing.
 - Curse progression, player statistics, daily challenge and return rewards.
-- Reward shop backed by vanilla item fallbacks.
+- Reward shop backed by vanilla item fallbacks. The one-time `cursed-candy` reward costs 500 fragments; its short consumable effects also work when ItemsAdder is unavailable.
 - Optional ItemsAdder integration for cursed candy and the retained pumpkin block textures.
 - Configuration validation and the existing player-data store.
 
