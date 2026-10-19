@@ -714,7 +714,7 @@ jobs:
               'options.addAll(List.of("on", "off", "test"))',
               'action.equals("test")',
               'manager.testPulse(player)',
-              '"/halloween ambience [status|on|off|test]"',
+              'ambience [status|on|off|test]',
           ):
               if atmosphere_command_guard not in atmosphere_command:
                   raise SystemExit(f"Vanilla ambience command missing: {atmosphere_command_guard}")
