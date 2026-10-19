@@ -28,6 +28,7 @@ public final class HalloweenCore extends JavaPlugin {
     private boolean eventEnabled;
     private HalloweenEventManager eventManager;
     private HalloweenVanillaEventManager vanillaEventManager;
+    private HalloweenVanillaAtmosphereManager vanillaAtmosphereManager;
     private HalloweenRewardManager rewardManager;
     private HalloweenAtmosphere atmosphere;
     private HalloweenMobManager mobManager;
@@ -61,6 +62,7 @@ public final class HalloweenCore extends JavaPlugin {
         service = new HalloweenServiceImpl(this);
         eventManager = new HalloweenEventManager(this);
         vanillaEventManager = new HalloweenVanillaEventManager(this);
+        vanillaAtmosphereManager = new HalloweenVanillaAtmosphereManager(this);
         rewardManager = new HalloweenRewardManager(this);
         atmosphere = new HalloweenAtmosphere(this);
         mobManager = new HalloweenMobManager(this);
@@ -102,7 +104,8 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getScheduler().runTaskTimer(this, dataManager::save, saveInterval, saveInterval);
         eventManager.start();
         vanillaEventManager.start();
-        // Retired ambience, world decoration, and boss systems remain stopped.
+        vanillaAtmosphereManager.start();
+        // Retired custom soundtrack, world decoration, and boss systems remain stopped.
         worldDecorator.stop();
         atmosphere.stopPlayback();
         vampireEncounterManager.stopNaturalSummoningMonitor();
@@ -123,6 +126,7 @@ public final class HalloweenCore extends JavaPlugin {
     public void onDisable() {
         if (eventManager != null) eventManager.stop();
         if (vanillaEventManager != null) vanillaEventManager.stop();
+        if (vanillaAtmosphereManager != null) vanillaAtmosphereManager.stop();
         if (vampireEncounterManager != null) {
             vampireEncounterManager.stopNaturalSummoningMonitor();
             vampireEncounterManager.stopEncounter();
@@ -208,6 +212,7 @@ public final class HalloweenCore extends JavaPlugin {
 
         logConfigValidationIssues();
         if (vanillaEventManager != null) vanillaEventManager.restart();
+        if (vanillaAtmosphereManager != null) vanillaAtmosphereManager.restart();
         getLogger().info("HalloweenCore runtime state reloaded. enabled=" + eventEnabled
                 + ", random-events=" + getConfig().getBoolean("random-events.enabled", false)
                 + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", false)
@@ -234,6 +239,10 @@ public final class HalloweenCore extends JavaPlugin {
         if (vanillaEventManager != null) {
             if (enabled) vanillaEventManager.start();
             else vanillaEventManager.stop();
+        }
+        if (vanillaAtmosphereManager != null) {
+            if (enabled) vanillaAtmosphereManager.start();
+            else vanillaAtmosphereManager.stop();
         }
 
         if (changed) {
