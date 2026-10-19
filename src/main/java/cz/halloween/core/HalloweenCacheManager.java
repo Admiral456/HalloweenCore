@@ -414,6 +414,9 @@ public final class HalloweenCacheManager implements Listener {
     }
 
     private double clamp(double value, double min, double max) {
+        // NaN bypasses ordinary less-than/greater-than checks; fail closed for
+        // probabilities so malformed config cannot turn every chunk into a cache.
+        if (!Double.isFinite(value)) return min;
         return Math.max(min, Math.min(max, value));
     }
 }
