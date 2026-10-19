@@ -323,6 +323,10 @@ jobs:
           ).read_text(encoding="utf-8")
           if "plugin.getDataManager().save();" not in challenge_manager:
               raise SystemExit("Completed daily challenge claims must be persisted immediately")
+          claimed_flag_index = challenge_manager.find("plugin.getDataManager().markChallengeClaimed(player.getUniqueId())")
+          challenge_reward_index = challenge_manager.find('plugin.getService().addFragments(player.getUniqueId(), reward, "challenge")')
+          if claimed_flag_index < 0 or challenge_reward_index < 0 or claimed_flag_index > challenge_reward_index:
+              raise SystemExit("Daily challenge must persist its claimed flag before any goal-triggered reward save")
 
           join_listener_source = Path(
               "src/main/java/cz/halloween/core/HalloweenJoinListener.java"
