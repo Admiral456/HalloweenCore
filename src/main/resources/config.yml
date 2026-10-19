@@ -107,6 +107,19 @@ rewards:
 
 
 
+
+world-features:
+  enabled: true
+  generation:
+    enabled: true
+    pumpkin-patch-chance-per-chunk: 0.06
+    cave-web-patch-chance-per-chunk: 0.04
+    attempts-per-feature: 24
+    max-pumpkins-per-patch: 4
+    max-cave-webs-per-patch: 2
+    cave-webs-min-y: -48
+    cave-webs-max-y: 24
+
 underground-caches:
   enabled: true
   generation:
