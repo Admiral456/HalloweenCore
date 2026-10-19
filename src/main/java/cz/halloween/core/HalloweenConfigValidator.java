@@ -102,6 +102,16 @@ public final class HalloweenConfigValidator {
                     "vanilla-events.blood-moon.mob-kill-fragment-multiplier", 1.25D);
             double bloodMoonDamage = plugin.getConfig().getDouble(
                     "vanilla-events.blood-moon.hostile-damage-multiplier", 1.5D);
+            boolean invasionEnabled = plugin.getConfig().getBoolean(
+                    "vanilla-events.blood-moon.invasion.enabled", true);
+            int invasionWaveInterval = plugin.getConfig().getInt(
+                    "vanilla-events.blood-moon.invasion.wave-interval-seconds", 25);
+            int invasionMobsPerWave = plugin.getConfig().getInt(
+                    "vanilla-events.blood-moon.invasion.mobs-per-wave", 4);
+            int invasionMobCap = plugin.getConfig().getInt(
+                    "vanilla-events.blood-moon.invasion.max-event-mobs", 24);
+            int invasionCaptainFinalSeconds = plugin.getConfig().getInt(
+                    "vanilla-events.blood-moon.invasion.captain-final-seconds", 60);
 
             if (firstDelay < 30 || firstDelay > 3600) {
                 errors.add("vanilla-events.first-delay-seconds must be between 30 and 3600");
@@ -123,6 +133,20 @@ public final class HalloweenConfigValidator {
             }
             if (!Double.isFinite(bloodMoonDamage) || bloodMoonDamage < 1.0D || bloodMoonDamage > 3.0D) {
                 errors.add("vanilla-events.blood-moon.hostile-damage-multiplier must be between 1 and 3");
+            }
+            if (invasionEnabled) {
+                if (invasionWaveInterval < 10 || invasionWaveInterval > 180) {
+                    errors.add("vanilla-events.blood-moon.invasion.wave-interval-seconds must be between 10 and 180");
+                }
+                if (invasionMobsPerWave < 1 || invasionMobsPerWave > 8) {
+                    errors.add("vanilla-events.blood-moon.invasion.mobs-per-wave must be between 1 and 8");
+                }
+                if (invasionMobCap < 1 || invasionMobCap > 80) {
+                    errors.add("vanilla-events.blood-moon.invasion.max-event-mobs must be between 1 and 80");
+                }
+                if (invasionCaptainFinalSeconds < 15 || invasionCaptainFinalSeconds > 180) {
+                    errors.add("vanilla-events.blood-moon.invasion.captain-final-seconds must be between 15 and 180");
+                }
             }
         }
 
