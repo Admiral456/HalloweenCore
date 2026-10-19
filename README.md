@@ -16,7 +16,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 
 - The old random event lineup and old story quests; the replacement uses three vanilla-only events described below.
 - The old special-mob system and its MythicMobs/ModelEngine model pack, including Pumpkin Wraith.
-- Haunted Village and old secret-discovery locations tied to graves/ritual sites.
+- The old Haunted Village discovery/map system is disabled. Three vanilla-only hidden discoveries (Easter eggs) are retained separately, without custom models or audio.
 - The old automatic Halloween world-decoration engine; the replacement below only modifies newly generated Overworld chunks.
 - The custom soundtrack, ItemsAdder sound definitions, and sky shader.
 - Crimson Warden custom armor/weapons and other old custom item textures.
@@ -41,6 +41,8 @@ The existing Java classes for retired systems are kept temporarily for migration
 - `/halloween rewards`
 - `/halloween claim <id>`
 - `/halloween top`
+- `/halloween secrets` — lists discovered hidden places and gives hints without exposing coordinates.
+- `/halloween setsecret <id>` (admin) — sets one hidden discovery at the admin's current position.
 - `/halloween event [status|start <id>|stop]` — status is public; start/stop are admin-only.
 - `/halloween ambience [status|on|off|test]` — status is available to users; on/off and the immediate one-player test pulse require admin permission. The test command previews nearby vanilla particles/sound without waiting for the next randomized pulse.
 - `/halloween reload`
@@ -52,7 +54,7 @@ The existing Java classes for retired systems are kept temporarily for migration
 - `/halloween cache key <hráč> [počet]` — gives 1–64 cache keys to an online player (admin).
 - `/halloween on|off`
 
-Legacy commands for random events, story quests, the old village/discovery system, shader editing, custom mobs, and the vampire model encounter are retired pending replacement.
+Legacy commands for the old random events, story quests, Haunted Village map/loot system, shader editing, custom mobs, and vampire model encounter remain retired. The vanilla-only `secrets` and `setsecret` commands are active.
 
 ## Vanilla timed events
 
@@ -69,6 +71,14 @@ Use `/halloween event stop` to end the current event early. `/halloween off` sto
 The replacement ambience adds occasional, localized cues using only Minecraft's built-in ash and soul particles plus vanilla cave, witch, and phantom sounds. It is deliberately sparse: each pulse chooses eligible players individually, uses a randomized location nearby, and never stops or replaces Minecraft's normal background music. No custom sound files, ItemsAdder sound registration, resource pack, shader, or model is required.
 
 Tune `vanilla-atmosphere` in `config.yml`: `min-interval-seconds` and `max-interval-seconds` set the interval between pulses (default 90–180 seconds), `player-chance` sets the probability a given eligible player receives a cue on each pulse (default 0.35), `particles-enabled` and `sounds-enabled` can be switched off independently, and `sound-volume` controls ambience volume. It pauses when Halloween is turned off and restarts cleanly after `/halloween reload`. The sound selection responds to the running event: witch sounds during Witching Hour, phantom/Wither ambience during Blood Moon, and occasional composter sounds during Pumpkin Harvest.
+
+## Hidden discoveries and Easter eggs
+
+The vanilla discovery system preserves three hidden locations from the original plugin: `blood-altar` (Krvavý oltář), `witch-den` (Doupě hexové čarodějky), and `forgotten-grave` (Zapomenutý hrob). They use only built-in particles and sounds—no custom mobs, models, shader, or resource-pack assets.
+
+An administrator stands at each intended spot and runs `/halloween setsecret <id>`. The coordinates are saved in the plugin config, but players never see them. Players use `/halloween secrets` to see how many places they have found and read the hints for undiscovered places. Entering the configured radius grants that player the location's one-time fragment reward (250, 300, or 350 by default). The find and reward are saved immediately to `plugins/HalloweenCore/data.yml`.
+
+All three locations ship as unconfigured, so nothing rewards players at a placeholder coordinate. A one-time migration restores these definitions on existing servers whose config was stripped by the previous cleanup version; it preserves any custom secret locations that are already configured.
 
 ## Vanilla world features
 
