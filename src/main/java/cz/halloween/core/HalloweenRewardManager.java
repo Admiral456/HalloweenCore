@@ -195,6 +195,22 @@ public final class HalloweenRewardManager {
         return rewardId.equalsIgnoreCase(stored);
     }
 
+    private boolean canFitInInventory(Player player, ItemStack item) {
+        if (player == null || item == null || item.getType().isAir()) return false;
+        int remaining = item.getAmount();
+        int maxStackSize = Math.max(1, item.getMaxStackSize());
+
+        for (ItemStack existing : player.getInventory().getStorageContents()) {
+            if (existing == null || existing.getType().isAir()) {
+                remaining -= maxStackSize;
+            } else if (existing.isSimilar(item)) {
+                remaining -= Math.max(0, existing.getMaxStackSize() - existing.getAmount());
+            }
+            if (remaining <= 0) return true;
+        }
+        return false;
+    }
+
     public boolean claim(Player player, String id) {
         if (id == null || id.isBlank()) {
             player.sendMessage(plugin.color("&cPoužij /halloween claim <id>."));
@@ -257,6 +273,12 @@ public final class HalloweenRewardManager {
             item.setItemMeta(meta);
         }
 
+        // Check capacity before charging. A reward must never be silently dropped for anyone else to steal.
+        if (!canFitInInventory(player, item)) {
+            player.sendMessage(plugin.color("&cNemáš v inventáři místo. Uvolni místo a zkus odměnu znovu."));
+            return false;
+        }
+
         // A zero-cost reward is valid in config and must not call removeFragments(0), which rejects non-positive amounts.
         if (cost > 0L && !plugin.getDataManager().removeFragments(player.getUniqueId(), cost)) {
             player.sendMessage(plugin.color("&cOdměnu se nepodařilo bezpečně odečíst."));
@@ -265,9 +287,12 @@ public final class HalloweenRewardManager {
 
         var overflow = player.getInventory().addItem(item);
         for (ItemStack overflowItem : overflow.values()) {
-            if (overflowItem != null && !overflowItem.getType().isAir() && overflowItem.getAmount() > 0) {
-                player.getWorld().dropItemNaturally(player.getLocation(), overflowItem);
-            }
+            if (overflowItem == null || overflowItem.getType().isAir() || overflowItem.getAmount() <= 0) continue;
+            // Defensive fallback if a third-party inventory listener changes capacity
+            // between validation and insertion. Keep the overflow bound to its claimant.
+            var dropped = player.getWorld().dropItemNaturally(player.getLocation(), overflowItem);
+            dropped.setOwner(player.getUniqueId());
+            dropped.setPickupDelay(20);
         }
 
         plugin.getDataManager().markRewardClaimed(player.getUniqueId(), normalizedId);
