@@ -29,13 +29,15 @@ jobs:
 
           config = Path("src/main/resources/config.yml").read_text(encoding="utf-8")
           disabled_sections = [
-              "random-events", "special-mobs", "story-quests", "haunted-village",
+              "random-events", "special-mobs", "haunted-village",
               "world-decorations", "atmosphere"
           ]
           for section in disabled_sections:
               pattern = rf"(?m)^{re.escape(section)}:\n  enabled: false$"
               if not re.search(pattern, config):
                   raise SystemExit(f"Expected {section}.enabled to be false")
+          if not re.search(r"(?m)^story-quests:\n  enabled: true$", config):
+              raise SystemExit("The vanilla story campaign must be enabled by default")
 
           if not re.search(r"(?m)^\s+bonus-health: 2\.0$", config):
               raise SystemExit("Cursed talisman must grant one heart (+2 health)")
@@ -170,12 +172,15 @@ jobs:
               "registerEvents(villageDiscoveryManager",
               "registerEvents(vampireEncounterManager",
               "registerEvents(mobManager",
-              "registerEvents(questManager",
               "registerEvents(worldDecorator",
           )
           for registration in retired_registrations:
               if registration in core_source:
                   raise SystemExit(f"Retired listener must remain unregistered: {registration}")
+          if "registerEvents(questManager, this)" not in core_source:
+              raise SystemExit("Vanilla story quest listener must be registered")
+          if 'getConfig().set("story-quests.enabled", false);' in core_source:
+              raise SystemExit("The vanilla campaign must not be disabled by legacy cleanup")
           if "registerEvents(passiveEffectManager, this)" not in core_source:
               raise SystemExit("Vanilla reward passive effects must remain registered")
           if "passiveEffectManager.start();" not in core_source:
@@ -448,12 +453,35 @@ jobs:
               raise SystemExit("The active player's rolling rate window must be pruned on each activity")
           print("Reconnect-safe anti-farming regression checks passed.")
 
-          if "getQuestManager().recordAction" in activity_listener:
-              raise SystemExit("Retired story quest callbacks must not remain in the live activity reward listener")
+          for quest_callback in (
+              'getQuestManager().recordAction(player, "mining")',
+              'getQuestManager().recordAction(player, "farming")',
+              'getQuestManager().recordAction(event.getPlayer(), "fishing")',
+          ):
+              if quest_callback not in activity_listener:
+                  raise SystemExit(f"Vanilla story quest activity callback missing: {quest_callback}")
           if "getChallengeManager().recordAction" in activity_listener:
               raise SystemExit("Daily challenge progress must not be incremented a second time in the activity listener")
 
-          print("Mob-kill anti-farming regression checks passed.")
+          quest_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenQuestManager.java"
+          ).read_text(encoding="utf-8")
+          if quest_source.count("new Quest(") != 9:
+              raise SystemExit("The vanilla story campaign must contain exactly nine chapters")
+          if '"special:' in quest_source:
+              raise SystemExit("Story chapters must not depend on retired custom mobs")
+          for objective in ('"mob-kill"', '"mining"', '"farming"', '"fishing"',
+                            '"secret-discovery"', '"cache-open"'):
+              if objective not in quest_source:
+                  raise SystemExit(f"Vanilla story objective missing: {objective}")
+          if 'recordAction(player, "secret-discovery")' not in secret_manager:
+              raise SystemExit("Secret discoveries must advance the corresponding story chapter")
+          cache_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenCacheManager.java"
+          ).read_text(encoding="utf-8")
+          if 'recordAction(player, "cache-open")' not in cache_manager:
+              raise SystemExit("Successfully unlocked caches must advance the corresponding story chapter")
+          print("Mob-kill anti-farming and vanilla story campaign regression checks passed.")
 
           npc_manager = Path(
               "src/main/java/cz/halloween/core/HalloweenPumpkinVillagerManager.java"
