@@ -201,7 +201,6 @@ jobs:
           retired_registrations = (
               "registerEvents(villageDiscoveryManager",
               "registerEvents(vampireEncounterManager",
-              "registerEvents(mobManager",
               "registerEvents(worldDecorator",
           )
           for registration in retired_registrations:
