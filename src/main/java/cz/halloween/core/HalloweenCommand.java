@@ -29,13 +29,20 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = new ArrayList<>(List.of(
-                    "stats", "progress", "curse", "challenge", "quests", "rewards", "claim", "top", "event", "ambience", "secrets"
+                    "stats", "progress", "curse", "challenge", "quests", "rewards", "claim", "top", "event", "ambience", "secrets", "boss"
             ));
             if (sender.hasPermission("halloweencore.admin")) {
                 subcommands.addAll(List.of("reload", "debug", "give", "on", "off", "npc", "cache", "setsecret"));
             }
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("boss")) {
+            List<String> options = new ArrayList<>(List.of("status"));
+            if (sender.hasPermission("halloweencore.admin")) options.addAll(List.of("spawn", "stop"));
+            return options.stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("setsecret")
@@ -141,8 +148,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
         String requested = args[0].toLowerCase(java.util.Locale.ROOT);
         if (requested.equals("quests") || requested.equals("quest")) return quests(sender, args);
+        if (requested.equals("boss")) return vanillaBoss(sender, args);
         if (List.of("shader", "setvillage", "setvampirearena",
-                "buildvampirearena", "boss", "bosseffects", "modelpreview")
+                "buildvampirearena", "bosseffects", "modelpreview")
                 .contains(requested)) {
             sender.sendMessage(plugin.color("&eTato stará Halloween funkce byla odstavena a bude nahrazena novým vanilla systémem."));
             return true;
@@ -171,6 +179,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween challenge &7- dnešní výzva"));
         sender.sendMessage(plugin.color("&6/halloween quests &7- devítikapitolový vanilla Halloween příběh"));
         sender.sendMessage(plugin.color("&6/halloween quests reset <hráč> &7- restart příběhu hráče (admin)"));
+        sender.sendMessage(plugin.color("&6/halloween boss status|spawn|stop &7- vanilla Král upírů (spawn/stop admin)"));
         sender.sendMessage(plugin.color("&6/halloween rewards &7- odměny za fragmenty"));
         sender.sendMessage(plugin.color("&6/halloween claim <id> &7- vyzvednutí odměny"));
         sender.sendMessage(plugin.color("&6/halloween top &7- leaderboard"));
@@ -185,6 +194,42 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween npc spawn <jméno>|remove &7- správa dýňového vesničana (admin)"));
         sender.sendMessage(plugin.color("&6/halloween cache spawn|key <hráč> [počet] &7- podzemní schránky (admin)"));
         sender.sendMessage(plugin.color("&7Staré náhodné eventy, shader, hudba, dekorace a Haunted Village jsou odstavené; vanilla příběh a elitní nepřátelé zůstávají aktivní."));
+        return true;
+    }
+
+    private boolean vanillaBoss(CommandSender sender, String[] args) {
+        HalloweenVanillaBossManager manager = plugin.getVanillaBossManager();
+        if (manager == null) {
+            sender.sendMessage(plugin.color("&cVanilla boss systém není inicializovaný."));
+            return true;
+        }
+        if (args.length != 2) {
+            sender.sendMessage(plugin.color("&ePoužití: /halloween boss <status|spawn|stop>"));
+            return true;
+        }
+
+        String action = args[1].toLowerCase(java.util.Locale.ROOT);
+        if (action.equals("status")) {
+            manager.sendStatus(sender);
+            return true;
+        }
+        if (!sender.hasPermission("halloweencore.admin")) {
+            sender.sendMessage(plugin.color("&cK tomuto příkazu potřebuješ oprávnění halloweencore.admin."));
+            return true;
+        }
+        if (action.equals("spawn")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(plugin.color("&cBoss se musí vyvolat přímo ze hry."));
+                return true;
+            }
+            manager.spawnBoss(player);
+            return true;
+        }
+        if (action.equals("stop")) {
+            manager.stopBoss(sender);
+            return true;
+        }
+        sender.sendMessage(plugin.color("&ePoužití: /halloween boss <status|spawn|stop>"));
         return true;
     }
 
