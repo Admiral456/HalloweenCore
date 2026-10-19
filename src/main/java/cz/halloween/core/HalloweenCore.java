@@ -50,7 +50,11 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         disableLegacyContentSystems();
 
         dataManager = new HalloweenDataManager(this);
-        dataManager.load();
+        if (!dataManager.load()) {
+            getLogger().severe("HalloweenCore is disabling itself because player data could not be loaded safely.");
+            getServer().getPluginManager().disablePlugin(this);
+            return;
+        }
 
         eventEnabled = getConfig().getBoolean("enabled", true);
         service = new HalloweenServiceImpl(this);
