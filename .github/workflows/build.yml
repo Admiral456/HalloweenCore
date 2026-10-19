@@ -80,6 +80,12 @@ jobs:
               "Bukkit.createBossBar(",
               "vanilla-boss.pulse.interval-seconds",
               "vanilla-boss.pulse.dodge-radius-blocks",
+              "vanilla-boss.rewards.minimum-participation-seconds",
+              "vanilla-boss.rewards.minimum-damage-percent",
+              "participationSeconds.merge(",
+              "qualifiesForReward(",
+              "plugin.getDataManager().isFinaleUnlocked()",
+              "plugin.getDataManager().markVampireDefeated()",
               "contributorDamage.merge(",
               "rewardContributors(event.getEntity())",
               "event.getDrops().clear();",
@@ -96,6 +102,7 @@ jobs:
               "migrateVanillaBossConfig();",
               "registerEvents(vanillaBossManager, this)",
               "vanillaBossManager.shutdown()",
+              "vanillaBossManager.resumeLoadedBosses()",
           ):
               if boss_lifecycle not in core_for_boss:
                   raise SystemExit(f"Vanilla boss lifecycle missing: {boss_lifecycle}")
@@ -107,6 +114,20 @@ jobs:
           for boss_command in ('manager.spawnBoss(player);', 'manager.stopBoss(sender);', 'manager.sendStatus(sender);'):
               if boss_command not in command_for_boss:
                   raise SystemExit(f"Vanilla boss command action missing: {boss_command}")
+          placeholder_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenPlaceholderExpansion.java"
+          ).read_text(encoding="utf-8")
+          for boss_placeholder in (
+              'key.equals("vanilla_boss_phase")',
+              'key.equals("vanilla_boss_hp_percent")',
+              'key.equals("vanilla_boss_participants")',
+              'key.equals("vanilla_boss_defeated")',
+              'key.equals("vanilla_boss_active")',
+          ):
+              if boss_placeholder not in placeholder_source:
+                  raise SystemExit(f"Vanilla boss PlaceholderAPI integration missing: {boss_placeholder}")
+          if 'getVampireEncounterManager() == null' in placeholder_source:
+              raise SystemExit("Legacy boss placeholders must read the vanilla boss state")
 
           if not re.search(r"(?m)^\s+bonus-health: 2\.0$", config):
               raise SystemExit("Cursed talisman must grant one heart (+2 health)")
