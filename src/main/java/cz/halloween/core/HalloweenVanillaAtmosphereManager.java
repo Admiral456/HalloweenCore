@@ -26,6 +26,10 @@ public final class HalloweenVanillaAtmosphereManager {
         return plugin.getConfig().getBoolean("vanilla-atmosphere.enabled", true);
     }
 
+    public boolean isRunning() {
+        return task != null;
+    }
+
     public void start() {
         if (task != null || !isEnabled() || !plugin.isEventEnabled()) return;
         scheduleNextPulse();
