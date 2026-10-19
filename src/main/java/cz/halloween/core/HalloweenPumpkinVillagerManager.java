@@ -52,12 +52,8 @@ public final class HalloweenPumpkinVillagerManager implements Listener {
         if (name.isEmpty()) name = "Dýňový poutník";
         if (name.length() > 48) name = name.substring(0, 48);
 
-        Location spawnLocation = creator.getLocation().clone();
-        Vector facing = spawnLocation.getDirection().setY(0.0D);
-        if (facing.lengthSquared() > 0.0001D) {
-            facing.normalize();
-            spawnLocation.add(facing.multiply(2.0D));
-        }
+        Location spawnLocation = findSafeSpawnLocation(creator);
+        if (spawnLocation == null) return null;
         spawnLocation.setYaw(creator.getLocation().getYaw() + 180.0F);
         spawnLocation.setPitch(0.0F);
 
@@ -81,6 +77,25 @@ public final class HalloweenPumpkinVillagerManager implements Listener {
                 villager.getEquipment().setHelmetDropChance(0.0F);
             }
         });
+    }
+
+    private Location findSafeSpawnLocation(Player creator) {
+        Location origin = creator.getLocation();
+        Vector facing = origin.getDirection().setY(0.0D);
+        if (facing.lengthSquared() < 0.0001D) facing = new Vector(0.0D, 0.0D, 1.0D);
+        facing.normalize();
+
+        for (int distance = 2; distance <= 5; distance++) {
+            Location candidate = origin.clone().add(facing.clone().multiply(distance));
+            var feet = candidate.getBlock();
+            var head = candidate.clone().add(0.0D, 1.0D, 0.0D).getBlock();
+            var floor = candidate.clone().add(0.0D, -1.0D, 0.0D).getBlock();
+            if (!feet.isPassable() || !head.isPassable() || !floor.getType().isSolid()) continue;
+            if (feet.isLiquid() || head.isLiquid() || floor.isLiquid()) continue;
+            return candidate;
+        }
+        creator.sendMessage(plugin.color("&cPoblíž není bezpečné místo pro dýňového vesničana. Ustup od stěny nebo vody a zkus to znovu."));
+        return null;
     }
 
     public boolean removeNearest(Player player, double radius) {
