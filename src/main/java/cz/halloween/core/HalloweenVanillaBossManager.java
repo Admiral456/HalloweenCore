@@ -139,7 +139,18 @@ public final class HalloweenVanillaBossManager implements Listener {
 
     public void sendStatus(org.bukkit.command.CommandSender sender) {
         if (!plugin.getConfig().getBoolean("vanilla-boss.enabled", true)) {
+            cleanup(true);
             sender.sendMessage(plugin.color("&7Vanilla boss: &cVYPNUTÝ V KONFIGURACI"));
+            return;
+        }
+        if (!plugin.isEventEnabled()) {
+            cleanup(true);
+            sender.sendMessage(plugin.color("&7Vanilla boss: &cHALLOWEEN JE VYPNUTÝ"));
+            return;
+        }
+        if (!plugin.getDataManager().isFinaleUnlocked()) {
+            cleanup(true);
+            sender.sendMessage(plugin.color("&7Vanilla boss: &eFinále ještě není odemčeno"));
             return;
         }
         if (plugin.getDataManager().isVampireDefeated()) {
@@ -303,7 +314,7 @@ public final class HalloweenVanillaBossManager implements Listener {
             cleanup(false);
             return;
         }
-        if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("vanilla-boss.enabled", true)) {
+        if (!canResumeBoss()) {
             cleanup(true);
             return;
         }
