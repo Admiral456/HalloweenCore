@@ -1,0 +1,53 @@
+# HalloweenCore release verification checklist
+
+Run these checks on a **staging Paper/Purpur server**, not directly on the production world. The CI build and source smoke checks do not replace a live-server test.
+
+## Before testing
+
+- [ ] Back up the world folders, plugin folder, plugins/HalloweenCore/config.yml, and plugins/HalloweenCore/data.yml.
+- [ ] Use Java 21 and a server/API version compatible with the build (Paper 1.21.10).
+- [ ] Install the built JAR. If testing custom candy textures, install the generated ItemsAdder content ZIP under the ItemsAdder contents directory and regenerate the resource pack using the procedure for the installed ItemsAdder version.
+- [ ] Start the server and check the console for startup errors. ItemsAdder and PlaceholderAPI are optional integrations; MythicMobs, ModelEngine, BattlePass, and WorldGuard must not be required by this vanilla-first build.
+
+## 1. Cursed candy and reward shop
+
+- [ ] Run /halloween debug and verify the plugin and retained optional integrations are reported correctly.
+- [ ] Run /halloween rewards. Verify that **Prokleté cukroví** is listed for 500 fragments and can be claimed only once per player.
+- [ ] Try claiming it with insufficient fragments and with a full inventory. The balance must not be charged and the item must not be lost.
+- [ ] Claim it with at least 500 fragments. Verify the balance is reduced by exactly 500, the candy is delivered, and a second claim is rejected.
+- [ ] Eat the candy. Verify Speed for about 20 seconds, Night Vision for about 45 seconds, and Glowing for about 12 seconds.
+- [ ] Repeat on a staging copy without ItemsAdder. The vanilla pumpkin-pie fallback should still trigger the same effects.
+- [ ] Test config migration on a copy of an older server config that does not contain rewards.shop.cursed-candy. It should be added once. After migration, deleting the reward intentionally must not cause it to be re-added at the next reload/restart.
+
+## 2. Vanilla events and lifecycle
+
+- [ ] Run /halloween event status and confirm status/remaining-time output is sensible when no event is active.
+- [ ] Run /halloween event start pumpkin-harvest. Confirm a clear announcement/title and a larger fragment reward for mature farm crops; then run /halloween event stop.
+- [ ] Run /halloween event start witching-hour. Confirm the vanilla witch sound/announcement and the configured mob-kill fragment multiplier; then stop it.
+- [ ] Run /halloween event start blood-moon. On a test player, compare incoming damage from a hostile mob against a control hit under the same conditions; confirm the configured multiplier is applied. Test a hostile projectile as well; then stop it.
+- [ ] Run /halloween off. Confirm fragment progression and new events pause. Run /halloween on and confirm a fresh event schedule starts without duplicate timers.
+- [ ] Run /halloween reload several times and verify there are no duplicate event announcements/tickers or errors.
+
+## 3. Fragment and save safety
+
+- [ ] Earn fragments by mob kills, mining, farming, and fishing. Confirm configured reward values, allowed gamemodes/worlds, and per-minute caps.
+- [ ] Reach a mob-kill cap, disconnect/reconnect within the same minute, and verify reconnecting does not reset the cap.
+- [ ] Grant fragments using the admin command. Confirm they increase the spendable balance but do not increase lifetime-earned fragments or curse level, including after a server restart.
+- [ ] Earn ordinary fragments and complete/claim a daily challenge. Restart the server and verify balance, lifetime totals, curse level, challenge claim state, and claimed reward state are preserved.
+- [ ] On a disposable test copy only, test malformed data.yml and unsupported schema versions. Startup must refuse to overwrite the original data and must report a backup.
+
+## 4. Pumpkin villager and underground caches
+
+- [ ] Run /halloween npc spawn <name> in a clear area. Verify the villager wears a carved-pumpkin helmet, remains persistent through restart, cannot be damaged, and does not open the vanilla trading interface while enabled.
+- [ ] Right-click the NPC and test all clickable dialogue links: rewards, daily challenge, and server progress.
+- [ ] Run /halloween npc remove and verify only a managed pumpkin villager nearby is removed.
+- [ ] Run /halloween cache spawn, then /halloween cache key <player> 1. Verify an ordinary renamed Tripwire Hook does not unlock it, a real plugin key does, and the key is consumed only once.
+- [ ] Confirm a locked cache cannot be broken, blown up, moved by pistons, or accessed by hoppers before unlocking. Confirm it can be opened normally after unlocking.
+- [ ] On a new test world, explore newly generated Overworld chunks. The pumpkin patches, cave cobwebs, and generated locked caches are intentionally sparse and only generated for new chunks; existing chunks are not retroactively scanned. Do not use the absence of a structure in one chunk as a failed test.
+- [ ] With underground-caches.enabled: false, verify an existing locked cache becomes a normal accessible chest on its next open instead of trapping its loot.
+
+## 5. Release artifacts
+
+- [ ] Confirm GitHub Actions passes the Maven build, smoke checks, ItemsAdder ZIP package test, and both artifact uploads.
+- [ ] Inspect the ItemsAdder ZIP. It should contain only the cursed-candy content and the three retained Minecraft pumpkin block texture overrides. There should be no retired shader, OGG files, or old MythicMobs content.
+- [ ] Do not merge or deploy until all staging checks pass and the production backup has been verified.
