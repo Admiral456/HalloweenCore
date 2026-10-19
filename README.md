@@ -1,6 +1,6 @@
 # HalloweenCore
 
-HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces the previous custom-asset Halloween implementation with a vanilla-first foundation, including a pumpkin villager NPC and locked underground caches.
+HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces the previous custom-asset Halloween implementation with a vanilla-first foundation: a pumpkin villager NPC, locked underground caches, and sparse new-chunk Halloween features.
 
 ## Kept in the core
 
@@ -16,7 +16,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces 
 - The old random event lineup and old story quests.
 - The old special-mob system and its MythicMobs/ModelEngine model pack, including Pumpkin Wraith.
 - Haunted Village and old secret-discovery locations tied to graves/ritual sites.
-- Automatic Halloween world decoration.
+- The old automatic Halloween world-decoration engine; the replacement below only modifies newly generated Overworld chunks.
 - The custom soundtrack, ItemsAdder sound definitions, and sky shader.
 - Crimson Warden custom armor/weapons and other old custom item textures.
 
@@ -50,6 +50,18 @@ The existing Java classes for retired systems are kept temporarily for migration
 - `/halloween on|off`
 
 Legacy commands for random events, story quests, the old village/discovery system, shader editing, custom mobs, and the vampire model encounter are retired pending replacement.
+
+## Vanilla world features
+
+On newly generated Overworld chunks only, the plugin can very rarely add small natural pumpkin patches in open grassland/forest biomes and a few cobwebs inside naturally enclosed cave pockets. It uses vanilla blocks only, does not add custom mobs or custom models, and does not scan older chunks. Surface placement requires a patch of natural ground with clear space; local tile-entity checks guard each placement. Cave-web placement is limited by configured Y levels and requires natural stone around the candidate.
+
+Settings live under `world-features` in `config.yml`:
+- `pumpkin-patch-chance-per-chunk`: chance to try a small pumpkin patch per newly generated Overworld chunk (default 6%).
+- `cave-web-patch-chance-per-chunk`: chance to try a cave-web patch (default 4%).
+- `max-pumpkins-per-patch` and `max-cave-webs-per-patch`: strict placement caps.
+- `cave-webs-min-y` / `cave-webs-max-y`: depth range for cave cobwebs.
+
+These are new vanilla features, separate from the retired `world-decorations` system. Turning Halloween off pauses generation in future chunks; already generated features remain in place. Disabling `world-features.enabled` also stops new generation but does not remove existing blocks.
 
 ## Underground caches
 
