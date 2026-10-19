@@ -90,6 +90,63 @@ jobs:
                       "Validator structure changed unexpectedly."
                   )
           print("Disabled-system validator guards verified.")
+
+          core_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenCore.java"
+          ).read_text(encoding="utf-8")
+          retired_registrations = (
+              "registerEvents(villageDiscoveryManager",
+              "registerEvents(secretDiscoveryManager",
+              "registerEvents(vampireEncounterManager",
+              "registerEvents(mobManager",
+              "registerEvents(questManager",
+              "registerEvents(worldDecorator",
+          )
+          for registration in retired_registrations:
+              if registration in core_source:
+                  raise SystemExit(f"Retired listener must remain unregistered: {registration}")
+          if "registerEvents(passiveEffectManager, this)" not in core_source:
+              raise SystemExit("Vanilla reward passive effects must remain registered")
+          if "passiveEffectManager.start();" not in core_source:
+              raise SystemExit("Vanilla reward passive effects must start")
+
+          event_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenEventManager.java"
+          ).read_text(encoding="utf-8")
+          if "private BukkitTask tickerTask;" not in event_manager or "tickerTask.cancel();" not in event_manager:
+              raise SystemExit("Retired event ticker must have explicit task ownership and cancellation")
+          if 'getConfig().getBoolean("random-events.enabled", false)' not in event_manager:
+              raise SystemExit("Random event ticker must default to disabled")
+
+          passive_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenPassiveEffectManager.java"
+          ).read_text(encoding="utf-8")
+          if "private BukkitTask task;" not in passive_manager or "task.cancel();" not in passive_manager:
+              raise SystemExit("Passive reward ticker must have explicit task ownership and cancellation")
+
+          item_listener = Path(
+              "src/main/java/cz/halloween/core/HalloweenItemListener.java"
+          ).read_text(encoding="utf-8")
+          if "haunted-map-2026" in item_listener or "haunted-village" in item_listener:
+              raise SystemExit("Retired Haunted Village map behavior must not remain in the active item listener")
+          if '"cursed-candy-2026"' not in item_listener:
+              raise SystemExit("Retained cursed candy consume behavior is missing")
+
+          command_source = Path(
+              "src/main/java/cz/halloween/core/HalloweenCommand.java"
+          ).read_text(encoding="utf-8")
+          for active_command in (
+              'private boolean stats(CommandSender sender)',
+              'private boolean rewards(CommandSender sender)',
+              'private boolean claim(CommandSender sender, String[] args)',
+              'private boolean challenge(CommandSender sender)',
+              'private boolean reload(CommandSender sender)',
+              'private boolean give(CommandSender sender, String[] args)',
+          ):
+              if active_command not in command_source:
+                  raise SystemExit(f"Required progression command method missing: {active_command}")
+
+          print("Runtime lifecycle, retained item behavior and command surface checks passed.")
           print("Cleanup invariants and retired-feature checks passed.")
           PY
 
