@@ -343,7 +343,7 @@ public final class HalloweenDataManager {
         }
 
         if (countLifetime) {
-            long currentLifetime = lifetimeFragments.getOrDefault(uuid, current);
+            long currentLifetime = lifetimeFragments.getOrDefault(uuid, 0L);
             try {
                 lifetimeFragments.put(uuid, Math.addExact(currentLifetime, amount));
             } catch (ArithmeticException ex) {
@@ -367,7 +367,10 @@ public final class HalloweenDataManager {
     }
 
     public long getLifetimeFragments(UUID uuid) {
-        return lifetimeFragments.getOrDefault(uuid, getFragments(uuid));
+        // Legacy files without this field are migrated to the current balance during load.
+        // A missing in-memory value after load therefore means zero lifetime-earned
+        // fragments (for example, an admin-only grant), not the spendable balance.
+        return lifetimeFragments.getOrDefault(uuid, 0L);
     }
 
     public long getServerFragments() {
