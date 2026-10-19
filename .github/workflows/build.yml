@@ -146,6 +146,13 @@ jobs:
               if active_command not in command_source:
                   raise SystemExit(f"Required progression command method missing: {active_command}")
 
+          plugin_yml = Path("src/main/resources/plugin.yml").read_text(encoding="utf-8")
+          if "softdepend: [ItemsAdder, PlaceholderAPI]" not in plugin_yml:
+              raise SystemExit("Only the retained optional integrations should be soft dependencies")
+          for retired_dependency in ("MythicMobs", "ModelEngine", "BattlePass", "WorldGuard"):
+              if retired_dependency in plugin_yml:
+                  raise SystemExit(f"Retired integration must not remain in plugin metadata: {retired_dependency}")
+
           print("Runtime lifecycle, retained item behavior and command surface checks passed.")
 
           data_manager = Path(
