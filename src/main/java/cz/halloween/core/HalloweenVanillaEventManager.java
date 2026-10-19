@@ -139,7 +139,9 @@ public final class HalloweenVanillaEventManager implements Listener {
         }
 
         if (activeEventId == null && nextEventAt > 0L && now >= nextEventAt
-                && Bukkit.getOnlinePlayers().stream().anyMatch(plugin::isEligibleGameplayPlayer)) {
+                && Bukkit.getOnlinePlayers().stream()
+                    .filter(plugin::isEligibleGameplayPlayer)
+                    .anyMatch(player -> plugin.isEligibleGameplayWorld(player.getWorld()))) {
             String id = EVENT_IDS.get(ThreadLocalRandom.current().nextInt(EVENT_IDS.size()));
             beginEvent(id);
         }
