@@ -169,6 +169,38 @@ jobs:
               raise SystemExit("Saved player data must include the current schema version")
 
           print("Persistent data failure-safety checks passed.")
+
+          reward_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenRewardManager.java"
+          ).read_text(encoding="utf-8")
+          capacity_check = "if (!canFitInInventory(player, item))"
+          charge_call = "removeFragments(player.getUniqueId(), cost)"
+          if capacity_check not in reward_manager:
+              raise SystemExit("Reward claims must check inventory capacity before charging")
+          if "dropped.setOwner(player.getUniqueId());" not in reward_manager:
+              raise SystemExit("Unexpected reward overflow must remain owner-locked")
+          if reward_manager.index(capacity_check) > reward_manager.index(charge_call):
+              raise SystemExit("Inventory capacity must be checked before subtracting fragments")
+
+          passive_effects = Path(
+              "src/main/java/cz/halloween/core/HalloweenPassiveEffectManager.java"
+          ).read_text(encoding="utf-8")
+          if 'getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D)' not in passive_effects:
+              raise SystemExit("Missing talisman health must default safely to one heart (+2 health)")
+
+          join_listener = Path(
+              "src/main/java/cz/halloween/core/HalloweenJoinListener.java"
+          ).read_text(encoding="utf-8")
+          if "plugin.getDataManager().save();" not in join_listener:
+              raise SystemExit("Daily reward state must be persisted immediately")
+
+          challenge_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenChallengeManager.java"
+          ).read_text(encoding="utf-8")
+          if "plugin.getDataManager().save();" not in challenge_manager:
+              raise SystemExit("Completed daily challenge claims must be persisted immediately")
+
+          print("Reward safety regression checks passed.")
           print("Cleanup invariants and retired-feature checks passed.")
           PY
 
