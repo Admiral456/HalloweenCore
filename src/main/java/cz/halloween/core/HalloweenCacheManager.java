@@ -351,8 +351,10 @@ public final class HalloweenCacheManager implements Listener {
     }
 
     private boolean isKey(ItemStack item) {
-        return item != null && !item.getType().isAir() && item.getItemMeta() != null
-                && item.getItemMeta().getPersistentDataContainer().has(cacheKeyItemKey, PersistentDataType.BYTE);
+        if (item == null || item.getType().isAir() || item.getItemMeta() == null) return false;
+        Byte marker = item.getItemMeta().getPersistentDataContainer()
+                .get(cacheKeyItemKey, PersistentDataType.BYTE);
+        return marker != null && marker == (byte) 1;
     }
 
     private boolean consumeKey(Player player) {
