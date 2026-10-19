@@ -11,7 +11,6 @@ import org.bukkit.block.Block;
 import org.bukkit.boss.BarColor;
 import org.bukkit.boss.BarStyle;
 import org.bukkit.boss.BossBar;
-import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
@@ -52,7 +51,6 @@ public final class HalloweenVanillaBossManager implements Listener {
     private WitherSkeleton boss;
     private BossBar bossBar;
     private BukkitTask ticker;
-    private UUID bossWorldId;
     private int phase = 1;
     private int secondsUntilPulse;
 
@@ -168,7 +166,7 @@ public final class HalloweenVanillaBossManager implements Listener {
         }
     }
 
-    @EventHandler(ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
     public void onBossDamage(EntityDamageByEntityEvent event) {
         if (!isBoss(event.getEntity())) return;
         if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("vanilla-boss.enabled", true)) return;
@@ -190,7 +188,9 @@ public final class HalloweenVanillaBossManager implements Listener {
         if (!isBoss(event.getEntity())) return;
         event.getDrops().clear();
         event.setDroppedExp(0);
-        rewardContributors(event.getEntity());
+        if (plugin.isEventEnabled() && plugin.getConfig().getBoolean("vanilla-boss.enabled", true)) {
+            rewardContributors(event.getEntity());
+        }
         for (Player player : event.getEntity().getWorld().getPlayers()) {
             player.sendMessage(plugin.color("&6&lHALLOWEEN &8» &aKrál upírů byl poražen!"));
             player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8F, 1.0F);
@@ -202,6 +202,10 @@ public final class HalloweenVanillaBossManager implements Listener {
     public void onChunkLoad(ChunkLoadEvent event) {
         for (Entity entity : event.getChunk().getEntities()) {
             if (!isBoss(entity) || !(entity instanceof WitherSkeleton loadedBoss)) continue;
+            if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("vanilla-boss.enabled", true)) {
+                loadedBoss.remove();
+                continue;
+            }
             if (boss != null && boss.isValid() && !boss.getUniqueId().equals(loadedBoss.getUniqueId())) {
                 loadedBoss.remove();
                 continue;
@@ -223,10 +227,11 @@ public final class HalloweenVanillaBossManager implements Listener {
             candidate.setZ(Math.floor(candidate.getZ()) + 0.5D);
             Block feet = candidate.getBlock();
             Block head = feet.getRelative(org.bukkit.block.BlockFace.UP);
+            Block aboveHead = head.getRelative(org.bukkit.block.BlockFace.UP);
             Block ground = feet.getRelative(org.bukkit.block.BlockFace.DOWN);
             if (!world.getWorldBorder().isInside(candidate)
-                    || !feet.isPassable() || !head.isPassable()
-                    || feet.isLiquid() || head.isLiquid()
+                    || !feet.isPassable() || !head.isPassable() || !aboveHead.isPassable()
+                    || feet.isLiquid() || head.isLiquid() || aboveHead.isLiquid()
                     || ground.isLiquid() || !ground.getType().isSolid()) continue;
             return candidate;
         }
@@ -236,7 +241,6 @@ public final class HalloweenVanillaBossManager implements Listener {
     private void activate(WitherSkeleton activeBoss) {
         cleanup(false);
         boss = activeBoss;
-        bossWorldId = activeBoss.getWorld().getUID();
         contributorDamage.clear();
         phase = 1;
         secondsUntilPulse = (int) boundedConfig(
@@ -426,7 +430,6 @@ public final class HalloweenVanillaBossManager implements Listener {
         }
         WitherSkeleton oldBoss = boss;
         boss = null;
-        bossWorldId = null;
         phase = 1;
         secondsUntilPulse = 0;
         contributorDamage.clear();
