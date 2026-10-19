@@ -293,6 +293,7 @@ jobs:
               "return !hasTileStateInNeighborhood(target);",
               "new NamespacedKey(plugin, \"locked_underground_cache\")",
               "new NamespacedKey(plugin, \"underground_cache_key\")",
+              "marker != null && marker == (byte) 1",
               "public void onInventoryOpen(InventoryOpenEvent event)",
               "public void onCacheBreak(BlockBreakEvent event)",
               "public void onEntityExplode(EntityExplodeEvent event)",
