@@ -219,6 +219,16 @@ public final class HalloweenCore extends JavaPlugin {
                 + ", world-decorations=" + getConfig().getBoolean("world-decorations.enabled", false));
     }
 
+    public void setVanillaAtmosphereEnabled(boolean enabled) {
+        boolean changed = getConfig().getBoolean("vanilla-atmosphere.enabled", true) != enabled;
+        getConfig().set("vanilla-atmosphere.enabled", enabled);
+        if (changed) saveConfig();
+
+        if (vanillaAtmosphereManager != null) {
+            vanillaAtmosphereManager.restart();
+        }
+    }
+
     public void setEventEnabled(boolean enabled) {
         boolean changed = eventEnabled != enabled;
         eventEnabled = enabled;
@@ -278,6 +288,10 @@ public final class HalloweenCore extends JavaPlugin {
 
     public HalloweenVanillaEventManager getVanillaEventManager() {
         return vanillaEventManager;
+    }
+
+    public HalloweenVanillaAtmosphereManager getVanillaAtmosphereManager() {
+        return vanillaAtmosphereManager;
     }
 
     public HalloweenRewardManager getRewardManager() {
