@@ -289,6 +289,12 @@ jobs:
               if required_npc_behavior not in npc_manager:
                   raise SystemExit(f"Pumpkin villager missing required vanilla behavior: {required_npc_behavior}")
 
+          interaction_start = npc_manager.index("public void onInteract(PlayerInteractEntityEvent event)")
+          interaction_end = npc_manager.index("@EventHandler", interaction_start + 1)
+          interaction_handler = npc_manager[interaction_start:interaction_end]
+          if interaction_handler.index("if (!isEnabled()) return;") > interaction_handler.index("event.setCancelled(true);"):
+              raise SystemExit("Disabled pumpkin villager must not intercept vanilla interactions")
+
           if "registerEvents(pumpkinVillagerManager, this)" not in core_source:
               raise SystemExit("Pumpkin villager manager must be registered")
           command_source = Path(
