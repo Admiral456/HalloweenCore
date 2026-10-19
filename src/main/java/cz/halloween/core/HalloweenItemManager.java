@@ -45,6 +45,29 @@ public final class HalloweenItemManager {
         }
     }
 
+    /**
+     * Checks the ItemsAdder registry ID of an existing Bukkit stack without
+     * linking ItemsAdder classes at compile time.
+     */
+    public boolean isItemsAdderItem(ItemStack item, String namespacedId) {
+        if (item == null || item.getType().isAir() || namespacedId == null || namespacedId.isBlank()) {
+            return false;
+        }
+
+        try {
+            Class<?> customStackClass = Class.forName("dev.lone.itemsadder.api.CustomStack");
+            Method byItemStack = customStackClass.getMethod("byItemStack", ItemStack.class);
+            Object customStack = byItemStack.invoke(null, item);
+            if (customStack == null) return false;
+
+            Method getNamespacedId = customStackClass.getMethod("getNamespacedID");
+            Object actualId = getNamespacedId.invoke(customStack);
+            return actualId instanceof String id && id.equalsIgnoreCase(namespacedId);
+        } catch (ReflectiveOperationException | LinkageError | RuntimeException ignored) {
+            return false;
+        }
+    }
+
     public boolean isSupportedVersion() {
         String minimum = plugin.getConfig().getString("itemsadder.minimum-version", "4.0.13");
         var pluginInstance = plugin.getServer().getPluginManager().getPlugin("ItemsAdder");
