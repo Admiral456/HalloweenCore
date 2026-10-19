@@ -43,9 +43,17 @@ The existing Java classes for retired systems are kept temporarily for migration
 - `/halloween reload`
 - `/halloween debug`
 - `/halloween give <hráč> <počet>` (admin)
+- `/halloween npc spawn <jméno>` — creates a persistent vanilla villager wearing a carved pumpkin (admin).
+- `/halloween npc remove` — removes the nearest managed pumpkin villager within 8 blocks (admin).
 - `/halloween on|off`
 
 Legacy commands for random events, story quests, the old village/discovery system, shader editing, custom mobs, and the vampire model encounter are retired pending replacement.
+
+## Pumpkin villager
+
+The pumpkin villager is a vanilla villager wearing a carved pumpkin helmet; it requires no custom model or additional texture. Its entity marker is stored in persistent data, so it survives restarts with its chunk. Right-clicking it opens a short Czech dialogue with clickable links to the existing rewards menu, daily challenge and server progress. The NPC is invulnerable, has no AI, cannot pick up items, and does not drop its pumpkin.
+
+The feature is controlled by `pumpkin-villager.enabled` and `pumpkin-villager.interact-cooldown-millis` in `config.yml`.
 
 ## Build
 
