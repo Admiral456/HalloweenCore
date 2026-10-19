@@ -208,9 +208,13 @@ public final class HalloweenVanillaBossManager implements Listener {
             plugin.getDataManager().markVampireDefeated();
             plugin.getDataManager().save();
         }
-        for (Player player : event.getEntity().getWorld().getPlayers()) {
-            player.sendMessage(plugin.color("&6&lHALLOWEEN &8» &aKrál upírů byl poražen!"));
-            player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8F, 1.0F);
+        if (eligibleVictory) {
+            for (Player player : event.getEntity().getWorld().getPlayers()) {
+                if (!plugin.isEligibleGameplayPlayer(player)
+                        || !plugin.isEligibleGameplayWorld(player.getWorld())) continue;
+                player.sendMessage(plugin.color("&6&lHALLOWEEN &8» &aKrál upírů byl poražen!"));
+                player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8F, 1.0F);
+            }
         }
         cleanup(false);
     }
@@ -318,8 +322,12 @@ public final class HalloweenVanillaBossManager implements Listener {
                 && maxHealth > 0.0D && dealt / maxHealth >= damagePercent;
     }
 
+    public boolean isActive() {
+        return adoptExistingBoss() && boss != null && boss.isValid() && !boss.isDead();
+    }
+
     public int getPhase() {
-        return phase;
+        return isActive() ? phase : 0;
     }
 
     public double getHealthPercent() {
