@@ -356,11 +356,14 @@ jobs:
           vanilla_events = Path(
               "src/main/java/cz/halloween/core/HalloweenVanillaEventManager.java"
           ).read_text(encoding="utf-8")
-          if not re.search(
-              r'(?s)EVENT_IDS = List\\.of\\(\\s*"pumpkin-harvest",\\s*"witching-hour",\\s*"blood-moon"\\s*\\)',
-              vanilla_events,
-          ):
-              raise SystemExit("Vanilla event IDs must include pumpkin-harvest, witching-hour and blood-moon")
+          event_ids_start = vanilla_events.find("EVENT_IDS = List.of(")
+          event_ids_end = vanilla_events.find(");", event_ids_start)
+          if event_ids_start < 0 or event_ids_end < 0:
+              raise SystemExit("Vanilla event ID list is missing")
+          event_ids_source = vanilla_events[event_ids_start:event_ids_end]
+          for required_event_id in ('"pumpkin-harvest"', '"witching-hour"', '"blood-moon"'):
+              if required_event_id not in event_ids_source:
+                  raise SystemExit(f"Vanilla event ID missing from EVENT_IDS: {required_event_id}")
 
           for event_guard in (
               "private BukkitTask tickerTask;",
