@@ -32,7 +32,7 @@ public final class HalloweenConfigValidator {
         }
 
         double curseBonus = plugin.getConfig().getDouble("curse.bonus-per-level", -1.0D);
-        if (curseBonus < 0.0D || curseBonus > 1.0D) {
+        if (!Double.isFinite(curseBonus) || curseBonus < 0.0D || curseBonus > 1.0D) {
             errors.add("curse.bonus-per-level must be between 0 and 1");
         }
 
@@ -95,16 +95,16 @@ public final class HalloweenConfigValidator {
             if (eventDuration < 1 || eventDuration > 30) {
                 errors.add("vanilla-events.duration-minutes must be between 1 and 30");
             }
-            if (harvestMultiplier < 1.0D || harvestMultiplier > 4.0D) {
+            if (!Double.isFinite(harvestMultiplier) || harvestMultiplier < 1.0D || harvestMultiplier > 4.0D) {
                 errors.add("vanilla-events.pumpkin-harvest.farming-fragment-multiplier must be between 1 and 4");
             }
-            if (witchingMultiplier < 1.0D || witchingMultiplier > 4.0D) {
+            if (!Double.isFinite(witchingMultiplier) || witchingMultiplier < 1.0D || witchingMultiplier > 4.0D) {
                 errors.add("vanilla-events.witching-hour.mob-kill-fragment-multiplier must be between 1 and 4");
             }
-            if (bloodMoonMultiplier < 1.0D || bloodMoonMultiplier > 4.0D) {
+            if (!Double.isFinite(bloodMoonMultiplier) || bloodMoonMultiplier < 1.0D || bloodMoonMultiplier > 4.0D) {
                 errors.add("vanilla-events.blood-moon.mob-kill-fragment-multiplier must be between 1 and 4");
             }
-            if (bloodMoonDamage < 1.0D || bloodMoonDamage > 3.0D) {
+            if (!Double.isFinite(bloodMoonDamage) || bloodMoonDamage < 1.0D || bloodMoonDamage > 3.0D) {
                 errors.add("vanilla-events.blood-moon.hostile-damage-multiplier must be between 1 and 3");
             }
         }
@@ -125,10 +125,10 @@ public final class HalloweenConfigValidator {
             int caveMinY = plugin.getConfig().getInt("world-features.generation.cave-webs-min-y", -48);
             int caveMaxY = plugin.getConfig().getInt("world-features.generation.cave-webs-max-y", 24);
 
-            if (pumpkinChance < 0.0D || pumpkinChance > 1.0D) {
+            if (!Double.isFinite(pumpkinChance) || pumpkinChance < 0.0D || pumpkinChance > 1.0D) {
                 errors.add("world-features.generation.pumpkin-patch-chance-per-chunk must be between 0 and 1");
             }
-            if (webChance < 0.0D || webChance > 1.0D) {
+            if (!Double.isFinite(webChance) || webChance < 0.0D || webChance > 1.0D) {
                 errors.add("world-features.generation.cave-web-patch-chance-per-chunk must be between 0 and 1");
             }
             if (featureAttempts < 1 || featureAttempts > 64) {
@@ -154,7 +154,7 @@ public final class HalloweenConfigValidator {
                 int maxY = plugin.getConfig().getInt("underground-caches.generation.max-y", 24);
                 int attempts = plugin.getConfig().getInt(
                         "underground-caches.generation.attempts-per-chunk", 32);
-                if (chunkChance < 0.0D || chunkChance > 1.0D) {
+                if (!Double.isFinite(chunkChance) || chunkChance < 0.0D || chunkChance > 1.0D) {
                     errors.add("underground-caches.generation.chance-per-new-chunk must be between 0 and 1");
                 }
                 if (minY >= maxY) {
@@ -168,7 +168,7 @@ public final class HalloweenConfigValidator {
             if (plugin.getConfig().getBoolean("underground-caches.key-drop.enabled", true)) {
                 double keyChance = plugin.getConfig().getDouble(
                         "underground-caches.key-drop.chance-per-hostile-kill", 0.006D);
-                if (keyChance < 0.0D || keyChance > 0.05D) {
+                if (!Double.isFinite(keyChance) || keyChance < 0.0D || keyChance > 0.05D) {
                     errors.add("underground-caches.key-drop.chance-per-hostile-kill must be between 0 and 0.05");
                 }
             }
