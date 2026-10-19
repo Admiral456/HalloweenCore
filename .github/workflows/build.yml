@@ -170,6 +170,8 @@ jobs:
 
           for data_guard in (
               'if (data.isSet("players") && !data.isConfigurationSection("players"))',
+              'if (!data.isConfigurationSection(playerPath))',
+              'return failLoadSafely("player data entry must be a YAML section: " + key)',
               'if (data.isSet("server") && !data.isConfigurationSection("server"))',
               'if (data.isSet("meta.schema-version") && !(data.get("meta.schema-version") instanceof Number))',
               'return failLoadSafely("invalid player UUID key in data.yml: " + key)',
