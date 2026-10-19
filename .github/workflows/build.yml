@@ -606,6 +606,49 @@ jobs:
           if 'if (!Double.isFinite(curseBonus) || curseBonus < 0.0D || curseBonus > 1.0D)' not in validator:
               raise SystemExit("Curse multiplier must reject NaN and infinity")
           
+          ambience = Path(
+              "src/main/java/cz/halloween/core/HalloweenVanillaAtmosphereManager.java"
+          ).read_text(encoding="utf-8")
+          for ambience_guard in (
+              "private BukkitTask task;",
+              "task.cancel();",
+              "vanilla-atmosphere.min-interval-seconds",
+              "vanilla-atmosphere.max-interval-seconds",
+              "vanilla-atmosphere.player-chance",
+              "Particle.ASH",
+              "Particle.SOUL",
+              '"minecraft:ambient.cave"',
+              '"minecraft:entity.witch.ambient"',
+              '"minecraft:entity.phantom.ambient"',
+              "plugin.isEligibleGameplayPlayer(player)",
+              "plugin.isEligibleGameplayWorld(player.getWorld())",
+          ):
+              if ambience_guard not in ambience:
+                  raise SystemExit(f"Vanilla atmosphere safety/behavior missing: {ambience_guard}")
+
+          if "vanillaAtmosphereManager = new HalloweenVanillaAtmosphereManager(this);" not in core_source:
+              raise SystemExit("Vanilla atmosphere manager must be constructed")
+          for ambience_lifecycle_guard in (
+              "vanillaAtmosphereManager.start();",
+              "vanillaAtmosphereManager.stop();",
+              "vanillaAtmosphereManager.restart();",
+          ):
+              if ambience_lifecycle_guard not in core_source:
+                  raise SystemExit(f"Vanilla ambience lifecycle integration missing: {ambience_lifecycle_guard}")
+
+          for ambience_validation in (
+              'boolean vanillaAtmosphereEnabled = plugin.getConfig().getBoolean("vanilla-atmosphere.enabled", true);',
+              'if (!Double.isFinite(playerChance) || playerChance < 0.0D || playerChance > 1.0D)',
+              'if (!Double.isFinite(soundVolume) || soundVolume < 0.0D || soundVolume > 1.5D)',
+          ):
+              if ambience_validation not in validator:
+                  raise SystemExit(f"Vanilla ambience config validation missing: {ambience_validation}")
+          if not re.search(
+              r"(?ms)^vanilla-atmosphere:\\n  enabled: true\\n  min-interval-seconds: 90\\n  max-interval-seconds: 180\\n  player-chance: 0\\.35\\n  particles-enabled: true\\n  sounds-enabled: true\\n  sound-volume: 0\\.55$",
+              config,
+          ):
+              raise SystemExit("Vanilla atmosphere config is missing or malformed")
+
           print("Vanilla event scheduling, effects and command checks passed.")
           checklist = Path("docs/RELEASE_VERIFICATION_CHECKLIST.md")
           if not checklist.is_file():
