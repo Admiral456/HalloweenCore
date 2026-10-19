@@ -1,6 +1,6 @@
 # HalloweenCore
 
-HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch removes the old custom-asset Halloween implementation before a vanilla-first quest, dialogue, event, and underground-cache system is added.
+HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch replaces the previous custom-asset Halloween implementation with a vanilla-first foundation, including a pumpkin villager NPC and locked underground caches.
 
 ## Kept in the core
 
@@ -8,7 +8,7 @@ HalloweenCore is a Java 21 plugin for Paper/Purpur 1.21.x. This branch removes t
 - Fragment rewards for eligible gameplay actions such as mob kills, mining, farming, and fishing.
 - Curse progression, player statistics, daily challenge and return rewards.
 - Reward shop backed by vanilla item fallbacks.
-- Optional ItemsAdder integration for cursed candy and the retained pumpkin texture set for the planned pumpkin-headed villager.
+- Optional ItemsAdder integration for cursed candy and the retained pumpkin block textures.
 - Configuration validation and the existing player-data store.
 
 ## Disabled or removed during the rebuild
@@ -45,9 +45,19 @@ The existing Java classes for retired systems are kept temporarily for migration
 - `/halloween give <hráč> <počet>` (admin)
 - `/halloween npc spawn <jméno>` — creates a persistent vanilla villager wearing a carved pumpkin (admin).
 - `/halloween npc remove` — removes the nearest managed pumpkin villager within 8 blocks (admin).
+- `/halloween cache spawn` — creates a test cache safely in front of the admin (admin).
+- `/halloween cache key <hráč> [počet]` — gives 1–64 cache keys to an online player (admin).
 - `/halloween on|off`
 
 Legacy commands for random events, story quests, the old village/discovery system, shader editing, custom mobs, and the vampire model encounter are retired pending replacement.
+
+## Underground caches
+
+The plugin can generate a single locked chest in a small number of newly generated Overworld chunks. It does not scan or rewrite existing chunks, reducing the risk of touching player builds. Caches use vanilla chest blocks and ordinary vanilla loot. A real key is a tripwire hook with a plugin-only persistent-data marker, so renaming a normal hook does not make a valid key.
+
+Locked caches cannot be opened without a key, broken, blown up, pushed by pistons, or used by hoppers until unlocked. Using a key consumes one and permanently unlocks that chest. Hostile mobs have a configurable small chance to drop keys. Admins can test the system with `/halloween cache spawn` and `/halloween cache key <hráč> [počet]`.
+
+Settings are under `underground-caches` in `config.yml`. `generation.chance-per-new-chunk` controls the generation chance; `generation.min-y` and `generation.max-y` limit the underground depth; `key-drop.chance-per-hostile-kill` controls the chance of a key drop. This system does not need custom textures or ModelsEngine/MythicMobs.
 
 ## Pumpkin villager
 
