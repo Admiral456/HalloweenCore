@@ -60,15 +60,24 @@ public final class SecretRoomManager implements Listener {
         World world = chunk.getWorld();
         int chunkX = chunk.getX() << 4;
         int chunkZ = chunk.getZ() << 4;
-        int x = chunkX + 4 + random.nextInt(6);
-        int z = chunkZ + 4 + random.nextInt(6);
-        int surfaceY = world.getHighestBlockYAt(x + 2, z + 2);
-        int minDepth = Math.max(12, plugin.getConfig().getInt("secret-rooms.min-depth-below-surface", 16));
-        int maxDepth = Math.max(minDepth, plugin.getConfig().getInt("secret-rooms.max-depth-below-surface", 28));
-        int y = surfaceY - minDepth - random.nextInt(maxDepth - minDepth + 1);
-        if (y < world.getMinHeight() + 8 || y + 3 >= surfaceY - 8) return;
-        if (!isNaturalRockVolume(world, x, y, z)) return;
 
+        // Retry a handful of positions in the same new chunk so ordinary ores/caves
+        // do not make the feature practically impossible to discover.
+        for (int attempt = 0; attempt < 8; attempt++) {
+            int x = chunkX + 4 + random.nextInt(6);
+            int z = chunkZ + 4 + random.nextInt(6);
+            int surfaceY = world.getHighestBlockYAt(x + 2, z + 2);
+            int minDepth = Math.max(12, plugin.getConfig().getInt("secret-rooms.min-depth-below-surface", 16));
+            int maxDepth = Math.max(minDepth, plugin.getConfig().getInt("secret-rooms.max-depth-below-surface", 28));
+            int y = surfaceY - minDepth - random.nextInt(maxDepth - minDepth + 1);
+            if (y < world.getMinHeight() + 8 || y + 3 >= surfaceY - 8) continue;
+            if (!isNaturalRockVolume(world, x, y, z)) continue;
+            buildRoom(world, x, y, z);
+            return;
+        }
+    }
+
+    private void buildRoom(World world, int x, int y, int z) {
         for (int dx = 0; dx < 5; dx++) {
             for (int dy = 0; dy < 4; dy++) {
                 for (int dz = 0; dz < 5; dz++) {
@@ -105,24 +114,41 @@ public final class SecretRoomManager implements Listener {
     }
 
     private boolean isNaturalRockVolume(World world, int x, int y, int z) {
-        for (int checkX = x - 4; checkX <= x + 5; checkX++) {
-            for (int checkY = y - 1; checkY <= y + 3; checkY++) {
-                for (int checkZ = z - 1; checkZ <= z + 5; checkZ++) {
+        // Validate the actual room volume, the tunnel and its concealed cap;
+        // do not reject a candidate merely because there is an ore nearby.
+        for (int checkX = x; checkX <= x + 4; checkX++) {
+            for (int checkY = y; checkY <= y + 3; checkY++) {
+                for (int checkZ = z; checkZ <= z + 4; checkZ++) {
                     if (!isNaturalRock(world.getBlockAt(checkX, checkY, checkZ).getType())) return false;
                 }
+            }
+        }
+        for (int dx = 1; dx <= 4; dx++) {
+            for (int dy = 1; dy <= 2; dy++) {
+                if (!isNaturalRock(world.getBlockAt(x - dx, y + dy, z + 2).getType())) return false;
             }
         }
         return true;
     }
 
     private boolean isNaturalRock(Material material) {
-        return material == Material.STONE || material == Material.DEEPSLATE || material == Material.TUFF
-                || material == Material.GRANITE || material == Material.DIORITE || material == Material.ANDESITE
-                || material == Material.CALCITE || material == Material.DRIPSTONE_BLOCK
-                || material == Material.SMOOTH_BASALT;
+        return switch (material) {
+            case STONE, DEEPSLATE, TUFF, GRANITE, DIORITE, ANDESITE, CALCITE,
+                 DRIPSTONE_BLOCK, SMOOTH_BASALT,
+                 COAL_ORE, DEEPSLATE_COAL_ORE,
+                 IRON_ORE, DEEPSLATE_IRON_ORE,
+                 COPPER_ORE, DEEPSLATE_COPPER_ORE,
+                 GOLD_ORE, DEEPSLATE_GOLD_ORE,
+                 REDSTONE_ORE, DEEPSLATE_REDSTONE_ORE,
+                 LAPIS_ORE, DEEPSLATE_LAPIS_ORE,
+                 DIAMOND_ORE, DEEPSLATE_DIAMOND_ORE,
+                 EMERALD_ORE, DEEPSLATE_EMERALD_ORE -> true;
+            default -> false;
+        };
     }
 
     private boolean isAllowedWorld(World world) {
+        if (world.getEnvironment() != World.Environment.NORMAL) return false;
         for (String denied : plugin.getConfig().getStringList("secret-rooms.excluded-worlds")) {
             if (world.getName().equalsIgnoreCase(denied)) return false;
         }

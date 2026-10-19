@@ -41,8 +41,25 @@ public final class KeyItemFactory {
     public boolean isKey(ItemStack stack) {
         if (stack == null || stack.getType().isAir() || !stack.hasItemMeta()) return false;
         ItemMeta meta = stack.getItemMeta();
-        return meta != null && meta.getPersistentDataContainer()
-                .getOrDefault(marker, PersistentDataType.BYTE, (byte) 0) == 1;
+        if (meta != null && meta.getPersistentDataContainer()
+                .getOrDefault(marker, PersistentDataType.BYTE, (byte) 0) == 1) {
+            return true;
+        }
+        // This also accepts the same ItemsAdder item handed out directly by UplineDialogues.
+        return isItemsAdderKey(stack);
+    }
+
+    private boolean isItemsAdderKey(ItemStack stack) {
+        if (!plugin.getServer().getPluginManager().isPluginEnabled("ItemsAdder")) return false;
+        try {
+            Class<?> type = Class.forName("dev.lone.itemsadder.api.CustomStack");
+            Object customStack = type.getMethod("byItemStack", ItemStack.class).invoke(null, stack);
+            if (customStack == null) return false;
+            Object id = type.getMethod("getNamespacedID").invoke(customStack);
+            return id instanceof String value && ITEM_ID.equalsIgnoreCase(value);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            return false;
+        }
     }
 
     private ItemStack getItemsAdderKey() {

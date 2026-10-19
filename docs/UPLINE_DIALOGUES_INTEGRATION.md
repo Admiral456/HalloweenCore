@@ -19,7 +19,7 @@ Sekce quest-rewards v config.yml zůstává prázdná. Až bude odměna konkrét
 
 ## Klíč
 
-HalloweenCore označí vlastní speciální klíč značkou PersistentDataContainer. ItemsAdder položka má ID warriorland_halloween:secret_key. Způsob získávání klíčů zatím není pevně přiřazený. Později může domluvený NPC dialog spustit /halloween key give jako OP pro právě hovořícího hráče.
+HalloweenCore označí vlastní speciální klíč značkou PersistentDataContainer. ItemsAdder položka má ID warriorland_halloween:secret_key. Způsob získávání klíčů zatím není pevně přiřazený. Až bude dohodnutý, UplineDialogues může použít akci Give item pro ItemsAdder ID warriorland_halloween:secret_key; HalloweenCore rozpozná toto ID i bez vlastního PDC markeru. Alternativou je /halloween key give spuštěný jako OP pro právě hovořícího hráče. Žádný NPC dialog zatím klíč automaticky nepřiděluje.
 
 ## Ověření na stagingu
 

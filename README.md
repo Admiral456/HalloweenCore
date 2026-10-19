@@ -32,7 +32,7 @@ Při změně stavu úkolu v UplineDialogues použij spuštění příkazu jako O
 
 Odměny nejsou definitivně domluvené, proto nejsou přednastavené žádné questy ani odměny. HalloweenCore umí při prvním dokončení konkrétního úkolu jednorázově přidat nakonfigurované fragmenty a vykonat příkazy, ale sekce quest-rewards je ve výchozím nastavení prázdná. Nejsou přednastaveny peníze, vybavení ani jiné odměny.
 
-Získávání klíčů není automaticky přiřazeno k žádnému úkolu. Když bude jeho zdroj domluvený, může odpovídající NPC dialog použít /halloween key give spuštěný jako OP pro interagujícího hráče. Správce může klíč vydat také z konzole.
+Získávání klíčů není automaticky přiřazeno k žádnému úkolu. Když bude jeho zdroj domluvený, může odpovídající NPC dialog klíč vydat přes ItemsAdder položku warriorland_halloween:secret_key (UplineDialogues akce Give item) nebo příkaz /halloween key give spuštěný jako OP. Obojí HalloweenCore rozpozná. Správce může klíč vydat také z konzole.
 
 ## Tajné podzemní místnosti
 
