@@ -389,6 +389,53 @@ public final class HalloweenConfigValidator {
             }
         }
 
+        boolean vanillaBossEnabled = plugin.getConfig().getBoolean("vanilla-boss.enabled", true);
+        if (vanillaBossEnabled) {
+            double maxHealth = plugin.getConfig().getDouble("vanilla-boss.max-health", Double.NaN);
+            double trackingRadius = plugin.getConfig().getDouble("vanilla-boss.tracking-radius-blocks", Double.NaN);
+            int pulseInterval = plugin.getConfig().getInt("vanilla-boss.pulse.interval-seconds", -1);
+            double pulseRadius = plugin.getConfig().getDouble("vanilla-boss.pulse.radius-blocks", Double.NaN);
+            double pulseDamage = plugin.getConfig().getDouble("vanilla-boss.pulse.damage", Double.NaN);
+            int windupTicks = plugin.getConfig().getInt("vanilla-boss.pulse.windup-ticks", -1);
+            double dodgeRadius = plugin.getConfig().getDouble("vanilla-boss.pulse.dodge-radius-blocks", Double.NaN);
+            int witherTicks = plugin.getConfig().getInt("vanilla-boss.pulse.wither-ticks", -1);
+            long participationReward = plugin.getConfig().getLong(
+                    "vanilla-boss.rewards.participation-fragments", -1L);
+            long topBonus = plugin.getConfig().getLong(
+                    "vanilla-boss.rewards.top-contributor-bonus-fragments", -1L);
+
+            if (!Double.isFinite(maxHealth) || maxHealth < 100.0D || maxHealth > 500.0D) {
+                errors.add("vanilla-boss.max-health must be finite and between 100 and 500");
+            }
+            if (!Double.isFinite(trackingRadius) || trackingRadius < 16.0D || trackingRadius > 192.0D) {
+                errors.add("vanilla-boss.tracking-radius-blocks must be finite and between 16 and 192");
+            }
+            if (pulseInterval < 8 || pulseInterval > 60) {
+                errors.add("vanilla-boss.pulse.interval-seconds must be between 8 and 60");
+            }
+            if (!Double.isFinite(pulseRadius) || pulseRadius < 3.0D || pulseRadius > 20.0D) {
+                errors.add("vanilla-boss.pulse.radius-blocks must be finite and between 3 and 20");
+            }
+            if (!Double.isFinite(pulseDamage) || pulseDamage < 0.0D || pulseDamage > 10.0D) {
+                errors.add("vanilla-boss.pulse.damage must be finite and between 0 and 10");
+            }
+            if (windupTicks < 10 || windupTicks > 80) {
+                errors.add("vanilla-boss.pulse.windup-ticks must be between 10 and 80");
+            }
+            if (!Double.isFinite(dodgeRadius) || dodgeRadius < 0.75D || dodgeRadius > 5.0D) {
+                errors.add("vanilla-boss.pulse.dodge-radius-blocks must be finite and between 0.75 and 5");
+            }
+            if (witherTicks < 20 || witherTicks > 200) {
+                errors.add("vanilla-boss.pulse.wither-ticks must be between 20 and 200");
+            }
+            if (participationReward < 0L || participationReward > 5000L) {
+                errors.add("vanilla-boss.rewards.participation-fragments must be between 0 and 5000");
+            }
+            if (topBonus < 0L || topBonus > 5000L) {
+                errors.add("vanilla-boss.rewards.top-contributor-bonus-fragments must be between 0 and 5000");
+            }
+        }
+
         ConfigurationSection vampire = plugin.getConfig().getConfigurationSection("bosses.vampire");
         if (vampire != null && vampire.getBoolean("enabled", false)) {
             if (vampire.getInt("min-height-blocks", 0) < 10) {
