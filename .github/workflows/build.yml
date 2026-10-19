@@ -661,6 +661,8 @@ jobs:
               raise SystemExit("Core must persist and apply ambience on/off commands")
           if "public boolean isRunning()" not in ambience:
               raise SystemExit("Ambience status must report actual scheduler state")
+          if 'sender.sendMessage(plugin.color("&7Vanilla atmosféra: " + ambienceStatus' not in command_source:
+              raise SystemExit("Admin debug output must report vanilla ambience runtime status")
 
           for ambience_config_line in (
               "vanilla-atmosphere:",
