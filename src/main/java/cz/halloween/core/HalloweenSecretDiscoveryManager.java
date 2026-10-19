@@ -73,6 +73,7 @@ public final class HalloweenSecretDiscoveryManager implements Listener {
                     plugin.getConfig().getLong(path + ".reward-fragments",
                             plugin.getConfig().getLong("secret-discoveries.default-reward-fragments", 250L)));
             plugin.getService().addFragments(player.getUniqueId(), reward, "secret-discovery");
+            plugin.getQuestManager().recordAction(player, "secret-discovery");
             // Store the one-time discovery and its reward together; a restart must not
             // make the same hidden location pay out again.
             plugin.getDataManager().save();
