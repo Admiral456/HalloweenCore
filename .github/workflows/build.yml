@@ -21,6 +21,56 @@ jobs:
       - name: Build
         run: mvn -B clean package
 
+      - name: Smoke-check cleanup and retained content
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          config = Path("src/main/resources/config.yml").read_text(encoding="utf-8")
+          disabled_sections = [
+              "random-events", "special-mobs", "story-quests", "haunted-village",
+              "secret-discoveries", "world-decorations", "atmosphere"
+          ]
+          for section in disabled_sections:
+              pattern = rf"(?m)^{re.escape(section)}:\n  enabled: false$"
+              if not re.search(pattern, config):
+                  raise SystemExit(f"Expected {section}.enabled to be false")
+
+          if not re.search(r"(?m)^  bonus-health: 2\.0$", config):
+              raise SystemExit("Cursed talisman must grant one heart (+2 health)")
+          if '+1 srdce maximálního zdraví při držení.' not in config:
+              raise SystemExit("Cursed talisman lore does not describe one heart")
+
+          content_root = Path("itemsadder/contents/warriorland_halloween")
+          assets_root = content_root / "resourcepack" / "assets"
+          expected_pngs = {
+              "warriorland_halloween/textures/item/cursed_candy.png",
+              "minecraft/textures/block/pumpkin_face.png",
+              "minecraft/textures/block/pumpkin_side.png",
+              "minecraft/textures/block/pumpkin_top.png",
+          }
+          actual_pngs = {
+              path.relative_to(assets_root).as_posix()
+              for path in assets_root.rglob("*.png")
+          }
+          if actual_pngs != expected_pngs:
+              raise SystemExit(
+                  f"Unexpected retained PNG set. Expected {sorted(expected_pngs)}, got {sorted(actual_pngs)}"
+              )
+
+          for retired_path in (Path("mythicmobs"), Path("scripts")):
+              if retired_path.exists():
+                  raise SystemExit(f"Retired content still exists: {retired_path}")
+
+          if list(content_root.rglob("*.ogg")):
+              raise SystemExit("Retired sound assets remain in the ItemsAdder content")
+          if list(content_root.rglob("sky.fsh")):
+              raise SystemExit("Retired sky shader remains in the ItemsAdder content")
+
+          print("Cleanup invariants passed; only candy and the three intended pumpkin textures remain.")
+          PY
+
       - name: Package retained candy and pumpkin villager textures
         run: |
           mkdir -p target
