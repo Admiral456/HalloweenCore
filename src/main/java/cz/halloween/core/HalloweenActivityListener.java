@@ -111,8 +111,12 @@ public final class HalloweenActivityListener implements Listener {
 
     private boolean allowFragmentReward(Player player, String source) {
         String basePath = "rewards." + source;
-        int limit = plugin.getConfig().getInt(basePath + ".max-fragment-rewards-per-minute", 0);
-        if (limit <= 0) return true; // Backward-compatible: an omitted limit does not disable rewards.
+        // Old server configs may not yet contain the newly introduced mob-kill limit.
+        // Keep legacy sources unlimited when their limit is omitted, but never let
+        // a missing mob-kill key silently bypass the new anti-farming guard.
+        int fallbackLimit = "mob-kill".equalsIgnoreCase(source) ? 60 : 0;
+        int limit = plugin.getConfig().getInt(basePath + ".max-fragment-rewards-per-minute", fallbackLimit);
+        if (limit <= 0) return true; // Backward-compatible for the legacy activity sources.
 
         long now = System.currentTimeMillis();
         UUID playerId = player.getUniqueId();
