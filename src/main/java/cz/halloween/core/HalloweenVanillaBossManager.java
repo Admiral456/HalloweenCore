@@ -220,10 +220,34 @@ public final class HalloweenVanillaBossManager implements Listener {
     }
 
     @EventHandler
+    public void resumeLoadedBosses() {
+        List<WitherSkeleton> found = new ArrayList<>();
+        for (World world : Bukkit.getWorlds()) {
+            for (Entity entity : world.getEntities()) {
+                if (isBoss(entity) && entity instanceof WitherSkeleton loadedBoss) found.add(loadedBoss);
+            }
+        }
+        if (!canResumeBoss()) {
+            found.forEach(Entity::remove);
+            return;
+        }
+        if (found.isEmpty()) return;
+        activate(found.get(0));
+        for (int i = 1; i < found.size(); i++) found.get(i).remove();
+    }
+
+    private boolean canResumeBoss() {
+        return plugin.isEventEnabled()
+                && plugin.getConfig().getBoolean("vanilla-boss.enabled", true)
+                && plugin.getDataManager().isFinaleUnlocked()
+                && !plugin.getDataManager().isVampireDefeated();
+    }
+
+    @EventHandler
     public void onChunkLoad(ChunkLoadEvent event) {
         for (Entity entity : event.getChunk().getEntities()) {
             if (!isBoss(entity) || !(entity instanceof WitherSkeleton loadedBoss)) continue;
-            if (!plugin.isEventEnabled() || !plugin.getConfig().getBoolean("vanilla-boss.enabled", true)) {
+            if (!canResumeBoss()) {
                 loadedBoss.remove();
                 continue;
             }
@@ -323,7 +347,7 @@ public final class HalloweenVanillaBossManager implements Listener {
     }
 
     public boolean isActive() {
-        return adoptExistingBoss() && boss != null && boss.isValid() && !boss.isDead();
+        return boss != null && boss.isValid() && !boss.isDead();
     }
 
     public int getPhase() {
@@ -331,13 +355,13 @@ public final class HalloweenVanillaBossManager implements Listener {
     }
 
     public double getHealthPercent() {
-        if (!adoptExistingBoss() || boss == null || !boss.isValid()) return 0.0D;
+        if (!isActive()) return 0.0D;
         return Math.max(0.0D, Math.min(100.0D, boss.getHealth()
                 / Math.max(1.0D, boss.getMaxHealth()) * 100.0D));
     }
 
     public int getParticipantCount() {
-        if (!adoptExistingBoss() || boss == null || !boss.isValid()) return 0;
+        if (!isActive()) return 0;
         double maxHealth = boss.getMaxHealth();
         return (int) contributorDamage.keySet().stream()
                 .filter(id -> qualifiesForReward(id, maxHealth))
