@@ -825,8 +825,8 @@ jobs:
               raise SystemExit("Vanilla ambience must expose a targeted preview pulse for staging checks")
           if 'sender.sendMessage(plugin.color("&7Vanilla atmosféra: " + ambienceStatus' not in command_source:
               raise SystemExit("Admin debug output must report vanilla ambience runtime status")
-          if 'sender.sendMessage(plugin.color("&7Skryté Easter eggy: "' not in command_source:
-              raise SystemExit("Admin debug output must show hidden Easter egg setup status")
+          if 'sender.sendMessage(plugin.color("&7Skrytá místa: "' not in command_source:
+              raise SystemExit("Admin debug output must show hidden discovery setup status")
 
           for ambience_config_line in (
               "vanilla-atmosphere:",
