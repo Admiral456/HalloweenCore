@@ -1,5 +1,7 @@
 # Integrace UplineDialogues a HalloweenCore
 
+Dialogy se vytvářejí jako mapa v editoru UplineDialogues, nikoli jako YAML konfigurace HalloweenCore. Plugin podporuje skutečná okna Minecraft dialogů od verze klienta 1.21.6; starší verze mají ostatní dialogové funkce, ale nativní okna se neotevřou. Server WarriorLandu na 1.21.10 je nad tímto minimem.
+
 UplineDialogues 3.0.0 poskytuje editor NPC dialogů, volby, větvení a příkazy spouštěné jako hráč, OP nebo konzole. HalloweenCore proto neposkytuje vlastní dialogové GUI; eviduje questový stav, fragmenty a jednorázové dokončení.
 
 ## Napojení
