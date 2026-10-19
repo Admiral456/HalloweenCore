@@ -239,11 +239,13 @@ public final class HalloweenWorldFeatureManager implements Listener {
             try {
                 for (int i = 0; i < targets.size(); i++) {
                     Block target = targets.get(i);
-                    target.setType(stones.get(i), false);
+                    // Register the originally-air block before mutation so even an
+                    // unexpected setType failure can be rolled back.
                     placedBlocks.add(target);
+                    target.setType(stones.get(i), false);
                 }
-                lanternTarget.setType(Material.SOUL_LANTERN, false);
                 placedBlocks.add(lanternTarget);
+                lanternTarget.setType(Material.SOUL_LANTERN, false);
             } catch (RuntimeException ex) {
                 // Roll back only the air blocks placed by this failed attempt.
                 for (Block placed : placedBlocks) {
