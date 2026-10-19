@@ -643,11 +643,18 @@ jobs:
           ):
               if ambience_validation not in validator:
                   raise SystemExit(f"Vanilla ambience config validation missing: {ambience_validation}")
-          if not re.search(
-              r"(?ms)^vanilla-atmosphere:\\n  enabled: true\\n  min-interval-seconds: 90\\n  max-interval-seconds: 180\\n  player-chance: 0\\.35\\n  particles-enabled: true\\n  sounds-enabled: true\\n  sound-volume: 0\\.55$",
-              config,
+          for ambience_config_line in (
+              "vanilla-atmosphere:",
+              "  enabled: true",
+              "  min-interval-seconds: 90",
+              "  max-interval-seconds: 180",
+              "  player-chance: 0.35",
+              "  particles-enabled: true",
+              "  sounds-enabled: true",
+              "  sound-volume: 0.55",
           ):
-              raise SystemExit("Vanilla atmosphere config is missing or malformed")
+              if ambience_config_line not in config:
+                  raise SystemExit(f"Vanilla atmosphere config is missing: {ambience_config_line}")
 
           print("Vanilla event scheduling, effects and command checks passed.")
           checklist = Path("docs/RELEASE_VERIFICATION_CHECKLIST.md")
