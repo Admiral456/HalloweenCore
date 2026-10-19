@@ -169,6 +169,8 @@ special-mobs:
     enabled: false
   relic-item-id: "warriorland_halloween:cursed_candy"
   relic-drop-chance: 0.0
+  map-drop-chance: 0.0
+  map-item-id: "minecraft:map"
 
 story-quests:
   enabled: false
