@@ -64,6 +64,17 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] When an ancient altar appears, verify it consists of a few mossy/cracked stone blocks and a soul lantern above untouched natural terrain. Confirm it is only generated in a clear natural area and never overwrites blocks or tile entities.
 - [ ] With underground-caches.enabled: false, verify an existing locked cache becomes a normal accessible chest on its next open instead of trapping its loot.
 
+## 6. Vanilla elite mobs
+
+- [ ] Verify migration adds any missing vanilla elite profiles while preserving existing custom names, health multipliers, ability values, and cooldowns.
+- [ ] Explore newly generated eligible Overworld areas and confirm a small fraction of natural zombies, husks, skeletons, strays, spiders, creepers, witches, and phantoms become themed elite variants.
+- [ ] Confirm elites use vanilla models, particles, and sounds only. MythicMobs and ModelEngine must not be required, and custom models must stay disabled.
+- [ ] On a staging player, test melee and projectile effects for the relevant elite types and verify ability cooldowns work.
+- [ ] Test Pumpkin Wraith in a disposable area. Its special explosion must not damage blocks, even after the feature is disabled.
+- [ ] Verify eligible player defeat rewards include the configured fragment bonus and low-probability Cursed Candy, while environmental or creative defeats do not award elite rewards.
+- [ ] During Witching Hour and Blood Moon, verify the configured elite chance multiplier. Set special-mobs.enabled to false and reload; new elite spawns, abilities, and bonuses should stop and stay disabled after restart.
+- [ ] Check spawn probability over a broad sample rather than judging it from one or two chunks.
+
 ## 7. Vanilla story campaign
 
 - [ ] Run /halloween quests on a fresh staging player. Confirm chapter 1 of 9 appears with an objective, progress, and fragment reward.
