@@ -69,6 +69,7 @@ public final class HalloweenWorldFeatureManager implements Listener {
 
         Chunk chunk = event.getChunk();
         if (chunk.getWorld().getEnvironment() != World.Environment.NORMAL
+                || !plugin.isEligibleGameplayWorld(chunk.getWorld())
                 || chunk.getPersistentDataContainer().has(processedChunkKey, PersistentDataType.BYTE)) return;
 
         try {
