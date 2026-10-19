@@ -47,12 +47,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         saveDefaultConfig();
-        migrateAtmosphereVolume();
-        migrateAtmospherePlaylistDefaults();
-        migrateCrimsonWardenShopDefaults();
-        migrateCrimsonWardenArmorStats();
-        migrateHalloweenEventOverhaul();
-        migrateAdditionalMobAndQuestDefaults();
+        disableLegacyContentSystems();
 
         dataManager = new HalloweenDataManager(this);
         dataManager.load();
@@ -128,6 +123,51 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (dataManager != null) dataManager.save();
     }
 
+    /**
+     * Removes configuration left by the retired custom-asset implementation.
+     * This deliberately runs on every startup and config reload so an old server
+     * config cannot silently reactivate the systems while they are being replaced.
+     */
+    private void disableLegacyContentSystems() {
+        for (String root : List.of("random-events", "special-mobs", "story-quests",
+                "haunted-village", "secret-discoveries", "world-decorations", "atmosphere")) {
+            getConfig().set(root, null);
+        }
+        getConfig().set("random-events.enabled", false);
+        getConfig().set("random-events.start-delay-seconds", 30);
+        getConfig().set("random-events.interval-minutes.min", 15);
+        getConfig().set("random-events.interval-minutes.max", 24);
+        getConfig().set("random-events.duration-minutes", 6);
+        getConfig().set("random-events.surge-interval-seconds", 25);
+        getConfig().set("random-events.max-event-mobs", 48);
+        getConfig().set("random-events.event-mobs-enabled", false);
+        getConfig().set("random-events.invasion-mobs-per-surge", 4);
+        getConfig().set("random-events.blood-moon-damage-multiplier", 3.0D);
+        getConfig().set("random-events.special-mob-chance-multiplier", 2.0D);
+        getConfig().set("special-mobs.enabled", false);
+        getConfig().set("special-mobs.custom-models.enabled", false);
+        getConfig().set("special-mobs.relic-item-id", "warriorland_halloween:cursed_candy");
+        getConfig().set("special-mobs.relic-drop-chance", 0.0D);
+        getConfig().set("story-quests.enabled", false);
+        getConfig().set("haunted-village.enabled", false);
+        getConfig().set("secret-discoveries.enabled", false);
+        getConfig().set("world-decorations.enabled", false);
+        getConfig().set("atmosphere.enabled", false);
+        getConfig().set("atmosphere.send-title-on-join", false);
+        getConfig().set("bosses.vampire.enabled", false);
+        for (String id : List.of("crimson-warden-helmet", "crimson-warden-chestplate",
+                "crimson-warden-leggings", "crimson-warden-boots", "crimson-warden-sword",
+                "crimson-warden-pickaxe", "crimson-warden-axe", "crimson-warden-shovel",
+                "crimson-warden-hoe")) {
+            getConfig().set("rewards.shop." + id, null);
+        }
+        for (String id : List.of("hunter-mask", "cursed-talisman", "halloween-token")) {
+            getConfig().set("rewards.shop." + id + ".itemsadder-id", null);
+        }
+        getConfig().set("migrations.legacy-content-cleanup-v1", true);
+        saveConfig();
+    }
+
     @EventHandler(ignoreCancelled = true)
     public void onEntityDeath(EntityDeathEvent event) {
         if (!eventEnabled) return;
@@ -152,11 +192,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
      */
     public void reloadEventConfig() {
         reloadConfig();
-        migrateAtmosphereVolume();
-        migrateCrimsonWardenShopDefaults();
-        migrateCrimsonWardenArmorStats();
-        migrateHalloweenEventOverhaul();
-        migrateAdditionalMobAndQuestDefaults();
+        disableLegacyContentSystems();
         eventEnabled = getConfig().getBoolean("enabled", true);
 
         if (eventManager != null) {
@@ -210,10 +246,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         if (changed) {
             Bukkit.broadcastMessage(color(enabled
-                    ? "&6&lHALLOWEEN &8» &eHalloween je zapnutý. První událost dorazí za chvíli!"
-                    : "&8[HALLOWEEN] &7Halloween event byl vypnut."));
+                    ? "&6&lHALLOWEEN &8» &eHalloween je zapnutý. Získávej fragmenty a plň výzvy!"
+                    : "&8[HALLOWEEN] &7Halloween systém byl vypnut."));
         } else if (enabled) {
-            getLogger().info("Halloween event is already enabled; next event scheduled shortly.");
+            getLogger().info("Halloween progression is already enabled; legacy random events remain disabled.");
         }
     }
 
