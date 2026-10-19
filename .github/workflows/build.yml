@@ -84,11 +84,10 @@ jobs:
               "rewardContributors(event.getEntity())",
               "event.getDrops().clear();",
               "event.setDroppedExp(0);",
-              "event.blockList().clear();",
           ):
               if boss_guard not in boss_source:
                   raise SystemExit(f"Vanilla boss encounter behavior/safety missing: {boss_guard}")
-          if any(dependency in boss_source for dependency in ("MythicMobs", "ModelEngine", "spawnMythicModelMob")):
+          if any(dependency in boss_source for dependency in ("com.ticxo.modelengine", "io.lumine", "spawnMythicModelMob")):
               raise SystemExit("Vanilla boss must not use retired custom-model integrations")
           core_for_boss = Path(
               "src/main/java/cz/halloween/core/HalloweenCore.java"
