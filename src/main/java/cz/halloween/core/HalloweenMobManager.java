@@ -21,13 +21,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class HalloweenMobManager implements Listener {
@@ -36,7 +31,6 @@ public final class HalloweenMobManager implements Listener {
     private final NamespacedKey relicKey;
     private final NamespacedKey eventMobKey;
     private final NamespacedKey abilityCooldownKey;
-    private final Set<String> warnedCustomModelIssues = new HashSet<>();
 
     public HalloweenMobManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -70,24 +64,18 @@ public final class HalloweenMobManager implements Listener {
 
         double chance = Math.max(0.0D, Math.min(1.0D,
                 plugin.getConfig().getDouble("special-mobs.chance", 0.04D)));
-        int phase = plugin.getEventManager() == null ? 0 : plugin.getEventManager().getGlobalPhase();
-        double phaseBonus = Math.max(0.0D,
-                plugin.getConfig().getDouble("special-mobs.phase-bonus-chance", 0.005D));
-        chance = Math.min(1.0D, chance + phase * phaseBonus);
-        if (plugin.getEventManager() != null && plugin.getEventManager().getActiveEventId() != null) {
-            chance = Math.min(1.0D, chance * Math.max(1.0D,
-                    plugin.getConfig().getDouble("random-events.special-mob-chance-multiplier", 1.50D)));
+        HalloweenVanillaEventManager vanillaEvents = plugin.getVanillaEventManager();
+        String activeEvent = vanillaEvents == null ? null : vanillaEvents.getActiveEventId();
+        if ("witching-hour".equals(activeEvent) || "blood-moon".equals(activeEvent)) {
+            double eventMultiplier = plugin.getConfig().getDouble(
+                    "special-mobs.event-chance-multiplier", 1.5D);
+            if (!Double.isFinite(eventMultiplier)) eventMultiplier = 1.5D;
+            eventMultiplier = Math.max(1.0D, Math.min(3.0D, eventMultiplier));
+            chance = Math.min(1.0D, chance * eventMultiplier);
         }
-        if (ThreadLocalRandom.current().nextDouble() > chance) return;
+        if (ThreadLocalRandom.current().nextDouble() >= chance) return;
 
-        // If the ModelEngine pack is installed, replace the natural vanilla mob with
-        // its distinct textured MythicMob at the same location.
-        LivingEntity modeled = spawnMythicModelMob(entity.getLocation(), mobId);
-        if (modeled != null) {
-            configureSpecialMob(modeled, mobId);
-            event.setCancelled(true);
-            return;
-        }
+        // Elite forms remain vanilla entities; no model/resource-pack dependency is loaded.
         configureSpecialMob(entity, mobId);
     }
 
@@ -434,14 +422,10 @@ public final class HalloweenMobManager implements Listener {
         Location spawnLocation = findSafeEventLocation(player);
         if (spawnLocation == null) return false;
 
-        LivingEntity living = spawnMythicModelMob(spawnLocation, mobId);
-        if (living == null) {
-            Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
-            if (!(entity instanceof LivingEntity spawned)) {
-                entity.remove();
-                return false;
-            }
-            living = spawned;
+        Entity entity = world.spawnEntity(spawnLocation, baseEntityType(mobId));
+        if (!(entity instanceof LivingEntity living)) {
+            entity.remove();
+            return false;
         }
 
         configureSpecialMob(living, mobId);
@@ -465,14 +449,10 @@ public final class HalloweenMobManager implements Listener {
         Location spawnLocation = findSafeEventLocation(player);
         if (spawnLocation == null) return false;
 
-        LivingEntity living = spawnMythicModelMob(spawnLocation, "pumpkin-wraith");
-        if (living == null) {
-            Entity entity = world.spawnEntity(spawnLocation, EntityType.CREEPER);
-            if (!(entity instanceof LivingEntity spawned)) {
-                entity.remove();
-                return false;
-            }
-            living = spawned;
+        Entity entity = world.spawnEntity(spawnLocation, EntityType.CREEPER);
+        if (!(entity instanceof LivingEntity living)) {
+            entity.remove();
+            return false;
         }
 
         configureSpecialMob(living, "pumpkin-wraith");
@@ -505,99 +485,6 @@ public final class HalloweenMobManager implements Listener {
             case "hex-witch" -> EntityType.WITCH;
             default -> EntityType.ZOMBIE;
         };
-    }
-
-    /**
-     * The ModelEngine texture/model layer is used only when its dependencies and the
-     * matching MythicMobs definition are present. If not, callers safely use vanilla.
-     */
-    private LivingEntity spawnMythicModelMob(Location location, String mobId) {
-        if (!plugin.getConfig().getBoolean("special-mobs.custom-models.enabled", true)) return null;
-        var mythicPlugin = plugin.getServer().getPluginManager().getPlugin("MythicMobs");
-        var modelPlugin = plugin.getServer().getPluginManager().getPlugin("ModelEngine");
-        if (mythicPlugin == null || !mythicPlugin.isEnabled() || modelPlugin == null || !modelPlugin.isEnabled()) return null;
-
-        String customId = switch (mobId) {
-            case "cursed-zombie" -> "halloween_cursed_zombie";
-            case "void-reaper" -> "halloween_void_reaper";
-            case "gravekeeper" -> "halloween_gravekeeper";
-            case "frost-stalker" -> "halloween_frost_stalker";
-            case "blood-spider" -> "halloween_blood_spider";
-            case "pumpkin-wraith" -> "halloween_pumpkin_wraith";
-            case "hex-witch" -> "halloween_hex_witch";
-            case "nightmare" -> "halloween_nightmare";
-            default -> null;
-        };
-        if (customId == null) return null;
-
-        try {
-            Class<?> mythicBukkitClass = Class.forName("io.lumine.mythic.bukkit.MythicBukkit");
-            Object mythic = mythicBukkitClass.getMethod("inst").invoke(null);
-            Object manager = mythic.getClass().getMethod("getMobManager").invoke(mythic);
-            Method getter = manager.getClass().getMethod("getMythicMob", String.class);
-            Object maybeMob = getter.invoke(manager, customId);
-            Object mythicMob = maybeMob instanceof Optional<?> optional ? optional.orElse(null) : maybeMob;
-            if (mythicMob == null) return null;
-
-            Object adaptedLocation = adaptMythicLocation(location);
-            if (adaptedLocation == null) {
-                warnCustomModelOnce("location-adapter",
-                        "MythicMobs API location adapter was not found; special mobs will use vanilla fallback entities.");
-                return null;
-            }
-
-            Method spawnMethod = null;
-            for (Method method : mythicMob.getClass().getMethods()) {
-                if (!method.getName().equals("spawn") || method.getParameterCount() != 2) continue;
-                Class<?>[] parameters = method.getParameterTypes();
-                if (!parameters[0].isInstance(adaptedLocation)) continue;
-                if (parameters[1] != double.class && parameters[1] != Double.class) continue;
-                spawnMethod = method;
-                break;
-            }
-            if (spawnMethod == null) {
-                warnCustomModelOnce("spawn-method",
-                        "MythicMobs API does not expose spawn(location, level); special mobs will use vanilla fallback entities.");
-                return null;
-            }
-
-            Object activeMob = spawnMethod.invoke(mythicMob, adaptedLocation, 1.0D);
-            if (activeMob == null) return null;
-            Object entityWrapper = activeMob.getClass().getMethod("getEntity").invoke(activeMob);
-            Object bukkitEntity = entityWrapper.getClass().getMethod("getBukkitEntity").invoke(entityWrapper);
-            return bukkitEntity instanceof LivingEntity living ? living : null;
-        } catch (ReflectiveOperationException | LinkageError | RuntimeException exception) {
-            warnCustomModelOnce(exception.getClass().getName(),
-                    "Could not spawn a Halloween MythicMob through the API (" + exception.getClass().getSimpleName()
-                            + "); keeping vanilla fallback special mobs available.");
-            return null;
-        }
-    }
-
-    private Object adaptMythicLocation(Location location) throws ReflectiveOperationException {
-        String[] adapters = {
-                "io.lumine.mythic.bukkit.BukkitAdapter",
-                "io.lumine.mythic.bukkit.adapters.BukkitAdapter"
-        };
-        for (String adapterName : adapters) {
-            try {
-                Class<?> adapter = Class.forName(adapterName);
-                for (Method method : adapter.getMethods()) {
-                    if (!Modifier.isStatic(method.getModifiers()) || !method.getName().equals("adapt")
-                            || method.getParameterCount() != 1) continue;
-                    if (method.getParameterTypes()[0].isAssignableFrom(location.getClass())) {
-                        return method.invoke(null, location);
-                    }
-                }
-            } catch (ClassNotFoundException ignored) {
-                // Try the alternative package used by another MythicMobs API release.
-            }
-        }
-        return null;
-    }
-
-    private void warnCustomModelOnce(String key, String message) {
-        if (warnedCustomModelIssues.add(key)) plugin.getLogger().warning(message);
     }
 
     private void configureSpecialMob(LivingEntity entity, String mobId) {
