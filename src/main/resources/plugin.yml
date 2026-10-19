@@ -1,42 +1,23 @@
 name: HalloweenCore
-version: 0.1.0-SNAPSHOT
+version: 0.2.0
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
-description: Halloween event core for Purpur/Paper 1.21.10.
-softdepend: [ItemsAdder, MythicMobs, ModelEngine, BattlePass, WorldGuard, PlaceholderAPI]
+description: Dialogové questy a tajné podzemní místnosti se speciálním klíčem.
+softdepend: [ItemsAdder, PlaceholderAPI, UplineDialogues]
 commands:
   halloween:
-    description: Halloween event statistics and administration.
-    usage: /halloween [guide|achievements|guide|stats|progress|curse|event|challenge|quests [reset <hráč>]|rewards|claim|top|reload|debug|status|locate <typ|all>|grave test|spawn <hřbitov|vesnice|aréna|vampirearena|goblinarena>|shader|setsecret|secrets|boss|bosseffects|modelpreview|give <hráč> <počet|all>|disable|enable|on|off]
+    description: Questové příkazy, fragmenty a tajné místnosti.
+    usage: /halloween [quest|fragments|key|rooms|reload]
     aliases: [hallow]
     permission: halloweencore.use
 permissions:
   halloweencore.use:
+    description: Používání HalloweenCore questových příkazů.
     default: true
   halloweencore.admin:
+    description: Správa konfigurace HalloweenCore.
     default: op
-  halloweencore.locate:
-    description: Allows locating recorded Halloween structures.
-    default: true
-  halloweencore.structure.spawn:
-    description: Allows manual Halloween structure placement.
-    default: op
-  halloweencore.structure.force:
-    description: Allows FORCE overwriting blocks within a bounded structure footprint.
-    default: op
-  halloweencore.mob.spawn:
-    description: Allows manual Halloween mob spawning.
-    default: op
-  halloweencore.event.manage:
-    description: Allows starting and stopping Halloween events.
-    default: op
-  halloweencore.items.give:
-    description: Allows administrator item issuance.
-    default: op
-  halloweencore.reload:
-    description: Allows reloading Halloween runtime configuration.
-    default: op
-  halloweencore.debug:
-    description: Allows Halloween diagnostics.
+  halloweencore.key.give:
+    description: Administrátorské vydávání speciálních klíčů.
     default: op

@@ -1,32 +1,11 @@
-# Third-party asset notices
+# Oznámení k převzatým assetům
 
-The following item sprites are redistributed from **Stev's Halloween 1.0.0** by **Stev51**, under the MIT License declared by the upstream project.
+Tento ItemsAdder obsah redistribuuje třináct nezměněných 16×16 ikon sladkostí z projektu Stev's Halloween 1.0.0 od Stev51 pod licencí MIT deklarovanou zdrojovým projektem.
 
-Source project: https://github.com/Stev51/stevs-halloween-mod  
-License: https://github.com/Stev51/stevs-halloween-mod/blob/main/LICENSE  
-Imported files: the thirteen 16×16 PNG files under resourcepack/assets/warriorland_halloween/textures/item/stev_candy/. Source hashes and original file names are recorded in third-party-assets/stevs-halloween/asset-source-manifest.json.
+Projekt: https://www.curseforge.com/minecraft/mc-mods/stevs-halloween
+Licence: https://www.curseforge.com/minecraft/mc-mods/stevs-halloween/license
+SHA-256 zdrojového JARu: 0e69b791b295f79857f7470eff8b86c1cfb040e0dc9c21826cdf01364b37d696
 
-MIT License
+Ikony jsou v resourcepack/assets/warriorland_halloween/textures/item/stev_candy/. Jednotlivé zdrojové a cílové cesty a SHA-256 hashe jsou v THIRD_PARTY_LICENSES/stevs-halloween-source-manifest.json. Úplné znění licence MIT zůstává v THIRD_PARTY_LICENSES/stevs-halloween-MIT.txt.
 
-Copyright (c) 2026 Stev51
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-
-The generated Java custom-sky atlas `resourcepack/assets/minecraft/optifine/sky/world0/sky1.png` is converted from **Blood Moon Horizon — red sky by koto (1.0)**. Its distribution pages list the license as MIT. The source ZIP did not include a standalone license file or explicit copyright line; attribution, URLs, source-face checksums, and the MIT license text are included in `THIRD_PARTY_LICENSES/koto-sky-NOTICE.txt`. The six faces are reassembled at their original 512x512 resolution and are not recolored.
+Vlastní secret_key.png není součástí Stev's Halloween.
