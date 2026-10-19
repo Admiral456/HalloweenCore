@@ -69,16 +69,16 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         worldDecorator = new HalloweenWorldDecorator(this);
 
         logConfigValidationIssues();
-        bossManager.validateConfiguration();
 
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new HalloweenActivityListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenJoinListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenQuitListener(this), this);
+        getServer().getPluginManager().registerEvents(new HalloweenItemListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenRewardMenuListener(this), this);
-        // Only the fragment/progression core is active during the rebuild. Retired
-        // item, mob, quest, discovery, atmosphere and world-generation listeners
-        // are intentionally not registered.
+        getServer().getPluginManager().registerEvents(passiveEffectManager, this);
+        // Legacy mob, quest, discovery, atmosphere and world-generation listeners
+        // remain unregistered while the replacement vanilla systems are developed.
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
@@ -93,6 +93,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         worldDecorator.stop();
         atmosphere.stopPlayback();
         vampireEncounterManager.stopNaturalSummoningMonitor();
+        passiveEffectManager.start();
 
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
             if (new HalloweenPlaceholderExpansion(this).register()) {
@@ -188,7 +189,6 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (worldDecorator != null) worldDecorator.stop();
 
         logConfigValidationIssues();
-        if (bossManager != null) bossManager.validateConfiguration();
         getLogger().info("HalloweenCore runtime state reloaded. enabled=" + eventEnabled
                 + ", random-events=" + getConfig().getBoolean("random-events.enabled", false)
                 + ", atmosphere=" + getConfig().getBoolean("atmosphere.enabled", false)
