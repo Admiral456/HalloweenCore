@@ -291,6 +291,26 @@ jobs:
           ).read_text(encoding="utf-8")
           if 'getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D)' not in passive_effects:
               raise SystemExit("Missing talisman health must default safely to one heart (+2 health)")
+          for talisman_guard in (
+              "Double.isFinite(configuredBonusHealth)",
+              "Math.min(20.0D, configuredBonusHealth)",
+          ):
+              if talisman_guard not in passive_effects:
+                  raise SystemExit(f"Talisman health bound missing: {talisman_guard}")
+          for reward_multiplier_guard in (
+              "safeBonusMultiplier(shop.getDouble(",
+              "if (!Double.isFinite(configured)) return 0.0D;",
+              "Math.max(0.0D, Math.min(5.0D, configured))",
+              "return Math.min(10.0D, 1.0D + bonus);",
+          ):
+              if reward_multiplier_guard not in reward_manager:
+                  raise SystemExit(f"Reward multiplier safety guard missing: {reward_multiplier_guard}")
+          for reward_numeric_validation in (
+              'if (!Double.isFinite(bonusMultiplier) || bonusMultiplier < 0.0D || bonusMultiplier > 5.0D)',
+              'if (!Double.isFinite(bonusHealth) || bonusHealth < 0.0D || bonusHealth > 20.0D)',
+          ):
+              if reward_numeric_validation not in validator:
+                  raise SystemExit(f"Reward numeric validation missing: {reward_numeric_validation}")
 
           join_listener = Path(
               "src/main/java/cz/halloween/core/HalloweenJoinListener.java"
