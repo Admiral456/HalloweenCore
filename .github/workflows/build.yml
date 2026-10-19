@@ -455,6 +455,7 @@ jobs:
           for cache_validation in (
               'boolean cachesEnabled = plugin.getConfig().getBoolean("underground-caches.enabled", true);',
               'if (minY >= maxY)',
+              'if (!Double.isFinite(chunkChance) || chunkChance < 0.0D || chunkChance > 1.0D)',
               'if (!Double.isFinite(keyChance) || keyChance < 0.0D || keyChance > 0.05D)',
           ):
               if cache_validation not in cache_validator:
@@ -563,6 +564,9 @@ jobs:
           for event_validation in (
               'boolean vanillaEventsEnabled = plugin.getConfig().getBoolean("vanilla-events.enabled", true);',
               'if (eventIntervalMin < 5 || eventIntervalMax < eventIntervalMin || eventIntervalMax > 180)',
+              'if (!Double.isFinite(harvestMultiplier) || harvestMultiplier < 1.0D || harvestMultiplier > 4.0D)',
+              'if (!Double.isFinite(witchingMultiplier) || witchingMultiplier < 1.0D || witchingMultiplier > 4.0D)',
+              'if (!Double.isFinite(bloodMoonMultiplier) || bloodMoonMultiplier < 1.0D || bloodMoonMultiplier > 4.0D)',
               'if (!Double.isFinite(bloodMoonDamage) || bloodMoonDamage < 1.0D || bloodMoonDamage > 3.0D)',
           ):
               if event_validation not in validator:
