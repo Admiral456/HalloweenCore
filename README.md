@@ -89,6 +89,10 @@ The pumpkin villager is a vanilla villager wearing a carved pumpkin helmet; it r
 
 The feature is controlled by `pumpkin-villager.enabled` and `pumpkin-villager.interact-cooldown-millis` in `config.yml`.
 
+## Release verification
+
+Before deploying to a live server, follow [the staging release verification checklist](docs/RELEASE_VERIFICATION_CHECKLIST.md). CI confirms compilation and source/content invariants; it does not prove in-game Paper/Purpur behavior.
+
 ## Build
 
 Requires Java 21 and Maven:
