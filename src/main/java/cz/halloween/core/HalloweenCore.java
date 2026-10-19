@@ -93,9 +93,10 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(worldFeatureManager, this);
         getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vanillaEventManager, this);
-        // Retired custom-mob, Haunted Village, custom ambience, and decoration listeners
-        // remain unregistered. The story campaign now tracks only vanilla player actions;
-        // caches, hidden discoveries, new-chunk features, events, and ambient cues are active.
+        getServer().getPluginManager().registerEvents(mobManager, this);
+        // Custom mob models, Haunted Village, custom ambience, and decoration listeners
+        // remain retired. The elite mob listener now only marks existing vanilla entity
+        // types and supplies particle/effect abilities, with all model APIs removed.
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
