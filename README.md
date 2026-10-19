@@ -42,6 +42,7 @@ The existing Java classes for retired systems are kept temporarily for migration
 - `/halloween claim <id>`
 - `/halloween top`
 - `/halloween event [status|start <id>|stop]` — status is public; start/stop are admin-only.
+- `/halloween ambience [status|on|off]` — status is available to users; on/off require admin permission and toggle vanilla ambient cues without editing config.yml.
 - `/halloween reload`
 - `/halloween debug`
 - `/halloween give <hráč> <počet>` (admin)
