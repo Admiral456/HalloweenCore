@@ -244,6 +244,10 @@ jobs:
               raise SystemExit("Missing lifetime-earned totals must default to zero after load")
           if 'data.getLong(base + ".lifetime-fragments", amount)' not in data_manager:
               raise SystemExit("Legacy records without lifetime totals must migrate from their prior balance")
+          if 'data.set(base + ".lifetime-fragments", lifetime);' not in data_manager:
+              raise SystemExit("Lifetime fragment totals, including explicit zero, must persist across restarts")
+          if 'if (lifetime > 0L) data.set(base + ".lifetime-fragments", lifetime);' in data_manager:
+              raise SystemExit("A zero lifetime total must not be omitted from saved player data")
 
           for data_guard in (
               'if (data.isSet("players") && !data.isConfigurationSection("players"))',
