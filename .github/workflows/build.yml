@@ -258,6 +258,49 @@ jobs:
               raise SystemExit("Pumpkin villager default config is missing or malformed")
 
           print("Pumpkin villager lifecycle and command checks passed.")
+
+          cache_manager = Path(
+              "src/main/java/cz/halloween/core/HalloweenCacheManager.java"
+          ).read_text(encoding="utf-8")
+          for cache_guard in (
+              "event.isNewChunk()",
+              "World.Environment.NORMAL",
+              "new NamespacedKey(plugin, \"locked_underground_cache\")",
+              "new NamespacedKey(plugin, \"underground_cache_key\")",
+              "public void onInventoryOpen(InventoryOpenEvent event)",
+              "public void onCacheBreak(BlockBreakEvent event)",
+              "public void onEntityExplode(EntityExplodeEvent event)",
+              "public void onBlockExplode(BlockExplodeEvent event)",
+              "public void onInventoryMove(InventoryMoveItemEvent event)",
+              "public void onPistonExtend(BlockPistonExtendEvent event)",
+              "public void onPistonRetract(BlockPistonRetractEvent event)",
+              "event.getDrops().add(createKey(1));",
+          ):
+              if cache_guard not in cache_manager:
+                  raise SystemExit(f"Underground cache protection missing: {cache_guard}")
+
+          if "registerEvents(cacheManager, this)" not in core_source:
+              raise SystemExit("Underground cache manager must be registered")
+          if 'if (args[0].equalsIgnoreCase("cache")) return cache(sender, args);' not in command_source:
+              raise SystemExit("Underground cache admin commands are not connected")
+          if "private boolean cache(CommandSender sender, String[] args)" not in command_source:
+              raise SystemExit("Underground cache admin command handler is missing")
+          if not re.search(
+              r"(?ms)^underground-caches:\n  enabled: true\n  generation:\n    enabled: true\n    chance-per-new-chunk: 0\.10\n    min-y: -48\n    max-y: 24\n    attempts-per-chunk: 32\n  key-drop:\n    enabled: true\n    chance-per-hostile-kill: 0\.006$",
+              config,
+          ):
+              raise SystemExit("Underground cache configuration is missing or malformed")
+
+          cache_validator = validator
+          for cache_validation in (
+              'boolean cachesEnabled = plugin.getConfig().getBoolean("underground-caches.enabled", true);',
+              'if (minY >= maxY)',
+              'if (keyChance < 0.0D || keyChance > 0.05D)',
+          ):
+              if cache_validation not in cache_validator:
+                  raise SystemExit(f"Underground cache config validation missing: {cache_validation}")
+
+          print("Underground cache generation, key and anti-grief checks passed.")
           print("Cleanup invariants and retired-feature checks passed.")
           PY
 
