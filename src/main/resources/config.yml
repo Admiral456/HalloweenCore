@@ -143,6 +143,13 @@ vanilla-events:
   blood-moon:
     mob-kill-fragment-multiplier: 1.25
     hostile-damage-multiplier: 1.5
+    invasion:
+      enabled: true
+      wave-interval-seconds: 25
+      mobs-per-wave: 4
+      max-event-mobs: 24
+      captain-enabled: true
+      captain-final-seconds: 60
 
 world-features:
   enabled: true
