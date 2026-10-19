@@ -1,18 +1,26 @@
 name: HalloweenCore
-version: 0.1.0-SNAPSHOT
+version: 0.2.0
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
-description: Halloween event core for Purpur/Paper 1.21.10.
-softdepend: [ItemsAdder, MythicMobs, ModelEngine, BattlePass, WorldGuard, PlaceholderAPI]
+description: Dialogové questy a tajné podzemní místnosti se speciálním klíčem.
+softdepend: [ItemsAdder, PlaceholderAPI, UplineDialogues]
 commands:
   halloween:
-    description: Halloween event statistics and administration.
-    usage: /halloween [stats|progress|curse|event|challenge|quests [reset <hráč>]|rewards|claim|top|reload|debug|shader|setvillage|setvampirearena|buildvampirearena|setsecret|secrets|boss|bosseffects|modelpreview|give|on|off]
+    description: Questové příkazy, fragmenty a tajné místnosti.
+    usage: /halloween [quest|fragments|key|rooms|reload]
     aliases: [hallow]
     permission: halloweencore.use
 permissions:
   halloweencore.use:
+    description: Používání HalloweenCore questových příkazů.
     default: true
   halloweencore.admin:
+    description: Správa konfigurace HalloweenCore.
+    default: op
+  halloweencore.key.give:
+    description: Administrátorské vydávání speciálních klíčů.
+    default: op
+  halloweencore.quest.dialogue:
+    description: Oprávnění pro změnu questu z akce UplineDialogues.
     default: op

@@ -1,217 +1,168 @@
 info:
   namespace: warriorland_halloween
 
-equipments:
-  crimson_warden:
-    type: armor
-    layer_1: armor/crimson_warden/layer_1
-    layer_2: armor/crimson_warden/layer_2
-
 items:
-  hunter_mask:
-    name: "&6&lMaska nočního lovce &8[Halloween 2026]"
+  stev_apple_core:
+    name: "&6Jablečná jadérka"
     lore:
-      - "&7Limitovaná Halloween odměna."
-      - "&7Připomínka eventu WarriorLand 2026."
-    material: CARVED_PUMPKIN
+      - "&7Halloween sladkost."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
     graphics:
-      texture: item/hunter_mask
-
-  cursed_talisman:
-    name: "&5&lProkletý talisman &8[2026]"
-    lore:
-      - "&7Relikvie vysokého prokletí."
-      - "&d+1 celý řádek srdcí (+20 HP)"
-      - "&7Aktivní při držení v ruce nebo offhandu."
-      - "&7Lze enchantovat, pokud máš vhodný enchant."
-    material: NETHER_STAR
-    graphics:
-      texture: item/cursed_talisman
-
-  halloween_token:
-    name: "&c&lHalloween 2026"
-    lore:
-      - "&7Jedinečná památka."
-      - "&8Po skončení eventu už nebude běžně dostupná."
-    material: NAME_TAG
-    graphics:
-      texture: item/halloween_token
-
-  haunted_map:
-    name: "&5&lProkletá mapa &8[Halloween 2026]"
-    lore:
-      - "&7Ukazuje cestu k Haunted Village."
-      - "&8Vzácný nález z prokletých mobů."
-    material: PAPER
-    graphics:
-      texture: item/haunted_map
-
-  crimson_warden_helmet:
-    name: "&4&lHelma Krvavého strážce"
-    lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 6 (netherit 3) • výdrž 900."
-      - "&8Lze enchantovat běžnými enchanty."
-    material: NETHERITE_HELMET
-    components_nbt_file: "crimson_warden_helmet.json"
-    graphics:
-      texture: item/crimson_warden_helmet
-    durability:
-      max_durability: 900
-    equipment:
-      id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 3
-
-  crimson_warden_chestplate:
-    name: "&4&lKyrys Krvavého strážce"
-    lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 12 (netherit 8) • výdrž 1 300."
-      - "&8Lze enchantovat běžnými enchanty."
-    material: NETHERITE_CHESTPLATE
-    components_nbt_file: "crimson_warden_chestplate.json"
-    graphics:
-      texture: item/crimson_warden_chestplate
-    durability:
-      max_durability: 1300
-    equipment:
-      id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 4
-
-  crimson_warden_leggings:
-    name: "&4&lNohavice Krvavého strážce"
-    lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 9 (netherit 6) • výdrž 1 150."
-      - "&8Lze enchantovat běžnými enchanty."
-    material: NETHERITE_LEGGINGS
-    components_nbt_file: "crimson_warden_leggings.json"
-    graphics:
-      texture: item/crimson_warden_leggings
-    durability:
-      max_durability: 1150
-    equipment:
-      id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 3
-
-  crimson_warden_boots:
-    name: "&4&lBoty Krvavého strážce"
-    lore:
-      - "&7Relikvie elitní výbavy WarriorLandu."
-      - "&cBrnění 6 (netherit 3) • výdrž 950."
-      - "&8Lze enchantovat běžnými enchanty."
-    material: NETHERITE_BOOTS
-    components_nbt_file: "crimson_warden_boots.json"
-    graphics:
-      texture: item/crimson_warden_boots
-    durability:
-      max_durability: 950
-    equipment:
-      id: warriorland_halloween:crimson_warden
-      slot_attribute_modifiers:
-        armor: 3
-
-  crimson_warden_sword:
-    name: "&4&lKrvavý meč"
-    lore:
-      - "&7Legendární zbraň Krvavého strážce."
-      - "&cÚtokový modifier 15 • rychlostní modifier 0,8."
-      - "&7Výdrž 5 000. Lze enchantovat Sharpness, Looting a Mending."
-      - "&aLze enchantovat: Sharpness, Looting, Mending..."
-    material: NETHERITE_SWORD
-    components_nbt_file: "crimson_warden_sword.json"
-    graphics:
-      texture: item/crimson_warden_sword
-    durability:
-      max_durability: 5000
-    attribute_modifiers:
-      mainhand:
-        attackDamage: 15.0
-        attackSpeed: 0.8
-
-  crimson_warden_pickaxe:
-    name: "&4&lKrumpáč Krvavého strážce"
-    lore:
-      - "&7Legendární krumpáč pro hluboké doly."
-      - "&cTěžba rychlostí 14 • útokový modifier 10."
-      - "&7Rychlostní modifier 0,8 • výdrž 5 000."
-      - "&aLze enchantovat: Efficiency, Fortune, Silk Touch, Mending..."
-    material: NETHERITE_PICKAXE
-    components_nbt_file: "crimson_warden_pickaxe.json"
-    graphics:
-      texture: item/crimson_warden_pickaxe
-    durability:
-      max_durability: 5000
-    attribute_modifiers:
-      mainhand:
-        attackDamage: 10.0
-        attackSpeed: 0.8
-
-  crimson_warden_axe:
-    name: "&4&lSekera Krvavého strážce"
-    lore:
-      - "&7Legendární sekera s krvavým ostřím."
-      - "&cÚtokový modifier 14 • rychlostní modifier 0,6."
-      - "&7Těžba rychlostí 14 • výdrž 5 000."
-      - "&aLze enchantovat: Sharpness, Efficiency, Unbreaking, Mending..."
-    material: NETHERITE_AXE
-    components_nbt_file: "crimson_warden_axe.json"
-    graphics:
-      texture: item/crimson_warden_axe
-    durability:
-      max_durability: 5000
-    attribute_modifiers:
-      mainhand:
-        attackDamage: 14.0
-        attackSpeed: 0.6
-
-  crimson_warden_shovel:
-    name: "&4&lLopatka Krvavého strážce"
-    lore:
-      - "&7Legendární lopatka na rychlé kopání."
-      - "&cTěžba rychlostí 14 • útokový modifier 10."
-      - "&7Rychlostní modifier 0,8 • výdrž 4 500."
-      - "&aLze enchantovat: Efficiency, Silk Touch, Unbreaking, Mending..."
-    material: NETHERITE_SHOVEL
-    components_nbt_file: "crimson_warden_shovel.json"
-    graphics:
-      texture: item/crimson_warden_shovel
-    durability:
-      max_durability: 4500
-    attribute_modifiers:
-      mainhand:
-        attackDamage: 10.0
-        attackSpeed: 0.8
-
-  crimson_warden_hoe:
-    name: "&4&lMotyka Krvavého strážce"
-    lore:
-      - "&7Legendární motyka se zpevněným ostřím."
-      - "&cÚtokový modifier 7 • rychlostní modifier 1,0."
-      - "&7Těžba rychlostí 14 • výdrž 4 500."
-      - "&aLze enchantovat: Efficiency, Fortune, Silk Touch, Mending..."
-    material: NETHERITE_HOE
-    components_nbt_file: "crimson_warden_hoe.json"
-    graphics:
-      texture: item/crimson_warden_hoe
-    durability:
-      max_durability: 4500
-    attribute_modifiers:
-      mainhand:
-        attackDamage: 7.0
-        attackSpeed: 1.0
-
-  cursed_candy:
-    name: "&6&lProkleté cukroví &8[Halloween 2026]"
-    lore:
-      - "&7Padá ze speciálních Halloween mobů."
-      - "&7Po snězení tě na chvíli poznačí prokletí."
-    material: PUMPKIN_PIE
-    graphics:
-      texture: item/cursed_candy
+      texture: item/stev_candy/apple_core
     consumable:
       nutrition: 1
       saturation: 0.2
+
+  stev_candy_apple:
+    name: "&cKaramelové jablko"
+    lore:
+      - "&7Sladké jablko s halloweenovým vzhledem."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/candy_apple
+    consumable:
+      nutrition: 3
+      saturation: 0.6
+
+  stev_candy_bag:
+    name: "&6Pytlík sladkostí"
+    lore:
+      - "&7Pytlík plný halloweenských dobrot."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/candy_bag
+    consumable:
+      nutrition: 2
+      saturation: 0.4
+
+  stev_caramel:
+    name: "&6Karamel"
+    lore:
+      - "&7Sladká halloweenská odměna."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/caramel
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_caramel_apple:
+    name: "&cJablko v karamelu"
+    lore:
+      - "&7Karamelová dobrota z halloweenské slavnosti."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/caramel_apple
+    consumable:
+      nutrition: 3
+      saturation: 0.6
+
+  stev_chocolate_bar:
+    name: "&6Čokoládová tyčinka"
+    lore:
+      - "&7Čokoládová sladkost."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/chocolate_bar
+    consumable:
+      nutrition: 2
+      saturation: 0.5
+
+  stev_frosted_sugar_cookie:
+    name: "&dZdobená sušenka"
+    lore:
+      - "&7Sladká sušenka s polevou."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/frosted_sugar_cookie
+    consumable:
+      nutrition: 3
+      saturation: 0.6
+
+  stev_gumdrop:
+    name: "&aŽelé bonbon"
+    lore:
+      - "&7Barevný želé bonbon."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/gumdrop
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_hard_candy:
+    name: "&6Tvrdý bonbon"
+    lore:
+      - "&7Tvrdý bonbon do sbírky."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/hard_candy
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  stev_lollipop:
+    name: "&dLízátko"
+    lore:
+      - "&7Klasické halloweenské lízátko."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/lollipop
+    consumable:
+      nutrition: 2
+      saturation: 0.4
+
+  stev_peanut_butter_cup:
+    name: "&6Arašídový košíček"
+    lore:
+      - "&7Čokoláda a arašídové máslo."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/peanut_butter_cup
+    consumable:
+      nutrition: 2
+      saturation: 0.5
+
+  stev_sugar_cookie:
+    name: "&eCukrová sušenka"
+    lore:
+      - "&7Sladká cukrová sušenka."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/sugar_cookie
+    consumable:
+      nutrition: 2
+      saturation: 0.4
+
+  stev_toasted_pumpkin_seeds:
+    name: "&6Pražená dýňová semínka"
+    lore:
+      - "&7Podzimní pochoutka."
+      - "&8Grafika: Stev's Halloween (MIT)."
+    material: COOKIE
+    graphics:
+      texture: item/stev_candy/toasted_pumpkin_seeds
+    consumable:
+      nutrition: 1
+      saturation: 0.2
+
+  secret_key:
+    name: "&6&lKlíč tajné místnosti"
+    lore:
+      - "&7Odemkne zamčenou truhlu v tajné podzemní místnosti."
+      - "&8Po použití se klíč spotřebuje."
+    material: TRIPWIRE_HOOK
+    graphics:
+      texture: item/secret_key
