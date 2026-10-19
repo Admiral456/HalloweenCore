@@ -190,6 +190,12 @@ jobs:
                   raise SystemExit(f"Persisted data type guard missing: {data_type_guard}")
           if 'data.set("meta.schema-version", CURRENT_SCHEMA_VERSION)' not in data_manager:
               raise SystemExit("Saved player data must include the current schema version")
+          if "lifetimeFragments.getOrDefault(uuid, current)" in data_manager:
+              raise SystemExit("Admin-only balances must not be converted into lifetime-earned fragments")
+          if "lifetimeFragments.getOrDefault(uuid, 0L)" not in data_manager:
+              raise SystemExit("Missing lifetime-earned totals must default to zero after load")
+          if 'data.getLong(base + ".lifetime-fragments", amount)' not in data_manager:
+              raise SystemExit("Legacy records without lifetime totals must migrate from their prior balance")
 
           for data_guard in (
               'if (data.isSet("players") && !data.isConfigurationSection("players"))',
