@@ -265,6 +265,9 @@ jobs:
           for cache_guard in (
               "event.isNewChunk()",
               "World.Environment.NORMAL",
+              "random.nextInt(1, 15)",
+              "chunk.getBlock(localX, y, localZ)",
+              "NATURAL_STONE.contains(target.getType())",
               "new NamespacedKey(plugin, \"locked_underground_cache\")",
               "new NamespacedKey(plugin, \"underground_cache_key\")",
               "public void onInventoryOpen(InventoryOpenEvent event)",
