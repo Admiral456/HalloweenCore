@@ -356,7 +356,7 @@ jobs:
           vanilla_events = Path(
               "src/main/java/cz/halloween/core/HalloweenVanillaEventManager.java"
           ).read_text(encoding="utf-8")
-          event_ids_start = vanilla_events.find("EVENT_IDS = List.of(")
+              r'(?s)EVENT_IDS = List\.of\(\s*"pumpkin-harvest",\s*"witching-hour",\s*"blood-moon"\s*\)',
           event_ids_end = vanilla_events.find(");", event_ids_start)
           if event_ids_start < 0 or event_ids_end < 0:
               raise SystemExit("Vanilla event ID list is missing")
