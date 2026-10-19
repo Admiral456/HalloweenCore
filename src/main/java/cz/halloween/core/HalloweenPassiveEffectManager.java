@@ -13,11 +13,13 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
 
 public final class HalloweenPassiveEffectManager implements Listener {
     private final HalloweenCore plugin;
     private final NamespacedKey rewardKey;
     private final NamespacedKey talismanHealthKey;
+    private BukkitTask task;
 
     public HalloweenPassiveEffectManager(HalloweenCore plugin) {
         this.plugin = plugin;
@@ -26,11 +28,16 @@ public final class HalloweenPassiveEffectManager implements Listener {
     }
 
     public void start() {
+        if (task != null) return;
         long period = 20L;
-        plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, period, period);
+        task = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tick, period, period);
     }
 
     public void stop() {
+        if (task != null) {
+            task.cancel();
+            task = null;
+        }
         for (Player player : Bukkit.getOnlinePlayers()) {
             removeTalismanHealthModifier(player);
         }
