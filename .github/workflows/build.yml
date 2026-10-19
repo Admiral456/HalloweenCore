@@ -154,6 +154,7 @@ jobs:
               'if (args[0].equalsIgnoreCase("setsecret")) return setSecret(sender, args);',
               'if (args[0].equalsIgnoreCase("secrets")) return showSecrets(sender);',
               "private boolean setSecret(CommandSender sender, String[] args)",
+              'if (!plugin.isEligibleGameplayWorld(player.getWorld()))',
               "private boolean showSecrets(CommandSender sender)",
           ):
               if secret_command_guard not in secret_command:
