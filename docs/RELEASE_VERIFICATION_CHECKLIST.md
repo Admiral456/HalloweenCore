@@ -30,6 +30,7 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 
 - [ ] Leave vanilla-atmosphere enabled on a staging server and wait through one configured pulse interval (90–180 seconds by default). Verify occasional ash/soul particles and one of the built-in cave, witch, or phantom ambience sounds appear near eligible players without stopping normal Minecraft music.
 - [ ] Confirm cues are not forced on players in excluded worlds or unsupported gamemodes. Test that sounds-enabled and particles-enabled can each be switched off independently.
+- [ ] Run /halloween ambience status, then /halloween ambience off and /halloween ambience on as an administrator. Status must reflect the configured/running state; toggling must persist across restart and remain separate from /halloween on|off.
 - [ ] Run /halloween off, wait past a due pulse, and verify no new ambience cues occur. Run /halloween on and /halloween reload and confirm ambience resumes without duplicate timers.
 
 ## 3. Fragment and save safety
