@@ -153,6 +153,27 @@ public final class HalloweenCore extends JavaPlugin {
         getConfig().set("bosses.vampire.enabled", false);
         getConfig().set("bosses.vampire.summoning.automatic", false);
 
+        // One-time migration for servers that already have a config.yml from an
+        // older release. saveDefaultConfig() does not merge new reward entries.
+        if (!getConfig().getBoolean("migrations.cursed-candy-reward-v1", false)) {
+            if (!getConfig().contains("rewards.shop.cursed-candy", true)) {
+                getConfig().set("rewards.shop.cursed-candy.cost", 500L);
+                getConfig().set("rewards.shop.cursed-candy.min-curse", 0);
+                getConfig().set("rewards.shop.cursed-candy.itemsadder-id",
+                        "warriorland_halloween:cursed_candy");
+                getConfig().set("rewards.shop.cursed-candy.material", "PUMPKIN_PIE");
+                getConfig().set("rewards.shop.cursed-candy.amount", 1);
+                getConfig().set("rewards.shop.cursed-candy.name",
+                        "&6&lProkleté cukroví &8[Halloween 2026]");
+                getConfig().set("rewards.shop.cursed-candy.lore", List.of(
+                        "&7Limitovaná sladkost pro Halloween.",
+                        "&7Po snězení získáš krátké posílení.",
+                        "&8Jednorázová odměna."
+                ));
+            }
+            getConfig().set("migrations.cursed-candy-reward-v1", true);
+        }
+
         for (String id : List.of("crimson-warden-helmet", "crimson-warden-chestplate",
                 "crimson-warden-leggings", "crimson-warden-boots", "crimson-warden-sword",
                 "crimson-warden-pickaxe", "crimson-warden-axe", "crimson-warden-shovel",
