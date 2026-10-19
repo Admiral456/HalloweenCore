@@ -28,12 +28,20 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     @Override
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            List<String> subcommands = List.of(
-                    "stats", "progress", "curse", "challenge", "rewards", "claim",
-                    "top", "reload", "debug", "give", "on", "off"
-            );
+            List<String> subcommands = new ArrayList<>(List.of(
+                    "stats", "progress", "curse", "challenge", "rewards", "claim", "top"
+            ));
+            if (sender.hasPermission("halloweencore.admin")) {
+                subcommands.addAll(List.of("reload", "debug", "give", "on", "off", "npc"));
+            }
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("npc")
+                && sender.hasPermission("halloweencore.admin")) {
+            return List.of("spawn", "remove").stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("claim")) {
@@ -68,6 +76,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("npc")) return npc(sender, args);
         if (args[0].equalsIgnoreCase("top")) return top(sender);
         if (args[0].equalsIgnoreCase("progress")) return progress(sender);
         if (args[0].equalsIgnoreCase("curse")) return curse(sender);
@@ -90,6 +99,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween debug &7- diagnostika (admin)"));
         sender.sendMessage(plugin.color("&6/halloween give <hráč> <počet> &7- admin"));
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí progresu"));
+        sender.sendMessage(plugin.color("&6/halloween npc spawn <jméno>|remove &7- správa dýňového vesničana (admin)"));
         sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, hudba, dekorace, vesnice a příběhové úkoly jsou odstavené."));
         return true;
     }
@@ -297,6 +307,52 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         sender.sendMessage(plugin.color("&aPřidáno &e" + amount + " &afragmentů hráči &f" + target.getName() + "&a."));
         target.sendMessage(plugin.color("&6Získal jsi &e" + amount + " &6Halloween fragmentů. Celkem: &e" + newBalance));
+        return true;
+    }
+
+    private boolean npc(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cSpráva dýňového vesničana je dostupná jen hráči."));
+            return true;
+        }
+        if (args.length < 2) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween npc spawn <jméno> nebo /halloween npc remove"));
+            return true;
+        }
+
+        HalloweenPumpkinVillagerManager manager = plugin.getPumpkinVillagerManager();
+        if (manager == null) {
+            sender.sendMessage(plugin.color("&cSprávce dýňového vesničana není dostupný."));
+            return true;
+        }
+
+        if (args[1].equalsIgnoreCase("spawn")) {
+            if (!manager.isEnabled()) {
+                sender.sendMessage(plugin.color("&cDýňový vesničan je vypnutý v konfiguraci (pumpkin-villager.enabled)."));
+                return true;
+            }
+            String name = args.length > 2
+                    ? String.join(" ", java.util.Arrays.copyOfRange(args, 2, args.length))
+                    : "Dýňový poutník";
+            if (manager.spawn(player, name) == null) {
+                sender.sendMessage(plugin.color("&cDýňového vesničana se nepodařilo vytvořit."));
+                return true;
+            }
+            sender.sendMessage(plugin.color("&aDýňový vesničan byl vytvořen před tebou. NPC je vanilla villager s dýní na hlavě."));
+            return true;
+        }
+
+        if (args[1].equalsIgnoreCase("remove")) {
+            if (manager.removeNearest(player, 8.0D)) {
+                sender.sendMessage(plugin.color("&aNejbližší dýňový vesničan do 8 bloků byl odstraněn."));
+            } else {
+                sender.sendMessage(plugin.color("&cV okruhu 8 bloků není žádný spravovaný dýňový vesničan."));
+            }
+            return true;
+        }
+
+        sender.sendMessage(plugin.color("&cPoužití: /halloween npc spawn <jméno> nebo /halloween npc remove"));
         return true;
     }
 
