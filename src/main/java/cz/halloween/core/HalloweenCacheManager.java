@@ -137,7 +137,7 @@ public final class HalloweenCacheManager implements Listener {
         for (int distance = 2; distance <= 5; distance++) {
             Block target = creator.getLocation().clone().add(facing.clone().multiply(distance)).getBlock();
             if (!target.getType().isAir() || !target.getRelative(0, -1, 0).getType().isSolid()) continue;
-            if (target.getState() instanceof TileState) continue;
+            if (hasTileStateInNeighborhood(target)) continue;
             if (createLockedCache(target, new Random())) {
                 return true;
             }
@@ -325,14 +325,18 @@ public final class HalloweenCacheManager implements Listener {
         }
         if (!exposed) return false;
 
+        return !hasTileStateInNeighborhood(target);
+    }
+
+    private boolean hasTileStateInNeighborhood(Block target) {
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 for (int dz = -1; dz <= 1; dz++) {
-                    if (target.getRelative(dx, dy, dz).getState() instanceof TileState) return false;
+                    if (target.getRelative(dx, dy, dz).getState() instanceof TileState) return true;
                 }
             }
         }
-        return true;
+        return false;
     }
 
     private boolean unlockCache(Chest chest) {
