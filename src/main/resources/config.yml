@@ -150,7 +150,9 @@ world-features:
     enabled: true
     pumpkin-patch-chance-per-chunk: 0.06
     cave-web-patch-chance-per-chunk: 0.04
+    ancient-altar-chance-per-chunk: 0.02
     attempts-per-feature: 24
+    altar-attempts-per-feature: 16
     max-pumpkins-per-patch: 4
     max-cave-webs-per-patch: 2
     cave-webs-min-y: -48
