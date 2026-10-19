@@ -124,6 +124,7 @@ public final class HalloweenVanillaEventManager implements Listener {
                     : 1.0D;
             default -> 1.0D;
         };
+        if (!Double.isFinite(multiplier)) return 1.0D;
         return Math.max(1.0D, Math.min(4.0D, multiplier));
     }
 
@@ -215,6 +216,7 @@ public final class HalloweenVanillaEventManager implements Listener {
 
         double multiplier = plugin.getConfig().getDouble(
                 "vanilla-events.blood-moon.hostile-damage-multiplier", 1.5D);
+        if (!Double.isFinite(multiplier)) multiplier = 1.5D;
         multiplier = Math.max(1.0D, Math.min(3.0D, multiplier));
         event.setDamage(event.getDamage() * multiplier);
     }
