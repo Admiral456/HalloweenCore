@@ -24,7 +24,11 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Run /halloween event status and confirm status/remaining-time output is sensible when no event is active.
 - [ ] Run /halloween event start pumpkin-harvest. Confirm a clear announcement/title and a larger fragment reward for mature farm crops; then run /halloween event stop.
 - [ ] Run /halloween event start witching-hour. Confirm the vanilla witch sound/announcement and the configured mob-kill fragment multiplier; then stop it.
-- [ ] Run /halloween event start blood-moon. On a test player, compare incoming damage from a hostile mob against a control hit under the same conditions; confirm the configured multiplier is applied. Test a hostile projectile as well; then stop it.
+- [ ] Run /halloween event start blood-moon. On a test player, compare incoming damage from a hostile mob against a control hit under the same conditions; confirm the configured multiplier is applied. Test a hostile projectile as well.
+- [ ] Leave the Blood Moon running through at least two wave intervals. Confirm vanilla elite waves spawn around eligible players, stay under the configured per-world cap, and use the configured mob mix.
+- [ ] During the final configured seconds, confirm at most one Captain Blood Moon spawns for the encounter. If the captain cannot find a safe spawn or the world mob cap is full, it must not spawn unsafely.
+- [ ] End Blood Moon with /halloween event stop, or switch Halloween off. Confirm all event-tagged invasion mobs are removed and no new waves/captain spawn afterward.
+- [ ] Disable vanilla-events.blood-moon.invasion.enabled and verify waves/captain are absent while Blood Moon damage and fragment multipliers still work.
 - [ ] Run /halloween off. Confirm fragment progression and new events pause. Run /halloween on and confirm a fresh event schedule starts without duplicate timers.
 - [ ] Run /halloween reload several times and verify there are no duplicate event announcements/tickers or errors.
 
@@ -34,7 +38,7 @@ Run these checks on a **staging Paper/Purpur server**, not directly on the produ
 - [ ] Run /halloween ambience off and /halloween ambience on as an administrator. Status must reflect the configured/running state; toggling must persist across restart and remain separate from /halloween on|off.
 - [ ] Run /halloween off, wait past a due pulse, and verify no new ambience cues occur. Run /halloween on and /halloween reload and confirm ambience resumes without duplicate timers.
 
-## 3. Hidden discoveries and Easter eggs
+## 3. Hidden discoveries
 
 - [ ] Confirm the config contains the three default IDs: blood-altar, witch-den, and forgotten-grave; all are unconfigured before an admin places them.
 - [ ] In a staging world, stand at each desired location and run /halloween setsecret <id>. Confirm the world and location are saved in config.yml and the plugin reports the name of the configured secret.
