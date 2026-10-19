@@ -21,18 +21,18 @@ jobs:
       - name: Build
         run: mvn -B clean package
 
-      - name: Package candy ItemsAdder content
+      - name: Package retained candy and pumpkin villager textures
         run: |
           mkdir -p target
           cd itemsadder/contents
-          zip -qr ../../target/HalloweenCore-Candy-ItemsAdder.zip warriorland_halloween
-          unzip -t ../../target/HalloweenCore-Candy-ItemsAdder.zip
+          zip -qr ../../target/HalloweenCore-Candy-Pumpkin-ItemsAdder.zip warriorland_halloween
+          unzip -t ../../target/HalloweenCore-Candy-Pumpkin-ItemsAdder.zip
 
-      - name: Upload candy ItemsAdder content
+      - name: Upload retained ItemsAdder content
         uses: actions/upload-artifact@v4
         with:
-          name: HalloweenCore-Candy-ItemsAdder
-          path: target/HalloweenCore-Candy-ItemsAdder.zip
+          name: HalloweenCore-Candy-Pumpkin-ItemsAdder
+          path: target/HalloweenCore-Candy-Pumpkin-ItemsAdder.zip
           if-no-files-found: error
           retention-days: 14
 
