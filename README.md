@@ -56,7 +56,7 @@ Old custom-content classes are kept only where still needed for compatibility; t
 - `/halloween cache key <hráč> [počet]` — gives 1–64 cache keys to an online player (admin).
 - `/halloween on|off`
 
-Legacy commands for the old random events, story quests, Haunted Village map/loot system, shader editing, custom mobs, and vampire model encounter remain retired. The vanilla-only `secrets` and `setsecret` commands are active.
+Legacy commands for the old random-event lineup, Haunted Village map/loot system, shader editing, and vampire model encounter remain retired. The vanilla-only `quests`, elite-mob behaviors, `secrets`, and `setsecret` systems are active.
 
 ## Rare vanilla Halloween elite mobs
 
