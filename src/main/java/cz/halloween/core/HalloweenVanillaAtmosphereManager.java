@@ -64,10 +64,18 @@ public final class HalloweenVanillaAtmosphereManager {
         scheduleNextPulse();
     }
 
+    public int getMinimumIntervalSeconds() {
+        return boundedInt("vanilla-atmosphere.min-interval-seconds", 90, 30, 600);
+    }
+
+    public int getMaximumIntervalSeconds() {
+        int minimum = getMinimumIntervalSeconds();
+        return boundedInt("vanilla-atmosphere.max-interval-seconds", 180, minimum, 600);
+    }
+
     private void scheduleNextPulse() {
-        int minSeconds = boundedInt("vanilla-atmosphere.min-interval-seconds", 90, 30, 600);
-        int maxSeconds = boundedInt("vanilla-atmosphere.max-interval-seconds", 180, minSeconds, 600);
-        if (maxSeconds < minSeconds) maxSeconds = minSeconds;
+        int minSeconds = getMinimumIntervalSeconds();
+        int maxSeconds = getMaximumIntervalSeconds();
         int delay = ThreadLocalRandom.current().nextInt(minSeconds, maxSeconds + 1);
         nextPulseAt = System.currentTimeMillis() + delay * 1000L;
     }
