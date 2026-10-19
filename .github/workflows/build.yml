@@ -168,6 +168,17 @@ jobs:
           if 'data.set("meta.schema-version", CURRENT_SCHEMA_VERSION)' not in data_manager:
               raise SystemExit("Saved player data must include the current schema version")
 
+          for data_guard in (
+              'if (data.isSet("players") && !data.isConfigurationSection("players"))',
+              'if (data.isSet("server") && !data.isConfigurationSection("server"))',
+              'if (data.isSet("meta.schema-version") && !(data.get("meta.schema-version") instanceof Number))',
+              'return failLoadSafely("invalid player UUID key in data.yml: " + key)',
+          ):
+              if data_guard not in data_manager:
+                  raise SystemExit(f"Persistent data structural validation missing: {data_guard}")
+          if "Ignoring invalid player UUID in data.yml" in data_manager:
+              raise SystemExit("Invalid UUID rows must fail safely instead of being silently discarded")
+
           print("Persistent data failure-safety checks passed.")
 
           reward_manager = Path(
@@ -389,6 +400,9 @@ jobs:
               raise SystemExit("Vanilla event manager must follow plugin startup and shutdown")
           if "vanillaEventManager.restart();" not in core_source:
               raise SystemExit("Config reload must restart the vanilla event scheduler")
+
+          if ".filter(plugin::isEligibleGameplayPlayer)" not in vanilla_events or "plugin.isEligibleGameplayWorld(player.getWorld())" not in vanilla_events:
+              raise SystemExit("Timed events must require an eligible player in an eligible gameplay world")
           if "getVanillaEventManager().getMultiplier" not in Path(
               "src/main/java/cz/halloween/core/HalloweenServiceImpl.java"
           ).read_text(encoding="utf-8"):
