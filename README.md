@@ -68,7 +68,7 @@ Use `/halloween event stop` to end the current event early. `/halloween off` sto
 
 The replacement ambience adds occasional, localized cues using only Minecraft's built-in ash and soul particles plus vanilla cave, witch, and phantom sounds. It is deliberately sparse: each pulse chooses eligible players individually, uses a randomized location nearby, and never stops or replaces Minecraft's normal background music. No custom sound files, ItemsAdder sound registration, resource pack, shader, or model is required.
 
-Tune `vanilla-atmosphere` in `config.yml`: `min-interval-seconds` and `max-interval-seconds` set the interval between pulses (default 90–180 seconds), `player-chance` sets the probability a given eligible player receives a cue on each pulse (default 0.35), `particles-enabled` and `sounds-enabled` can be switched off independently, and `sound-volume` controls ambience volume. It pauses when Halloween is turned off and restarts cleanly after `/halloween reload`.
+Tune `vanilla-atmosphere` in `config.yml`: `min-interval-seconds` and `max-interval-seconds` set the interval between pulses (default 90–180 seconds), `player-chance` sets the probability a given eligible player receives a cue on each pulse (default 0.35), `particles-enabled` and `sounds-enabled` can be switched off independently, and `sound-volume` controls ambience volume. It pauses when Halloween is turned off and restarts cleanly after `/halloween reload`. The sound selection responds to the running event: witch sounds during Witching Hour, phantom/Wither ambience during Blood Moon, and occasional composter sounds during Pumpkin Harvest.
 
 ## Vanilla world features
 
