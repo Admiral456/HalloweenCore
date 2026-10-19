@@ -22,7 +22,7 @@ if not key_path.is_file():
     raise SystemExit("Missing secret_key.png")
 with key_path.open("rb") as stream:
     header = stream.read(24)
-if not header.startswith(b"\x89PNG\r\n\x1a\n"):
+if header[:8] != bytes([137, 80, 78, 71, 13, 10, 26, 10]):
     raise SystemExit("secret_key.png is not a PNG file")
 if struct.unpack(">II", header[16:24]) != (32, 32):
     raise SystemExit("secret_key.png must be 32x32")
@@ -43,7 +43,7 @@ for asset in assets:
         raise SystemExit(f"Imported candy texture hash changed: {relative_target}")
     with target.open("rb") as stream:
         png_header = stream.read(24)
-    if not png_header.startswith(b"\\x89PNG\\r\\n\\x1a\\n"):
+    if png_header[:8] != bytes([137, 80, 78, 71, 13, 10, 26, 10]):
         raise SystemExit(f"Invalid PNG: {relative_target}")
     if struct.unpack(">II", png_header[16:24]) != (16, 16):
         raise SystemExit(f"Expected a 16x16 candy sprite: {relative_target}")
