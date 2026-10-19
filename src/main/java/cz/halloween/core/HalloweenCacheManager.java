@@ -136,6 +136,10 @@ public final class HalloweenCacheManager implements Listener {
         facing.normalize();
         for (int distance = 2; distance <= 5; distance++) {
             Block target = creator.getLocation().clone().add(facing.clone().multiply(distance)).getBlock();
+            int localX = target.getX() & 15;
+            int localZ = target.getZ() & 15;
+            // The neighborhood safety scan below must remain inside the loaded chunk.
+            if (localX < 1 || localX > 14 || localZ < 1 || localZ > 14) continue;
             if (!target.getType().isAir() || !target.getRelative(0, -1, 0).getType().isSolid()) continue;
             if (hasTileStateInNeighborhood(target)) continue;
             if (createLockedCache(target, new Random())) {
