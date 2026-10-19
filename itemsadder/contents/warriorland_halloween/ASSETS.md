@@ -1,5 +1,9 @@
 # HalloweenCore ItemsAdder content
 
-This folder retains only the custom texture for `warriorland_halloween:cursed_candy` at `resourcepack/assets/warriorland_halloween/textures/item/cursed_candy.png`.
+Retained assets:
+- `resourcepack/assets/warriorland_halloween/textures/item/cursed_candy.png` — Prokleté cukroví item.
+- `resourcepack/assets/minecraft/textures/block/pumpkin_face.png`
+- `resourcepack/assets/minecraft/textures/block/pumpkin_side.png`
+- `resourcepack/assets/minecraft/textures/block/pumpkin_top.png` — pumpkin texture set retained for the planned pumpkin-headed villager appearance.
 
-No custom armor textures, mob models, custom sound registrations, vanilla block replacements, or shaders are used by the cleanup branch. Run `/iazip` after importing this content on a server using ItemsAdder.
+All shaders, custom sound registrations, custom mob models, and custom armor/weapon/item textures have been removed. The three Minecraft pumpkin texture overrides are an intentional exception and affect the pumpkin block textures in the generated pack.
