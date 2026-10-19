@@ -217,6 +217,8 @@ jobs:
               raise SystemExit("PvP deaths must not award mob-kill fragments")
           if 'allowFragmentReward(killer, "mob-kill")' not in activity_listener:
               raise SystemExit("Mob-kill rewards must use the common per-minute limiter")
+          if '"mob-kill".equalsIgnoreCase(source) ? 60 : 0' not in activity_listener:
+              raise SystemExit("Legacy configs missing the mob-kill limit must use the safe default")
 
           if "onEntityDeath(EntityDeathEvent event)" in core_source:
               raise SystemExit("Mob-kill rewards must not bypass the shared activity limiter")
