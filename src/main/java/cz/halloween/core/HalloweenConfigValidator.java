@@ -69,6 +69,35 @@ public final class HalloweenConfigValidator {
             }
         }
 
+        boolean cachesEnabled = plugin.getConfig().getBoolean("underground-caches.enabled", true);
+        if (cachesEnabled) {
+            if (plugin.getConfig().getBoolean("underground-caches.generation.enabled", true)) {
+                double chunkChance = plugin.getConfig().getDouble(
+                        "underground-caches.generation.chance-per-new-chunk", 0.10D);
+                int minY = plugin.getConfig().getInt("underground-caches.generation.min-y", -48);
+                int maxY = plugin.getConfig().getInt("underground-caches.generation.max-y", 24);
+                int attempts = plugin.getConfig().getInt(
+                        "underground-caches.generation.attempts-per-chunk", 32);
+                if (chunkChance < 0.0D || chunkChance > 1.0D) {
+                    errors.add("underground-caches.generation.chance-per-new-chunk must be between 0 and 1");
+                }
+                if (minY >= maxY) {
+                    errors.add("underground-caches.generation.min-y must be below max-y");
+                }
+                if (attempts < 1 || attempts > 64) {
+                    errors.add("underground-caches.generation.attempts-per-chunk must be between 1 and 64");
+                }
+            }
+
+            if (plugin.getConfig().getBoolean("underground-caches.key-drop.enabled", true)) {
+                double keyChance = plugin.getConfig().getDouble(
+                        "underground-caches.key-drop.chance-per-hostile-kill", 0.006D);
+                if (keyChance < 0.0D || keyChance > 0.05D) {
+                    errors.add("underground-caches.key-drop.chance-per-hostile-kill must be between 0 and 0.05");
+                }
+            }
+        }
+
         ConfigurationSection rewards = plugin.getConfig().getConfigurationSection("rewards.shop");
         if (rewards == null || rewards.getKeys(false).isEmpty()) {
             errors.add("rewards.shop must contain at least one reward");
