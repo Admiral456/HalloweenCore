@@ -160,7 +160,7 @@ public final class HalloweenCore extends JavaPlugin {
             getConfig().set("migrations.vanilla-story-quests-v1", true);
         }
         getConfig().set("haunted-village.enabled", false);
-        // Keep the vanilla-only hidden Easter eggs while retiring the old village system.
+        // Keep vanilla hidden discoveries while retiring the old village system.
         migrateVanillaSecretDiscoveries();
         getConfig().set("world-decorations.enabled", false);
         getConfig().set("atmosphere.enabled", false);
@@ -261,7 +261,7 @@ public final class HalloweenCore extends JavaPlugin {
 
     /**
      * One-time restore of the vanilla-only hidden discovery system. The migration
-     * merges the three stock Easter eggs into existing configurations while
+     * merges the three stock hidden discoveries into existing configurations while
      * preserving any administrator-defined locations and coordinates.
      */
     private void migrateVanillaSecretDiscoveries() {
