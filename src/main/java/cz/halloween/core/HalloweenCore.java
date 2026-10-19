@@ -147,9 +147,10 @@ public final class HalloweenCore extends JavaPlugin {
      */
     private void disableLegacyContentSystems() {
         getConfig().set("random-events.enabled", false);
-        getConfig().set("special-mobs.enabled", false);
+        migrateVanillaEliteMobs();
+        // Custom mob models and Haunted Village maps stay retired even when vanilla
+        // elite creatures are enabled. Nothing here requires MythicMobs or ModelEngine.
         getConfig().set("special-mobs.custom-models.enabled", false);
-        getConfig().set("special-mobs.relic-drop-chance", 0.0D);
         getConfig().set("special-mobs.map-drop-chance", 0.0D);
         // Upgrade configs from the vanilla-first cleanup that had story quests disabled.
         // After this one-time migration, admins can still disable the campaign in config.yml.
@@ -200,6 +201,63 @@ public final class HalloweenCore extends JavaPlugin {
         saveConfig();
     }
 
+
+    /**
+     * Restores rare elite variants of vanilla hostile mobs without reactivating any
+     * MythicMobs/ModelEngine model or old Haunted Village reward path.
+     */
+    private void migrateVanillaEliteMobs() {
+        if (getConfig().getBoolean("migrations.vanilla-elite-mobs-v1", false)) return;
+
+        getConfig().set("special-mobs.enabled", true);
+        setConfigDefaultIfMissing("special-mobs.chance", 0.04D);
+        setConfigDefaultIfMissing("special-mobs.phase-bonus-chance", 0.005D);
+        setConfigDefaultIfMissing("special-mobs.event-chance-multiplier", 1.5D);
+        setConfigDefaultIfMissing("special-mobs.bonus-fragments", 12L);
+        // The cleanup build forced this to zero; restore a restrained candy drop.
+        getConfig().set("special-mobs.relic-drop-chance", 0.08D);
+        getConfig().set("special-mobs.relic-item-id", "warriorland_halloween:cursed_candy");
+        getConfig().set("special-mobs.map-drop-chance", 0.0D);
+        getConfig().set("special-mobs.map-item-id", "minecraft:map");
+        getConfig().set("special-mobs.custom-models.enabled", false);
+
+        addDefaultEliteProfile("cursed-zombie", "&5&lProkletý zombie", 1.35D, 0, 0, 12L);
+        addDefaultEliteProfile("void-reaper", "&5&lŽenec prázdnoty", 1.65D, 0, 1, 13L);
+        addDefaultEliteProfile("gravekeeper", "&8&lHrobník", 1.45D, 0, 0, 9L);
+        addDefaultEliteProfile("frost-stalker", "&b&lLedový stopař", 1.40D, 1, 0, 10L);
+        addDefaultEliteProfile("blood-spider", "&c&lKrvavý pavouk", 1.25D, 1, 0, 8L);
+        addDefaultEliteProfile("nightmare", "&d&lNoční můra", 1.75D, 1, 1, 12L);
+        addDefaultEliteProfile("pumpkin-wraith", "&6&lDýňový přízrak", 1.60D, 0, 1, 10L);
+        addDefaultEliteProfile("hex-witch", "&5&lHexová čarodějka", 1.30D, 0, 0, 10L);
+
+        setConfigDefaultIfMissing("special-mobs.types.cursed-zombie.soul-siphon-blindness-ticks", 35);
+        setConfigDefaultIfMissing("special-mobs.types.cursed-zombie.soul-siphon-weakness-ticks", 80);
+        setConfigDefaultIfMissing("special-mobs.types.void-reaper.gloom-ticks", 70);
+        setConfigDefaultIfMissing("special-mobs.types.gravekeeper.grave-mark-delay-ticks", 24);
+        setConfigDefaultIfMissing("special-mobs.types.gravekeeper.grave-mark-radius-blocks", 1.5D);
+        setConfigDefaultIfMissing("special-mobs.types.gravekeeper.grave-mark-damage", 3.0D);
+        setConfigDefaultIfMissing("special-mobs.types.frost-stalker.frostbite-ticks", 80);
+        setConfigDefaultIfMissing("special-mobs.types.blood-spider.blood-web-poison-ticks", 80);
+        setConfigDefaultIfMissing("special-mobs.types.blood-spider.blood-web-slowness-ticks", 45);
+        setConfigDefaultIfMissing("special-mobs.types.nightmare.night-terror-ticks", 60);
+        setConfigDefaultIfMissing("special-mobs.types.pumpkin-wraith.explosion-radius", 3);
+        setConfigDefaultIfMissing("special-mobs.types.pumpkin-wraith.ash-flash-radius-blocks", 5.0D);
+        setConfigDefaultIfMissing("special-mobs.types.pumpkin-wraith.ash-flash-nausea-ticks", 70);
+        setConfigDefaultIfMissing("special-mobs.types.pumpkin-wraith.ash-flash-blindness-ticks", 30);
+        setConfigDefaultIfMissing("special-mobs.types.hex-witch.random-hex-duration-ticks", 65);
+        getConfig().set("migrations.vanilla-elite-mobs-v1", true);
+    }
+
+    private void addDefaultEliteProfile(String id, String name, double healthMultiplier,
+                                        int speedLevel, int strengthLevel, long cooldownSeconds) {
+        String path = "special-mobs.types." + id;
+        setConfigDefaultIfMissing(path + ".name", name);
+        setConfigDefaultIfMissing(path + ".glowing", true);
+        setConfigDefaultIfMissing(path + ".health-multiplier", healthMultiplier);
+        setConfigDefaultIfMissing(path + ".speed-level", speedLevel);
+        setConfigDefaultIfMissing(path + ".strength-level", strengthLevel);
+        setConfigDefaultIfMissing(path + ".ability-cooldown-seconds", cooldownSeconds);
+    }
 
     /**
      * One-time restore of the vanilla-only hidden discovery system. The migration
