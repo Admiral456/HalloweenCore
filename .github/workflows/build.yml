@@ -74,6 +74,10 @@ jobs:
           ).read_text(encoding="utf-8")
           if '"special-mob"' in challenge_source:
               raise SystemExit("Daily challenges must not require the retired special-mob system")
+          if "boolean knownChallenge = challenges.stream()" not in challenge_source:
+              raise SystemExit("Retired or unknown daily challenge IDs must be reassigned safely")
+          if "findFirst().orElse(null)" not in challenge_source:
+              raise SystemExit("Unknown daily challenge IDs must not silently fall back to the hunt challenge")
 
           validator = Path(
               "src/main/java/cz/halloween/core/HalloweenConfigValidator.java"
