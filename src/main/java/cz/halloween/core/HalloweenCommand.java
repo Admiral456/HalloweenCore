@@ -29,13 +29,22 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     public java.util.List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
             List<String> subcommands = new ArrayList<>(List.of(
-                    "stats", "progress", "curse", "challenge", "rewards", "claim", "top", "event", "ambience"
+                    "stats", "progress", "curse", "challenge", "rewards", "claim", "top", "event", "ambience", "secrets"
             ));
             if (sender.hasPermission("halloweencore.admin")) {
-                subcommands.addAll(List.of("reload", "debug", "give", "on", "off", "npc", "cache"));
+                subcommands.addAll(List.of("reload", "debug", "give", "on", "off", "npc", "cache", "setsecret"));
             }
             return subcommands.stream()
                     .filter(value -> value.startsWith(args[0].toLowerCase(java.util.Locale.ROOT)))
+                    .toList();
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("setsecret")
+                && sender.hasPermission("halloweencore.admin")) {
+            var secrets = plugin.getConfig().getConfigurationSection("secret-discoveries.locations");
+            if (secrets == null) return List.of();
+            return secrets.getKeys(false).stream()
+                    .filter(value -> value.startsWith(args[1].toLowerCase(java.util.Locale.ROOT)))
+                    .sorted()
                     .toList();
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("ambience")) {
@@ -117,12 +126,14 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
         String requested = args[0].toLowerCase(java.util.Locale.ROOT);
         if (List.of("quests", "quest", "shader", "setvillage", "setvampirearena",
-                "buildvampirearena", "setsecret", "secrets", "boss", "bosseffects", "modelpreview")
+                "buildvampirearena", "boss", "bosseffects", "modelpreview")
                 .contains(requested)) {
             sender.sendMessage(plugin.color("&eTato stará Halloween funkce byla odstavena a bude nahrazena novým vanilla systémem."));
             return true;
         }
 
+        if (args[0].equalsIgnoreCase("setsecret")) return setSecret(sender, args);
+        if (args[0].equalsIgnoreCase("secrets")) return showSecrets(sender);
         if (args[0].equalsIgnoreCase("npc")) return npc(sender, args);
         if (args[0].equalsIgnoreCase("event")) return vanillaEvent(sender, args);
         if (args[0].equalsIgnoreCase("ambience")) return ambience(sender, args);
@@ -151,6 +162,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí progresu"));
         sender.sendMessage(plugin.color("&6/halloween event [status|start <id>|stop] &7- vanilla Halloween události"));
         sender.sendMessage(plugin.color("&6/halloween ambience [status|on|off] &7- ambientní Halloween efekty"));
+        sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy k tajným objevům (easter eggům)"));
+        sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit polohu skrytého místa (admin)"));
         sender.sendMessage(plugin.color("&6/halloween npc spawn <jméno>|remove &7- správa dýňového vesničana (admin)"));
         sender.sendMessage(plugin.color("&6/halloween cache spawn|key <hráč> [počet] &7- podzemní schránky (admin)"));
         sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, hudba, dekorace, vesnice a příběhové úkoly jsou odstavené; nové události používají vanilla systém."));
@@ -490,6 +503,58 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         sender.sendMessage(plugin.color("&cPoužití: /halloween cache spawn nebo /halloween cache key <hráč> [počet]"));
+        return true;
+    }
+
+    private boolean setSecret(CommandSender sender, String[] args) {
+        if (!checkAdmin(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz použij ve hře přímo na místě tajného objevu."));
+            return true;
+        }
+        if (args.length != 2) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween setsecret <id>"));
+            sender.sendMessage(plugin.color("&7ID: &eblood-altar, witch-den, forgotten-grave"));
+            return true;
+        }
+
+        String id = args[1].toLowerCase(java.util.Locale.ROOT);
+        String path = "secret-discoveries.locations." + id;
+        if (!plugin.getConfig().isConfigurationSection(path)) {
+            sender.sendMessage(plugin.color("&cTajný objev s ID &e" + id + " &cneexistuje v konfiguraci."));
+            return true;
+        }
+
+        plugin.getConfig().set("secret-discoveries.enabled", true);
+        plugin.getConfig().set(path + ".configured", true);
+        plugin.getConfig().set(path + ".world", player.getWorld().getName());
+        plugin.getConfig().set(path + ".x", player.getLocation().getX());
+        plugin.getConfig().set(path + ".y", player.getLocation().getY());
+        plugin.getConfig().set(path + ".z", player.getLocation().getZ());
+        plugin.saveConfig();
+
+        String name = plugin.getConfig().getString(path + ".name", id);
+        player.sendMessage(plugin.color("&5&lTAJNÝ OBJEV &8» &aMísto &f" + name + " &abylo nastaveno."));
+        player.sendMessage(plugin.color("&7Hráči uvidí pouze nápovědu, nikoliv souřadnice."));
+        player.sendMessage(plugin.color("&7Každý hráč může za objev získat odměnu jen jednou."));
+        return true;
+    }
+
+    private boolean showSecrets(CommandSender sender) {
+        if (!checkUse(sender)) return true;
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cPřehled tajných objevů je určen hráčům ve hře."));
+            return true;
+        }
+        if (!plugin.getConfig().getBoolean("secret-discoveries.enabled", true)) {
+            sender.sendMessage(plugin.color("&7Tajné objevy jsou momentálně vypnuté."));
+            return true;
+        }
+        if (plugin.getSecretDiscoveryManager() == null) {
+            sender.sendMessage(plugin.color("&cSystém tajných objevů není dostupný."));
+            return true;
+        }
+        plugin.getSecretDiscoveryManager().showSecrets(player);
         return true;
     }
 
