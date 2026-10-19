@@ -309,15 +309,47 @@ public final class HalloweenConfigValidator {
             errors.add("haunted-village.world must be configured when Haunted Village is enabled");
         }
         boolean specialMobsEnabled = plugin.getConfig().getBoolean("special-mobs.enabled", false);
-        double mapChance = plugin.getConfig().getDouble("special-mobs.map-drop-chance", -1.0D);
-        if (specialMobsEnabled && (mapChance < 0.0D || mapChance > 1.0D)) {
-            errors.add("special-mobs.map-drop-chance must be between 0 and 1");
+        double eliteChance = plugin.getConfig().getDouble("special-mobs.chance", Double.NaN);
+        double eventEliteMultiplier = plugin.getConfig().getDouble("special-mobs.event-chance-multiplier", Double.NaN);
+        double relicChance = plugin.getConfig().getDouble("special-mobs.relic-drop-chance", Double.NaN);
+        double mapChance = plugin.getConfig().getDouble("special-mobs.map-drop-chance", Double.NaN);
+        if (specialMobsEnabled) {
+            if (!Double.isFinite(eliteChance) || eliteChance < 0.0D || eliteChance > 0.25D) {
+                errors.add("special-mobs.chance must be finite and between 0 and 0.25");
+            }
+            if (!Double.isFinite(eventEliteMultiplier) || eventEliteMultiplier < 1.0D || eventEliteMultiplier > 3.0D) {
+                errors.add("special-mobs.event-chance-multiplier must be finite and between 1 and 3");
+            }
+            if (!Double.isFinite(relicChance) || relicChance < 0.0D || relicChance > 0.5D) {
+                errors.add("special-mobs.relic-drop-chance must be finite and between 0 and 0.5");
+            }
+            if (!Double.isFinite(mapChance) || mapChance < 0.0D || mapChance > 1.0D) {
+                errors.add("special-mobs.map-drop-chance must be finite and between 0 and 1");
+            }
+            if (plugin.getConfig().getBoolean("special-mobs.custom-models.enabled", false)) {
+                errors.add("special-mobs.custom-models.enabled must remain false in the vanilla-only build");
+            }
         }
         ConfigurationSection specialMobTypes = plugin.getConfig().getConfigurationSection("special-mobs.types");
+        if (specialMobsEnabled && (specialMobTypes == null || specialMobTypes.getKeys(false).isEmpty())) {
+            errors.add("special-mobs.types must contain at least one vanilla elite profile");
+        }
         if (specialMobsEnabled && specialMobTypes != null) {
             for (String id : specialMobTypes.getKeys(false)) {
                 ConfigurationSection mob = specialMobTypes.getConfigurationSection(id);
                 if (mob == null) continue;
+                double healthMultiplier = mob.getDouble("health-multiplier", Double.NaN);
+                if (!Double.isFinite(healthMultiplier) || healthMultiplier < 1.0D || healthMultiplier > 3.0D) {
+                    errors.add("special-mobs.types." + id + ".health-multiplier must be finite and between 1 and 3");
+                }
+                int speedLevel = mob.getInt("speed-level", 0);
+                int strengthLevel = mob.getInt("strength-level", 0);
+                if (speedLevel < 0 || speedLevel > 2) {
+                    errors.add("special-mobs.types." + id + ".speed-level must be between 0 and 2");
+                }
+                if (strengthLevel < 0 || strengthLevel > 2) {
+                    errors.add("special-mobs.types." + id + ".strength-level must be between 0 and 2");
+                }
                 long cooldown = mob.getLong("ability-cooldown-seconds", 8L);
                 if (cooldown < 1L || cooldown > 300L) {
                     errors.add("special-mobs.types." + id + ".ability-cooldown-seconds must be between 1 and 300");
