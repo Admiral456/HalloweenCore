@@ -82,6 +82,7 @@ public final class HalloweenCore extends JavaPlugin {
         logConfigValidationIssues();
 
         getServer().getPluginManager().registerEvents(new HalloweenActivityListener(this), this);
+        getServer().getPluginManager().registerEvents(questManager, this);
         getServer().getPluginManager().registerEvents(new HalloweenJoinListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenQuitListener(this), this);
         getServer().getPluginManager().registerEvents(new HalloweenItemListener(this), this);
@@ -92,9 +93,9 @@ public final class HalloweenCore extends JavaPlugin {
         getServer().getPluginManager().registerEvents(worldFeatureManager, this);
         getServer().getPluginManager().registerEvents(secretDiscoveryManager, this);
         getServer().getPluginManager().registerEvents(vanillaEventManager, this);
-        // Legacy mob, story-quest, village, custom ambience and decoration listeners remain
-        // unregistered. The vanilla cache, hidden Easter-egg discoveries, new-chunk
-        // features, timed events, and vanilla atmosphere are the active replacements.
+        // Retired custom-mob, Haunted Village, custom ambience, and decoration listeners
+        // remain unregistered. The story campaign now tracks only vanilla player actions;
+        // caches, hidden discoveries, new-chunk features, events, and ambient cues are active.
 
         if (getCommand("halloween") != null) {
             HalloweenCommand halloweenCommand = new HalloweenCommand(this);
@@ -150,7 +151,12 @@ public final class HalloweenCore extends JavaPlugin {
         getConfig().set("special-mobs.custom-models.enabled", false);
         getConfig().set("special-mobs.relic-drop-chance", 0.0D);
         getConfig().set("special-mobs.map-drop-chance", 0.0D);
-        getConfig().set("story-quests.enabled", false);
+        // Upgrade configs from the vanilla-first cleanup that had story quests disabled.
+        // After this one-time migration, admins can still disable the campaign in config.yml.
+        if (!getConfig().getBoolean("migrations.vanilla-story-quests-v1", false)) {
+            getConfig().set("story-quests.enabled", true);
+            getConfig().set("migrations.vanilla-story-quests-v1", true);
+        }
         getConfig().set("haunted-village.enabled", false);
         // Keep the vanilla-only hidden Easter eggs while retiring the old village system.
         migrateVanillaSecretDiscoveries();
