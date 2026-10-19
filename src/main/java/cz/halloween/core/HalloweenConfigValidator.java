@@ -69,6 +69,44 @@ public final class HalloweenConfigValidator {
             }
         }
 
+        boolean vanillaEventsEnabled = plugin.getConfig().getBoolean("vanilla-events.enabled", true);
+        if (vanillaEventsEnabled) {
+            int firstDelay = plugin.getConfig().getInt("vanilla-events.first-delay-seconds", 300);
+            int eventIntervalMin = plugin.getConfig().getInt("vanilla-events.interval-minutes.min", 20);
+            int eventIntervalMax = plugin.getConfig().getInt("vanilla-events.interval-minutes.max", 35);
+            int eventDuration = plugin.getConfig().getInt("vanilla-events.duration-minutes", 6);
+            double harvestMultiplier = plugin.getConfig().getDouble(
+                    "vanilla-events.pumpkin-harvest.farming-fragment-multiplier", 2.0D);
+            double witchingMultiplier = plugin.getConfig().getDouble(
+                    "vanilla-events.witching-hour.mob-kill-fragment-multiplier", 1.5D);
+            double bloodMoonMultiplier = plugin.getConfig().getDouble(
+                    "vanilla-events.blood-moon.mob-kill-fragment-multiplier", 1.25D);
+            double bloodMoonDamage = plugin.getConfig().getDouble(
+                    "vanilla-events.blood-moon.hostile-damage-multiplier", 1.5D);
+
+            if (firstDelay < 30 || firstDelay > 3600) {
+                errors.add("vanilla-events.first-delay-seconds must be between 30 and 3600");
+            }
+            if (eventIntervalMin < 5 || eventIntervalMax < eventIntervalMin || eventIntervalMax > 180) {
+                errors.add("vanilla-events.interval-minutes must be ordered between 5 and 180");
+            }
+            if (eventDuration < 1 || eventDuration > 30) {
+                errors.add("vanilla-events.duration-minutes must be between 1 and 30");
+            }
+            if (harvestMultiplier < 1.0D || harvestMultiplier > 4.0D) {
+                errors.add("vanilla-events.pumpkin-harvest.farming-fragment-multiplier must be between 1 and 4");
+            }
+            if (witchingMultiplier < 1.0D || witchingMultiplier > 4.0D) {
+                errors.add("vanilla-events.witching-hour.mob-kill-fragment-multiplier must be between 1 and 4");
+            }
+            if (bloodMoonMultiplier < 1.0D || bloodMoonMultiplier > 4.0D) {
+                errors.add("vanilla-events.blood-moon.mob-kill-fragment-multiplier must be between 1 and 4");
+            }
+            if (bloodMoonDamage < 1.0D || bloodMoonDamage > 3.0D) {
+                errors.add("vanilla-events.blood-moon.hostile-damage-multiplier must be between 1 and 3");
+            }
+        }
+
         boolean worldFeaturesEnabled = plugin.getConfig().getBoolean("world-features.enabled", true);
         if (worldFeaturesEnabled
                 && plugin.getConfig().getBoolean("world-features.generation.enabled", true)) {
