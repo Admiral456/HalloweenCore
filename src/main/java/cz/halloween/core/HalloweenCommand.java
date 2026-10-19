@@ -180,11 +180,11 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&6/halloween on|off &7- zapnutí/vypnutí progresu"));
         sender.sendMessage(plugin.color("&6/halloween event [status|start <id>|stop] &7- vanilla Halloween události"));
         sender.sendMessage(plugin.color("&6/halloween ambience [status|on|off|test] &7- ambientní Halloween efekty"));
-        sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy k tajným objevům (easter eggům)"));
+        sender.sendMessage(plugin.color("&6/halloween secrets &7- nápovědy ke skrytým objevům"));
         sender.sendMessage(plugin.color("&6/halloween setsecret <id> &7- nastavit polohu skrytého místa (admin)"));
         sender.sendMessage(plugin.color("&6/halloween npc spawn <jméno>|remove &7- správa dýňového vesničana (admin)"));
         sender.sendMessage(plugin.color("&6/halloween cache spawn|key <hráč> [počet] &7- podzemní schránky (admin)"));
-        sender.sendMessage(plugin.color("&7Staré eventy, vlastní moby, shader, hudba, dekorace, vesnice a příběhové úkoly jsou odstavené; nové události používají vanilla systém."));
+        sender.sendMessage(plugin.color("&7Staré náhodné eventy, shader, hudba, dekorace a Haunted Village jsou odstavené; vanilla příběh a elitní nepřátelé zůstávají aktivní."));
         return true;
     }
 
@@ -399,10 +399,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         boolean secretsEnabled = plugin.getSecretDiscoveryManager() != null
                 && plugin.getConfig().getBoolean("secret-discoveries.enabled", false);
-        sender.sendMessage(plugin.color("&7Skryté Easter eggy: "
+        sender.sendMessage(plugin.color("&7Skrytá místa: 
                 + (secretsEnabled ? "&aZAPNUTÉ" : "&cVYPNUTÉ")
                 + " &8• nastavená místa: &e" + configuredSecretCount + "&8/&e" + totalSecretCount));
-        sender.sendMessage(plugin.color("&7Staré eventy, questy, vlastní mobové, soundtrack a dekorace: &eODSTAVENY"));
+        sender.sendMessage(plugin.color("&7Staré náhodné eventy, soundtrack a dekorace: &eODSTAVENY &8• &7vanilla questy a elitní mobové: &aAKTIVNÍ"));
         sender.sendMessage(plugin.color("&7Bonus talismanu: &e+"
                 + plugin.getConfig().getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D)
                 + " zdraví &8(1 srdce = 2 body)"));
