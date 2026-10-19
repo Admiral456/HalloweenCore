@@ -98,6 +98,10 @@ public final class HalloweenDataManager {
 
         if (data.isConfigurationSection("players")) {
             for (String key : data.getConfigurationSection("players").getKeys(false)) {
+                String playerPath = "players." + key;
+                if (!data.isConfigurationSection(playerPath)) {
+                    return failLoadSafely("player data entry must be a YAML section: " + key);
+                }
                 try {
                     UUID uuid = UUID.fromString(key);
                     String base = "players." + key;
