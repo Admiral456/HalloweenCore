@@ -33,15 +33,22 @@ public final class HalloweenJoinListener implements Listener {
         }
 
         long elapsed = now - last;
-        long claimDelay = plugin.getConfig().getLong("return-rewards.claim-delay-hours", 20L) * 3_600_000L;
+        long claimDelayHours = boundedHours("return-rewards.claim-delay-hours", 20L);
+        long claimDelay = claimDelayHours * 3_600_000L;
         if (elapsed < claimDelay) return;
 
-        long streakWindow = plugin.getConfig().getLong("return-rewards.streak-window-hours", 48L) * 3_600_000L;
-        boolean comeback = elapsed >= plugin.getConfig().getLong("return-rewards.comeback-after-hours", 72L) * 3_600_000L;
+        long streakWindow = boundedHours("return-rewards.streak-window-hours", 48L) * 3_600_000L;
+        boolean comeback = elapsed >= boundedHours("return-rewards.comeback-after-hours", 72L) * 3_600_000L;
         int previousStreak = plugin.getDataManager().getStreak(player.getUniqueId());
         int streak = elapsed <= streakWindow ? Math.min(previousStreak + 1, 7) : 1;
 
         awardDaily(player, streak, comeback);
+    }
+
+    private long boundedHours(String path, long fallback) {
+        // Ten years is far above expected gameplay settings, and multiplication
+        // by milliseconds remains safely inside the signed 64-bit range.
+        return Math.max(1L, Math.min(87_600L, plugin.getConfig().getLong(path, fallback)));
     }
 
     private void awardDaily(Player player, int streak, boolean comeback) {
@@ -54,7 +61,14 @@ public final class HalloweenJoinListener implements Listener {
                 ? Math.max(0L, plugin.getConfig().getLong("return-rewards.comeback-bonus", 15L))
                 : 0L;
 
-        long total = reward + comebackBonus;
+        long total;
+        try {
+            total = Math.addExact(reward, comebackBonus);
+        } catch (ArithmeticException overflow) {
+            // Extremely large admin-configured comeback bonuses must never wrap
+            // into a negative value and silently suppress the reward.
+            total = Long.MAX_VALUE;
+        }
         plugin.getService().addFragments(player.getUniqueId(), total, "daily");
 
         plugin.getDataManager().recordJoin(player.getUniqueId(), System.currentTimeMillis(), streak);
