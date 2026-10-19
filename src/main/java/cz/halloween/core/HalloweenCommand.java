@@ -334,6 +334,22 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 + status(plugin.getCacheManager() != null && plugin.getCacheManager().isEnabled())
                 + " &8• světové prvky: "
                 + status(plugin.getWorldFeatureManager() != null && plugin.getWorldFeatureManager().isEnabled())));
+        var secretLocations = plugin.getConfig().getConfigurationSection("secret-discoveries.locations");
+        long configuredSecretCount = 0L;
+        long totalSecretCount = 0L;
+        if (secretLocations != null) {
+            for (String secretId : secretLocations.getKeys(false)) {
+                var secret = secretLocations.getConfigurationSection(secretId);
+                if (secret == null) continue;
+                totalSecretCount++;
+                if (secret.getBoolean("configured", false)) configuredSecretCount++;
+            }
+        }
+        boolean secretsEnabled = plugin.getSecretDiscoveryManager() != null
+                && plugin.getConfig().getBoolean("secret-discoveries.enabled", false);
+        sender.sendMessage(plugin.color("&7Skryté Easter eggy: "
+                + (secretsEnabled ? "&aZAPNUTÉ" : "&cVYPNUTÉ")
+                + " &8• nastavená místa: &e" + configuredSecretCount + "&8/&e" + totalSecretCount));
         sender.sendMessage(plugin.color("&7Staré eventy, questy, vlastní mobové, soundtrack a dekorace: &eODSTAVENY"));
         sender.sendMessage(plugin.color("&7Bonus talismanu: &e+"
                 + plugin.getConfig().getDouble("rewards.shop.cursed-talisman.bonus-health", 2.0D)
