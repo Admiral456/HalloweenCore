@@ -410,21 +410,36 @@ public final class HalloweenMobManager implements Listener {
         }
     }
 
+    private boolean isBloodMoonInvasionActive() {
+        HalloweenVanillaEventManager events = plugin.getVanillaEventManager();
+        return plugin.isEventEnabled()
+                && plugin.getConfig().getBoolean("special-mobs.enabled", true)
+                && plugin.getConfig().getBoolean("vanilla-events.blood-moon.invasion.enabled", true)
+                && events != null && "blood-moon".equals(events.getActiveEventId());
+    }
+
+    private int getMaxBloodMoonEventMobs() {
+        return Math.max(1, Math.min(80,
+                plugin.getConfig().getInt("vanilla-events.blood-moon.invasion.max-event-mobs", 24)));
+    }
+
     public boolean spawnEventMob(Player player) {
-        String[] ids = {"cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch"};
+        String[] ids = {
+                "cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                "blood-spider", "nightmare", "pumpkin-wraith", "hex-witch"
+        };
         return spawnEventMob(player, ids[ThreadLocalRandom.current().nextInt(ids.length)]);
     }
 
     /** Spawn a specific special type so every event can choose its own enemy mix. */
     public boolean spawnEventMob(Player player, String mobId) {
-        if (!plugin.isEventEnabled() || player == null
-                || !plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
+        if (!isBloodMoonInvasionActive() || player == null || !player.isOnline()
+                || !plugin.isEligibleGameplayPlayer(player)) return false;
         if (!isKnownSpecialMob(mobId)) return false;
 
         World world = player.getWorld();
         if (!plugin.isEligibleGameplayWorld(world)) return false;
-        int maxEventMobs = Math.max(1, Math.min(80,
-                plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
+        int maxEventMobs = getMaxBloodMoonEventMobs();
         if (countEventMobs(world) >= maxEventMobs) return false;
 
         Location spawnLocation = findSafeEventLocation(player);
@@ -446,13 +461,12 @@ public final class HalloweenMobManager implements Listener {
      * so it is cleaned up at the end of the event and respects the configured per-world cap.
      */
     public boolean spawnInvasionCaptain(Player player) {
-        if (!plugin.isEventEnabled() || player == null || !player.isOnline()) return false;
-        if (!plugin.getConfig().getBoolean("random-events.event-mobs-enabled", true)) return false;
+        if (!isBloodMoonInvasionActive() || player == null || !player.isOnline()
+                || !plugin.isEligibleGameplayPlayer(player)) return false;
         World world = player.getWorld();
         if (!plugin.isEligibleGameplayWorld(world)) return false;
 
-        int maxEventMobs = Math.max(1, Math.min(80,
-                plugin.getConfig().getInt("random-events.max-event-mobs", 48)));
+        int maxEventMobs = getMaxBloodMoonEventMobs();
         if (countEventMobs(world) >= maxEventMobs) return false;
         Location spawnLocation = findSafeEventLocation(player);
         if (spawnLocation == null) return false;
@@ -480,14 +494,17 @@ public final class HalloweenMobManager implements Listener {
 
     private boolean isKnownSpecialMob(String mobId) {
         return mobId != null && switch (mobId) {
-            case "cursed-zombie", "gravekeeper", "blood-spider", "pumpkin-wraith", "hex-witch" -> true;
+            case "cursed-zombie", "void-reaper", "gravekeeper", "frost-stalker",
+                    "blood-spider", "nightmare", "pumpkin-wraith", "hex-witch" -> true;
             default -> false;
         };
     }
 
     private EntityType baseEntityType(String mobId) {
         return switch (mobId) {
-            case "gravekeeper" -> EntityType.SKELETON;
+            case "void-reaper", "gravekeeper" -> EntityType.SKELETON;
+            case "frost-stalker" -> EntityType.STRAY;
+            case "nightmare" -> EntityType.PHANTOM;
             case "blood-spider" -> EntityType.SPIDER;
             case "pumpkin-wraith" -> EntityType.CREEPER;
             case "hex-witch" -> EntityType.WITCH;
