@@ -266,6 +266,10 @@ jobs:
               'villager.setInvulnerable(true);',
               'villager.setAI(false);',
               'new ItemStack(Material.CARVED_PUMPKIN)',
+              "findSafeSpawnLocation(creator)",
+              "private Location findSafeSpawnLocation(Player creator)",
+              "!feet.isPassable() || !head.isPassable() || !floor.getType().isSolid()",
+              "if (feet.isLiquid() || head.isLiquid() || floor.isLiquid()) continue;",
               "event.setCancelled(true);",
               'ClickEvent.runCommand(command)',
           ):
