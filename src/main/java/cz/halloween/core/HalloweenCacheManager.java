@@ -209,6 +209,7 @@ public final class HalloweenCacheManager implements Listener {
         }
 
         player.sendMessage(plugin.color("&8[&6Halloween&8] &aKlíč zapadl do zámku. Schránka je odemčená."));
+        plugin.getQuestManager().recordAction(player, "cache-open");
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
