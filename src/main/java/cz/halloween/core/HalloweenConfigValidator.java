@@ -273,10 +273,16 @@ public final class HalloweenConfigValidator {
                 if (secret.getBoolean("configured", false)) {
                     String world = secret.getString("world", "");
                     if (world.isBlank()) errors.add("secret-discoveries.locations." + id + ".world must be set");
+                    double x = secret.getDouble("x", Double.NaN);
+                    double y = secret.getDouble("y", Double.NaN);
+                    double z = secret.getDouble("z", Double.NaN);
+                    if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)) {
+                        errors.add("secret-discoveries.locations." + id + " coordinates must be finite numbers");
+                    }
                     double radius = secret.getDouble("radius-blocks",
                             plugin.getConfig().getDouble("secret-discoveries.default-radius-blocks", 4.5D));
-                    if (radius < 1.0D || radius > 32.0D) {
-                        errors.add("secret-discoveries.locations." + id + ".radius-blocks must be between 1 and 32");
+                    if (!Double.isFinite(radius) || radius < 1.0D || radius > 32.0D) {
+                        errors.add("secret-discoveries.locations." + id + ".radius-blocks must be finite and between 1 and 32");
                     }
                     long reward = secret.getLong("reward-fragments",
                             plugin.getConfig().getLong("secret-discoveries.default-reward-fragments", 250L));
