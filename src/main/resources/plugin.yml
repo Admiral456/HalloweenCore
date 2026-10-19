@@ -3,12 +3,12 @@ version: 0.1.0-SNAPSHOT
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
-description: Halloween progression with vanilla pumpkin villager and locked underground caches.
+description: Halloween progression with vanilla events, pumpkin villager and underground caches.
 softdepend: [ItemsAdder, MythicMobs, ModelEngine, BattlePass, WorldGuard, PlaceholderAPI]
 commands:
   halloween:
     description: Halloween progression, rewards and administration.
-    usage: /halloween [stats|progress|curse|challenge|rewards|claim|top|npc|cache|reload|debug|give|on|off]
+    usage: /halloween [stats|progress|curse|challenge|rewards|claim|top|event|npc|cache|reload|debug|give|on|off]
     aliases: [hallow]
     permission: halloweencore.use
 permissions:
