@@ -153,17 +153,12 @@ for rarity_weight in ("common: 70", "rare: 25", "legendary: 5"):
         fail(f"room rarity weights are incomplete: {rarity_weight}")
 if "key-drop-chance: 0.15" not in config:
     fail("bonus key drop chance should default to configurable 15 percent")
-for runtime_feature in ("rollRarity", "secret_room_rarity", "roomShellMaterial", "getChestRarity"):
-    if runtime_feature not in room_java:
-        fail(f"three-tier room runtime is missing: {runtime_feature}")
-if "rollBonusKeyDrop" not in quest_java or "key-rarity-weights" not in quest_java:
-    fail("villager quest bonus key drop is not implemented")
-
 room_java = (JAVA_DIR / "SecretRoomManager.java").read_text(encoding="utf-8")
 for feature in (
     "event.isNewChunk()", "chunkAttemptedKey", "isSafeRoomVolume", "recordGeneratedRoom",
     "generateTestRoom", "findAccessTunnel", "isSafeTunnelCeiling", "world.isChunkLoaded", "isNaturalCaveOpening", "decorateEntranceArch", "locateNearest", "locateAll", "onPlayerEnterSecretRoom",
-    "setDecorationIfAir", "secret_room_locked", "consumeOne", "migrateLegacyRoomRecords"
+    "setDecorationIfAir", "secret_room_locked", "secret_room_rarity", "consumeOne",
+    "migrateLegacyRoomRecords", "rollRarity", "roomShellMaterial", "getChestRarity"
 ):
     if feature not in room_java:
         fail(f"secret-room runtime contract is missing: {feature}")
@@ -179,6 +174,9 @@ for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
                 ".removeItem(", "objective-missing"):
     if feature not in quest_java:
         fail(f"quest turn-in contract is missing: {feature}")
+for feature in ("rollBonusKeyDrop", "key-rarity-weights"):
+    if feature not in quest_java:
+        fail(f"villager quest bonus key drop is missing: {feature}")
 
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
 for feature in ('action.equals("turnin")', "rooms generate", "private boolean handleLocate",
