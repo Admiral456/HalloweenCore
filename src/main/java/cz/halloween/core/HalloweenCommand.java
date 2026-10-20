@@ -494,7 +494,6 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&d/halloween rooms generate [radius] &7- bezpečný test generování (admin)"));
         sender.sendMessage(plugin.color("&d/locate halloweenroom &7- nejbližší zaznamenaná místnost"));
         sender.sendMessage(plugin.color("&d/locateall halloweenroom &7- všechny místnosti v tomto světě (admin)"));
-        sender.sendMessage(plugin.color("&d/halloween rooms generate &7- testovací generování (admin)"));
         sender.sendMessage(plugin.color("&d/halloween key give <počet> &7- běžné klíče sobě (admin)"));
         sender.sendMessage(plugin.color("&d/halloween key give <common|rare|legendary> <počet> [hráč] &7- klíče podle vzácnosti"));
         sender.sendMessage(plugin.color("&d/halloween rooms verify &7- kontrola evidovaných místností (admin)"));
