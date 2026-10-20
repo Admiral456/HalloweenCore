@@ -185,14 +185,13 @@ for feature in ("rollBonusKeyDrop", "key-drop-chances.common", "key-drop-chances
                 "key-drop-chances.legendary", "clampProbability"):
     if feature not in quest_java:
         fail(f"villager quest bonus key drop is missing: {feature}")
-if "verifyRecordedRooms" not in command_java or 'action.equals("verify")' not in command_java:
-    fail("admin room integrity verification command is missing")
-
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
 for feature in ('action.equals("turnin")', "rooms generate", "private boolean handleLocate",
                 "/locate halloweenroom"):
     if feature not in command_java:
         fail(f"required player/admin command is missing: {feature}")
+if "verifyRecordedRooms" not in command_java or 'action.equals("verify")' not in command_java:
+    fail("admin room integrity verification command is missing")
 
 dialogue_library = ROOT / "docs/DIALOGUE_LIBRARY_CZ.md"
 if not dialogue_library.is_file():

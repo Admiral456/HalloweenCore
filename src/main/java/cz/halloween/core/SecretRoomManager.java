@@ -429,6 +429,57 @@ public final class SecretRoomManager implements Listener {
         player.sendMessage(plugin.color("&8Místnost je ukrytá v přírodním kameni; hledej bezpečný vstup."));
     }
 
+    private boolean isRoomStructureIntact(World world, int chestX, int chestY, int chestZ) {
+        int x = chestX - ROOM_WIDTH / 2;
+        int y = chestY - 1;
+        int z = chestZ - ROOM_DEPTH / 2;
+
+        for (int dx = 0; dx < ROOM_WIDTH; dx++) {
+            for (int dy = 0; dy < ROOM_HEIGHT; dy++) {
+                for (int dz = 0; dz < ROOM_DEPTH; dz++) {
+                    boolean shell = dx == 0 || dx == ROOM_WIDTH - 1
+                            || dz == 0 || dz == ROOM_DEPTH - 1
+                            || dy == 0 || dy == ROOM_HEIGHT - 1;
+                    if (!shell) continue;
+
+                    boolean possibleDoorCell = (dy == 1 || dy == 2)
+                            && (((dx == 0 || dx == ROOM_WIDTH - 1) && dz == ROOM_DEPTH / 2)
+                            || ((dz == 0 || dz == ROOM_DEPTH - 1) && dx == ROOM_WIDTH / 2));
+                    if (!possibleDoorCell && world.getBlockAt(x + dx, y + dy, z + dz).getType().isAir()) {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        Direction[] directions = {
+                new Direction(-1, 0), new Direction(1, 0),
+                new Direction(0, -1), new Direction(0, 1)
+        };
+        int doorways = 0;
+        for (Direction direction : directions) {
+            int wallX = direction.dx() < 0 ? x
+                    : direction.dx() > 0 ? x + ROOM_WIDTH - 1 : x + ROOM_WIDTH / 2;
+            int wallZ = direction.dz() < 0 ? z
+                    : direction.dz() > 0 ? z + ROOM_DEPTH - 1 : z + ROOM_DEPTH / 2;
+            boolean lowerAir = world.getBlockAt(wallX, y + 1, wallZ).getType().isAir();
+            boolean upperAir = world.getBlockAt(wallX, y + 2, wallZ).getType().isAir();
+            if (!lowerAir && !upperAir) continue;
+            if (!(lowerAir && upperAir)) return false;
+            doorways++;
+
+            int outsideX = wallX + direction.dx();
+            int outsideZ = wallZ + direction.dz();
+            if (world.isChunkLoaded(outsideX >> 4, outsideZ >> 4)) {
+                if (!world.getBlockAt(outsideX, y + 1, outsideZ).getType().isAir()
+                        || !world.getBlockAt(outsideX, y + 2, outsideZ).getType().isAir()) {
+                    return false;
+                }
+            }
+        }
+        return doorways == 1;
+    }
+
     public void verifyRecordedRooms(CommandSender sender) {
         if (!sender.hasPermission("halloweencore.admin")) {
             sender.sendMessage(plugin.color("&cOvěření tajných truhel je pouze pro správce."));
@@ -444,7 +495,8 @@ public final class SecretRoomManager implements Listener {
             if (!world.isChunkLoaded(x >> 4, z >> 4)) { unloaded++; continue; }
             checked++;
             Block block = world.getBlockAt(x, y, z);
-            if (block.getType() != Material.CHEST || !isProtectedChest(block)) { broken++; continue; }
+            if (block.getType() != Material.CHEST || !isProtectedChest(block)
+                    || !isRoomStructureIntact(world, x, y, z)) { broken++; continue; }
             intact++;
             if (isLockedChest(block)) locked++;
         }
@@ -507,7 +559,16 @@ public final class SecretRoomManager implements Listener {
 
             KeyItemFactory.Rarity rarity = rollRarity("rooms.rarity-weights");
             buildRoom(world, x, y, z, accessTunnel, rarity);
-            recordGeneratedRoom(world, x + ROOM_WIDTH / 2, y + 1, z + ROOM_DEPTH / 2, rarity);
+            int chestX = x + ROOM_WIDTH / 2;
+            int chestY = y + 1;
+            int chestZ = z + ROOM_DEPTH / 2;
+            if (!isProtectedChest(world.getBlockAt(chestX, chestY, chestZ))
+                    || !isRoomStructureIntact(world, chestX, chestY, chestZ)) {
+                plugin.getLogger().warning("Generated secret room failed the post-build integrity check at "
+                        + world.getName() + " " + chestX + " " + chestY + " " + chestZ + ".");
+                return false;
+            }
+            recordGeneratedRoom(world, chestX, chestY, chestZ, rarity);
             chunk.getPersistentDataContainer().set(chunkHasRoomKey, PersistentDataType.BYTE, (byte) 1);
             plugin.getLogger().info("Generated " + rarity.id() + " secret room at " + world.getName() + " "
                     + (x + 3) + " " + (y + 1) + " " + (z + 3) + ".");

@@ -510,7 +510,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return filter(List.of("start", "turnin", "progress", "complete", "claim", "status"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("rooms")) {
-            return filter(List.of("status", "generate"), args[1]);
+            return filter(List.of("status", "generate", "verify", "list"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("locate")) {
             return filter(List.of("room", "rooms", "all", "halloweenroom", "secretroom"), args[1]);
