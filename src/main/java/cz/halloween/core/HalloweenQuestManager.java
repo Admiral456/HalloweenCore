@@ -257,25 +257,31 @@ public final class HalloweenQuestManager {
     }
 
     private void rollBonusKeyDrop(Player player) {
-        double chance = plugin.getConfig().getDouble("quests.key-drop-chance", 0.15D);
-        chance = Math.max(0.0D, Math.min(1.0D, chance));
-        if (chance <= 0.0D || java.util.concurrent.ThreadLocalRandom.current().nextDouble() >= chance) return;
+        // Absolute mutually exclusive probabilities, not relative rarity weights.
+        double roll = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
+        double common = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.common", 0.40D));
+        double rare = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.rare", 0.10D));
+        double legendary = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.legendary", 0.05D));
 
-        int common = Math.max(0, plugin.getConfig().getInt("quests.key-rarity-weights.common", 70));
-        int rare = Math.max(0, plugin.getConfig().getInt("quests.key-rarity-weights.rare", 25));
-        int legendary = Math.max(0, plugin.getConfig().getInt("quests.key-rarity-weights.legendary", 5));
-        long total = (long) common + rare + legendary;
-        KeyItemFactory.Rarity rarity = KeyItemFactory.Rarity.COMMON;
-        if (total > 0L) {
-            long roll = java.util.concurrent.ThreadLocalRandom.current().nextLong(total);
-            if (roll < common) rarity = KeyItemFactory.Rarity.COMMON;
-            else if ((roll -= common) < rare) rarity = KeyItemFactory.Rarity.RARE;
-            else rarity = KeyItemFactory.Rarity.LEGENDARY;
+        KeyItemFactory.Rarity rarity;
+        if (roll < common) {
+            rarity = KeyItemFactory.Rarity.COMMON;
+        } else if (roll < common + rare) {
+            rarity = KeyItemFactory.Rarity.RARE;
+        } else if (roll < common + rare + legendary) {
+            rarity = KeyItemFactory.Rarity.LEGENDARY;
+        } else {
+            return; // No key this time: 45% with the default configuration.
         }
 
         plugin.getKeyItemFactory().give(player, rarity, 1);
         player.sendMessage(plugin.color("&5&lBONUSOVÁ ODMĚNA &8» &7Štěstí! Získal jsi "
                 + rarity.color() + rarity.displayName() + " klíč tajné místnosti&7."));
+    }
+
+    private double clampProbability(double value) {
+        if (!Double.isFinite(value)) return 0.0D;
+        return Math.max(0.0D, Math.min(1.0D, value));
     }
 
     private int countMatchingItems(Player player, ItemStack template) {

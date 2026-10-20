@@ -276,12 +276,12 @@ quests:
         - id: minecraft:raw_iron
           amount: 8
 
-  # Additional roll on a successful villager quest turn-in. This never replaces the normal payout.
-  key-drop-chance: 0.15
-  key-rarity-weights:
-    common: 70
-    rare: 25
-    legendary: 5
+  # Absolute tier probabilities per successful player turn-in. Sum=0.55, so 45% gives no key.
+  # This is an extra bonus and never replaces the normal configured quest payout.
+  key-drop-chances:
+    common: 0.40
+    rare: 0.10
+    legendary: 0.05
 
 rooms:
   enabled: true

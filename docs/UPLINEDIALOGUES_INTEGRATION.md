@@ -31,9 +31,9 @@ HalloweenCore zpracovává akce z panelu přes skutečné Bukkit příkazy. Př�
 
 ## Bonusový klíč z villager questů
 
-Po úspěšném odevzdání questu příkazem `/halloween quest turnin <id>` se nezávisle na běžné odměně vyhodnotí šance 15 % na bonusový klíč. Pokud klíč padne, vzácnost se losuje samostatně: běžný 70 %, vzácný 25 %, legendární 5 %. Quest se dokončí i tehdy, když klíč nepadne. Ruční administrátorské dokončení questu klíč nelosuje — bonus je jen za skutečné odevzdání hráčem.
+Po úspěšném odevzdání questu příkazem `/halloween quest turnin <id>` proběhne jeden náhodný hod pro bonusový klíč: **40 % běžný, 10 % vzácný, 5 % legendární**. Jde o absolutní a vzájemně se vylučující šance; v 45 % případů nepadne žádný klíč. Quest se dokončí i tehdy, když klíč nepadne. Ruční administrátorské dokončení questu klíč nelosuje — bonus je jen za skutečné odevzdání hráčem.
 
-Šance je nastavena v `quests.key-drop-chance` (rozsah 0 až 1) a váhy v `quests.key-rarity-weights`. Běžná odměna se nastavuje nezávisle přes `reward-fragments` nebo `reward-items` u jednotlivých questů; není nahrazena klíčem.
+Šance jsou v `quests.key-drop-chances.common`, `quests.key-drop-chances.rare` a `quests.key-drop-chances.legendary` jako čísla od 0 do 1. Běžná odměna se nastavuje nezávisle přes `reward-fragments` nebo `reward-items` u jednotlivých questů; není nahrazena klíčem.
 
 ## Připravené questy
 

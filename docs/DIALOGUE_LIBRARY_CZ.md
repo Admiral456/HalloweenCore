@@ -264,7 +264,7 @@ V UplineDialogues vytvoř pro každého zadavatele rozhovor se čtyřmi větvemi
 
 ## Bonusový klíč z odevzdaného questu
 
-Při úspěšném odevzdání villager questu má hráč výchozí 15% šanci na bonusový klíč. Jeho vzácnost se losuje podle vah 70 běžný / 25 vzácný / 5 legendární. Klíč nenahrazuje běžnou odměnu; jde o zvláštní bonus. Hodnoty jsou nastavitelné v `config.yml`.
+Při úspěšném odevzdání villager questu se provede jeden hod pro bonusový klíč: 40 % běžný, 10 % vzácný, 5 % legendární; v 45 % případů nepadne žádný klíč. Klíč nenahrazuje běžnou odměnu. Hodnoty jsou nastavitelné v `config.yml`.
 
 ## Doporučená struktura každého rozhovoru v editoru
 
