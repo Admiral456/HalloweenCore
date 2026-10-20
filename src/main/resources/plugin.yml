@@ -6,6 +6,10 @@ author: Admiral456
 description: UplineDialogues quest bridge and locked underground secret rooms.
 softdepend: [ItemsAdder, PlaceholderAPI]
 commands:
+  locate:
+    description: Locate the nearest recorded Halloween secret room; other arguments pass to vanilla locate.
+    usage: /locate <secretroom|vanilla structure arguments>
+    permission: halloweencore.use
   halloween:
     description: Dialogue quests, quest fragments, secret-room status and key administration.
     usage: /halloween [quest|fragments|rooms|locate|key|reload]

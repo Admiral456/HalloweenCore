@@ -21,6 +21,15 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+        if (command.getName().equalsIgnoreCase("locate")) {
+            if (args.length > 0 && (args[0].equalsIgnoreCase("room")
+                    || args[0].equalsIgnoreCase("rooms") || args[0].equalsIgnoreCase("secretroom"))) {
+                return handleLocate(sender, new String[]{"locate", args[0]});
+            }
+            // Preserve vanilla /locate behavior for all other arguments.
+            String vanillaArgs = String.join(" ", args);
+            return Bukkit.dispatchCommand(sender, "minecraft:locate" + (vanillaArgs.isBlank() ? "" : " " + vanillaArgs));
+        }
         if (args.length == 0) {
             sendHelp(sender);
             return true;
