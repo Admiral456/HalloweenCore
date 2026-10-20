@@ -2,6 +2,7 @@ package cz.halloween.core;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
