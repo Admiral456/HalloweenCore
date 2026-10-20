@@ -1,6 +1,5 @@
 package cz.halloween.core;
 
-import me.clip.placeholderapi.PlaceholderAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
@@ -87,6 +86,8 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         NamespacedKey graveEncounterMob = new NamespacedKey(this, "grave_encounter_mob");
         NamespacedKey bloodMoonCaptain = new NamespacedKey(this, "blood_moon_captain");
         NamespacedKey vampireBoss = new NamespacedKey(this, "vampire_boss");
+        NamespacedKey headlessRider = new NamespacedKey(this, "headless_nick_rider");
+        NamespacedKey headlessHorse = new NamespacedKey(this, "headless_nick_horse");
         int removed = 0;
         for (Entity entity : chunk.getEntities()) {
             var pdc = entity.getPersistentDataContainer();
@@ -94,7 +95,9 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                     || pdc.has(eventMob, PersistentDataType.BYTE)
                     || pdc.has(graveEncounterMob, PersistentDataType.BYTE)
                     || pdc.has(bloodMoonCaptain, PersistentDataType.BYTE)
-                    || pdc.has(vampireBoss, PersistentDataType.BYTE);
+                    || pdc.has(vampireBoss, PersistentDataType.BYTE)
+                    || pdc.has(headlessRider, PersistentDataType.BYTE)
+                    || pdc.has(headlessHorse, PersistentDataType.BYTE);
             if (obsolete) {
                 entity.remove();
                 removed++;
@@ -112,7 +115,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                 "haunted-village", "secret-discoveries", "story-quests", "special-mobs", "notifications",
                 "daily-challenge", "return-rewards", "curse", "headless-nick", "random-events",
                 "atmosphere", "world-decorations", "finale", "boss", "vampire", "migrations",
-                "structure-generation", "structures");
+                "structure-generation", "structures", "bosses", "messages", "enabled");
         boolean changed = false;
         for (String section : legacySections) {
             if (getConfig().contains(section)) {

@@ -14,6 +14,9 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
@@ -103,6 +106,34 @@ public final class SecretRoomManager implements Listener {
                 player.openInventory(unlockedChest.getBlockInventory());
             }
         });
+    }
+
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onLockedChestBreak(BlockBreakEvent event) {
+        if (!isLockedChest(event.getBlock())) return;
+        event.setCancelled(true);
+        if (event.getPlayer() != null) {
+            event.getPlayer().sendMessage(plugin.color("&5&lZAMČENÁ TRUHLA &8» &7Bez speciálního klíče ji nelze otevřít ani rozbít."));
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onEntityExplosion(EntityExplodeEvent event) {
+        event.blockList().removeIf(this::isLockedChest);
+    }
+
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    public void onBlockExplosion(BlockExplodeEvent event) {
+        event.blockList().removeIf(this::isLockedChest);
+    }
+
+    private boolean isLockedChest(Block block) {
+        if (block == null || block.getType() != Material.CHEST) return false;
+        BlockState state = block.getState();
+        if (!(state instanceof Chest chest)) return false;
+        Byte locked = chest.getPersistentDataContainer().get(lockedKey, PersistentDataType.BYTE);
+        return locked != null && locked == (byte) 1;
     }
 
     public int getGeneratedCount() {
