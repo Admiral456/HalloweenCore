@@ -263,7 +263,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
 
     private boolean handleKey(CommandSender sender, String[] args) {
         if (args.length < 2 || !args[1].equalsIgnoreCase("give")) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween key give <počet> nebo /halloween key give <hráč> <počet>"));
+            sender.sendMessage(plugin.color("&cPoužití: /halloween key give <počet> nebo /halloween key give <vzácnost> <počet> [hráč]."));
             return true;
         }
         if (!mayManageKeys(sender)) {
@@ -272,15 +272,38 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
         Player target;
+        KeyItemFactory.Rarity rarity = KeyItemFactory.Rarity.COMMON;
         int amount;
         if (args.length == 3) {
             target = resolveTarget(sender, null);
             amount = parseAmount(args[2]);
         } else if (args.length == 4) {
-            target = resolveTarget(sender, args[2]);
-            amount = parseAmount(args[3]);
+            KeyItemFactory.Rarity parsed = parseRarity(args[2]);
+            if (parsed != null) {
+                rarity = parsed;
+                target = resolveTarget(sender, null);
+                amount = parseAmount(args[3]);
+            } else {
+                target = resolveTarget(sender, args[2]);
+                amount = parseAmount(args[3]);
+            }
+        } else if (args.length == 5) {
+            KeyItemFactory.Rarity parsedTierFirst = parseRarity(args[2]);
+            KeyItemFactory.Rarity parsedPlayerFirst = parseRarity(args[3]);
+            if (parsedTierFirst != null) {
+                rarity = parsedTierFirst;
+                amount = parseAmount(args[3]);
+                target = resolveTarget(sender, args[4]);
+            } else if (parsedPlayerFirst != null) {
+                target = resolveTarget(sender, args[2]);
+                rarity = parsedPlayerFirst;
+                amount = parseAmount(args[4]);
+            } else {
+                sender.sendMessage(plugin.color("&cVzácnost musí být common, rare nebo legendary."));
+                return true;
+            }
         } else {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween key give <počet> nebo /halloween key give <hráč> <počet>"));
+            sender.sendMessage(plugin.color("&cPoužití: /halloween key give <počet> nebo /halloween key give <vzácnost> <počet> [hráč]."));
             return true;
         }
         if (target == null) return true;
@@ -289,10 +312,22 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        plugin.getKeyItemFactory().give(target, amount);
-        target.sendMessage(plugin.color("&5&lKLÍČ SKRYTÉ MÍSTNOSTI &8» &dObdržel jsi " + amount + " klíč(ů)."));
-        sender.sendMessage(plugin.color("&aVydáno " + amount + " klíč(ů) hráči &f" + target.getName() + "&a."));
+        plugin.getKeyItemFactory().give(target, rarity, amount);
+        target.sendMessage(plugin.color("&5&lKLÍČ TAJNÉ MÍSTNOSTI &8» &dObdržel jsi " + amount + "× "
+                + rarity.displayName().toLowerCase(Locale.ROOT) + " klíč."));
+        sender.sendMessage(plugin.color("&aVydáno " + amount + "× " + rarity.displayName().toLowerCase(Locale.ROOT)
+                + " klíč hráči &f" + target.getName() + "&a."));
         return true;
+    }
+
+    private KeyItemFactory.Rarity parseRarity(String value) {
+        if (value == null) return null;
+        return switch (value.toLowerCase(Locale.ROOT)) {
+            case "common", "bezny", "běžný", "běžná" -> KeyItemFactory.Rarity.COMMON;
+            case "rare", "vzacny", "vzácný", "vzácná" -> KeyItemFactory.Rarity.RARE;
+            case "legendary", "legendarní", "legendární" -> KeyItemFactory.Rarity.LEGENDARY;
+            default -> null;
+        };
     }
 
     private boolean handleRooms(CommandSender sender, String[] args) {
@@ -482,9 +517,18 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 && List.of("start", "turnin", "status", "claim", "complete").contains(args[1].toLowerCase(Locale.ROOT))) {
             return filter(new ArrayList<>(plugin.getQuestManager().getCatalogIds()), args[2]);
         }
-        if (args.length == 3 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")
-                && sender instanceof Player) {
-            return filter(List.of("1", "3", "5"), args[2]);
+        if (args.length == 3 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")) {
+            return filter(List.of("common", "rare", "legendary", "1", "3", "5"), args[2]);
+        }
+        if (args.length == 4 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")) {
+            if (parseRarity(args[2]) != null) return filter(List.of("1", "3", "5"), args[3]);
+            return filter(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[3]);
+        }
+        if (args.length == 5 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")) {
+            if (parseRarity(args[2]) != null) {
+                return filter(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[4]);
+            }
+            return filter(List.of("common", "rare", "legendary"), args[3]);
         }
         return List.of();
     }
