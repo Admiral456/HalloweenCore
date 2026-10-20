@@ -190,7 +190,7 @@ Příkazy pro akce dialogu:
 
 ## Přidávání vlastních úkolů
 
-V `src/main/resources/config.yml` přidej novou položku do `quests.definitions`. Vyplň unikátní ID, `title`, `difficulty`, `description`, `objective-type`, `target` a `required-items`. Volitelně přidej:
+V `src/main/resources/config.yml` přidej novou položku do `quests.definitions`. Vyplň unikátní ID, `title`, `difficulty`, `description`, `objective-type`, `target` a `required-items`. Tento build podporuje `delivery` (odevzdání předmětů), `explore-room` (vstup do evidované tajné místnosti) a `explore-and-deliver` (obojí). U běžné dodávky musí být seznam `required-items` neprázdný; `explore-room` může mít prázdný seznam. Po uložení a načtení konfigurace spusť jako správce `/halloween quest validate`, který vypíše neplatná ID dřív, než je hráči dostanou v náhodné nabídce. Volitelně přidej:
 - `dialogue-story: "Krátké příběhové pozadí, které NPC řekne při nabídce"`;
 - `villager-offer-weight: 1.0` — vyšší číslo znamená častější nabídku, `0` nabídku vypne. Pokud pole chybí, váha je 1;
 - `repeatable: false` — úkol se po dokončení už znovu nenabídne. Pokud pole chybí, úkol je opakovatelný;
