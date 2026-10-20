@@ -73,4 +73,4 @@ Zůstalo pouze třináct licencovaných sladkostí s nezměněnými texturami a 
 
 Po sestavení stáhni artefakt HalloweenCore JAR a ItemsAdder ZIP z GitHub Actions. JAR vlož do plugins, samostatně nainstaluj UplineDialogues a volitelně ItemsAdder + PlaceholderAPI. ItemsAdder obsah zkopíruj do plugins/ItemsAdder/contents/warriorland_halloween/, spusť /iazip a ověř doručení resource packu klientům. Po změně JARu server restartuj.
 
-Tato větev musí projít CI a testem na staging serveru; samotné sestavení není důkazem živého testu.
+CI run [39424417548](https://github.com/Admiral456/HalloweenCore/actions/runs/39424417548) prošel validací konfigurace a loot tabulek, Maven sestavením i zabalením JARu a ItemsAdder ZIPu. Živé testování na staging serveru a vlastní dialogové mapy v UplineDialogues jsou stále samostatné kroky.
