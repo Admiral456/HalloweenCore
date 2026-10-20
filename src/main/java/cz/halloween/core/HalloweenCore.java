@@ -60,7 +60,39 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         getConfig().addDefault("secret-rooms.chance-per-new-chunk", 0.01);
         getConfig().addDefault("secret-rooms.min-depth-below-surface", 16);
         getConfig().addDefault("secret-rooms.max-depth-below-surface", 28);
-        getConfig().addDefault("quest-rewards", java.util.Collections.emptyMap());
+        getConfig().addDefault("secret-rooms.rarity-weights.common", 70);
+        getConfig().addDefault("secret-rooms.rarity-weights.rare", 25);
+        getConfig().addDefault("secret-rooms.rarity-weights.legendary", 5);
+
+        getConfig().addDefault("secret-rooms.loot.common.min-fragments", 8);
+        getConfig().addDefault("secret-rooms.loot.common.max-fragments", 16);
+        getConfig().addDefault("secret-rooms.loot.rare.min-fragments", 20);
+        getConfig().addDefault("secret-rooms.loot.rare.max-fragments", 35);
+        getConfig().addDefault("secret-rooms.loot.legendary.min-fragments", 40);
+        getConfig().addDefault("secret-rooms.loot.legendary.max-fragments", 70);
+
+        getConfig().addDefault("quest-rewards.default-difficulty", "light");
+        getConfig().addDefault("quest-rewards.difficulties.light.min-fragments", 3);
+        getConfig().addDefault("quest-rewards.difficulties.light.max-fragments", 5);
+        getConfig().addDefault("quest-rewards.difficulties.medium.min-fragments", 6);
+        getConfig().addDefault("quest-rewards.difficulties.medium.max-fragments", 9);
+        getConfig().addDefault("quest-rewards.difficulties.hard.min-fragments", 10);
+        getConfig().addDefault("quest-rewards.difficulties.hard.max-fragments", 15);
+        getConfig().addDefault("quest-rewards.difficulties.very-hard.min-fragments", 16);
+        getConfig().addDefault("quest-rewards.difficulties.very-hard.max-fragments", 25);
+
+        getConfig().addDefault("quest-rewards.difficulties.light.key-chances.common", 0.10);
+        getConfig().addDefault("quest-rewards.difficulties.light.key-chances.rare", 0.01);
+        getConfig().addDefault("quest-rewards.difficulties.light.key-chances.legendary", 0.001);
+        getConfig().addDefault("quest-rewards.difficulties.medium.key-chances.common", 0.15);
+        getConfig().addDefault("quest-rewards.difficulties.medium.key-chances.rare", 0.035);
+        getConfig().addDefault("quest-rewards.difficulties.medium.key-chances.legendary", 0.005);
+        getConfig().addDefault("quest-rewards.difficulties.hard.key-chances.common", 0.20);
+        getConfig().addDefault("quest-rewards.difficulties.hard.key-chances.rare", 0.06);
+        getConfig().addDefault("quest-rewards.difficulties.hard.key-chances.legendary", 0.02);
+        getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.common", 0.25);
+        getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.rare", 0.10);
+        getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.legendary", 0.08);
         getConfig().options().copyDefaults(true);
         saveConfig();
     }
@@ -79,6 +111,10 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
     public DialogQuestManager getQuestManager() {
         return questManager;
+    }
+
+    public KeyItemFactory getKeyItemFactory() {
+        return keyItemFactory;
     }
 
     public void savePlayerData() {
@@ -186,47 +222,71 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
     private void handleKeyCommand(CommandSender sender, String[] args) {
         if (args.length < 2 || !args[1].equalsIgnoreCase("give")) {
-            sender.sendMessage(ChatColor.YELLOW + "Použití: /halloween key give [hráč] [počet]");
+            sender.sendMessage(ChatColor.YELLOW
+                    + "Použití: /halloween key give [common|rare|legendary] [hráč] [počet]");
             return;
         }
         if (!sender.hasPermission("halloweencore.key.give")) {
             sender.sendMessage(ChatColor.RED + "Na vydávání klíčů nemáš oprávnění.");
             return;
         }
+
+        String rarity = "common";
+        int cursor = 2;
+        if (cursor < args.length && KeyItemFactory.isValidRarity(args[cursor])) {
+            rarity = KeyItemFactory.normalizeRarity(args[cursor]);
+            cursor++;
+        }
+
         Player target;
-        int amount = 1;
-        if (sender instanceof Player player && args.length == 2) {
-            target = player;
-        } else {
-            if (args.length < 3) {
-                sender.sendMessage(ChatColor.YELLOW + "Použití z konzole: /halloween key give <hráč> [počet]");
-                return;
-            }
-            target = Bukkit.getPlayerExact(args[2]);
+        if (cursor < args.length) {
+            target = Bukkit.getPlayerExact(args[cursor]);
             if (target == null) {
                 sender.sendMessage(ChatColor.RED + "Hráč musí být online.");
                 return;
             }
-            if (args.length >= 4) {
-                try {
-                    amount = Integer.parseInt(args[3]);
-                } catch (NumberFormatException exception) {
-                    sender.sendMessage(ChatColor.RED + "Počet musí být celé číslo.");
-                    return;
-                }
+            cursor++;
+        } else if (sender instanceof Player player) {
+            target = player;
+        } else {
+            sender.sendMessage(ChatColor.YELLOW
+                    + "Použití z konzole: /halloween key give [common|rare|legendary] <hráč> [počet]");
+            return;
+        }
+
+        int amount = 1;
+        if (cursor < args.length) {
+            try {
+                amount = Integer.parseInt(args[cursor]);
+            } catch (NumberFormatException exception) {
+                sender.sendMessage(ChatColor.RED + "Počet musí být celé číslo.");
+                return;
             }
+            cursor++;
+        }
+        if (cursor < args.length) {
+            sender.sendMessage(ChatColor.YELLOW
+                    + "Použití: /halloween key give [common|rare|legendary] [hráč] [počet]");
+            return;
         }
         if (amount < 1 || amount > 64) {
             sender.sendMessage(ChatColor.RED + "Počet klíčů musí být v rozsahu 1 až 64.");
             return;
         }
-        ItemStack key = keyItemFactory.createKey(amount);
+
+        ItemStack key = keyItemFactory.createKey(rarity, amount);
         Map<Integer, ItemStack> leftovers = target.getInventory().addItem(key);
         for (ItemStack leftover : leftovers.values()) {
             target.getWorld().dropItemNaturally(target.getLocation(), leftover);
         }
-        target.sendMessage(ChatColor.GOLD + "Získal jsi speciální klíč k tajné podzemní truhle.");
-        if (sender != target) sender.sendMessage(ChatColor.GREEN + "Klíč předán hráči " + target.getName() + ".");
+        String rarityLabel = switch (rarity) {
+            case "rare" -> "vzácný";
+            case "legendary" -> "legendární";
+            default -> "obyčejný";
+        };
+        target.sendMessage(ChatColor.GOLD + "Získal jsi " + amount + "× " + rarityLabel
+                + " klíč tajné místnosti.");
+        if (sender != target) sender.sendMessage(ChatColor.GREEN + "Klíče předány hráči " + target.getName() + ".");
     }
 
     private void sendHelp(CommandSender sender) {
@@ -237,7 +297,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         sender.sendMessage(ChatColor.YELLOW + "/halloween quest status [id] " + ChatColor.GRAY + "— stav úkolů");
         sender.sendMessage(ChatColor.YELLOW + "/halloween fragments " + ChatColor.GRAY + "— počet fragmentů");
         sender.sendMessage(ChatColor.YELLOW + "/halloween rooms status " + ChatColor.GRAY + "— stav místností");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween key give [hráč] [počet] " + ChatColor.GRAY + "— administrátorské vydání klíče");
+        sender.sendMessage(ChatColor.YELLOW + "/halloween key give [common|rare|legendary] [hráč] [počet] " + ChatColor.GRAY + "— administrátorské vydání klíče");
         if (sender.hasPermission("halloweencore.admin")) {
             sender.sendMessage(ChatColor.YELLOW + "/halloween reload " + ChatColor.GRAY + "— načíst konfiguraci");
         }
