@@ -48,7 +48,7 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
             if (field.equals("has_quest")) return Boolean.toString(manager.hasVillagerQuest(player.getUniqueId()));
             if (id == null || id.isBlank() || !manager.isConfiguredQuest(id)) {
                 return switch (field) {
-                    case "id", "title", "description", "difficulty", "reward" -> "";
+                    case "id", "title", "description", "difficulty", "reward", "story" -> "";
                     default -> null;
                 };
             }
@@ -56,6 +56,7 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
                 case "id" -> id;
                 case "title" -> manager.getTitle(id);
                 case "description" -> manager.getDescription(id);
+                case "story" -> plugin.getConfig().getString("quests.definitions." + id + ".dialogue-story", manager.getDescription(id));
                 case "difficulty" -> manager.getDifficulty(id);
                 case "reward" -> Long.toString(manager.getConfiguredFragmentReward(id));
                 default -> null;
