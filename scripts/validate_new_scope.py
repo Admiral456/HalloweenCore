@@ -207,7 +207,8 @@ dialogue_text = dialogue_library.read_text(encoding="utf-8")
 for placeholder in (
     "%halloween_villager_quest_status%", "%halloween_villager_quest_title%",
     "%halloween_villager_quest_description%", "%halloween_villager_quest_story%",
-    "%halloween_villager_quest_reward%", "%halloween_villager_quest_reward_items%"
+    "%halloween_villager_quest_reward%", "%halloween_villager_quest_reward_items%",
+    "%halloween_villager_quest_turnin_status%"
 ):
     if placeholder not in dialogue_text:
         fail(f"random villager dialogue is missing required placeholder {placeholder}")
@@ -219,9 +220,9 @@ for command in (
         fail(f"random villager dialogue is missing command {command}")
 
 for node in (
-    "START", "VILLAGE_STORY", "OFFER", "OFFER_DETAILS", "ACCEPTED",
-    "ACTIVE", "ACTIVE_DETAILS", "NOT_READY", "QUEST_COMPLETE", "DECLINED",
-    "NO_WORK", "GOODBYE"
+    "START", "OFFER_ROUTER", "VILLAGE_STORY", "OFFER", "OFFER_DETAILS", "ACCEPTED",
+    "ACTIVE", "ACTIVE_DETAILS", "TURNIN_ROUTER", "NOT_READY", "QUEST_ERROR",
+    "QUEST_COMPLETE", "DECLINED", "NO_WORK", "GOODBYE"
 ):
     if f"Uzel {node}" not in dialogue_text:
         fail(f"random villager dialogue tree is missing node {node}")
