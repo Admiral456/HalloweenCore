@@ -234,6 +234,11 @@ for node in (
 ):
     if f"Uzel {node}" not in dialogue_text:
         fail(f"random villager dialogue tree is missing node {node}")
+declared_nodes = set(re.findall(r"^### Uzel ([A-Z_]+)\\b", dialogue_text, flags=re.MULTILINE))
+targets = set(re.findall(r"→\\s*(?:uzel\\s+)?(?:\\*\\*)?([A-Z_]{2,})(?:\\*\\*)?", dialogue_text))
+unresolved = targets - declared_nodes
+if unresolved:
+    fail(f"dialogue tree has links to missing nodes: {sorted(unresolved)}")
 for choice in ("zeptat se na podrobnosti", "odmítám", "Přijímám úkol", "Vrátím se později"):
     if choice.lower() not in dialogue_text.lower():
         fail(f"random villager dialogue tree is missing player choice: {choice}")
