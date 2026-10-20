@@ -185,7 +185,7 @@ quest_java = (JAVA_DIR / "HalloweenQuestManager.java").read_text(encoding="utf-8
 for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
                 ".removeItem(", "objective-missing", "prepareVillagerOffer",
                 "acceptVillagerOffer", "declineVillagerOffer", "markVillagerQuestCompleted",
-                "getVillagerQuestStatus", "villager-offer-weight", "default-reward-fragments"):
+                "getVillagerQuestStatus", "isRepeatable", "villager-offer-weight", "default-reward-fragments"):
     if feature not in quest_java:
         fail(f"quest turn-in/random-offer contract is missing: {feature}")
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
