@@ -3,13 +3,17 @@ package cz.halloween.core;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.Locale;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.World;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.configuration.ConfigurationSection;
@@ -26,6 +30,8 @@ import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 
 public final class SecretRoomManager implements Listener {
@@ -107,7 +113,9 @@ public final class SecretRoomManager implements Listener {
         rooms.set(path + ".x", chestX);
         rooms.set(path + ".y", chestY);
         rooms.set(path + ".z", chestZ);
+        rooms.set(path + ".rarity", rollRoomRarity());
         rooms.set(path + ".locked", true);
+        rooms.set(path + ".loot-generated", false);
         saveRooms();
         plugin.getLogger().info("Vygenerována tajná místnost v novém chunku: "
                 + world.getName() + " " + chestX + "," + chestY + "," + chestZ);
@@ -168,15 +176,45 @@ public final class SecretRoomManager implements Listener {
         String path = roomPath(block.getWorld().getUID(), block.getX(), block.getY(), block.getZ());
         if (!rooms.contains(path + ".locked") || !rooms.getBoolean(path + ".locked", false)) return;
 
-        if (!consumeKey(event.getPlayer().getInventory())) {
+        String rarity = normalizeRarity(rooms.getString(path + ".rarity", "common"));
+        PlayerInventory inventory = event.getPlayer().getInventory();
+        if (!hasMatchingKey(inventory, rarity)) {
             event.setCancelled(true);
-            event.getPlayer().sendMessage(ChatColor.RED + "Truhla je zamčená. Potřebuješ speciální klíč.");
+            event.getPlayer().sendMessage(ChatColor.RED + "Truhla je zamčená. Potřebuješ "
+                    + rarityName(rarity) + " klíč.");
             return;
         }
+        if (!consumeKey(inventory, rarity)) {
+            event.setCancelled(true);
+            event.getPlayer().sendMessage(ChatColor.RED + "Nepodařilo se použít odpovídající klíč.");
+            return;
+        }
+
+        // The loot is generated once, when the correct key unlocks this specific chest.
+        // The tier and reward marker are saved, so the chest cannot reroll its rewards.
+        populateChest(block, rarity);
+        long fragments = rollFragmentReward(rarity);
+        if (fragments > 0) {
+            String balancePath = "players." + event.getPlayer().getUniqueId() + ".fragments";
+            long current = Math.max(0L, plugin.getPlayerData().getLong(balancePath, 0L));
+            long next = current > Long.MAX_VALUE - fragments ? Long.MAX_VALUE : current + fragments;
+            plugin.getPlayerData().set(balancePath, next);
+        }
+
         rooms.set(path + ".locked", false);
+        rooms.set(path + ".loot-generated", true);
+        rooms.set(path + ".fragments-awarded", fragments);
         rooms.set(path + ".unlocked-by", event.getPlayer().getUniqueId().toString());
+        rooms.set(path + ".unlocked-at", java.time.Instant.now().toString());
+        plugin.savePlayerData();
         saveRooms();
-        event.getPlayer().sendMessage(ChatColor.GOLD + "Použil jsi speciální klíč a odemkl tajnou truhlu.");
+
+        event.getPlayer().sendMessage(ChatColor.GOLD + "Odemkl jsi " + rarityName(rarity)
+                + " tajnou truhlu.");
+        if (fragments > 0) {
+            event.getPlayer().sendMessage(ChatColor.GOLD + "Odměna: " + fragments + " fragmentů.");
+        }
+        event.getPlayer().sendMessage(ChatColor.GRAY + "Obsah truhly byl vytvořen jednorázově.");
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
@@ -218,9 +256,18 @@ public final class SecretRoomManager implements Listener {
         return rooms.getBoolean(path + ".locked", false);
     }
 
-    private boolean consumeKey(PlayerInventory inventory) {
+    private boolean hasMatchingKey(PlayerInventory inventory, String requiredRarity) {
         ItemStack offHand = inventory.getItemInOffHand();
-        if (keyFactory.isKey(offHand)) {
+        if (requiredRarity.equals(keyFactory.getRarity(offHand))) return true;
+        for (ItemStack stack : inventory.getStorageContents()) {
+            if (requiredRarity.equals(keyFactory.getRarity(stack))) return true;
+        }
+        return false;
+    }
+
+    private boolean consumeKey(PlayerInventory inventory, String requiredRarity) {
+        ItemStack offHand = inventory.getItemInOffHand();
+        if (requiredRarity.equals(keyFactory.getRarity(offHand))) {
             if (offHand.getAmount() <= 1) inventory.setItemInOffHand(null);
             else {
                 offHand.setAmount(offHand.getAmount() - 1);
@@ -231,7 +278,7 @@ public final class SecretRoomManager implements Listener {
         ItemStack[] contents = inventory.getStorageContents();
         for (int slot = 0; slot < contents.length; slot++) {
             ItemStack stack = contents[slot];
-            if (!keyFactory.isKey(stack)) continue;
+            if (!requiredRarity.equals(keyFactory.getRarity(stack))) continue;
             if (stack.getAmount() <= 1) inventory.setItem(slot, null);
             else {
                 stack.setAmount(stack.getAmount() - 1);
@@ -240,6 +287,123 @@ public final class SecretRoomManager implements Listener {
             return true;
         }
         return false;
+    }
+
+    private String rollRoomRarity() {
+        int common = Math.max(0, Math.min(1_000_000,
+                plugin.getConfig().getInt("secret-rooms.rarity-weights.common", 70)));
+        int rare = Math.max(0, Math.min(1_000_000,
+                plugin.getConfig().getInt("secret-rooms.rarity-weights.rare", 25)));
+        int legendary = Math.max(0, Math.min(1_000_000,
+                plugin.getConfig().getInt("secret-rooms.rarity-weights.legendary", 5)));
+        int total = common + rare + legendary;
+        if (total <= 0) return "common";
+        int roll = random.nextInt(total);
+        if (roll < common) return "common";
+        roll -= common;
+        if (roll < rare) return "rare";
+        return "legendary";
+    }
+
+    private String normalizeRarity(String rarity) {
+        return KeyItemFactory.normalizeRarity(rarity);
+    }
+
+    private String rarityName(String rarity) {
+        return switch (normalizeRarity(rarity)) {
+            case "rare" -> "vzácnou";
+            case "legendary" -> "legendární";
+            default -> "obyčejnou";
+        };
+    }
+
+    private long rollFragmentReward(String rarity) {
+        String path = "secret-rooms.loot." + normalizeRarity(rarity);
+        long min = Math.max(0L, plugin.getConfig().getLong(path + ".min-fragments", 0L));
+        long max = Math.max(min, plugin.getConfig().getLong(path + ".max-fragments", min));
+        if (max <= min) return min;
+        return min + random.nextLong(max - min + 1L);
+    }
+
+    private void populateChest(Block block, String rarity) {
+        BlockState state = block.getState();
+        if (!(state instanceof org.bukkit.block.Chest chest)) return;
+        Inventory inventory = chest.getBlockInventory();
+        inventory.clear();
+
+        String path = "secret-rooms.loot." + normalizeRarity(rarity) + ".items";
+        List<Map<?, ?>> entries = plugin.getConfig().getMapList(path);
+        for (Map<?, ?> entry : entries) {
+            String materialName = stringValue(entry.get("material"), "");
+            Material material = Material.matchMaterial(materialName);
+            if (material == null || material.isAir()) {
+                plugin.getLogger().warning("Neznámý materiál v " + path + ": " + materialName);
+                continue;
+            }
+            double chance = doubleValue(entry.get("chance"), 1.0);
+            if (random.nextDouble() >= Math.max(0.0, Math.min(1.0, chance))) continue;
+
+            int min = Math.max(1, intValue(entry.get("min"), 1));
+            int max = Math.max(min, intValue(entry.get("max"), min));
+            int amount = min == max ? min : min + random.nextInt(max - min + 1);
+            amount = Math.min(amount, material.getMaxStackSize());
+            ItemStack item = new ItemStack(material, amount);
+            applyRandomEnchantment(item, entry.get("enchantments"));
+
+            Map<Integer, ItemStack> leftovers = inventory.addItem(item);
+            for (ItemStack leftover : leftovers.values()) {
+                block.getWorld().dropItemNaturally(block.getLocation().add(0.5, 0.5, 0.5), leftover);
+            }
+        }
+        chest.update(true, false);
+    }
+
+    private void applyRandomEnchantment(ItemStack item, Object configured) {
+        if (!(configured instanceof List<?> options) || options.isEmpty()) return;
+        String selected = String.valueOf(options.get(random.nextInt(options.size())));
+        int separator = selected.lastIndexOf(':');
+        if (separator <= 0 || separator >= selected.length() - 1) return;
+
+        String enchantmentId = selected.substring(0, separator).toLowerCase(Locale.ROOT);
+        int level;
+        try {
+            level = Integer.parseInt(selected.substring(separator + 1));
+        } catch (NumberFormatException exception) {
+            return;
+        }
+        if (level < 1 || level > 5) return;
+
+        Enchantment enchantment = Enchantment.getByKey(NamespacedKey.minecraft(enchantmentId));
+        if (enchantment == null) return;
+        ItemMeta meta = item.getItemMeta();
+        if (meta instanceof EnchantmentStorageMeta bookMeta) {
+            bookMeta.addStoredEnchant(enchantment, level, true);
+            item.setItemMeta(bookMeta);
+        } else if (meta != null) {
+            item.addUnsafeEnchantment(enchantment, level);
+        }
+    }
+
+    private String stringValue(Object value, String fallback) {
+        return value == null ? fallback : String.valueOf(value);
+    }
+
+    private int intValue(Object value, int fallback) {
+        if (value instanceof Number number) return number.intValue();
+        try {
+            return Integer.parseInt(String.valueOf(value));
+        } catch (NumberFormatException exception) {
+            return fallback;
+        }
+    }
+
+    private double doubleValue(Object value, double fallback) {
+        if (value instanceof Number number) return number.doubleValue();
+        try {
+            return Double.parseDouble(String.valueOf(value));
+        } catch (NumberFormatException exception) {
+            return fallback;
+        }
     }
 
     private String roomPath(UUID worldUid, int x, int y, int z) {
