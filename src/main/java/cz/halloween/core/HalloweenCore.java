@@ -34,6 +34,7 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
 
         Bukkit.getPluginManager().registerEvents(this, this);
         Bukkit.getPluginManager().registerEvents(secretRoomManager, this);
+        secretRoomManager.protectRecordedChestsInLoadedChunks();
 
         if (getCommand("halloween") == null) {
             getLogger().severe("Command 'halloween' is missing from plugin.yml; disabling plugin.");

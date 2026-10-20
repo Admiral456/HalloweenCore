@@ -61,6 +61,8 @@ PlaceholderAPI je volitelné. Jsou dostupné:
 
 - /halloween rooms status zobrazuje počítadla, konfiguraci a poslední zaznamenanou místnost.
 - /halloween rooms generate [radius] je administrátorský test v Overworldu; zkouší bezpečné umístění v okruhu několika chunků.
+- /halloween rooms verify zkontroluje zaznamenané místnosti v již načtených chunkech a vypíše chybějící či nechráněné truhly; nenačtené chunky neotevírá.
 - /locate halloweenroom [max-vzdálenost] nebo /halloween locate room hledá nejbližší skutečně zaznamenanou místnost.
 - /locateall halloweenroom vypisuje všechny zaznamenané místnosti aktuálního světa pouze správci.
-- Automatické generování se spouští na nově vytvořeném Overworld chunku; již existující chunky se automaticky neprohledávají. Výchozí šance 2,5 % je šancí na pokus; pokud žádný kandidát neprojde kontrolou bezpečného kamenného obalu, místnost se nevygeneruje. Ruční příkaz slouží jako ověřitelný test.
+- Automatické generování se spouští na nově vytvořeném Overworld chunku; již existující chunky se automaticky neprohledávají. Výchozí šance 2,5 % je šancí na pokus, nikoli zárukou místnosti v každém novém chunku; kandidát musí projít kontrolou kamenného obalu i bezpečné cesty do přírodní jeskyně. Použij /halloween rooms generate jako test a /halloween rooms verify ke kontrole záznamů.
+- Truhly zůstávají chráněné i po odemčení proti rozbití, ohni, výbuchům TNT/creeperů, přesunu písty a automatickému vkládání/vytahování předmětů hopperem či hopper-minecartem. Po odemčení je lze ručně otevřít.

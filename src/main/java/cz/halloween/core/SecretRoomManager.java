@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
+import org.bukkit.block.DoubleChest;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -16,12 +17,18 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockBurnEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.configuration.file.YamlConfiguration;
@@ -54,6 +61,7 @@ public final class SecretRoomManager implements Listener {
     private final KeyItemFactory keyItemFactory;
     private final NamespacedKey lockedKey;
     private final NamespacedKey rarityKey;
+    private final NamespacedKey managedKey;
     private final NamespacedKey chunkAttemptedKey;
     private final NamespacedKey chunkHasRoomKey;
     private final File dataFile;
@@ -64,6 +72,7 @@ public final class SecretRoomManager implements Listener {
         this.keyItemFactory = keyItemFactory;
         this.lockedKey = new NamespacedKey(plugin, "secret_room_locked");
         this.rarityKey = new NamespacedKey(plugin, "secret_room_rarity");
+        this.managedKey = new NamespacedKey(plugin, "secret_room_managed");
         this.chunkAttemptedKey = new NamespacedKey(plugin, "secret_room_attempted_v1");
         this.chunkHasRoomKey = new NamespacedKey(plugin, "secret_room_anchor_v1");
         this.dataFile = new File(plugin.getDataFolder(), "secret-rooms.yml");
@@ -108,6 +117,47 @@ public final class SecretRoomManager implements Listener {
             data.set("stats.generated", Math.max(data.getInt("stats.generated", 0), locations.size()));
             save();
             plugin.getLogger().info("Migrated " + added + " existing secret-room location(s) for /locate.");
+        }
+    }
+
+    /**
+     * Re-attach protection to registered chests from previous builds, even if already opened.
+     * Only already-loaded chunks are inspected; this never loads terrain as a side effect.
+     */
+    public void protectRecordedChestsInLoadedChunks() {
+        for (World world : Bukkit.getWorlds()) {
+            for (Chunk chunk : world.getLoadedChunks()) markRecordedChestsInChunk(chunk);
+        }
+    }
+
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    public void onRecordedRoomChunkLoad(ChunkLoadEvent event) {
+        markRecordedChestsInChunk(event.getChunk());
+    }
+
+    private void markRecordedChestsInChunk(Chunk chunk) {
+        String worldName = chunk.getWorld().getName();
+        for (Map<?, ?> entry : data.getMapList("locations")) {
+            if (!worldName.equals(String.valueOf(entry.get("world")))) continue;
+            int x = (int) value(entry.get("x"));
+            int y = (int) value(entry.get("y"));
+            int z = (int) value(entry.get("z"));
+            if ((x >> 4) != chunk.getX() || (z >> 4) != chunk.getZ()) continue;
+
+            Block block = chunk.getWorld().getBlockAt(x, y, z);
+            if (block.getType() != Material.CHEST || !(block.getState() instanceof Chest chest)) continue;
+            var pdc = chest.getPersistentDataContainer();
+            boolean changed = false;
+            if (!pdc.has(managedKey, PersistentDataType.BYTE)) {
+                pdc.set(managedKey, PersistentDataType.BYTE, (byte) 1);
+                changed = true;
+            }
+            if (!pdc.has(rarityKey, PersistentDataType.STRING)) {
+                pdc.set(rarityKey, PersistentDataType.STRING,
+                        KeyItemFactory.Rarity.fromId(String.valueOf(entry.get("rarity"))).id());
+                changed = true;
+            }
+            if (changed) chest.update(true, false);
         }
     }
 
@@ -178,7 +228,7 @@ public final class SecretRoomManager implements Listener {
 
         consumeOne(player, inMainHand);
         chest.getPersistentDataContainer().remove(lockedKey);
-        chest.getPersistentDataContainer().remove(rarityKey);
+        // Keep managed/rarity markers permanently so an unlocked chest remains protected.
         chest.update(true, false);
         player.sendMessage(plugin.color("&5&lTRUHLA ODEMČENA &8» &d" + requiredRarity.displayName()
                 + " truhla je odemčená. Klíč byl spotřebován."));
@@ -194,20 +244,61 @@ public final class SecretRoomManager implements Listener {
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
-    public void onLockedChestBreak(BlockBreakEvent event) {
-        if (!isLockedChest(event.getBlock())) return;
+    public void onProtectedChestBreak(BlockBreakEvent event) {
+        if (!isProtectedChest(event.getBlock())) return;
         event.setCancelled(true);
-        event.getPlayer().sendMessage(plugin.color("&5&lZAMČENÁ TRUHLA &8» &7Bez speciálního klíče ji nelze rozbít."));
+        event.getPlayer().sendMessage(plugin.color("&5&lCHRÁNĚNÁ TRUHLA &8» &7Tuhle tajnou truhlu nelze rozbít."));
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onProtectedChestBurn(BlockBurnEvent event) {
+        if (isProtectedChest(event.getBlock())) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onEntityExplosion(EntityExplodeEvent event) {
-        event.blockList().removeIf(this::isLockedChest);
+        // Removes protected chest from the blast list, including TNT and creepers.
+        event.blockList().removeIf(this::isProtectedChest);
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onBlockExplosion(BlockExplodeEvent event) {
-        event.blockList().removeIf(this::isLockedChest);
+        event.blockList().removeIf(this::isProtectedChest);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onProtectedChestPistonExtend(BlockPistonExtendEvent event) {
+        if (event.getBlocks().stream().anyMatch(this::isProtectedChest)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onProtectedChestPistonRetract(BlockPistonRetractEvent event) {
+        if (event.getBlocks().stream().anyMatch(this::isProtectedChest)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onProtectedChestTransfer(InventoryMoveItemEvent event) {
+        // Blocks automatic insertion/extraction by hoppers and hopper minecarts.
+        // Manual player interaction with an unlocked chest remains allowed.
+        if (isProtectedInventory(event.getSource()) || isProtectedInventory(event.getDestination())) {
+            event.setCancelled(true);
+        }
+    }
+
+    private boolean isProtectedInventory(Inventory inventory) {
+        if (inventory == null) return false;
+        if (isProtectedHolder(inventory.getHolder())) return true;
+        Location location = inventory.getLocation();
+        return location != null && isProtectedChest(location.getBlock());
+    }
+
+    private boolean isProtectedHolder(InventoryHolder holder) {
+        if (holder instanceof Chest chest) return isProtectedChest(chest.getBlock());
+        if (holder instanceof DoubleChest doubleChest) {
+            return isProtectedHolder(doubleChest.getLeftSide())
+                    || isProtectedHolder(doubleChest.getRightSide());
+        }
+        return false;
     }
 
     @EventHandler(ignoreCancelled = true)
@@ -336,6 +427,36 @@ public final class SecretRoomManager implements Listener {
         KeyItemFactory.Rarity roomRarity = KeyItemFactory.Rarity.fromId(String.valueOf(nearest.get("rarity")));
         player.sendMessage(plugin.color("&7Vzácnost: " + roomRarity.color() + roomRarity.displayName()));
         player.sendMessage(plugin.color("&8Místnost je ukrytá v přírodním kameni; hledej bezpečný vstup."));
+    }
+
+    public void verifyRecordedRooms(CommandSender sender) {
+        if (!sender.hasPermission("halloweencore.admin")) {
+            sender.sendMessage(plugin.color("&cOvěření tajných truhel je pouze pro správce."));
+            return;
+        }
+        int checked = 0, intact = 0, locked = 0, broken = 0, unloaded = 0;
+        for (Map<?, ?> entry : data.getMapList("locations")) {
+            World world = Bukkit.getWorld(String.valueOf(entry.get("world")));
+            if (world == null) { unloaded++; continue; }
+            int x = (int) value(entry.get("x"));
+            int y = (int) value(entry.get("y"));
+            int z = (int) value(entry.get("z"));
+            if (!world.isChunkLoaded(x >> 4, z >> 4)) { unloaded++; continue; }
+            checked++;
+            Block block = world.getBlockAt(x, y, z);
+            if (block.getType() != Material.CHEST || !isProtectedChest(block)) { broken++; continue; }
+            intact++;
+            if (isLockedChest(block)) locked++;
+        }
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        sender.sendMessage(plugin.color("&5&lKONTROLA TAJNÝCH TRUHEL"));
+        sender.sendMessage(plugin.color("&7Záznamy zkontrolované v načtených chunkech: &d" + checked));
+        sender.sendMessage(plugin.color("&7Truhly nalezené a chráněné: &a" + intact));
+        sender.sendMessage(plugin.color("&7Z toho stále zamčené: &d" + locked));
+        sender.sendMessage(plugin.color("&7Chybějící nebo bez ochrany: " + (broken == 0 ? "&a" : "&c") + broken));
+        sender.sendMessage(plugin.color("&7Přeskočené nenačtené světy/chunky: &e" + unloaded));
+        sender.sendMessage(plugin.color("&8Nenačtené chunky se kvůli kontrole nenačítají."));
+        sender.sendMessage(plugin.color("&8&m--------------------------------"));
     }
 
     public void locateAll(CommandSender sender) {
@@ -498,6 +619,7 @@ public final class SecretRoomManager implements Listener {
         if (state instanceof Chest chest) {
             chest.getPersistentDataContainer().set(lockedKey, PersistentDataType.BYTE, (byte) 1);
             chest.getPersistentDataContainer().set(rarityKey, PersistentDataType.STRING, rarity.id());
+            chest.getPersistentDataContainer().set(managedKey, PersistentDataType.BYTE, (byte) 1);
             chest.update(true, false);
         }
         // Loot remains empty until its exact contents are agreed; room and lock still have a rarity tier.
@@ -669,10 +791,21 @@ public final class SecretRoomManager implements Listener {
         return state instanceof Chest chest && isLocked(chest);
     }
 
+    private boolean isProtectedChest(Block block) {
+        if (block == null || block.getType() != Material.CHEST) return false;
+        BlockState state = block.getState();
+        if (!(state instanceof Chest chest)) return false;
+        var pdc = chest.getPersistentDataContainer();
+        Byte managed = pdc.get(managedKey, PersistentDataType.BYTE);
+        Byte locked = pdc.get(lockedKey, PersistentDataType.BYTE);
+        return (managed != null && managed == (byte) 1)
+                || (locked != null && locked == (byte) 1)
+                || pdc.has(rarityKey, PersistentDataType.STRING);
+    }
+
     private boolean isLocked(Chest chest) {
         Byte locked = chest.getPersistentDataContainer().get(lockedKey, PersistentDataType.BYTE);
-        String rarity = chest.getPersistentDataContainer().get(rarityKey, PersistentDataType.STRING);
-        return (locked != null && locked == (byte) 1) || rarity != null;
+        return locked != null && locked == (byte) 1;
     }
 
     private KeyItemFactory.Rarity getChestRarity(Chest chest) {

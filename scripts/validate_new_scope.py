@@ -160,8 +160,12 @@ room_java = (JAVA_DIR / "SecretRoomManager.java").read_text(encoding="utf-8")
 for feature in (
     "event.isNewChunk()", "chunkAttemptedKey", "isSafeRoomVolume", "recordGeneratedRoom",
     "generateTestRoom", "findAccessTunnel", "isSafeTunnelCeiling", "world.isChunkLoaded", "isNaturalCaveOpening", "decorateEntranceArch", "locateNearest", "locateAll", "onPlayerEnterSecretRoom",
-    "setDecorationIfAir", "secret_room_locked", "secret_room_rarity", "consumeOne",
-    "migrateLegacyRoomRecords", "rollRarity", "roomShellMaterial", "getChestRarity"
+    "setDecorationIfAir", "secret_room_locked", "secret_room_rarity", "secret_room_managed", "consumeOne",
+    "migrateLegacyRoomRecords", "rollRarity", "roomShellMaterial", "getChestRarity",
+    "protectRecordedChestsInLoadedChunks", "verifyRecordedRooms", "onProtectedChestBreak",
+    "onProtectedChestBurn", "onEntityExplosion", "onBlockExplosion", "onProtectedChestPistonExtend",
+    "onProtectedChestPistonRetract", "onProtectedChestTransfer", "InventoryMoveItemEvent",
+    "BlockPistonExtendEvent", "BlockPistonRetractEvent", "isProtectedChest", "isProtectedInventory"
 ):
     if feature not in room_java:
         fail(f"secret-room runtime contract is missing: {feature}")
@@ -181,6 +185,8 @@ for feature in ("rollBonusKeyDrop", "key-drop-chances.common", "key-drop-chances
                 "key-drop-chances.legendary", "clampProbability"):
     if feature not in quest_java:
         fail(f"villager quest bonus key drop is missing: {feature}")
+if "verifyRecordedRooms" not in command_java or 'action.equals("verify")' not in command_java:
+    fail("admin room integrity verification command is missing")
 
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
 for feature in ('action.equals("turnin")', "rooms generate", "private boolean handleLocate",

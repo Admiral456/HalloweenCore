@@ -361,8 +361,12 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             rooms.locateAll(sender);
             return true;
         }
+        if (action.equals("verify") || action.equals("audit")) {
+            rooms.verifyRecordedRooms(sender);
+            return true;
+        }
         if (!action.equals("status")) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween rooms <status|generate [radius-chunků]|list>"));
+            sender.sendMessage(plugin.color("&cPoužití: /halloween rooms <status|generate [radius-chunků]|list|verify>"));
             return true;
         }
 
@@ -381,6 +385,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 + " &8| &7neúspěšné pokusy: &d" + rooms.getGenerationFailedCount()));
         sender.sendMessage(plugin.color("&7Poslední místnost: &d" + rooms.getLastRoomSummary()));
         sender.sendMessage(plugin.color("&7Test: &f/halloween rooms generate &7(pouze správce)"));
+        sender.sendMessage(plugin.color("&7Kontrola truhel: &f/halloween rooms verify &7(pouze správce)"));
         sender.sendMessage(plugin.color("&7Hledání: &f/locate halloweenroom"));
         sender.sendMessage(plugin.color("&8Truhly nemají loot; obsah zatím nebyl domluven."));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
