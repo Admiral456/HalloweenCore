@@ -334,20 +334,20 @@ quests:
         - id: minecraft:raw_iron
           amount: 16
 
-    cactus_delivery:
-      title: "Kaktusy pro alchymii"
-      difficulty: "Těžký"
-      description: "Přines 20 kaktusů pro přípravu ochranné směsi."
-      dialogue-story: "Alchymistka chce zkusit novou ochrannou směs. Podle jejích poznámek potřebuje nezvykle velkou dávku čerstvého kaktusu."
+    dried_ghast_delivery:
+      title: "Vysušený ghast pro alchymii"
+      difficulty: "Velmi těžký"
+      description: "Přines 20 bloků vysušeného ghasta pro přípravu ochranné směsi."
+      dialogue-story: "Alchymistka chce zkusit mimořádně vzácnou ochrannou směs. Potřebuje dvacet bloků vysušeného ghasta, které se těžko shánějí i vyrábějí."
       objective-type: delivery
       target: 1
       required-items:
-        - id: minecraft:cactus
+        - id: minecraft:dried_ghast
           amount: 20
       key-drop-chances:
         common: 0.20
-        rare: 0.05
-        legendary: 0.06
+        rare: 0.10
+        legendary: 0.18
 
     iron_mining_contract:
       title: "Železo pro velkou zakázku"

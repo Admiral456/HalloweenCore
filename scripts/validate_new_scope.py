@@ -261,7 +261,7 @@ for quest_id in expected_quests:
         fail(f"quest {quest_id} is missing its story dialogue text")
 
 for quest_id, legendary_chance in (
-    ("cactus_delivery", "0.06"),
+    ("dried_ghast_delivery", "0.18"),
     ("iron_mining_contract", "0.10"),
     ("diamond_quota", "0.14"),
     ("trident_hunt", "0.20"),
@@ -277,7 +277,7 @@ for quest_id, legendary_chance in (
         if line == "rooms:" or (line.endswith(":") and indentation == 4):
             quest_end = line_no
             break
-    quest_text = "\\n".join(quest_lines[quest_start:quest_end])
+    quest_text = "\n".join(quest_lines[quest_start:quest_end])
     if f"legendary: {legendary_chance}" not in quest_text:
         fail(f"hard quest {quest_id} must configure its own legendary-key chance")
 
