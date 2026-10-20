@@ -55,6 +55,7 @@ Pod tím zobraz:
 - **Zadání:** `%halloween_villager_quest_description%`
 - **Obtížnost:** `%halloween_villager_quest_difficulty%`
 - **Odměna:** `%halloween_villager_quest_reward%` fragmentů a samostatná šance na klíč tajné místnosti.
+- **Další předměty:** `%halloween_villager_quest_reward_items%` — tento řádek zobraz jen tehdy, když placeholder není prázdný.
 
 Možnosti:
 - **„Zeptat se na podrobnosti“** → uzel **OFFER_DETAILS**.
@@ -157,6 +158,7 @@ HalloweenCore poskytuje přes PlaceholderAPI:
 - `%halloween_villager_quest_story%` — příběhový text z konfigurace.
 - `%halloween_villager_quest_difficulty%` — obtížnost úkolu.
 - `%halloween_villager_quest_reward%` — počet fragmentů za splnění.
+- `%halloween_villager_quest_reward_items%` — volitelné další předměty z `reward-items`; pokud není nastaven žádný předmět, placeholder je prázdný.
 
 Příkazy pro akce dialogu:
 - `/halloween quest offer` — vybere náhodný úkol do rozhovoru, úspěšně připravená nabídka nevypisuje další chatovou hlášku.
