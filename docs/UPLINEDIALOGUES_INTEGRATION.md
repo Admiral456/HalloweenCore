@@ -29,9 +29,15 @@ HalloweenCore zpracovává akce z panelu přes skutečné Bukkit příkazy. Př�
 
 **Hranice ověření:** příkazy, oprávnění a backend jsou ověřitelné v repozitáři. Nemám přístup k tvému běžícímu serveru ani k lokálním souborům UplineDialogues, takže nemůžu potvrdit již uložený NPC strom na serveru. Markdown katalog se do panelu sám neimportuje.
 
+## Bonusový klíč z villager questů
+
+Po úspěšném odevzdání questu příkazem `/halloween quest turnin <id>` se nezávisle na běžné odměně vyhodnotí šance 15 % na bonusový klíč. Pokud klíč padne, vzácnost se losuje samostatně: běžný 70 %, vzácný 25 %, legendární 5 %. Quest se dokončí i tehdy, když klíč nepadne. Ruční administrátorské dokončení questu klíč nelosuje — bonus je jen za skutečné odevzdání hráčem.
+
+Šance je nastavena v `quests.key-drop-chance` (rozsah 0 až 1) a váhy v `quests.key-rarity-weights`. Běžná odměna se nastavuje nezávisle přes `reward-fragments` nebo `reward-items` u jednotlivých questů; není nahrazena klíčem.
+
 ## Připravené questy
 
-Quest IDs jsou definovaná v src/main/resources/config.yml. Obtížnost a popis se zobrazují v quest statusu a required-items obsahuje požadavky na odevzdání. Pro všech 25 questů jsou odměny ponechané nenastavené. Nepřidávej do dialogu command action, která rozdává předměty nebo klíče, dokud se nedomluví jejich získávání.
+Quest IDs jsou definovaná v src/main/resources/config.yml. Obtížnost a popis se zobrazují v quest statusu a required-items obsahuje požadavky na odevzdání. Konkrétní běžné odměny nejsou nastavené, protože jejich položky a množství zatím nebyly určeny.
 
 ## Quest příkazy
 

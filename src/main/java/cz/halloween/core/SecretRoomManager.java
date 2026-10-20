@@ -53,6 +53,7 @@ public final class SecretRoomManager implements Listener {
     private final HalloweenCore plugin;
     private final KeyItemFactory keyItemFactory;
     private final NamespacedKey lockedKey;
+    private final NamespacedKey rarityKey;
     private final NamespacedKey chunkAttemptedKey;
     private final NamespacedKey chunkHasRoomKey;
     private final File dataFile;
@@ -62,6 +63,7 @@ public final class SecretRoomManager implements Listener {
         this.plugin = plugin;
         this.keyItemFactory = keyItemFactory;
         this.lockedKey = new NamespacedKey(plugin, "secret_room_locked");
+        this.rarityKey = new NamespacedKey(plugin, "secret_room_rarity");
         this.chunkAttemptedKey = new NamespacedKey(plugin, "secret_room_attempted_v1");
         this.chunkHasRoomKey = new NamespacedKey(plugin, "secret_room_anchor_v1");
         this.dataFile = new File(plugin.getDataFolder(), "secret-rooms.yml");
@@ -154,19 +156,32 @@ public final class SecretRoomManager implements Listener {
 
         event.setCancelled(true);
         Player player = event.getPlayer();
-        ItemStack held = player.getInventory().getItemInMainHand();
-        boolean inMainHand = keyItemFactory.isKey(held);
-        if (!inMainHand) held = player.getInventory().getItemInOffHand();
-
-        if (!keyItemFactory.isKey(held)) {
-            player.sendMessage(plugin.color("&5&lZAMČENÁ TRUHLA &8» &7Potřebuješ speciální klíč."));
+        KeyItemFactory.Rarity requiredRarity = getChestRarity(chest);
+        ItemStack mainHand = player.getInventory().getItemInMainHand();
+        ItemStack offHand = player.getInventory().getItemInOffHand();
+        boolean inMainHand;
+        if (keyItemFactory.isKey(mainHand, requiredRarity)) {
+            inMainHand = true;
+        } else if (keyItemFactory.isKey(offHand, requiredRarity)) {
+            inMainHand = false;
+        } else {
+            boolean hasWrongKey = keyItemFactory.isKey(mainHand) || keyItemFactory.isKey(offHand);
+            if (hasWrongKey) {
+                player.sendMessage(plugin.color("&5&lZAMČENÁ TRUHLA &8» &7Tahle truhla vyžaduje klíč vzácnosti "
+                        + requiredRarity.color() + requiredRarity.displayName() + "&7."));
+            } else {
+                player.sendMessage(plugin.color("&5&lZAMČENÁ TRUHLA &8» &7Potřebuješ klíč vzácnosti "
+                        + requiredRarity.color() + requiredRarity.displayName() + "&7."));
+            }
             return;
         }
 
         consumeOne(player, inMainHand);
         chest.getPersistentDataContainer().remove(lockedKey);
+        chest.getPersistentDataContainer().remove(rarityKey);
         chest.update(true, false);
-        player.sendMessage(plugin.color("&5&lTRUHLA ODEMČENA &8» &dKlíč byl spotřebován. Truhla zůstane odemčená."));
+        player.sendMessage(plugin.color("&5&lTRUHLA ODEMČENA &8» &d" + requiredRarity.displayName()
+                + " truhla je odemčená. Klíč byl spotřebován."));
         player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_CHEST_OPEN, 0.8f, 0.8f);
 
         Block chestBlock = clicked;
@@ -237,7 +252,8 @@ public final class SecretRoomManager implements Listener {
     public String getLastRoomSummary() {
         if (!data.contains("last.world")) return "zatím žádná";
         return data.getString("last.world", "?") + " " + data.getInt("last.x", 0) + " "
-                + data.getInt("last.y", 0) + " " + data.getInt("last.z", 0);
+                + data.getInt("last.y", 0) + " " + data.getInt("last.z", 0) + " ("
+                + KeyItemFactory.Rarity.fromId(data.getString("last.rarity", "common")).displayName() + ")";
     }
 
     public void save() {
@@ -317,6 +333,8 @@ public final class SecretRoomManager implements Listener {
         player.sendMessage(plugin.color("&7Svět: &f" + player.getWorld().getName()));
         player.sendMessage(plugin.color("&7Souřadnice truhly: &dX " + x + " Y " + y + " Z " + z));
         player.sendMessage(plugin.color("&7Vzdálenost: &d" + Math.round(distance) + " bloků"));
+        KeyItemFactory.Rarity roomRarity = KeyItemFactory.Rarity.fromId(String.valueOf(nearest.get("rarity")));
+        player.sendMessage(plugin.color("&7Vzácnost: " + roomRarity.color() + roomRarity.displayName()));
         player.sendMessage(plugin.color("&8Místnost je ukrytá v přírodním kameni; hledej bezpečný vstup."));
     }
 
@@ -339,6 +357,7 @@ public final class SecretRoomManager implements Listener {
                 .sorted(Comparator.comparingDouble(entry -> distanceSquared(player.getLocation(), entry)))
                 .forEach(entry -> player.sendMessage(plugin.color("&d" + (int) value(entry.get("x")) + " "
                         + (int) value(entry.get("y")) + " " + (int) value(entry.get("z"))
+                        + " &8— &7" + KeyItemFactory.Rarity.fromId(String.valueOf(entry.get("rarity"))).displayName()
                         + " &8— &7" + Math.round(Math.sqrt(distanceSquared(player.getLocation(), entry))) + " bloků")));
     }
 
@@ -365,10 +384,11 @@ public final class SecretRoomManager implements Listener {
             AccessTunnel accessTunnel = findAccessTunnel(world, x, y, z);
             if (accessTunnel == null) continue;
 
-            buildRoom(world, x, y, z, accessTunnel);
-            recordGeneratedRoom(world, x + ROOM_WIDTH / 2, y + 1, z + ROOM_DEPTH / 2);
+            KeyItemFactory.Rarity rarity = rollRarity("rooms.rarity-weights");
+            buildRoom(world, x, y, z, accessTunnel, rarity);
+            recordGeneratedRoom(world, x + ROOM_WIDTH / 2, y + 1, z + ROOM_DEPTH / 2, rarity);
             chunk.getPersistentDataContainer().set(chunkHasRoomKey, PersistentDataType.BYTE, (byte) 1);
-            plugin.getLogger().info("Generated locked secret room at " + world.getName() + " "
+            plugin.getLogger().info("Generated " + rarity.id() + " secret room at " + world.getName() + " "
                     + (x + 3) + " " + (y + 1) + " " + (z + 3) + ".");
             return true;
         }
@@ -405,7 +425,37 @@ public final class SecretRoomManager implements Listener {
         return material.name().endsWith("_ORE") || material == Material.ANCIENT_DEBRIS;
     }
 
-    private void buildRoom(World world, int x, int y, int z, AccessTunnel accessTunnel) {
+    private Material roomShellMaterial(KeyItemFactory.Rarity rarity, int dx, int dy, int dz) {
+        if (rarity == KeyItemFactory.Rarity.RARE) {
+            if ((dx + dy + dz) % 9 == 0) return Material.AMETHYST_BLOCK;
+            if (dy == 0 && (dx + dz) % 2 == 0) return Material.POLISHED_DEEPSLATE;
+            if ((dx + dy + dz) % 7 == 0) return Material.CHISELED_DEEPSLATE;
+            return Material.POLISHED_DEEPSLATE;
+        }
+        if (rarity == KeyItemFactory.Rarity.LEGENDARY) {
+            if ((dx + dy + dz) % 8 == 0) return Material.GILDED_BLACKSTONE;
+            if ((dx == 0 || dx == ROOM_WIDTH - 1) && (dz == 0 || dz == ROOM_DEPTH - 1)
+                    && dy > 0 && dy < ROOM_HEIGHT - 1) return Material.GOLD_BLOCK;
+            if (dy == 0 && (dx + dz) % 2 == 0) return Material.POLISHED_BLACKSTONE_BRICKS;
+            if ((dx + dy + dz) % 7 == 0) return Material.CHISELED_POLISHED_BLACKSTONE;
+            return Material.POLISHED_BLACKSTONE_BRICKS;
+        }
+
+        boolean corner = (dx == 0 || dx == ROOM_WIDTH - 1)
+                && (dz == 0 || dz == ROOM_DEPTH - 1);
+        if (corner && dy > 0 && dy < ROOM_HEIGHT - 1) return Material.COBBLED_DEEPSLATE;
+        if (dy == 0 && (dx + dz) % 2 == 0) return Material.DEEPSLATE_TILES;
+        if (dy == ROOM_HEIGHT - 1 && ThreadLocalRandom.current().nextInt(100) < 12) {
+            return Material.CRACKED_DEEPSLATE_BRICKS;
+        }
+        if (dy > 0 && dy < ROOM_HEIGHT - 1 && (dx + dz + dy) % 7 == 0) {
+            return Material.CRACKED_DEEPSLATE_BRICKS;
+        }
+        return Material.DEEPSLATE_BRICKS;
+    }
+
+    private void buildRoom(World world, int x, int y, int z, AccessTunnel accessTunnel,
+                           KeyItemFactory.Rarity rarity) {
         for (int dx = 0; dx < ROOM_WIDTH; dx++) {
             for (int dy = 0; dy < ROOM_HEIGHT; dy++) {
                 for (int dz = 0; dz < ROOM_DEPTH; dz++) {
@@ -414,21 +464,7 @@ public final class SecretRoomManager implements Listener {
                             || dy == 0 || dy == ROOM_HEIGHT - 1;
                     Block block = world.getBlockAt(x + dx, y + dy, z + dz);
                     if (shell) {
-                        Material shellMaterial = Material.DEEPSLATE_BRICKS;
-                        boolean corner = (dx == 0 || dx == ROOM_WIDTH - 1)
-                                && (dz == 0 || dz == ROOM_DEPTH - 1);
-                        if (corner && dy > 0 && dy < ROOM_HEIGHT - 1) {
-                            shellMaterial = Material.COBBLED_DEEPSLATE;
-                        } else if (dy == 0 && (dx + dz) % 2 == 0) {
-                            shellMaterial = Material.DEEPSLATE_TILES;
-                        } else if (dy == ROOM_HEIGHT - 1
-                                && ThreadLocalRandom.current().nextInt(100) < 12) {
-                            shellMaterial = Material.CRACKED_DEEPSLATE_BRICKS;
-                        } else if (dy > 0 && dy < ROOM_HEIGHT - 1
-                                && (dx + dz + dy) % 7 == 0) {
-                            shellMaterial = Material.CRACKED_DEEPSLATE_BRICKS;
-                        }
-                        block.setType(shellMaterial, false);
+                        block.setType(roomShellMaterial(rarity, dx, dy, dz), false);
                     } else if (NATURAL_STONE.contains(block.getType())) {
                         block.setType(Material.AIR, false);
                     }
@@ -443,7 +479,7 @@ public final class SecretRoomManager implements Listener {
             world.getBlockAt(tunnelBlock.x(), y + 1, tunnelBlock.z()).setType(Material.AIR, false);
             world.getBlockAt(tunnelBlock.x(), y + 2, tunnelBlock.z()).setType(Material.AIR, false);
         }
-        decorateEntranceArch(world, x, y, z, accessTunnel.direction());
+        decorateEntranceArch(world, x, y, z, accessTunnel.direction(), rarity);
 
         // Vanilla-only details: no retired Halloween mobs, events, sounds, rewards, or loot.
         setDecorationIfAir(world, x + 1, y + 1, z + 1, Material.SOUL_LANTERN);
@@ -461,9 +497,10 @@ public final class SecretRoomManager implements Listener {
         BlockState state = chestBlock.getState();
         if (state instanceof Chest chest) {
             chest.getPersistentDataContainer().set(lockedKey, PersistentDataType.BYTE, (byte) 1);
+            chest.getPersistentDataContainer().set(rarityKey, PersistentDataType.STRING, rarity.id());
             chest.update(true, false);
         }
-        // Intentionally no loot: chest contents were not agreed and must not be invented.
+        // Loot remains empty until its exact contents are agreed; room and lock still have a rarity tier.
     }
 
     private AccessTunnel findAccessTunnel(World world, int x, int y, int z) {
@@ -549,7 +586,8 @@ public final class SecretRoomManager implements Listener {
         return airBlocks >= 3;
     }
 
-    private void decorateEntranceArch(World world, int x, int y, int z, Direction direction) {
+    private void decorateEntranceArch(World world, int x, int y, int z, Direction direction,
+                                       KeyItemFactory.Rarity rarity) {
         int wallX = direction.dx() < 0 ? x
                 : direction.dx() > 0 ? x + ROOM_WIDTH - 1 : x + ROOM_WIDTH / 2;
         int wallZ = direction.dz() < 0 ? z
@@ -557,10 +595,20 @@ public final class SecretRoomManager implements Listener {
         for (int side : new int[]{-1, 1}) {
             int pillarX = wallX + (direction.dx() == 0 ? side : 0);
             int pillarZ = wallZ + (direction.dz() == 0 ? side : 0);
-            world.getBlockAt(pillarX, y + 1, pillarZ).setType(Material.POLISHED_BLACKSTONE_BRICKS, false);
-            world.getBlockAt(pillarX, y + 2, pillarZ).setType(Material.POLISHED_BLACKSTONE_BRICKS, false);
+            Material pillar = switch (rarity) {
+                case COMMON -> Material.POLISHED_BLACKSTONE_BRICKS;
+                case RARE -> Material.AMETHYST_BLOCK;
+                case LEGENDARY -> Material.GILDED_BLACKSTONE;
+            };
+            world.getBlockAt(pillarX, y + 1, pillarZ).setType(pillar, false);
+            world.getBlockAt(pillarX, y + 2, pillarZ).setType(pillar, false);
         }
-        world.getBlockAt(wallX, y + 3, wallZ).setType(Material.CHISELED_DEEPSLATE, false);
+        Material keystone = switch (rarity) {
+            case COMMON -> Material.CHISELED_DEEPSLATE;
+            case RARE -> Material.AMETHYST_BLOCK;
+            case LEGENDARY -> Material.GOLD_BLOCK;
+        };
+        world.getBlockAt(wallX, y + 3, wallZ).setType(keystone, false);
     }
 
     private void setDecorationIfAir(World world, int x, int y, int z, Material decoration) {
@@ -569,7 +617,7 @@ public final class SecretRoomManager implements Listener {
         if (block.getType().isAir()) block.setType(decoration, false);
     }
 
-    private void recordGeneratedRoom(World world, int x, int y, int z) {
+    private void recordGeneratedRoom(World world, int x, int y, int z, KeyItemFactory.Rarity rarity) {
         List<Map<?, ?>> existing = new ArrayList<>(data.getMapList("locations"));
         Map<String, Object> entry = new LinkedHashMap<>();
         entry.put("id", "room-" + String.format(Locale.ROOT, "%05d", getGeneratedCount() + 1));
@@ -577,6 +625,7 @@ public final class SecretRoomManager implements Listener {
         entry.put("x", x);
         entry.put("y", y);
         entry.put("z", z);
+        entry.put("rarity", rarity.id());
         existing.add(entry);
         data.set("locations", existing);
         data.set("stats.generated", existing.size());
@@ -584,6 +633,7 @@ public final class SecretRoomManager implements Listener {
         data.set("last.x", x);
         data.set("last.y", y);
         data.set("last.z", z);
+        data.set("last.rarity", rarity.id());
         save();
     }
 
@@ -621,7 +671,27 @@ public final class SecretRoomManager implements Listener {
 
     private boolean isLocked(Chest chest) {
         Byte locked = chest.getPersistentDataContainer().get(lockedKey, PersistentDataType.BYTE);
-        return locked != null && locked == (byte) 1;
+        String rarity = chest.getPersistentDataContainer().get(rarityKey, PersistentDataType.STRING);
+        return (locked != null && locked == (byte) 1) || rarity != null;
+    }
+
+    private KeyItemFactory.Rarity getChestRarity(Chest chest) {
+        String rarity = chest.getPersistentDataContainer().get(rarityKey, PersistentDataType.STRING);
+        // Old marked chests have no rarity string and remain openable with the COMMON key.
+        return KeyItemFactory.Rarity.fromId(rarity);
+    }
+
+    private KeyItemFactory.Rarity rollRarity(String weightPath) {
+        int common = Math.max(0, plugin.getConfig().getInt(weightPath + ".common", 70));
+        int rare = Math.max(0, plugin.getConfig().getInt(weightPath + ".rare", 25));
+        int legendary = Math.max(0, plugin.getConfig().getInt(weightPath + ".legendary", 5));
+        long total = (long) common + rare + legendary;
+        if (total <= 0L) return KeyItemFactory.Rarity.COMMON;
+        long roll = ThreadLocalRandom.current().nextLong(total);
+        if (roll < common) return KeyItemFactory.Rarity.COMMON;
+        roll -= common;
+        if (roll < rare) return KeyItemFactory.Rarity.RARE;
+        return KeyItemFactory.Rarity.LEGENDARY;
     }
 
     private boolean isAllowedWorld(World world) {

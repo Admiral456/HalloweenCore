@@ -276,6 +276,13 @@ quests:
         - id: minecraft:raw_iron
           amount: 8
 
+  # Additional roll on a successful villager quest turn-in. This never replaces the normal payout.
+  key-drop-chance: 0.15
+  key-rarity-weights:
+    common: 70
+    rare: 25
+    legendary: 5
+
 rooms:
   enabled: true
   # Probability per newly generated Overworld chunk. Existing chunks are not auto-rescanned.
@@ -288,5 +295,15 @@ rooms:
   manual-search-radius-chunks: 3
   blocked-worlds:
     - Spawn
+  # Legacy COMMON-key setting is kept for existing configs.
   key-item-id: warriorland_halloween:secret_room_key
-  # Chests remain empty until the intended loot is agreed.
+  key-item-ids:
+    common: warriorland_halloween:secret_room_key
+    rare: warriorland_halloween:secret_room_key_rare
+    legendary: warriorland_halloween:secret_room_key_legendary
+  # Relative weights are normalized automatically; defaults are 70/25/5.
+  rarity-weights:
+    common: 70
+    rare: 25
+    legendary: 5
+  # Chest loot is still intentionally unconfigured until its contents are agreed.

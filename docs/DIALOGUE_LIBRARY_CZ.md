@@ -262,6 +262,10 @@ V UplineDialogues vytvoř pro každého zadavatele rozhovor se čtyřmi větvemi
 - **„Vzorky jsem přinesl.“** → `/halloween quest turnin miner_samples`; po dokončení: „Díky. Některé nové štoly mají jinou skladbu kamene než staré.“
 - **„Našel jsi něco neobvyklého?“** → „Zatím jen místa, kde se chodba náhle zužuje. Nechci je rozšiřovat, dokud je nezměříme.“
 
+## Bonusový klíč z odevzdaného questu
+
+Při úspěšném odevzdání villager questu má hráč výchozí 15% šanci na bonusový klíč. Jeho vzácnost se losuje podle vah 70 běžný / 25 vzácný / 5 legendární. Klíč nenahrazuje běžnou odměnu; jde o zvláštní bonus. Hodnoty jsou nastavitelné v `config.yml`.
+
 ## Doporučená struktura každého rozhovoru v editoru
 
 1. **Úvodní uzel:** první replika NPC a volby pro vysvětlení, přijetí úkolu, odevzdání a odchod.

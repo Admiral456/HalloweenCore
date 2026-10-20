@@ -252,7 +252,30 @@ public final class HalloweenQuestManager {
         if (!complete(player, id)) {
             return new TurnInResult(false, "completion-failed");
         }
+        rollBonusKeyDrop(player);
         return new TurnInResult(true, "completed");
+    }
+
+    private void rollBonusKeyDrop(Player player) {
+        double chance = plugin.getConfig().getDouble("quests.key-drop-chance", 0.15D);
+        chance = Math.max(0.0D, Math.min(1.0D, chance));
+        if (chance <= 0.0D || java.util.concurrent.ThreadLocalRandom.current().nextDouble() >= chance) return;
+
+        int common = Math.max(0, plugin.getConfig().getInt("quests.key-rarity-weights.common", 70));
+        int rare = Math.max(0, plugin.getConfig().getInt("quests.key-rarity-weights.rare", 25));
+        int legendary = Math.max(0, plugin.getConfig().getInt("quests.key-rarity-weights.legendary", 5));
+        long total = (long) common + rare + legendary;
+        KeyItemFactory.Rarity rarity = KeyItemFactory.Rarity.COMMON;
+        if (total > 0L) {
+            long roll = java.util.concurrent.ThreadLocalRandom.current().nextLong(total);
+            if (roll < common) rarity = KeyItemFactory.Rarity.COMMON;
+            else if ((roll -= common) < rare) rarity = KeyItemFactory.Rarity.RARE;
+            else rarity = KeyItemFactory.Rarity.LEGENDARY;
+        }
+
+        plugin.getKeyItemFactory().give(player, rarity, 1);
+        player.sendMessage(plugin.color("&5&lBONUSOVÁ ODMĚNA &8» &7Štěstí! Získal jsi "
+                + rarity.color() + rarity.displayName() + " klíč tajné místnosti&7."));
     }
 
     private int countMatchingItems(Player player, ItemStack template) {

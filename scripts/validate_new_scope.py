@@ -108,7 +108,10 @@ for old in ("crimson_warden", "hunter_mask", "cursed_talisman", "halloween_token
     if old in items_yml:
         fail(f"retired item still registered: {old}")
 if "secret_room_key:" not in items_yml:
-    fail("secret-room key is not registered in ItemsAdder")
+    fail("common secret-room key is not registered in ItemsAdder")
+for item_id in ("secret_room_key_rare:", "secret_room_key_legendary:"):
+    if item_id not in items_yml:
+        fail(f"rarity key is not registered in ItemsAdder: {item_id}")
 
 config = (ROOT / "src/main/resources/config.yml").read_text(encoding="utf-8").lower()
 for old in ("random-events:", "special-mobs:", "grave-encounters:", "headless-nick:",
@@ -145,6 +148,16 @@ if "chance-per-new-chunk: 0.025" not in rooms_config:
     fail("default secret-room generation chance must remain 2.5% per new chunk")
 if "min-y: -36" not in rooms_config or "max-y: -8" not in rooms_config:
     fail("default room generation height should stay underground at Y=-36 through Y=-8")
+for rarity_weight in ("common: 70", "rare: 25", "legendary: 5"):
+    if rarity_weight not in rooms_config:
+        fail(f"room rarity weights are incomplete: {rarity_weight}")
+if "key-drop-chance: 0.15" not in config:
+    fail("bonus key drop chance should default to configurable 15 percent")
+for runtime_feature in ("rollRarity", "secret_room_rarity", "roomShellMaterial", "getChestRarity"):
+    if runtime_feature not in room_java:
+        fail(f"three-tier room runtime is missing: {runtime_feature}")
+if "rollBonusKeyDrop" not in quest_java or "key-rarity-weights" not in quest_java:
+    fail("villager quest bonus key drop is not implemented")
 
 room_java = (JAVA_DIR / "SecretRoomManager.java").read_text(encoding="utf-8")
 for feature in (
@@ -183,4 +196,4 @@ for quest_id in expected_quests:
     if quest_id not in dialogue_text:
         fail(f"dialogue catalogue is missing quest {quest_id}")
 
-print("Scope check passed: 25 dialogue quests, cave-connected rooms, locate aliases and only retained sweet textures.")
+print("Scope check passed: 25 dialogue quests, three room/key rarities, bonus key drop, cave-connected rooms and retained sweet textures.")

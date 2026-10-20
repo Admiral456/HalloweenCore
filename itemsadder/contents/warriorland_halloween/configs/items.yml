@@ -3,9 +3,27 @@ info:
 
 items:
   secret_room_key:
-    name: "&5&lKlíč skryté místnosti"
+    name: "&f&lBěžný klíč tajné místnosti"
     lore:
-      - "&7Otevírá zamčené truhly ve skrytých podzemních místnostech."
+      - "&7Otevírá běžné tajné truhly."
+      - "&8Spotřebuje se při prvním odemčení."
+    material: TRIPWIRE_HOOK
+    graphics:
+      texture: item/room_key
+
+  secret_room_key_rare:
+    name: "&b&lVzácný klíč tajné místnosti"
+    lore:
+      - "&7Otevírá vzácné tajné truhly."
+      - "&8Spotřebuje se při prvním odemčení."
+    material: TRIPWIRE_HOOK
+    graphics:
+      texture: item/room_key
+
+  secret_room_key_legendary:
+    name: "&6&lLegendární klíč tajné místnosti"
+    lore:
+      - "&7Otevírá legendární tajné truhly."
       - "&8Spotřebuje se při prvním odemčení."
     material: TRIPWIRE_HOOK
     graphics:
