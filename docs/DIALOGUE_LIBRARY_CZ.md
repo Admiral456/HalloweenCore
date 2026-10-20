@@ -162,6 +162,106 @@ V UplineDialogues vytvoř pro každého zadavatele rozhovor se čtyřmi větvemi
 - **„Vzorky jsou tady.“** → /halloween quest turnin night_research; po dokončení: „Díky. Teď můžu porovnat noční a denní výsledky.“
 - **„Co když je to nebezpečné?“** → „Pak to musíme zjistit dřív, než se někdo další vydá do hlubin bez přípravy.“
 
+## 16. Lesní sběratelka Běla — Vzorky z lesa
+
+**ID:** mushroom_samples · **Obtížnost:** lehká · **Požadavek:** 12 červených a 12 hnědých hub
+
+**Začátek:** „Les se mění podle půdy a světla. Potřebuji porovnat houby z obou stran potoka.“
+- **„Jaké vzorky?“** → „Dvanáct červených a dvanáct hnědých hub. Sbírej je opatrně, ať zůstane část podhoubí.“
+- **„Přijímám úkol.“** → `/halloween quest start mushroom_samples`; „Díky. Na okraji lesa najdeš obvykle oba druhy.“
+- **„Vzorky mám.“** → `/halloween quest turnin mushroom_samples`; po dokončení: „Tohle mi pro porovnání stačí. Rozdíl zapíšu do zápisníku.“
+- **„Proč je porovnáváš?“** → „Některé houby rostou i u kamene, kde by podle starých poznámek nemělo být nic živého.“
+
+## 17. Hostinská Róza — Lůžka pro hostinec
+
+**ID:** wool_for_bedding · **Obtížnost:** lehká · **Požadavek:** 16 bílých vln
+
+**Začátek:** „Po cestě sem míří stále víc poutníků. Chci jim připravit čisté postele, než přijde další déšť.“
+- **„Co potřebuješ?“** → „Šestnáct bílých vln. Barvenou nechci, aby byly všechny pokoje stejné.“
+- **„Rád pomůžu.“** → `/halloween quest start wool_for_bedding`; „Děkuju. Až je přineseš, můžu dokončit poslední dvě místnosti.“
+- **„Tady je vlna.“** → `/halloween quest turnin wool_for_bedding`; po dokončení: „Teď můžeme ubytovat další cestující.“
+- **„Kdo tu nocoval naposledy?“** → „Horníci. Ráno tu nechali mapu se značkou tam, kde podle ní vůbec žádná chodba být nemá.“
+
+## 18. Kuchař Matěj — Úlovek z řeky
+
+**ID:** river_catch · **Obtížnost:** střední · **Požadavek:** 8 tresek a 4 lososy
+
+**Začátek:** „Dnes čekám návštěvu z druhého břehu. Potřebuji ryby, ale nechci vybrat řeku do poslední.“
+- **„Kolik ryb?“** → „Osm tresek a čtyři lososy. Nic dalšího, ať ve vodě zůstane dost ryb.“
+- **„Přijímám úkol.“** → `/halloween quest start river_catch`; „Zkus klidnější úsek u ohybu řeky.“
+- **„Ryby jsou připravené.“** → `/halloween quest turnin river_catch`; po dokončení: „To bude stačit pro dnešní návštěvu. Zbytek necháme řece.“
+- **„Přišla už zpráva od hostů?“** → „Jen krátká poznámka: dorazí po setmění a budou se ptát na starou cestu pod kopcem.“
+
+## 19. Hrnčíř Jáchym — Hlína pro hrnčíře
+
+**ID:** clay_for_potter · **Obtížnost:** lehká · **Požadavek:** 24 hliněných kuliček
+
+**Začátek:** „Rozbily se nám nádoby na vodu a nové se musí vypálit dřív, než vyschnou zásoby.“
+- **„Kolik hlíny?“** → „Dvacet čtyři hliněných kuliček. Připravuji malé džbány, ne velké nádoby.“
+- **„Přijímám úkol.“** → `/halloween quest start clay_for_potter`; „Hlínu najdeš u řeky a v některých jeskyních.“
+- **„Hlína je tady.“** → `/halloween quest turnin clay_for_potter`; po dokončení: „Dobře. Ještě dnes připravím první várku.“
+- **„Proč se nádoby rozbily?“** → „Na některých se objevily tenké praskliny, jako by je zevnitř stlačil kámen.“
+
+## 20. Správce cesty Bohdan — Světlo na cestu
+
+**ID:** lantern_supplies · **Obtížnost:** střední · **Požadavek:** 16 pochodní
+
+**Začátek:** „Cesta k severnímu svahu musí být průchozí i po setmění. Včera tam někdo málem spadl do staré šachty.“
+- **„Co mám přinést?“** → „Šestnáct pochodní. Umístím je na bezpečná místa, ne přímo na okraj šachty.“
+- **„Přijímám úkol.“** → `/halloween quest start lantern_supplies`; „Až je přineseš, projdu cestu ještě před večerem.“
+- **„Pochodně mám.“** → `/halloween quest turnin lantern_supplies`; po dokončení: „Díky. Aspoň uvidíme, kudy cesta vede.“
+- **„Je šachta hluboká?“** → „Nevíme. Kámen pod okrajem je hladký a zvuk padajícího kamene trvá nezvykle dlouho.“
+
+## 21. Léčitelka Anežka — Med pro léčitelku
+
+**ID:** honey_for_healer · **Obtížnost:** střední · **Požadavek:** 4 lahve medu
+
+**Začátek:** „Na ošetřovně dochází med. Potřebuji ho do běžných směsí a na zásoby pro zimu.“
+- **„Kolik lahví?“** → „Čtyři lahve medu. Prosím, nepřines prázdné lahve místo plných.“
+- **„Přijímám úkol.“** → `/halloween quest start honey_for_healer`; „Děkuju, budu mezitím připravovat čisté nádoby.“
+- **„Med jsem přinesl.“** → `/halloween quest turnin honey_for_healer`; po dokončení: „To nám na nějakou dobu vystačí.“
+- **„Je někdo nemocný?“** → „Ne víc než obvykle. Jen pár lidí si stěžovalo na zvláštní kovovou chuť vody z hlubší studny.“
+
+## 22. Truhlář Vít — Dřevo pro truhláře
+
+**ID:** forest_materials · **Obtížnost:** střední · **Požadavek:** 16 dubových klád
+
+**Začátek:** „Opravujeme lavice a dveře ve společenské síni. Staré dřevo už nedrží hřebíky.“
+- **„Jaké dřevo potřebuješ?“** → „Šestnáct dubových klád. Potřebuji rovné kusy na rám a nohy stolů.“
+- **„Přijímám úkol.“** → `/halloween quest start forest_materials`; „Dávej pozor na označené stromy u vsi, ty nekácej.“
+- **„Dřevo je připravené.“** → `/halloween quest turnin forest_materials`; po dokončení: „Výborně. Sál bude znovu použitelný.“
+- **„Co se stalo s původním nábytkem?“** → „Jedna lavice se propadla do podlahy. Pod ní byla dutina, kterou na půdorysu nikdo neměl.“
+
+## 23. Sedlář Kamil — Kožené řemeny
+
+**ID:** leather_repair · **Obtížnost:** těžká · **Požadavek:** 12 kusů kůže
+
+**Začátek:** „Řemeny na nákladních brašnách se trhají příliš rychle. Potřebuji materiál na nové, pevnější kusy.“
+- **„Kolik kůže?“** → „Dvanáct kusů. Vezmu jen nepoškozenou kůži, kterou lze sešít.“
+- **„Přijímám úkol.“** → `/halloween quest start leather_repair`; „Nechám ti místo na pracovním stole.“
+- **„Kůže je tady.“** → `/halloween quest turnin leather_repair`; po dokončení: „Díky. Zkontroluji také brašny, které se vrátily z dolů.“
+- **„Co se jim stalo?“** → „Na několika kusech jsou oděrky z vnitřní strany, jako by se o ně opíraly ostré kameny.“
+
+## 24. Kartografka Ela — Směr do podzemí
+
+**ID:** map_and_compass · **Obtížnost:** těžká · **Požadavek:** 1 kompas a 8 papírů
+
+**Začátek:** „Chci připravit přesnější mapu okolí kopce. Bez kompasu a dostatku papíru se dál nedostanu.“
+- **„Co potřebuješ?“** → „Jeden kompas a osm papírů. Nejde mi o poklad, ale o zakreslení cest, které na starých mapách chybí.“
+- **„Přijímám úkol.“** → `/halloween quest start map_and_compass`; „Jakmile bude všechno připravené, vyznačím měřicí body.“
+- **„Vybavení mám.“** → `/halloween quest turnin map_and_compass`; po dokončení: „Dobře. Teď budu moct porovnat směr kompasu s původními záznamy.“
+- **„Proč jsou mapy nepřesné?“** → „Některé staré čáry končí uprostřed kamene. Nechci si domýšlet, co je za nimi.“
+
+## 25. Horník Zdeněk — Hornické vzorky
+
+**ID:** miner_samples · **Obtížnost:** těžká · **Požadavek:** 12 uhlí a 8 surového železa
+
+**Začátek:** „Připravuji přehled surovin z nových štol. Potřebuji vzorky z různých míst, ne celý náklad z jedné žíly.“
+- **„Jaké vzorky?“** → „Dvanáct uhlí a osm kusů surového železa. Vzorky rozdělím podle místa nálezu.“
+- **„Přijímám úkol.“** → `/halloween quest start miner_samples`; „Vezmi jen běžné suroviny. Značky na stěnách nech tak, jak jsou.“
+- **„Vzorky jsem přinesl.“** → `/halloween quest turnin miner_samples`; po dokončení: „Díky. Některé nové štoly mají jinou skladbu kamene než staré.“
+- **„Našel jsi něco neobvyklého?“** → „Zatím jen místa, kde se chodba náhle zužuje. Nechci je rozšiřovat, dokud je nezměříme.“
+
 ## Doporučená struktura každého rozhovoru v editoru
 
 1. **Úvodní uzel:** první replika NPC a volby pro vysvětlení, přijetí úkolu, odevzdání a odchod.

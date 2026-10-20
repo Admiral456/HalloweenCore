@@ -168,6 +168,114 @@ quests:
         - id: minecraft:ender_pearl
           amount: 4
 
+    mushroom_samples:
+      title: "Vzorky z lesa"
+      difficulty: "Lehký"
+      description: "Přines 12 červených a 12 hnědých hub lesní sběratelce."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:red_mushroom
+          amount: 12
+        - id: minecraft:brown_mushroom
+          amount: 12
+
+    wool_for_bedding:
+      title: "Lůžka pro hostinec"
+      difficulty: "Lehký"
+      description: "Dodej 16 bílých vln pro nové postele v hostinci."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:white_wool
+          amount: 16
+
+    river_catch:
+      title: "Úlovek z řeky"
+      difficulty: "Střední"
+      description: "Přines 8 tresek a 4 lososy kuchaři."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:cod
+          amount: 8
+        - id: minecraft:salmon
+          amount: 4
+
+    clay_for_potter:
+      title: "Hlína pro hrnčíře"
+      difficulty: "Lehký"
+      description: "Přines 24 hliněných kuliček hrnčíři."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:clay_ball
+          amount: 24
+
+    lantern_supplies:
+      title: "Světlo na cestu"
+      difficulty: "Střední"
+      description: "Přines 16 pochodní pro osvětlení staré cesty."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:torch
+          amount: 16
+
+    honey_for_healer:
+      title: "Med pro léčitelku"
+      difficulty: "Střední"
+      description: "Dodej 4 lahve medu do vesnické ošetřovny."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:honey_bottle
+          amount: 4
+
+    forest_materials:
+      title: "Dřevo pro truhláře"
+      difficulty: "Střední"
+      description: "Přines 16 dubových klád na opravu nábytku."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:oak_log
+          amount: 16
+
+    leather_repair:
+      title: "Kožené řemeny"
+      difficulty: "Těžký"
+      description: "Přines 12 kusů kůže sedláři."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:leather
+          amount: 12
+
+    map_and_compass:
+      title: "Směr do podzemí"
+      difficulty: "Těžký"
+      description: "Přines 1 kompas a 8 papírů kartografovi."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:compass
+          amount: 1
+        - id: minecraft:paper
+          amount: 8
+
+    miner_samples:
+      title: "Hornické vzorky"
+      difficulty: "Těžký"
+      description: "Přines 12 uhlí a 8 surového železa pro průzkum hlubin."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:coal
+          amount: 12
+        - id: minecraft:raw_iron
+          amount: 8
+
 rooms:
   enabled: true
   # Probability per newly generated Overworld chunk. Existing chunks are not auto-rescanned.

@@ -42,6 +42,7 @@ public final class SecretRoomManager implements Listener {
     private static final int ROOM_WIDTH = 7;
     private static final int ROOM_HEIGHT = 5;
     private static final int ROOM_DEPTH = 7;
+    private static final int MAX_ACCESS_TUNNEL_LENGTH = 14;
 
     private static final Set<Material> NATURAL_STONE = Set.of(
             Material.STONE, Material.DEEPSLATE, Material.TUFF, Material.GRANITE,
@@ -359,7 +360,12 @@ public final class SecretRoomManager implements Listener {
             int y = minY + ThreadLocalRandom.current().nextInt(maxY - minY + 1);
             if (!isSafeRoomVolume(world, x, y, z)) continue;
 
-            buildRoom(world, x, y, z);
+            // Do not create a sealed stone box. A safe path into a nearby natural cave
+            // must be found before this location is accepted or any blocks are changed.
+            AccessTunnel accessTunnel = findAccessTunnel(world, x, y, z);
+            if (accessTunnel == null) continue;
+
+            buildRoom(world, x, y, z, accessTunnel);
             recordGeneratedRoom(world, x + ROOM_WIDTH / 2, y + 1, z + ROOM_DEPTH / 2);
             chunk.getPersistentDataContainer().set(chunkHasRoomKey, PersistentDataType.BYTE, (byte) 1);
             plugin.getLogger().info("Generated locked secret room at " + world.getName() + " "
@@ -399,7 +405,7 @@ public final class SecretRoomManager implements Listener {
         return material.name().endsWith("_ORE") || material == Material.ANCIENT_DEBRIS;
     }
 
-    private void buildRoom(World world, int x, int y, int z) {
+    private void buildRoom(World world, int x, int y, int z, AccessTunnel accessTunnel) {
         for (int dx = 0; dx < ROOM_WIDTH; dx++) {
             for (int dy = 0; dy < ROOM_HEIGHT; dy++) {
                 for (int dz = 0; dz < ROOM_DEPTH; dz++) {
@@ -408,7 +414,21 @@ public final class SecretRoomManager implements Listener {
                             || dy == 0 || dy == ROOM_HEIGHT - 1;
                     Block block = world.getBlockAt(x + dx, y + dy, z + dz);
                     if (shell) {
-                        block.setType(Material.DEEPSLATE_BRICKS, false);
+                        Material shellMaterial = Material.DEEPSLATE_BRICKS;
+                        boolean corner = (dx == 0 || dx == ROOM_WIDTH - 1)
+                                && (dz == 0 || dz == ROOM_DEPTH - 1);
+                        if (corner && dy > 0 && dy < ROOM_HEIGHT - 1) {
+                            shellMaterial = Material.COBBLED_DEEPSLATE;
+                        } else if (dy == 0 && (dx + dz) % 2 == 0) {
+                            shellMaterial = Material.DEEPSLATE_TILES;
+                        } else if (dy == ROOM_HEIGHT - 1
+                                && ThreadLocalRandom.current().nextInt(100) < 12) {
+                            shellMaterial = Material.CRACKED_DEEPSLATE_BRICKS;
+                        } else if (dy > 0 && dy < ROOM_HEIGHT - 1
+                                && (dx + dz + dy) % 7 == 0) {
+                            shellMaterial = Material.CRACKED_DEEPSLATE_BRICKS;
+                        }
+                        block.setType(shellMaterial, false);
                     } else if (NATURAL_STONE.contains(block.getType())) {
                         block.setType(Material.AIR, false);
                     }
@@ -417,13 +437,24 @@ public final class SecretRoomManager implements Listener {
             }
         }
 
-        // Small vanilla decorations keep rooms readable without adding a new asset pack.
+        // Open only the previously verified natural-stone cells; the far end connects
+        // to an already open cave. No ores, containers, fluids, or player blocks are carved.
+        for (TunnelBlock tunnelBlock : accessTunnel.blocks()) {
+            world.getBlockAt(tunnelBlock.x(), y + 1, tunnelBlock.z()).setType(Material.AIR, false);
+            world.getBlockAt(tunnelBlock.x(), y + 2, tunnelBlock.z()).setType(Material.AIR, false);
+        }
+        decorateEntranceArch(world, x, y, z, accessTunnel.direction());
+
+        // Vanilla-only details: no retired Halloween mobs, events, sounds, rewards, or loot.
         setDecorationIfAir(world, x + 1, y + 1, z + 1, Material.SOUL_LANTERN);
         setDecorationIfAir(world, x + ROOM_WIDTH - 2, y + 1, z + 1, Material.SOUL_LANTERN);
         setDecorationIfAir(world, x + 1, y + 1, z + ROOM_DEPTH - 2, Material.LANTERN);
         setDecorationIfAir(world, x + ROOM_WIDTH - 2, y + 1, z + ROOM_DEPTH - 2, Material.LANTERN);
         setDecorationIfAir(world, x + 1, y + ROOM_HEIGHT - 2, z + 1, Material.COBWEB);
-        setDecorationIfAir(world, x + ROOM_WIDTH - 2, y + ROOM_HEIGHT - 2, z + ROOM_DEPTH - 2, Material.COBWEB);
+        setDecorationIfAir(world, x + ROOM_WIDTH - 2, y + ROOM_HEIGHT - 2,
+                z + ROOM_DEPTH - 2, Material.COBWEB);
+        setDecorationIfAir(world, x + ROOM_WIDTH / 2, y + ROOM_HEIGHT - 2,
+                z + ROOM_DEPTH - 2, Material.CHAIN);
 
         Block chestBlock = world.getBlockAt(x + ROOM_WIDTH / 2, y + 1, z + ROOM_DEPTH / 2);
         chestBlock.setType(Material.CHEST, false);
@@ -433,6 +464,88 @@ public final class SecretRoomManager implements Listener {
             chest.update(true, false);
         }
         // Intentionally no loot: chest contents were not agreed and must not be invented.
+    }
+
+    private AccessTunnel findAccessTunnel(World world, int x, int y, int z) {
+        Direction[] directions = {
+                new Direction(-1, 0), new Direction(1, 0),
+                new Direction(0, -1), new Direction(0, 1)
+        };
+        int first = ThreadLocalRandom.current().nextInt(directions.length);
+        for (int rotation = 0; rotation < directions.length; rotation++) {
+            Direction direction = directions[(first + rotation) % directions.length];
+            int wallX = direction.dx() < 0 ? x
+                    : direction.dx() > 0 ? x + ROOM_WIDTH - 1 : x + ROOM_WIDTH / 2;
+            int wallZ = direction.dz() < 0 ? z
+                    : direction.dz() > 0 ? z + ROOM_DEPTH - 1 : z + ROOM_DEPTH / 2;
+            List<TunnelBlock> path = new ArrayList<>();
+
+            for (int step = 0; step <= MAX_ACCESS_TUNNEL_LENGTH; step++) {
+                int px = wallX + direction.dx() * step;
+                int pz = wallZ + direction.dz() * step;
+                Block lower = world.getBlockAt(px, y + 1, pz);
+                Block upper = world.getBlockAt(px, y + 2, pz);
+
+                if (step > 0 && lower.getType() == Material.AIR && upper.getType() == Material.AIR) {
+                    if (isNaturalCaveOpening(world, px, y, pz, direction)) {
+                        return new AccessTunnel(List.copyOf(path), direction);
+                    }
+                    break;
+                }
+
+                if (!isSafeTunnelCarve(lower) || !isSafeTunnelCarve(upper)
+                        || !isSafeTunnelFloor(world.getBlockAt(px, y, pz))) {
+                    break;
+                }
+                path.add(new TunnelBlock(px, pz));
+            }
+        }
+        return null;
+    }
+
+    private boolean isSafeTunnelCarve(Block block) {
+        return NATURAL_STONE.contains(block.getType())
+                && !(block.getState() instanceof org.bukkit.block.TileState);
+    }
+
+    private boolean isSafeTunnelFloor(Block block) {
+        Material type = block.getType();
+        return (NATURAL_STONE.contains(type) || isOre(type))
+                && !(block.getState() instanceof org.bukkit.block.TileState);
+    }
+
+    private boolean isNaturalCaveOpening(World world, int x, int y, int z, Direction direction) {
+        int airBlocks = 0;
+        for (int lateral = -1; lateral <= 1; lateral++) {
+            int checkX = x + (direction.dx() == 0 ? lateral : 0);
+            int checkZ = z + (direction.dz() == 0 ? lateral : 0);
+            for (int dy = 1; dy <= 2; dy++) {
+                Block block = world.getBlockAt(checkX, y + dy, checkZ);
+                if (block.getState() instanceof org.bukkit.block.TileState) return false;
+                Material type = block.getType();
+                if (type == Material.AIR) {
+                    airBlocks++;
+                } else if (!NATURAL_STONE.contains(type) && !isOre(type)) {
+                    return false;
+                }
+            }
+        }
+        // At least one neighbouring air block avoids a single-block slit.
+        return airBlocks >= 3;
+    }
+
+    private void decorateEntranceArch(World world, int x, int y, int z, Direction direction) {
+        int wallX = direction.dx() < 0 ? x
+                : direction.dx() > 0 ? x + ROOM_WIDTH - 1 : x + ROOM_WIDTH / 2;
+        int wallZ = direction.dz() < 0 ? z
+                : direction.dz() > 0 ? z + ROOM_DEPTH - 1 : z + ROOM_DEPTH / 2;
+        for (int side : new int[]{-1, 1}) {
+            int pillarX = wallX + (direction.dx() == 0 ? side : 0);
+            int pillarZ = wallZ + (direction.dz() == 0 ? side : 0);
+            world.getBlockAt(pillarX, y + 1, pillarZ).setType(Material.POLISHED_BLACKSTONE_BRICKS, false);
+            world.getBlockAt(pillarX, y + 2, pillarZ).setType(Material.POLISHED_BLACKSTONE_BRICKS, false);
+        }
+        world.getBlockAt(wallX, y + 3, wallZ).setType(Material.CHISELED_DEEPSLATE, false);
     }
 
     private void setDecorationIfAir(World world, int x, int y, int z, Material decoration) {
@@ -552,4 +665,7 @@ public final class SecretRoomManager implements Listener {
     }
 
     private record ChunkOffset(int dx, int dz, int distanceSquared) {}
+    private record Direction(int dx, int dz) {}
+    private record TunnelBlock(int x, int z) {}
+    private record AccessTunnel(List<TunnelBlock> blocks, Direction direction) {}
 }

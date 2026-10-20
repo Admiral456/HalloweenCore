@@ -5,22 +5,22 @@ HalloweenCore je zúžený update pro Paper/Purpur 1.21.10 a Java 21. Aktivní o
 ## Co funguje v kódu
 
 - UplineDialogues je samostatný plugin pro tvorbu a editaci rozhovorů. HalloweenCore poskytuje bezpečné questové příkazy, persistentní postup a placeholders.
-- Výchozí konfigurace obsahuje 15 questů se třemi úrovněmi obtížnosti. Požadované předměty jsou definované v konfiguraci; příkaz /halloween quest turnin je ověří všechny předem a odebere je až po úspěšné kontrole.
+- Výchozí konfigurace obsahuje 25 questů se třemi úrovněmi obtížnosti. Požadované předměty jsou definované v konfiguraci; příkaz /halloween quest turnin je ověří všechny předem a odebere je až po úspěšné kontrole.
 - Quest lze přijmout jen jednou, průběh je uložen podle hráče a dokončený quest nelze opakovat. Žádné fragmentové ani předmětové odměny nejsou bez dohody přednastavené.
-- Nové chunky Overworldu mají 2,5% šanci na pokus o generování malé skryté místnosti. Generátor zkouší více bezpečných umístění v chunku, vyžaduje přírodní kamenný obal a nevyřezává cesty, tekutiny, kontejnery ani hráčské stavby.
+- Nové chunky Overworldu mají 2,5% šanci na pokus o generování malé skryté místnosti. Generátor zkouší více bezpečných umístění, vyžaduje přírodní kamenný obal i nalezenou přírodní jeskyni do 14 bloků a otevře k ní úzký přístupový tunel. Tunel vyřezává pouze přírodní kámen, nikoli rudy, tekutiny, kontejnery nebo hráčské stavby.
 - Každá místnost má speciálním PDC označenou zamčenou truhlu. Klíč se při prvním odemčení spotřebuje; potom truhla zůstane odemčená. Truhla je chráněná před rozbitím a výbuchy.
 - Vstup do zaznamenané místnosti automaticky posune quest hidden_room_report a průzkumnou část sealed_archive.
 
 ## Dialogy
 
-UplineDialogues nainstaluj zvlášť a otevři jeho editor příkazem /updialog panel. Připravil jsem českou knihovnu 15 rozhovorů a návod na navázání questů: docs/DIALOGUE_LIBRARY_CZ.md. Knihovna obsahuje texty, větve a přesné příkazy pro každého zadavatele.
+UplineDialogues nainstaluj zvlášť a otevři jeho editor příkazem /updialog panel. Připravil jsem českou knihovnu 25 rozhovorů a návod na navázání questů: docs/DIALOGUE_LIBRARY_CZ.md. Knihovna obsahuje texty, větve a příkazy pro všech 25 zadavatelů. V UplineDialogues nastav akce jako hráč: `halloween quest start <id>` a `halloween quest turnin <id>`.
 
 Důležitě: uložené dialogové stromy jsou spravované vlastním editorem UplineDialogues na serveru. Samotný Markdown katalog se neimportuje automaticky do dat UplineDialogues; uzly je třeba vložit/vytvořit v jeho editoru. HalloweenCore ale už poskytuje skutečné příkazy pro přijetí a odevzdání questů.
 
 ## Příkazy
 
 - /halloween quest status [id] — stav, postup a obtížnost.
-- /halloween quest start <id> — přijmout jeden z 15 questů.
+- /halloween quest start <id> — přijmout jeden z 25 questů.
 - /halloween quest turnin <id> — ověřit a odevzdat požadované předměty.
 - /halloween quest claim <id> — jednorázově vyzvednout později nakonfigurovanou odměnu.
 - /halloween rooms status — počítadla generování, šance, hloubka a poslední místnost.

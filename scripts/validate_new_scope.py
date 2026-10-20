@@ -128,7 +128,9 @@ expected_quests = {
     "fresh_harvest", "stone_for_repairs", "paper_trail", "food_for_watch", "village_library",
     "copper_samples", "iron_requisition", "amethyst_study", "alchemist_components",
     "archivist_records", "blacksmith_order", "deep_expedition", "hidden_room_report",
-    "sealed_archive", "night_research",
+    "sealed_archive", "night_research", "mushroom_samples", "wool_for_bedding", "river_catch",
+    "clay_for_potter", "lantern_supplies", "honey_for_healer", "forest_materials",
+    "leather_repair", "map_and_compass", "miner_samples",
 }
 if set(quest_ids) != expected_quests:
     fail(f"quest catalogue mismatch: found {sorted(quest_ids)}")
@@ -147,7 +149,7 @@ if "min-y: -36" not in rooms_config or "max-y: -8" not in rooms_config:
 room_java = (JAVA_DIR / "SecretRoomManager.java").read_text(encoding="utf-8")
 for feature in (
     "event.isNewChunk()", "chunkAttemptedKey", "isSafeRoomVolume", "recordGeneratedRoom",
-    "generateTestRoom", "locateNearest", "locateAll", "onPlayerEnterSecretRoom",
+    "generateTestRoom", "findAccessTunnel", "isNaturalCaveOpening", "decorateEntranceArch", "locateNearest", "locateAll", "onPlayerEnterSecretRoom",
     "setDecorationIfAir", "secret_room_locked", "consumeOne", "migrateLegacyRoomRecords"
 ):
     if feature not in room_java:
@@ -175,10 +177,10 @@ dialogue_library = ROOT / "docs/DIALOGUE_LIBRARY_CZ.md"
 if not dialogue_library.is_file():
     fail("the Czech dialogue catalogue is missing")
 dialogue_text = dialogue_library.read_text(encoding="utf-8")
-if len(re.findall(r"^## \d+\.", dialogue_text, flags=re.MULTILINE)) != 15:
-    fail("the Czech dialogue catalogue must contain all 15 quest dialogues")
+if len(re.findall(r"^## \d+\.", dialogue_text, flags=re.MULTILINE)) != 25:
+    fail("the Czech dialogue catalogue must contain all 25 quest dialogues")
 for quest_id in expected_quests:
     if quest_id not in dialogue_text:
         fail(f"dialogue catalogue is missing quest {quest_id}")
 
-print("Scope check passed: 15 dialogue quests, safe recorded rooms, locate aliases and only retained sweet textures.")
+print("Scope check passed: 25 dialogue quests, cave-connected rooms, locate aliases and only retained sweet textures.")
