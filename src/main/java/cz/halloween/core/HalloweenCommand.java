@@ -45,7 +45,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             if (sender instanceof Player player) {
                 plugin.getQuestManager().showStatus(player, null);
             } else {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween quest <offer|accept-offer|decline-offer|turnin-offer|start|turnin|progress|complete|claim|status> ..."));
+                sender.sendMessage(plugin.color("&cPoužití: /halloween quest <offer|accept-offer|decline-offer|turnin-offer|start|turnin|progress|complete|claim|status|validate> ..."));
             }
             return true;
         }
@@ -57,6 +57,27 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 return true;
             }
             plugin.getQuestManager().showStatus(player, args.length >= 3 ? args[2] : null);
+            return true;
+        }
+
+        if (action.equals("validate")) {
+            if (!mayManage(sender)) {
+                sender.sendMessage(plugin.color("&cKontrolu definic úkolů může spustit pouze správce."));
+                return true;
+            }
+            var manager = plugin.getQuestManager();
+            List<String> invalid = manager.getInvalidQuestIds();
+            int total = manager.getCatalogIds().size();
+            sender.sendMessage(plugin.color("&8&m--------------------------------"));
+            sender.sendMessage(plugin.color("&5&lKONTROLA QUESTŮ"));
+            sender.sendMessage(plugin.color("&7Platné definice: &a" + (total - invalid.size()) + "&7/&d" + total));
+            if (invalid.isEmpty()) {
+                sender.sendMessage(plugin.color("&aVšechny questy mají platné zadání a mohou být nabídnuty."));
+            } else {
+                sender.sendMessage(plugin.color("&cNeplatné questy: &f" + String.join(", ", invalid)));
+                sender.sendMessage(plugin.color("&7Zkontroluj title, description, objective-type, target a required-items."));
+            }
+            sender.sendMessage(plugin.color("&8&m--------------------------------"));
             return true;
         }
 
@@ -537,6 +558,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&d/halloween quest decline-offer &7- odmítnout aktuální nabídku NPC"));
         sender.sendMessage(plugin.color("&d/halloween quest turnin-offer &7- odevzdat aktuální úkol od vesničana"));
         sender.sendMessage(plugin.color("&d/halloween quest status [id] &7- stav a postup úkolů"));
+        sender.sendMessage(plugin.color("&d/halloween quest validate &7- ověří definice vlastních úkolů (admin)"));
         sender.sendMessage(plugin.color("&d/halloween quest start <id> &7- přijmout úkol z rozhovoru"));
         sender.sendMessage(plugin.color("&d/halloween quest turnin <id> &7- zkontroluje a odebere požadované předměty; dokončí úkol"));
         sender.sendMessage(plugin.color("&d/halloween quest claim <id> &7- jednorázově vyzvednout později nastavenou odměnu"));
@@ -560,7 +582,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return filter(List.of("quest", "quests", "fragments", "rooms", "locate", "key", "reload"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quest") || args[0].equalsIgnoreCase("quests"))) {
-            return filter(List.of("offer", "accept-offer", "decline-offer", "turnin-offer", "start", "turnin", "progress", "complete", "claim", "status"), args[1]);
+            return filter(List.of("offer", "accept-offer", "decline-offer", "turnin-offer", "start", "turnin", "progress", "complete", "claim", "status", "validate"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("rooms")) {
             return filter(List.of("status", "generate", "verify", "list"), args[1]);
