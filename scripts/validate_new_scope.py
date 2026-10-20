@@ -225,7 +225,7 @@ for node in (
 ):
     if f"Uzel {node}" not in dialogue_text:
         fail(f"random villager dialogue tree is missing node {node}")
-for choice in ("zeptat na podrobnosti", "odmítám", "Přijímám úkol", "Vrátím se později"):
+for choice in ("zeptat se na podrobnosti", "odmítám", "Přijímám úkol", "Vrátím se později"):
     if choice.lower() not in dialogue_text.lower():
         fail(f"random villager dialogue tree is missing player choice: {choice}")
 
