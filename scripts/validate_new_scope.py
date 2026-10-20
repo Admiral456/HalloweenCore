@@ -185,7 +185,8 @@ quest_java = (JAVA_DIR / "HalloweenQuestManager.java").read_text(encoding="utf-8
 for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
                 ".removeItem(", "objective-missing", "prepareVillagerOffer",
                 "acceptVillagerOffer", "declineVillagerOffer", "markVillagerQuestCompleted",
-                "getVillagerQuestStatus", "isRepeatable", "villager-offer-weight", "default-reward-fragments"):
+                "getVillagerQuestStatus", "getVillagerQuestTurnInStatus", "recordVillagerQuestTurnInResult",
+                "isRepeatable", "villager-offer-weight", "default-reward-fragments"):
     if feature not in quest_java:
         fail(f"quest turn-in/random-offer contract is missing: {feature}")
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
@@ -196,7 +197,8 @@ for feature in ('action.equals("turnin")', "rooms generate", "private boolean ha
 if "verifyRecordedRooms" not in command_java or 'action.equals("verify")' not in command_java:
     fail("admin room integrity verification command is missing")
 placeholder_java = (JAVA_DIR / "HalloweenPlaceholderExpansion.java").read_text(encoding="utf-8")
-for field in ("villager_quest_", 'case "story"', 'case "reward"', 'case "reward_items"'):
+for field in ("villager_quest_", 'case "story"', 'case "reward"', 'case "reward_items"',
+              'field.equals("turnin_status")'):
     if field not in placeholder_java:
         fail(f"random villager dialogue placeholder support is missing: {field}")
 
