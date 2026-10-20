@@ -712,7 +712,9 @@ public final class SecretRoomManager implements Listener {
                 Block upper = world.getBlockAt(px, y + 2, pz);
                 Block ceiling = world.getBlockAt(px, y + 3, pz);
 
-                if (step > 0 && lower.getType() == Material.AIR && upper.getType() == Material.AIR) {
+                // World generation uses CAVE_AIR/VOID_AIR inside many natural caves,
+                // so treat Bukkit's full air family as a valid opening, not only AIR.
+                if (step > 0 && lower.getType().isAir() && upper.getType().isAir()) {
                     if (isNaturalCaveOpening(world, px, y, pz, direction)) {
                         return new AccessTunnel(List.copyOf(path), direction);
                     }
@@ -758,7 +760,7 @@ public final class SecretRoomManager implements Listener {
                 Block block = world.getBlockAt(checkX, y + dy, checkZ);
                 if (block.getState() instanceof org.bukkit.block.TileState) return false;
                 Material type = block.getType();
-                if (type == Material.AIR) {
+                if (type.isAir()) {
                     airBlocks++;
                 } else if (!NATURAL_STONE.contains(type) && !isOre(type)) {
                     return false;
