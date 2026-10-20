@@ -30,17 +30,26 @@ Při změně stavu úkolu v UplineDialogues použij spuštění příkazu jako O
 - %halloween_quest_started_archivist_intro%
 - %halloween_quest_completed_archivist_intro%
 
-Odměny nejsou definitivně domluvené, proto nejsou přednastavené žádné questy ani odměny. HalloweenCore umí při prvním dokončení konkrétního úkolu jednorázově přidat nakonfigurované fragmenty a vykonat příkazy, ale sekce quest-rewards je ve výchozím nastavení prázdná. Nejsou přednastaveny peníze, vybavení ani jiné odměny.
+### Odměny za questy a klíče
 
-Získávání klíčů není automaticky přiřazeno k žádnému úkolu. Když bude jeho zdroj domluvený, může odpovídající NPC dialog klíč vydat přes ItemsAdder položku warriorland_halloween:secret_key (UplineDialogues akce Give item) nebo příkaz /halloween key give spuštěný jako OP. Obojí HalloweenCore rozpozná. Správce může klíč vydat také z konzole.
+HalloweenCore při prvním dokončení úkolu připíše fragmenty podle nastavené obtížnosti a provede jeden nezávislý hod na klíč. Výchozí fragmentové rozsahy jsou:
+- Lehký: 3–5 fragmentů; šance na klíč: common 10 %, rare 1 %, legendary 0,1 %.
+- Střední: 6–9 fragmentů; common 15 %, rare 3,5 %, legendary 0,5 %.
+- Těžký: 10–15 fragmentů; common 20 %, rare 6 %, legendary 2 %.
+- Velmi těžký: 16–25 fragmentů; common 25 %, rare 10 %, legendary 8 %.
+
+ID úkolů a jejich příběh zůstávají v UplineDialogues; není vymyšlen žádný přednastavený quest ani cíl. Neznámé ID dostane výchozí lehkou odměnu. Pro konkrétní ID lze v `config.yml` nastavit `quest-rewards.quests.<id>.difficulty`, přepsat fragmenty nebo jednotlivé šance na klíč. Stav dokončení a použitá odměna se uloží, takže opakované dokončení stejného ID nevyplatí odměnu znovu. Připravené jsou pouze fragmenty a klíče; nepřidávají se žádné vlastní předměty, schopnosti, peníze ani další textury.
+
+Klíče mají tři serverem ověřované rarity: common, rare a legendary. Všechny používají tutéž existující ItemsAdder texturu `warriorland_halloween:secret_key`; rarita je uložená v PersistentDataContainer a nepoznává se podle názvu. Přímá akce UplineDialogues Give item vydá obyčejný klíč. Vyšší rarity může vydat questová odměna nebo správce příkazem `/halloween key give rare [hráč] [počet]` či `/halloween key give legendary [hráč] [počet]`.
 
 ## Tajné podzemní místnosti
 
 - Generují se jen v nově vytvořených chunkech; staré oblasti se zpětně neprokopávají.
 - Výchozí šance je 1 % na nový chunk. Místnost vznikne jen uvnitř souvislého přírodního kamene, pokud prostor neobsahuje rudu, vodu, vzduch, stavbu ani jiné bloky.
 - Místnost má velikost 5×4×5, skrytý krátký vstup a jednu evidovanou truhlu.
-- Truhlu nelze otevřít ani rozbít bez speciálního klíče; chrání ji také kontrola výbuchu. Použití klíče ji trvale odemkne a spotřebuje jeden klíč.
-- Truhly se automaticky neplní žádným lootem. Obsah a získávání klíčů zůstanou prázdné, dokud je společně nedomluvíme.
+- Každá místnost má jednu ze tří rarit: common / rare / legendary. Poměr při generování je výchozí 70 / 25 / 5 a jde změnit v konfiguraci.
+- Truhlu nelze otevřít ani rozbít bez klíče přesně odpovídající rarity; chrání ji také kontrola výbuchu a automatického přenosu přes hopper. Použití klíče ji trvale odemkne a spotřebuje jeden klíč.
+- Při prvním odemčení dostane hráč jednorázově 8–16 / 20–35 / 40–70 fragmentů podle rarity a truhla se naplní nastavenými vanilla surovinami, jídlem, očarovanými knihami/nástroji a malou šancí na vzácnější bonus. Loot se znovu nehází při opětovném otevření.
 
 Nastavení je v config.yml v sekci secret-rooms. Název hlavního herního světa není předpokládán: doplň jeho skutečný název do secret-rooms.worlds. Dokud je seznam prázdný, nic se negeneruje. Svět Spawn zůstává vyloučený i tehdy, když ho někdo omylem přidá do seznamu.
 
@@ -56,7 +65,7 @@ Zůstalo pouze třináct licencovaných sladkostí s nezměněnými texturami a 
 - /halloween quest complete <id>
 - /halloween quest status [id]
 - /halloween fragments
-- /halloween key give [hráč] [počet] (admin)
+- /halloween key give [common|rare|legendary] [hráč] [počet] (admin)
 - /halloween rooms status
 - /halloween reload (admin)
 
