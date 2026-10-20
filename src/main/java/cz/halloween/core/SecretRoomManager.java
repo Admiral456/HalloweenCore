@@ -10,6 +10,7 @@ import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
 import org.bukkit.block.DoubleChest;
+import org.bukkit.block.data.Directional;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
@@ -18,9 +19,11 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockBurnEvent;
+import org.bukkit.event.block.BlockDispenseEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.block.BlockPistonExtendEvent;
 import org.bukkit.event.block.BlockPistonRetractEvent;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.inventory.InventoryMoveItemEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -255,13 +258,13 @@ public final class SecretRoomManager implements Listener {
         if (isProtectedChest(event.getBlock())) event.setCancelled(true);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onEntityExplosion(EntityExplodeEvent event) {
         // Removes protected chest from the blast list, including TNT and creepers.
         event.blockList().removeIf(this::isProtectedChest);
     }
 
-    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onBlockExplosion(BlockExplodeEvent event) {
         event.blockList().removeIf(this::isProtectedChest);
     }
@@ -274,6 +277,20 @@ public final class SecretRoomManager implements Listener {
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onProtectedChestPistonRetract(BlockPistonRetractEvent event) {
         if (event.getBlocks().stream().anyMatch(this::isProtectedChest)) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onProtectedChestEntityChange(EntityChangeBlockEvent event) {
+        // Also stop destructive entity-driven block changes, e.g. wither block breaking.
+        if (isProtectedChest(event.getBlock())) event.setCancelled(true);
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onProtectedChestDispense(BlockDispenseEvent event) {
+        // Dropper/dispenser mechanics must not be an alternate automated chest interface.
+        if (!(event.getBlock().getBlockData() instanceof Directional directional)) return;
+        Block target = event.getBlock().getRelative(directional.getFacing());
+        if (isProtectedChest(target)) event.setCancelled(true);
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)

@@ -165,8 +165,10 @@ for feature in (
     "getType().isAir()", "protectRecordedChestsInLoadedChunks", "isRoomStructureIntact",
     "verifyRecordedRooms", "onProtectedChestBreak",
     "onProtectedChestBurn", "onEntityExplosion", "onBlockExplosion", "onProtectedChestPistonExtend",
-    "onProtectedChestPistonRetract", "onProtectedChestTransfer", "InventoryMoveItemEvent",
-    "BlockPistonExtendEvent", "BlockPistonRetractEvent", "isProtectedChest", "isProtectedInventory"
+    "onProtectedChestPistonRetract", "onProtectedChestEntityChange", "EntityChangeBlockEvent",
+    "onProtectedChestDispense", "BlockDispenseEvent", "Directional",
+    "onProtectedChestTransfer", "InventoryMoveItemEvent", "BlockPistonExtendEvent",
+    "BlockPistonRetractEvent", "isProtectedChest", "isProtectedInventory"
 ):
     if feature not in room_java:
         fail(f"secret-room runtime contract is missing: {feature}")

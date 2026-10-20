@@ -65,4 +65,4 @@ PlaceholderAPI je volitelné. Jsou dostupné:
 - /locate halloweenroom [max-vzdálenost] nebo /halloween locate room hledá nejbližší skutečně zaznamenanou místnost.
 - /locateall halloweenroom vypisuje všechny zaznamenané místnosti aktuálního světa pouze správci.
 - Automatické generování se spouští na nově vytvořeném Overworld chunku; již existující chunky se automaticky neprohledávají. Výchozí šance 2,5 % je šancí na pokus, nikoli zárukou místnosti v každém novém chunku; kandidát musí projít kontrolou kamenného obalu i bezpečné cesty do přírodní jeskyně. Použij /halloween rooms generate jako test a /halloween rooms verify ke kontrole záznamů.
-- Truhly zůstávají chráněné i po odemčení proti rozbití, ohni, výbuchům TNT/creeperů, přesunu písty a automatickému vkládání/vytahování předmětů hopperem či hopper-minecartem. Po odemčení je lze ručně otevřít.
+- Truhly zůstávají chráněné i po odemčení proti rozbití, ohni, výbuchům TNT/creeperů, přesunu písty, destruktivním změnám od entit, dispenserům/dropperům a automatickému vkládání/vytahování hopperem či hopper-minecartem. Po odemčení je lze ručně otevřít.
