@@ -210,8 +210,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(plugin.color("&cID úkolu může obsahovat pouze písmena a-z, čísla, podtržítka a pomlčky."));
             } else if (!manager.isConfiguredQuest(id)) {
                 sender.sendMessage(plugin.color("&cTento quest není definovaný v quests.definitions."));
-            } else if (manager.isCompleted(target.getUniqueId(), id)) {
-                sender.sendMessage(plugin.color("&eTento úkol už má hráč dokončený a nelze ho opakovat."));
+            } else if (manager.isCompleted(target.getUniqueId(), id) && !manager.isRepeatable(id)) {
+                sender.sendMessage(plugin.color("&eTento úkol už má hráč dokončený a je označený jako jednorázový."));
             } else if (manager.isActive(target.getUniqueId(), id)) {
                 sender.sendMessage(plugin.color("&eTento úkol už je aktivní."));
             } else if (!manager.start(target, id)) {
