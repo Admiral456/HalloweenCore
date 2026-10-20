@@ -1,9 +1,19 @@
 schema-version: 2
-# Only the special room key and the retained imported sweets are registered in this version.
+# All three room-key rarities share the retained key sprite; 13 imported sweets are also registered.
 items:
   secret_room_key:
     category: key
     itemsadder-id: warriorland_halloween:secret_room_key
+    fallback-material: TRIPWIRE_HOOK
+    texture: room_key
+  secret_room_key_rare:
+    category: key
+    itemsadder-id: warriorland_halloween:secret_room_key_rare
+    fallback-material: TRIPWIRE_HOOK
+    texture: room_key
+  secret_room_key_legendary:
+    category: key
+    itemsadder-id: warriorland_halloween:secret_room_key_legendary
     fallback-material: TRIPWIRE_HOOK
     texture: room_key
   stev_apple_core:
