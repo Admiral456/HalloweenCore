@@ -1,6 +1,6 @@
 # Audit implementace nové verze HalloweenCore
 
-Stav tohoto dokumentu odpovídá pracovní větvi refactor/dialogues-secret-rooms-main. Tato verze zatím není sloučena do main ani otestována na živém serveru.
+Stav tohoto dokumentu odpovídá verzi sloučené do main přes PR #58. CI ověřilo sestavení a statické validátory; test na živém Paper/Purpur serveru ani skutečné mapy UplineDialogues tím ověřeny nejsou.
 
 ## Co je v kódu připravené
 
