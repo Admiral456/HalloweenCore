@@ -1,4 +1,5 @@
 from pathlib import Path
+import hashlib
 import json
 import struct
 import sys
@@ -75,16 +76,30 @@ if data[:8] != b"\x89PNG\r\n\x1a\n":
 width, height = struct.unpack(">II", data[16:24])
 if (width, height) != (32, 32):
     fail(f"room key should be 32x32, got {width}x{height}")
+if data[25] != 6:
+    fail("room_key.png must retain an RGBA alpha channel")
 
-for manifest_path in (
+manifest_paths = (
     ASSET_ROOT / "THIRD_PARTY_LICENSES/stevs-halloween-source-manifest.json",
     ROOT / "third-party-assets/stevs-halloween/asset-source-manifest.json",
-):
+)
+manifests = []
+for manifest_path in manifest_paths:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifests.append(manifest)
     if len(manifest.get("assets", [])) != 13:
         fail(f"source manifest must list 13 retained sweets: {manifest_path}")
     if any("apple_leaves_with_apples.png" in item.get("target_path", "") for item in manifest["assets"]):
         fail(f"non-sweet decorative leaf texture should not be included: {manifest_path}")
+    for item in manifest["assets"]:
+        target = ROOT / item["target_path"]
+        if not target.is_file():
+            fail(f"manifest target is missing: {target}")
+        actual_hash = hashlib.sha256(target.read_bytes()).hexdigest()
+        if actual_hash != item.get("sha256"):
+            fail(f"imported sweet texture hash differs from its source manifest: {target}")
+if manifests[0] != manifests[1]:
+    fail("the source manifest shipped with ItemsAdder must match the repository manifest")
 
 items_yml = (ASSET_ROOT / "configs/items.yml").read_text(encoding="utf-8")
 for old in ("crimson_warden", "hunter_mask", "cursed_talisman", "halloween_token",
