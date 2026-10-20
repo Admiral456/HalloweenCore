@@ -32,7 +32,7 @@ The default configuration has no quest definitions. A later-defined quest may op
 
 ## Secret rooms and keys
 
-Rooms are considered only when a new Overworld chunk is generated. Default generation chance is 2.5% per new chunk, restricted to solid natural stone between Y=-36 and Y=24, and excluded from the world named Spawn. It will not carve caves, ores, liquids, block entities, or existing blocks other than natural stone in a new chunk.
+Rooms are considered only when a new Overworld chunk is generated. Default generation chance is 5% per new chunk, restricted to solid natural stone between Y=-36 and Y=24, and excluded from the world named Spawn. It will not carve caves, ores, liquids, block entities, or existing blocks other than natural stone in a new chunk.
 
 The chest intentionally has no configured loot. The key is created by HalloweenCore using the ItemsAdder item ID warriorland_halloween:secret_room_key when ItemsAdder is installed, with a named vanilla fallback otherwise. The admin key command is for testing only; no drop, NPC payout or automatic acquisition source is configured until the agreed system specifies it.
 

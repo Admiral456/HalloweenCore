@@ -10,7 +10,7 @@ quests:
 rooms:
   enabled: true
   # Chance that a newly generated Overworld chunk contains one small secret room.
-  chance-per-new-chunk: 0.025
+  chance-per-new-chunk: 0.05
   min-y: -36
   max-y: 24
   blocked-worlds:

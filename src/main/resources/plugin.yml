@@ -8,7 +8,7 @@ softdepend: [ItemsAdder, PlaceholderAPI]
 commands:
   halloween:
     description: Dialogue quests, quest fragments, secret-room status and key administration.
-    usage: /halloween [quest|fragments|rooms|key|reload]
+    usage: /halloween [quest|fragments|rooms|locate|key|reload]
     aliases: [hallow]
     permission: halloweencore.use
 permissions:

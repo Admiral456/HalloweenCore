@@ -31,6 +31,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             case "fragments" -> showFragments(sender);
             case "key" -> handleKey(sender, args);
             case "rooms" -> handleRooms(sender, args);
+            case "locate" -> handleLocate(sender, args);
             case "reload" -> reload(sender);
             default -> {
                 sendHelp(sender);
@@ -234,8 +235,22 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     }
 
     private boolean handleRooms(CommandSender sender, String[] args) {
-        if (args.length > 1 && !args[1].equalsIgnoreCase("status")) {
-            sender.sendMessage(plugin.color("&cPoužití: /halloween rooms status"));
+        if (args.length > 1 && !args[1].equalsIgnoreCase("status")
+                && !args[1].equalsIgnoreCase("generate")) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween rooms <status|generate>"));
+            return true;
+        }
+        if (args.length > 1 && args[1].equalsIgnoreCase("generate")) {
+            if (!(sender instanceof Player player) || !sender.hasPermission("halloweencore.admin")) {
+                sender.sendMessage(plugin.color("&cTestovací generování může spustit pouze správce ve hře."));
+                return true;
+            }
+            boolean generated = plugin.getSecretRoomManager().generateTestRoom(player.getLocation());
+            if (generated) {
+                sender.sendMessage(plugin.color("&aTestovací místnost byla vygenerována. Najdeš ji příkazem /halloween locate room."));
+            } else {
+                sender.sendMessage(plugin.color("&cV tomto chunku se nenašlo bezpečné místo z přírodního kamene. Zkus jiný podzemní chunk."));
+            }
             return true;
         }
         boolean enabled = plugin.getConfig().getBoolean("rooms.enabled", true);
@@ -247,6 +262,31 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&7Vygenerované místnosti v evidenci: &d" + plugin.getSecretRoomManager().getGeneratedCount()));
         sender.sendMessage(plugin.color("&7Truhly zatím nemají vlastní loot; obsah nebyl domýšlen."));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
+        return true;
+    }
+
+    private boolean handleLocate(CommandSender sender, String[] args) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cLocate musí spustit hráč ve hře."));
+            return true;
+        }
+        if (args.length != 2 || !(args[1].equalsIgnoreCase("room") || args[1].equalsIgnoreCase("rooms")
+                || args[1].equalsIgnoreCase("secretroom"))) {
+            sender.sendMessage(plugin.color("&cPoužití: /halloween locate room"));
+            return true;
+        }
+        var location = plugin.getSecretRoomManager().findNearestRoom(player.getLocation());
+        if (location == null) {
+            sender.sendMessage(plugin.color("&eV tomto světě zatím není v evidenci žádná vygenerovaná místnost."));
+            sender.sendMessage(plugin.color("&7Správce může otestovat generování příkazem /halloween rooms generate."));
+            return true;
+        }
+        int x = location.getBlockX(), y = location.getBlockY(), z = location.getBlockZ();
+        double blocks = Math.sqrt(location.distanceSquared(player.getLocation()));
+        sender.sendMessage(plugin.color("&5&lTAJNÁ MÍSTNOST &8» &f" + x + " " + y + " " + z
+                + " &7(vzdálenost " + Math.round(blocks) + " bloků)"));
+        sender.sendMessage(plugin.color("&7Svět: &f" + location.getWorld().getName()
+                + "&7. Použij souřadnice a kopej bezpečně."));
         return true;
     }
 
@@ -309,7 +349,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&d/halloween quest start <id> &7- přijmout úkol z rozhovoru"));
         sender.sendMessage(plugin.color("&d/halloween quest claim <id> &7- jednorázově vyzvednout později nastavenou odměnu"));
         sender.sendMessage(plugin.color("&d/halloween fragments &7- tvoje fragmenty z dokončených úkolů"));
+        sender.sendMessage(plugin.color("&d/halloween locate room &7- nejbližší známá tajná místnost"));
         sender.sendMessage(plugin.color("&d/halloween rooms status &7- stav generování tajných místností"));
+        sender.sendMessage(plugin.color("&d/halloween rooms generate &7- testovací generování (admin)"));
         sender.sendMessage(plugin.color("&d/halloween key give <počet> &7- administrační nástroj pro klíče"));
         sender.sendMessage(plugin.color("&d/halloween reload &7- reload konfigurace (admin)"));
         sender.sendMessage(plugin.color("&8Moby, bossové a původní eventy jsou z této verze odstraněni."));
@@ -319,13 +361,16 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return filter(List.of("quest", "quests", "fragments", "rooms", "key", "reload"), args[0]);
+            return filter(List.of("quest", "quests", "fragments", "rooms", "locate", "key", "reload"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quest") || args[0].equalsIgnoreCase("quests"))) {
             return filter(List.of("start", "progress", "complete", "claim", "status"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("rooms")) {
-            return filter(List.of("status"), args[1]);
+            return filter(List.of("status", "generate"), args[1]);
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("locate")) {
+            return filter(List.of("room", "rooms", "secretroom"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("key")) {
             return filter(List.of("give"), args[1]);

@@ -6,6 +6,7 @@ import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.Sound;
 import org.bukkit.World;
+import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
@@ -27,6 +28,8 @@ import org.bukkit.configuration.file.YamlConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -158,7 +161,7 @@ public final class SecretRoomManager implements Listener {
 
         int baseX = chunk.getX() << 4;
         int baseZ = chunk.getZ() << 4;
-        for (int attempt = 0; attempt < 12; attempt++) {
+        for (int attempt = 0; attempt < 64; attempt++) {
             // Keep the whole 7x7 footprint away from chunk edges.
             int x = baseX + 2 + ThreadLocalRandom.current().nextInt(8);
             int z = baseZ + 2 + ThreadLocalRandom.current().nextInt(8);
@@ -167,6 +170,12 @@ public final class SecretRoomManager implements Listener {
 
             buildRoom(world, x, y, z);
             data.set("stats.generated", getGeneratedCount() + 1);
+            String roomId = world.getName() + "_" + (x + ROOM_WIDTH / 2) + "_" + (y + 1) + "_" + (z + ROOM_DEPTH / 2);
+            String roomPath = "rooms." + roomId;
+            data.set(roomPath + ".world", world.getName());
+            data.set(roomPath + ".x", x + ROOM_WIDTH / 2);
+            data.set(roomPath + ".y", y + 1);
+            data.set(roomPath + ".z", z + ROOM_DEPTH / 2);
             data.set("last.world", world.getName());
             data.set("last.x", x + ROOM_WIDTH / 2);
             data.set("last.y", y + 1);
@@ -176,7 +185,32 @@ public final class SecretRoomManager implements Listener {
                     + " at " + (x + 3) + "," + (y + 1) + "," + (z + 3) + ".");
             return true;
         }
+        plugin.getLogger().fine("No safe solid-stone volume found for a secret room in chunk "
+                + chunk.getX() + "," + chunk.getZ() + " (" + world.getName() + ") after 64 attempts.");
         return false;
+    }
+
+    public Location findNearestRoom(Location origin) {
+        if (origin == null || origin.getWorld() == null) return null;
+        var rooms = data.getConfigurationSection("rooms");
+        if (rooms == null) return null;
+        return rooms.getKeys(false).stream()
+                .map(id -> {
+                    String path = "rooms." + id;
+                    World world = Bukkit.getWorld(data.getString(path + ".world", ""));
+                    if (world == null || !world.equals(origin.getWorld())) return null;
+                    return new Location(world, data.getInt(path + ".x"), data.getInt(path + ".y"),
+                            data.getInt(path + ".z"));
+                })
+                .filter(location -> location != null)
+                .min(Comparator.comparingDouble(location -> location.distanceSquared(origin)))
+                .orElse(null);
+    }
+
+    public boolean generateTestRoom(Location origin) {
+        if (origin == null || origin.getWorld() == null || !isAllowedWorld(origin.getWorld())) return false;
+        Chunk chunk = origin.getChunk();
+        return generateRoomInChunk(chunk);
     }
 
     private boolean isSolidNaturalRock(World world, int x, int y, int z) {
