@@ -16,108 +16,37 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Ensure audio encoder
-        run: |
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            sudo apt-get update
-            sudo apt-get install -y ffmpeg
-          fi
-      - name: Generate Halloween audio
-        run: python3 scripts/generate_halloween_audio.py
-      # Project-owned world-decoration textures are deterministic 16x16 Minecraft pixel art.
-      - name: Generate Halloween block textures
-        run: python3 scripts/generate_halloween_block_textures.py
-      # Player-owned shop and gear icons are reproducibly generated. Artist-owned mob UV atlases remain untouched.
-      - name: Generate Halloween item textures
-        run: python3 scripts/generate_halloween_item_textures.py
-      # Bitmap glyph textures used by the illustrated written-book guide.
-      - name: Generate illustrated guide-book glyphs
-        run: python3 scripts/generate_halloween_guide_textures.py
-      # Build the supplied MIT-licensed Koto cubemap into Java's 3x2 custom-sky atlas.
-      - name: Install Koto sky converter dependency
-        run: python3 -m pip install --disable-pip-version-check Pillow==11.3.0
-      - name: Download reviewed Koto sky source
-        run: |
-          mkdir -p target
-          curl --fail --location --retry 3 --connect-timeout 20 https://api.modrinth.com/v2/version/2CcGu1oW -o target/koto-sky-version.json
-          source_url="$(python3 -c 'import json; d=json.load(open("target/koto-sky-version.json", encoding="utf-8")); print(next(f["url"] for f in d["files"] if f["filename"].lower().endswith(".zip")))')"
-          curl --fail --location --retry 3 --connect-timeout 20 "$source_url" -o target/red-sky-by-koto.zip
-      - name: Generate Java-compatible Koto sky atlas
-        run: python3 scripts/generate_koto_skybox.py --source-zip target/red-sky-by-koto.zip
-      - name: Validate canonical content registry and imported asset provenance
-        run: python3 scripts/validate_halloween_content_registry.py
-      - name: Validate all model, decoration, armor and sound registry paths
-        run: python3 scripts/validate_content_registry.py
-      # Artist-owned mob PNGs are checked as committed; CI must not regenerate/recolor those textures.
-      - name: Validate Halloween assets
-        run: python3 scripts/validate_halloween_assets.py
-      - name: Validate Vampire King model
-        run: python3 scripts/validate_vampire_model.py
-      # Optional artist-owned mob atlases/models are packaged only when present; no recoloring/generation here.
-      - name: Validate custom Halloween mob models
-        run: python3 scripts/validate_special_mob_models.py
-      - name: Validate Halloween runtime rules
-        run: python3 scripts/validate_halloween_runtime_rules.py
-      - name: Test Halloween event behavior contract
-        run: python3 scripts/test_halloween_event_semantics.py
-      - name: Test Halloween achievements and tutorial-book shortcut
-        run: python3 scripts/test_halloween_achievements.py
-      - name: Build deterministic asset manifest
-        run: python3 scripts/build_halloween_asset_manifest.py --minecraft-version 1.21.10
-      - name: Verify deterministic asset manifest
-        run: python3 scripts/build_halloween_asset_manifest.py --minecraft-version 1.21.10 --check
-      - name: Test content registry and deterministic packaging
-        run: python3 scripts/test_halloween_asset_pipeline.py
-      - name: Build
+      - name: Validate the reduced feature scope and retained textures
+        run: python3 scripts/validate_new_scope.py
+      - name: Build plugin JAR
         run: mvn -B clean package
-      - name: Package ItemsAdder content reproducibly
+      - name: Package retained ItemsAdder content
         run: |
-          mkdir -p target
-          python3 scripts/package_deterministic_zip.py \
-            --root itemsadder/contents \
-            --include warriorland_halloween \
-            --output target/WarriorLand-Halloween-ItemsAdder-mc1.21.10.zip \
-            --minecraft-version 1.21.10 \
-            --metadata-path warriorland_halloween/BUILD_METADATA.json
-      - name: Upload ItemsAdder content pack
-        uses: actions/upload-artifact@v4
-        with:
-          name: WarriorLand-Halloween-ItemsAdder-mc1.21.10
-          path: target/WarriorLand-Halloween-ItemsAdder-mc1.21.10.zip
-          if-no-files-found: error
-          retention-days: 14
-      - name: Package special mob models
+          python3 - <<'PY'
+          from pathlib import Path
+          from zipfile import ZipFile, ZIP_DEFLATED
+          root = Path("itemsadder/contents")
+          output = Path("target/WarriorLand-Halloween-ItemsAdder-mc1.21.10.zip")
+          output.parent.mkdir(parents=True, exist_ok=True)
+          with ZipFile(output, "w", compression=ZIP_DEFLATED) as archive:
+              for path in sorted((root / "warriorland_halloween").rglob("*")):
+                  if path.is_file():
+                      archive.write(path, path.relative_to(root).as_posix())
+          with ZipFile(output) as archive:
+              bad = archive.testzip()
+              if bad:
+                  raise SystemExit(f"Invalid ZIP entry: {bad}")
+          PY
+      - name: Create checksums
         run: |
-          mkdir -p target/halloween-mob-pack/MythicMobs/Mobs target/halloween-mob-pack/ModelEngine/blueprints
-          cp mythicmobs/mobs/halloween-special-mobs.yml target/halloween-mob-pack/MythicMobs/Mobs/
-          cp mythicmobs/models/halloween_*.bbmodel target/halloween-mob-pack/ModelEngine/blueprints/
-          cp mythicmobs/models/halloween_*.png target/halloween-mob-pack/ModelEngine/blueprints/
-          cp mythicmobs/README.md target/halloween-mob-pack/README.txt
-          python3 scripts/package_deterministic_zip.py \
-            --root target/halloween-mob-pack \
-            --output target/HalloweenCore-Special-Mobs-ModelEngine-mc1.21.10.zip \
-            --minecraft-version 1.21.10 \
-            --metadata-path BUILD_METADATA.json
-          unzip -t target/HalloweenCore-Special-Mobs-ModelEngine-mc1.21.10.zip
-      - name: Upload special mob ModelEngine pack
+          sha256sum target/HalloweenCore.jar target/WarriorLand-Halloween-ItemsAdder-mc1.21.10.zip > target/SHA256SUMS.txt
+      - name: Upload plugin and ItemsAdder artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: HalloweenCore-Special-Mobs-ModelEngine-mc1.21.10
-          path: target/HalloweenCore-Special-Mobs-ModelEngine-mc1.21.10.zip
+          name: HalloweenCore-dialogues-secret-rooms
+          path: |
+            target/HalloweenCore.jar
+            target/WarriorLand-Halloween-ItemsAdder-mc1.21.10.zip
+            target/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
-      - name: Upload plugin JAR
-        uses: actions/upload-artifact@v4
-        with:
-          name: HalloweenCore-jar
-          path: target/HalloweenCore.jar
-          if-no-files-found: error
-          retention-days: 14
-
-      - name: Upload SHA-256 asset manifest
-        uses: actions/upload-artifact@v4
-        with:
-          name: HalloweenCore-Asset-Manifest-mc1.21.10
-          path: itemsadder/contents/warriorland_halloween/ASSET_MANIFEST.json
-          if-no-files-found: error
-          retention-days: 90

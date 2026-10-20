@@ -1,197 +1,197 @@
 package cz.halloween.core;
 
-import org.bukkit.NamespacedKey;
-import org.bukkit.Particle;
-import org.bukkit.Sound;
-import org.bukkit.entity.EnderDragon;
-import org.bukkit.entity.Ghast;
-import org.bukkit.entity.Monster;
-import org.bukkit.entity.Phantom;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.bukkit.entity.Shulker;
-import org.bukkit.entity.Slime;
-import org.bukkit.entity.Wither;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.persistence.PersistentDataType;
 
-import java.util.List;
-import java.util.Locale;
+import java.io.File;
+import java.io.IOException;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
-public final class HalloweenQuestManager implements Listener {
-    private record Quest(String id, String title, String description, String objective,
-                         int target, long reward) {}
+public final class HalloweenQuestManager {
+    private static final Pattern VALID_ID = Pattern.compile("[a-z0-9][a-z0-9_-]{0,47}");
 
     private final HalloweenCore plugin;
-    private final NamespacedKey cursedMobKey;
-    private final List<Quest> quests = List.of(
-            new Quest("fog-patrol", "Znamení v mlze",
-                    "Zabij 10 nepřátelských tvorů a zjisti, co se děje po setmění.",
-                    "mob-kill", 10, 150),
-            new Quest("gravekeepers-debt", "Dluh hrobníkovi",
-                    "Najdi a poraz 2 hrobníky na toulkách světem.",
-                    "special:gravekeeper", 2, 250),
-            new Quest("blood-silk", "Krvavé hedvábí",
-                    "Připrav krvavé pavouky o jejich kořist — poraz 3 kusy.",
-                    "special:blood-spider", 3, 300),
-            new Quest("cursed-harvest", "Sklizeň za úplňku",
-                    "Sklid 20 zralých plodin a posil svou výbavu.",
-                    "farming", 20, 200),
-            new Quest("witching-hour", "Čarodějnická hodina",
-                    "Najdi a poraz 2 hexové čarodějky.",
-                    "special:hex-witch", 2, 400),
-            new Quest("pumpkin-wraith", "Dýňové prokletí",
-                    "Znič 2 dýňové přízraky, než jejich popel zahalí okolí.",
-                    "special:pumpkin-wraith", 2, 450),
-            new Quest("void-reaper", "Ženec z prázdnoty",
-                    "Vypátrej a poraz 2 Žence prázdnoty.",
-                    "special:void-reaper", 2, 600),
-            new Quest("frost-stalker", "Ledová stopa",
-                    "Přemoz 2 Ledové stopaře v chladných krajích.",
-                    "special:frost-stalker", 2, 650),
-            new Quest("nightmare", "Poslední noční můra",
-                    "Přežij noc a poraz Noční můru.",
-                    "special:nightmare", 1, 900)
-    );
+    private final File dataFile;
+    private final YamlConfiguration data;
 
     public HalloweenQuestManager(HalloweenCore plugin) {
         this.plugin = plugin;
-        this.cursedMobKey = new NamespacedKey(plugin, "cursed_mob");
-    }
-
-    public void recordAction(Player player, String source) {
-        if (!isEligible(player) || source == null) return;
-        Quest quest = ensureActiveQuest(player);
-        if (quest == null || !quest.objective().equalsIgnoreCase(source)) return;
-        addProgress(player, quest, 1);
-    }
-
-    @EventHandler(ignoreCancelled = true)
-    public void onHostileMobDeath(EntityDeathEvent event) {
-        if (!plugin.isEventEnabled()) return;
-        Player killer = event.getEntity().getKiller();
-        if (!isEligible(killer)) return;
-
-        String specialMob = event.getEntity().getPersistentDataContainer()
-                .get(cursedMobKey, PersistentDataType.STRING);
-        var dead = event.getEntity();
-        boolean hostile = dead instanceof Monster || dead instanceof EnderDragon || dead instanceof Wither
-                || dead instanceof Ghast || dead instanceof Phantom || dead instanceof Shulker
-                || dead instanceof Slime;
-        if (!hostile) return;
-
-        Quest active = ensureActiveQuest(killer);
-        if (active == null) return;
-        if (specialMob != null && !specialMob.isBlank()) {
-            String specialObjective = "special:" + normalizeMobId(specialMob);
-            // One kill may advance only the currently active chapter. Do not also
-            // apply a generic-kill increment after unlocking the next chapter.
-            if (active.objective().equalsIgnoreCase(specialObjective)
-                    || active.objective().equalsIgnoreCase("mob-kill")) {
-                addProgress(killer, active, 1);
-            }
-            return;
+        if (!plugin.getDataFolder().exists() && !plugin.getDataFolder().mkdirs()) {
+            plugin.getLogger().warning("Could not create plugin data directory.");
         }
-        if (active.objective().equalsIgnoreCase("mob-kill")) {
-            addProgress(killer, active, 1);
-        }
+        this.dataFile = new File(plugin.getDataFolder(), "quest-data.yml");
+        this.data = YamlConfiguration.loadConfiguration(dataFile);
     }
 
-    public void show(Player player) {
-        if (player == null) return;
-        Quest active = ensureActiveQuest(player);
-        int completedCount = plugin.getDataManager().getCompletedStoryQuests(player.getUniqueId()).size();
+    public boolean isValidId(String id) {
+        return id != null && VALID_ID.matcher(id.toLowerCase(java.util.Locale.ROOT)).matches();
+    }
 
+    public String normalizeId(String id) {
+        return id == null ? "" : id.toLowerCase(java.util.Locale.ROOT);
+    }
+
+    public boolean start(Player player, String rawId) {
+        String id = normalizeId(rawId);
+        if (player == null || !isValidId(id) || isCompleted(player.getUniqueId(), id)
+                || isActive(player.getUniqueId(), id)) {
+            return false;
+        }
+        String root = questRoot(player.getUniqueId(), id);
+        data.set(root + ".status", "active");
+        data.set(root + ".progress", 0);
+        data.set(root + ".reward-paid", false);
+        save();
+        return true;
+    }
+
+    public boolean addProgress(Player player, String rawId, int amount) {
+        String id = normalizeId(rawId);
+        if (player == null || !isValidId(id) || amount < 1 || amount > 10000
+                || !isActive(player.getUniqueId(), id)) {
+            return false;
+        }
+        int previous = getProgress(player.getUniqueId(), id);
+        int next = (int) Math.min(getTarget(id), (long) previous + amount);
+        data.set(questRoot(player.getUniqueId(), id) + ".progress", next);
+        save();
+        return true;
+    }
+
+    /**
+     * Completes a started quest only after its configured progress target is reached.
+     * Fragment payout is config-driven and defaults to zero until the owner sets a reward.
+     */
+    public boolean complete(Player player, String rawId) {
+        String id = normalizeId(rawId);
+        if (player == null || !isValidId(id) || !isActive(player.getUniqueId(), id)
+                || getProgress(player.getUniqueId(), id) < getTarget(id)) {
+            return false;
+        }
+
+        String root = questRoot(player.getUniqueId(), id);
+        if (data.getBoolean(root + ".reward-paid", false)) {
+            return false;
+        }
+
+        long reward = getConfiguredFragmentReward(id);
+        data.set(root + ".status", "completed");
+        data.set(root + ".reward-paid", true);
+        if (reward > 0L) {
+            data.set(playerRoot(player.getUniqueId()) + ".fragments",
+                    Math.addExact(getFragments(player.getUniqueId()), reward));
+        }
+        // Completion marker and any configured fragment payout are saved together.
+        save();
+        return true;
+    }
+
+    public boolean isActive(UUID playerId, String id) {
+        return "active".equalsIgnoreCase(data.getString(questRoot(playerId, id) + ".status", "none"));
+    }
+
+    public boolean isCompleted(UUID playerId, String id) {
+        return "completed".equalsIgnoreCase(data.getString(questRoot(playerId, id) + ".status", "none"));
+    }
+
+    public String getStatus(UUID playerId, String id) {
+        return data.getString(questRoot(playerId, id) + ".status", "none");
+    }
+
+    public int getProgress(UUID playerId, String id) {
+        return Math.max(0, data.getInt(questRoot(playerId, id) + ".progress", 0));
+    }
+
+    public int getTarget(String id) {
+        int configured = plugin.getConfig().getInt("quests.definitions." + id + ".target", 1);
+        return Math.max(1, Math.min(configured, 100000));
+    }
+
+    public long getConfiguredFragmentReward(String id) {
+        return Math.max(0L, plugin.getConfig().getLong("quests.definitions." + id + ".reward-fragments", 0L));
+    }
+
+    public String getTitle(String id) {
+        String configured = plugin.getConfig().getString("quests.definitions." + id + ".title");
+        if (configured != null && !configured.isBlank()) {
+            return configured;
+        }
+        String[] words = id.replace('-', ' ').replace('_', ' ').split("\\s+");
+        StringBuilder title = new StringBuilder();
+        for (String word : words) {
+            if (word.isBlank()) continue;
+            if (title.length() > 0) title.append(' ');
+            title.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return title.toString();
+    }
+
+    public long getFragments(UUID playerId) {
+        return Math.max(0L, data.getLong(playerRoot(playerId) + ".fragments", 0L));
+    }
+
+    public Set<String> getQuestIds(UUID playerId) {
+        ConfigurationSection section = data.getConfigurationSection(playerRoot(playerId) + ".quests");
+        if (section == null) {
+            return Set.of();
+        }
+        return new TreeSet<>(section.getKeys(false));
+    }
+
+    public void showStatus(Player player, String requestedId) {
+        UUID playerId = player.getUniqueId();
         player.sendMessage(plugin.color("&8&m--------------------------------"));
-        player.sendMessage(plugin.color("&6&lPŘÍBĚHOVÉ HALLOWEEN QUESTY"));
-        player.sendMessage(plugin.color("&7Dokončeno: &e" + completedCount + "&7/&e" + quests.size()));
-        if (active == null) {
-            player.sendMessage(plugin.color("&a&lVŠECHNY KAPITOLY DOKONČENY"));
-            player.sendMessage(plugin.color("&7Pro letošní příběh už nemáš další úkol. Díky za záchranu světa."));
+        player.sendMessage(plugin.color("&5&lÚKOLY"));
+        player.sendMessage(plugin.color("&7Fragmenty: &d" + getFragments(playerId)));
+
+        if (requestedId != null && !requestedId.isBlank()) {
+            String id = normalizeId(requestedId);
+            if (!isValidId(id)) {
+                player.sendMessage(plugin.color("&cNeplatné ID úkolu."));
+            } else {
+                String status = getStatus(playerId, id);
+                player.sendMessage(plugin.color("&f" + getTitle(id) + " &8(" + id + ")"));
+                player.sendMessage(plugin.color("&7Stav: &e" + status));
+                player.sendMessage(plugin.color("&7Postup: &d" + getProgress(playerId, id) + "&7/&d" + getTarget(id)));
+                player.sendMessage(plugin.color("&7Jednorázová odměna ve fragmentech: &d"
+                        + (status.equals("completed") ? "již vyřízeno" : getConfiguredFragmentReward(id))));
+            }
             player.sendMessage(plugin.color("&8&m--------------------------------"));
             return;
         }
 
-        int progress = plugin.getDataManager().getStoryQuestProgress(player.getUniqueId());
-        player.sendMessage(plugin.color("&eKapitola " + (completedCount + 1) + "&8/&e" + quests.size()
-                + " &8» &f" + active.title()));
-        player.sendMessage(plugin.color("&7" + active.description()));
-        player.sendMessage(plugin.color("&7Postup: &e" + Math.min(progress, active.target())
-                + "&7/&e" + active.target()));
-        player.sendMessage(plugin.color("&7Odměna: &6" + active.reward() + " fragmentů"));
-        player.sendMessage(plugin.color("&8Postup se ukládá a přežije restart serveru."));
+        Set<String> ids = getQuestIds(playerId);
+        if (ids.isEmpty()) {
+            player.sendMessage(plugin.color("&7Zatím nemáš přijaté žádné úkoly."));
+        } else {
+            for (String id : ids) {
+                String status = getStatus(playerId, id);
+                player.sendMessage(plugin.color((status.equals("completed") ? "&a✔ " : "&e• ")
+                        + "&f" + getTitle(id) + " &8[" + id + "] &7"
+                        + (status.equals("completed") ? "dokončeno" :
+                        getProgress(playerId, id) + "/" + getTarget(id))));
+            }
+        }
         player.sendMessage(plugin.color("&8&m--------------------------------"));
     }
 
-    public int getQuestCount() {
-        return quests.size();
-    }
-
-    private Quest ensureActiveQuest(Player player) {
-        UUID id = player.getUniqueId();
-        String activeId = plugin.getDataManager().getStoryQuest(id);
-        if (!activeId.isBlank()) {
-            Quest active = findQuest(activeId);
-            if (active != null && !plugin.getDataManager().hasCompletedStoryQuest(id, active.id())) {
-                return active;
-            }
-        }
-
-        for (Quest quest : quests) {
-            if (!plugin.getDataManager().hasCompletedStoryQuest(id, quest.id())) {
-                plugin.getDataManager().setStoryQuest(id, quest.id());
-                return quest;
-            }
-        }
-
-        plugin.getDataManager().setStoryQuest(id, "");
-        return null;
-    }
-
-    private Quest findQuest(String id) {
-        return quests.stream().filter(quest -> quest.id().equalsIgnoreCase(id)).findFirst().orElse(null);
-    }
-
-    private void addProgress(Player player, Quest quest, int amount) {
-        UUID playerId = player.getUniqueId();
-        int oldProgress = plugin.getDataManager().getStoryQuestProgress(playerId);
-        int updated = Math.min(quest.target(), oldProgress + Math.max(0, amount));
-        plugin.getDataManager().setStoryQuestProgress(playerId, updated);
-        if (updated < quest.target()) return;
-
-        if (!plugin.getDataManager().completeStoryQuest(playerId, quest.id())) return;
-        plugin.getDataManager().setStoryQuest(playerId, "");
-        plugin.getService().addFragments(playerId, quest.reward(), "story-quest");
-        plugin.getDataManager().save();
-
-        player.sendTitle(plugin.color("&6&lKAPITOLA DOKONČENA"),
-                plugin.color("&f" + quest.title() + " &8• &e+" + quest.reward() + " fragmentů"),
-                10, 60, 20);
-        player.sendMessage(plugin.color("&6&lHALLOWEEN &8» &aSplnil jsi quest &f" + quest.title()
-                + "&a a získáváš &e" + quest.reward() + " fragmentů&a."));
-        player.playSound(player.getLocation(), Sound.UI_TOAST_CHALLENGE_COMPLETE, 0.8f, 1.0f);
-        player.getWorld().spawnParticle(Particle.SOUL, player.getLocation().add(0, 1.0, 0),
-                24, 0.45, 0.6, 0.45, 0.02);
-
-        Quest next = ensureActiveQuest(player);
-        if (next != null) {
-            player.sendMessage(plugin.color("&7Další úkol odemčen: &e" + next.title()
-                    + "&7. Použij &f/halloween quests &7pro podrobnosti."));
-        } else {
-            player.sendMessage(plugin.color("&6&lPŘÍBĚH DOKONČEN &8» &eDěkujeme, že jsi zachránil svět."));
+    public void save() {
+        try {
+            data.save(dataFile);
+        } catch (IOException ex) {
+            plugin.getLogger().severe("Could not save quest progress: " + ex.getMessage());
         }
     }
 
-    private boolean isEligible(Player player) {
-        return player != null && player.isOnline() && plugin.isEventEnabled()
-                && plugin.isEligibleGameplayPlayer(player)
-                && plugin.isEligibleGameplayWorld(player.getWorld())
-                && plugin.getConfig().getBoolean("story-quests.enabled", true);
+    private String playerRoot(UUID playerId) {
+        return "players." + playerId;
     }
 
-    private String normalizeMobId(String mobId) {
-        return mobId.trim().toLowerCase(Locale.ROOT).replace('_', '-');
+    private String questRoot(UUID playerId, String id) {
+        return playerRoot(playerId) + ".quests." + id;
     }
 }
