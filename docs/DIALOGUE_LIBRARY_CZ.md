@@ -20,7 +20,7 @@ V UplineDialogues otevři `/updialog panel`, vytvoř dialog například s názve
 
 PlaceholderAPI musí být nainstalované a jeho placeholdery musí UplineDialogues vyhodnocovat i v textech a podmínkách uzlů.
 
-### Uz el START — běžný rozhovor
+### Uzel START — běžný rozhovor
 
 **NPC:**
 „Zdravím tě, poutníku. V poslední době se kolem vesnice objevují podivné zprávy a každý tu má plné ruce práce. Co tě přivádí?“
