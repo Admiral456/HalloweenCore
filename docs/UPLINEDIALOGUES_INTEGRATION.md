@@ -57,5 +57,5 @@ Speciální legendární šance: 20 bloků vysušeného ghasta — 18 %; 40 žel
 
 - Stromy v editoru nejsou verzovány v tomto repozitáři a nejsou automaticky importovány.
 - Pumpkin hlavy ani automatická úprava vzhledu vesničanů nejsou v současném HalloweenCore implementované.
-- Truhly tajných místností jsou zamčené a chráněné, ale zatím nemají dohodnutou loot tabulku.
+- Truhly tajných místností mají tři rarity. Při prvním odemčení se jednorázově vloží vanilla loot podle rarity a hráč získá 8–16 / 20–35 / 40–70 fragmentů; žádné nové textury nejsou potřeba.
 - Úspěšné CI ověřuje kompilaci, statické kontroly a balení, nikoli živé chování serveru či správnost uloženého stromu v UplineDialogues.
