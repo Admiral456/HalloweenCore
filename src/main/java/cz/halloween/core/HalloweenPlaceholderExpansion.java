@@ -39,6 +39,28 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
         if (key.equals("fragments")) {
             return Long.toString(plugin.getQuestManager().getFragments(player.getUniqueId()));
         }
+        if (key.startsWith("villager_quest_")) {
+            HalloweenQuestManager manager = plugin.getQuestManager();
+            String field = key.substring("villager_quest_".length());
+            String id = manager.getVillagerQuestId(player.getUniqueId());
+            String status = manager.getVillagerQuestStatus(player.getUniqueId());
+            if (field.equals("status")) return status;
+            if (field.equals("has_quest")) return Boolean.toString(manager.hasVillagerQuest(player.getUniqueId()));
+            if (id == null || id.isBlank() || !manager.isConfiguredQuest(id)) {
+                return switch (field) {
+                    case "id", "title", "description", "difficulty", "reward" -> "";
+                    default -> null;
+                };
+            }
+            return switch (field) {
+                case "id" -> id;
+                case "title" -> manager.getTitle(id);
+                case "description" -> manager.getDescription(id);
+                case "difficulty" -> manager.getDifficulty(id);
+                case "reward" -> Long.toString(manager.getConfiguredFragmentReward(id));
+                default -> null;
+            };
+        }
         if (!key.startsWith("quest_")) return null;
 
         String[] suffixes = {"_started", "_progress", "_completed"};
