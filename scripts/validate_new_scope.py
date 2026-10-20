@@ -68,4 +68,35 @@ config = (root / "src/main/resources/config.yml").read_text(encoding="utf-8").lo
 for legacy in ("random-events:", "grave-encounters:", "witching-hour:", "automatic-world-generation:"):
     if legacy in config:
         raise SystemExit(f"Legacy configuration remains: {legacy}")
-print("New-scope validation passed: 13 imported candy textures, custom key, quest ledger and secret rooms.")
+
+# Guard the agreed reward economy so a later edit cannot accidentally remove a tier or
+# introduce a custom-texture dependency into the loot tables.
+if "\\nquest-rewards:" not in config:
+    raise SystemExit("Missing quest-rewards configuration")
+room_config = config.split("\\nquest-rewards:", 1)[0]
+reward_config = config.split("\\nquest-rewards:", 1)[1]
+for required in (
+    "rarity-weights:",
+    "min-fragments: 8", "max-fragments: 16",
+    "min-fragments: 20", "max-fragments: 35",
+    "min-fragments: 40", "max-fragments: 70",
+    "material: coal", "material: iron_ingot", "material: diamond",
+    "material: enchanted_book", "material: netherite_scrap",
+):
+    if required not in room_config:
+        raise SystemExit(f"Secret-room loot table missing required setting: {required}")
+if "warriorland_halloween:" in room_config:
+    raise SystemExit("Secret-room loot must use vanilla items; do not add custom-texture items")
+for required in (
+    "default-difficulty: light",
+    "light:", "medium:", "hard:", "very-hard:",
+    "min-fragments: 3", "max-fragments: 5",
+    "min-fragments: 6", "max-fragments: 9",
+    "min-fragments: 10", "max-fragments: 15",
+    "min-fragments: 16", "max-fragments: 25",
+    "key-chances:",
+):
+    if required not in reward_config:
+        raise SystemExit(f"Quest reward configuration missing required setting: {required}")
+
+print("New-scope validation passed: 13 imported candy textures, one shared key texture, tiered vanilla loot and quest rewards.")
