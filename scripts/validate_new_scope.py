@@ -148,7 +148,7 @@ room_java = (JAVA_DIR / "SecretRoomManager.java").read_text(encoding="utf-8")
 for feature in (
     "event.isNewChunk()", "chunkAttemptedKey", "isSafeRoomVolume", "recordGeneratedRoom",
     "generateTestRoom", "locateNearest", "locateAll", "onPlayerEnterSecretRoom",
-    "setDecorationIfAir", "secret_room_locked", "consumeOne"
+    "setDecorationIfAir", "secret_room_locked", "consumeOne", "migrateLegacyRoomRecords"
 ):
     if feature not in room_java:
         fail(f"secret-room runtime contract is missing: {feature}")

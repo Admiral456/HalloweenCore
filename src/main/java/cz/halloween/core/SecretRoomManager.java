@@ -25,6 +25,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.configuration.ConfigurationSection;
 
 import java.io.File;
 import java.io.IOException;
@@ -64,6 +65,47 @@ public final class SecretRoomManager implements Listener {
         this.chunkHasRoomKey = new NamespacedKey(plugin, "secret_room_anchor_v1");
         this.dataFile = new File(plugin.getDataFolder(), "secret-rooms.yml");
         this.data = YamlConfiguration.loadConfiguration(dataFile);
+        migrateLegacyRoomRecords();
+    }
+
+    /**
+     * Earlier builds stored room coordinates as rooms.<id>.*. Preserve those locations
+     * when upgrading to the list-based locate registry, so old generated rooms remain findable.
+     */
+    private void migrateLegacyRoomRecords() {
+        ConfigurationSection legacy = data.getConfigurationSection("rooms");
+        if (legacy == null) return;
+        List<Map<?, ?>> locations = new ArrayList<>(data.getMapList("locations"));
+        int added = 0;
+        for (String id : legacy.getKeys(false)) {
+            String path = "rooms." + id;
+            String worldName = data.getString(path + ".world");
+            if (worldName == null || worldName.isBlank()
+                    || !data.contains(path + ".x") || !data.contains(path + ".y") || !data.contains(path + ".z")) {
+                continue;
+            }
+            int x = data.getInt(path + ".x");
+            int y = data.getInt(path + ".y");
+            int z = data.getInt(path + ".z");
+            boolean exists = locations.stream().anyMatch(entry ->
+                    worldName.equals(String.valueOf(entry.get("world")))
+                            && value(entry.get("x")) == x && value(entry.get("y")) == y && value(entry.get("z")) == z);
+            if (exists) continue;
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("id", id);
+            entry.put("world", worldName);
+            entry.put("x", x);
+            entry.put("y", y);
+            entry.put("z", z);
+            locations.add(entry);
+            added++;
+        }
+        if (added > 0) {
+            data.set("locations", locations);
+            data.set("stats.generated", Math.max(data.getInt("stats.generated", 0), locations.size()));
+            save();
+            plugin.getLogger().info("Migrated " + added + " existing secret-room location(s) for /locate.");
+        }
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)

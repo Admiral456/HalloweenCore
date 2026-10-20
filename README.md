@@ -35,7 +35,7 @@ PlaceholderAPI je volitelný. Rozhovory mohou používat %halloween_quest_<id>_s
 
 Generování automaticky zkouší jen nově vytvořené chunky Overworldu; staré, už existující chunky se automaticky znovu neprohledávají. Výchozí rozsah hloubky je Y=-36 až Y=-8, maximálně 48 pokusů na nový chunk. Terén může místo odmítnout, proto je součástí /halloween rooms status i /halloween rooms generate pro testování na existujícím světě.
 
-Souřadnice každé úspěšně vygenerované místnosti se zapisují do plugins/HalloweenCore/secret-rooms.yml. Příkaz /locate vyhledává nejbližší z těchto skutečných záznamů, ne náhodné souřadnice.
+Souřadnice každé úspěšně vygenerované místnosti se zapisují do plugins/HalloweenCore/secret-rooms.yml. Při aktualizaci se převedou i záznamy starších verzí, pokud je tento soubor obsahuje. Příkaz /locate vyhledává nejbližší z těchto skutečných záznamů, ne náhodné souřadnice.
 
 Truhly jsou záměrně prázdné, dokud nebude dohodnut jejich obsah a způsob získávání klíčů. Ruční vydání klíče přes /halloween key give je administrátorská testovací pomůcka.
 
