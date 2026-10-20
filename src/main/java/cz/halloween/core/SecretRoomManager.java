@@ -295,8 +295,6 @@ public final class SecretRoomManager implements Listener {
             leftovers.values().forEach(leftover ->
                     chest.getWorld().dropItemNaturally(chest.getLocation().add(0.5, 0.5, 0.5), leftover));
         }
-        chest.update(true, false);
-
         long minFragments = Math.max(0L, plugin.getConfig().getLong(root + ".min-fragments", 0L));
         long maxFragments = Math.max(minFragments, plugin.getConfig().getLong(root + ".max-fragments", minFragments));
         if (maxFragments <= minFragments) return minFragments;
