@@ -160,6 +160,7 @@ quests:
       title: "Zpráva ze skryté místnosti"
       difficulty: "Těžký"
       description: "Najdi jednu zaznamenanou tajnou místnost a vrať se k badateli."
+      repeatable: false
       dialogue-story: "Irena shromažďuje ověřené zprávy o podzemních místnostech, které v mapách chybějí. Nezajímá ji pověst ani odhad — potřebuje, aby někdo skutečně vstoupil dovnitř."
       objective-type: explore-room
       target: 1
@@ -169,6 +170,7 @@ quests:
       title: "Zapečetěný archiv"
       difficulty: "Velmi těžký"
       description: "Nejdřív vstup do tajné místnosti, potom přines 8 knih, 16 papírů a 6 ametystových úlomků."
+      repeatable: false
       dialogue-story: "Strážce archivu hledá důkaz, že podzemní místnosti souvisejí se starými záznamy. Nejdřív musí být nález prozkoumán a pak bezpečně zapsán do několika kopií."
       objective-type: explore-and-deliver
       target: 1
