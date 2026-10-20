@@ -230,7 +230,7 @@ for choice in ("zeptat na podrobnosti", "odmítám", "Přijímám úkol", "Vrát
         fail(f"random villager dialogue tree is missing player choice: {choice}")
 
 for quest_id in expected_quests:
-    quest_pattern = rf"^    {re.escape(quest_id)}:\\n([\\s\\S]*?)(?=^    [a-z][a-z0-9_-]*:\\s*$|^rooms:)"
+    quest_pattern = rf"^    {re.escape(quest_id)}:\n([\s\S]*?)(?=^    [a-z][a-z0-9_-]*:\s*$|^rooms:)"
     quest_match = re.search(quest_pattern, config_text, flags=re.MULTILINE)
     if not quest_match:
         fail(f"could not find quest config block {quest_id}")
@@ -238,7 +238,7 @@ for quest_id in expected_quests:
         fail(f"quest {quest_id} is missing its story dialogue text")
 
 for one_time_id in ("hidden_room_report", "sealed_archive"):
-    quest_pattern = rf"^    {re.escape(one_time_id)}:\\n([\\s\\S]*?)(?=^    [a-z][a-z0-9_-]*:\\s*$|^rooms:)"
+    quest_pattern = rf"^    {re.escape(one_time_id)}:\n([\s\S]*?)(?=^    [a-z][a-z0-9_-]*:\s*$|^rooms:)"
     quest_match = re.search(quest_pattern, config_text, flags=re.MULTILINE)
     if not quest_match or "repeatable: false" not in quest_match.group(1):
         fail(f"secret-room milestone {one_time_id} must remain one-time")
