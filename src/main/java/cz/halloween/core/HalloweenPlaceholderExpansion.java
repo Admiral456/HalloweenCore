@@ -46,9 +46,11 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
             String status = manager.getVillagerQuestStatus(player.getUniqueId());
             if (field.equals("status")) return status;
             if (field.equals("has_quest")) return Boolean.toString(manager.hasVillagerQuest(player.getUniqueId()));
+            if (field.equals("turnin_result")) return manager.getVillagerQuestTurnInResult(player.getUniqueId());
+            if (field.equals("turnin_status")) return manager.getVillagerQuestTurnInStatus(player.getUniqueId());
             if (id == null || id.isBlank() || !manager.isConfiguredQuest(id)) {
                 return switch (field) {
-                    case "id", "title", "description", "difficulty", "reward", "reward_items", "story" -> "";
+                    case "id", "title", "description", "difficulty", "reward", "reward_items", "story", "turnin_result", "turnin_status" -> "";
                     default -> null;
                 };
             }
