@@ -218,4 +218,29 @@ for command in (
     if command not in dialogue_text:
         fail(f"random villager dialogue is missing command {command}")
 
-print("Scope check passed: 25 dialogue quests with random offers, configured rewards/key odds, protected tiered rooms/chests and retained sweet textures.")
+for node in (
+    "START", "VILLAGE_STORY", "OFFER", "OFFER_DETAILS", "ACCEPTED",
+    "ACTIVE", "ACTIVE_DETAILS", "NOT_READY", "QUEST_COMPLETE", "DECLINED",
+    "NO_WORK", "GOODBYE"
+):
+    if f"Uzel {node}" not in dialogue_text:
+        fail(f"random villager dialogue tree is missing node {node}")
+for choice in ("zeptat na podrobnosti", "odmítám", "Přijímám úkol", "Vrátím se později"):
+    if choice.lower() not in dialogue_text.lower():
+        fail(f"random villager dialogue tree is missing player choice: {choice}")
+
+for quest_id in expected_quests:
+    quest_pattern = rf"^    {re.escape(quest_id)}:\\n([\\s\\S]*?)(?=^    [a-z][a-z0-9_-]*:\\s*$|^rooms:)"
+    quest_match = re.search(quest_pattern, config_text, flags=re.MULTILINE)
+    if not quest_match:
+        fail(f"could not find quest config block {quest_id}")
+    if "dialogue-story:" not in quest_match.group(1):
+        fail(f"quest {quest_id} is missing its story dialogue text")
+
+for one_time_id in ("hidden_room_report", "sealed_archive"):
+    quest_pattern = rf"^    {re.escape(one_time_id)}:\\n([\\s\\S]*?)(?=^    [a-z][a-z0-9_-]*:\\s*$|^rooms:)"
+    quest_match = re.search(quest_pattern, config_text, flags=re.MULTILINE)
+    if not quest_match or "repeatable: false" not in quest_match.group(1):
+        fail(f"secret-room milestone {one_time_id} must remain one-time")
+
+print("Scope check passed: random story-driven villager dialogue, 25 quest stories, repeatability, reward/key odds, protected rooms and retained sweet textures.")
