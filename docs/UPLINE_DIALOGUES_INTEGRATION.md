@@ -17,11 +17,19 @@ ID v příkladech jsou zástupné. Skutečný příběh, názvy questů a jejich
 
 ## Odměny
 
-Sekce quest-rewards v config.yml zůstává prázdná. Až bude odměna konkrétního questu domluvená, lze nastavit fragments a/nebo commands. Příkazy se spouštějí jednou při prvním dokončení a rozpoznají zástupné hodnoty %player%, %uuid% a %quest%. Výchozí verze nepřiděluje žádné peníze, vybavení ani předměty.
+Výchozí odměny jsou aktivní a nastavují se v `config.yml`:
+- `light`: 3–5 fragmentů; common klíč 10 %, rare 1 %, legendary 0,1 %.
+- `medium`: 6–9 fragmentů; common 15 %, rare 3,5 %, legendary 0,5 %.
+- `hard`: 10–15 fragmentů; common 20 %, rare 6 %, legendary 2 %.
+- `very-hard`: 16–25 fragmentů; common 25 %, rare 10 %, legendary 8 %.
 
-## Klíč
+Nově vytvořené ID automaticky spadá do lehké obtížnosti, dokud mu ve `quest-rewards.quests.<id>.difficulty` nenastavíš správný tier. Lze také nastavit pevné `fragments`, vlastní rozsah `min-fragments` / `max-fragments` nebo přepsat jednotlivé hodnoty `key-chances`. Příkazy se spouštějí jednou při prvním dokončení a rozpoznají `%player%`, `%uuid%` a `%quest%`. Nedefinuje se tím příběh ani cíl žádného questu, pouze odměna.
 
-HalloweenCore označí vlastní speciální klíč značkou PersistentDataContainer. ItemsAdder položka má ID warriorland_halloween:secret_key. Způsob získávání klíčů zatím není pevně přiřazený. Až bude dohodnutý, UplineDialogues může použít akci Give item pro ItemsAdder ID warriorland_halloween:secret_key; HalloweenCore rozpozná toto ID i bez vlastního PDC markeru. Alternativou je /halloween key give spuštěný jako OP pro právě hovořícího hráče. Žádný NPC dialog zatím klíč automaticky nepřiděluje.
+## Klíče a loot
+
+Tři rarity klíčů používají tutéž existující ItemsAdder položku a texturu `warriorland_halloween:secret_key`; rarity jsou rozlišeny interní PDC značkou. Přímá UplineDialogues akce Give item vydá obyčejný klíč. Vyšší rarity lze vydat z questové odměny nebo jako OP příkazem `/halloween key give rare [hráč] [počet]` či `/halloween key give legendary [hráč] [počet]`. Běžný klíč otevře pouze obyčejnou místnost, vzácný pouze vzácnou a legendární pouze legendární.
+
+Při prvním odemčení místnosti hráč dostane 8–16 / 20–35 / 40–70 fragmentů podle rarity a do truhly se jednorázově vloží vanilla loot. Vzácnější tabulky mají šanci na očarované knihy/nástroje, diamanty, netheritový šrot a velmi nízkou šanci na totem nesmrtelnosti. Nepřidávají se žádné další custom předměty ani textury.
 
 ## Ověření na stagingu
 
@@ -29,4 +37,4 @@ HalloweenCore označí vlastní speciální klíč značkou PersistentDataContai
 - Ověř, že přijetí, postup a dokončení ukládá stav konkrétního hráče.
 - Ověř, že opakované dokončení znovu nevyplatí nakonfigurované fragmenty ani příkazy.
 - Ověř vlastní texturu klíče z ItemsAdder a vanilla fallback bez ItemsAdder.
-- Ověř, že nová truhla odmítne otevření bez klíče, spotřebuje jeden klíč, trvale se odemkne a zůstane prázdná do další dohody o obsahu.
+- Ověř, že klíč nesprávné rarity truhlu neotevře, správný klíč se spotřebuje, odměna se připíše jen jednou a truhla se naplní vanilla lootem.
