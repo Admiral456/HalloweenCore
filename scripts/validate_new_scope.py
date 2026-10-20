@@ -183,9 +183,11 @@ for alias in ("PlayerCommandPreprocessEvent", 'command.equals("/locate")',
 
 quest_java = (JAVA_DIR / "HalloweenQuestManager.java").read_text(encoding="utf-8")
 for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
-                ".removeItem(", "objective-missing"):
+                ".removeItem(", "objective-missing", "prepareVillagerOffer",
+                "acceptVillagerOffer", "declineVillagerOffer", "markVillagerQuestCompleted",
+                "getVillagerQuestStatus", "villager-offer-weight", "default-reward-fragments"):
     if feature not in quest_java:
-        fail(f"quest turn-in contract is missing: {feature}")
+        fail(f"quest turn-in/random-offer contract is missing: {feature}")
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
 for feature in ('action.equals("turnin")', "rooms generate", "private boolean handleLocate",
                 "/locate halloweenroom"):
@@ -193,15 +195,27 @@ for feature in ('action.equals("turnin")', "rooms generate", "private boolean ha
         fail(f"required player/admin command is missing: {feature}")
 if "verifyRecordedRooms" not in command_java or 'action.equals("verify")' not in command_java:
     fail("admin room integrity verification command is missing")
+placeholder_java = (JAVA_DIR / "HalloweenPlaceholderExpansion.java").read_text(encoding="utf-8")
+for field in ("villager_quest_", 'case "story"', 'case "reward"'):
+    if field not in placeholder_java:
+        fail(f"random villager dialogue placeholder support is missing: {field}")
 
 dialogue_library = ROOT / "docs/DIALOGUE_LIBRARY_CZ.md"
 if not dialogue_library.is_file():
     fail("the Czech dialogue catalogue is missing")
 dialogue_text = dialogue_library.read_text(encoding="utf-8")
-if len(re.findall(r"^## \d+\.", dialogue_text, flags=re.MULTILINE)) != 25:
-    fail("the Czech dialogue catalogue must contain all 25 quest dialogues")
-for quest_id in expected_quests:
-    if quest_id not in dialogue_text:
-        fail(f"dialogue catalogue is missing quest {quest_id}")
+for placeholder in (
+    "%halloween_villager_quest_status%", "%halloween_villager_quest_title%",
+    "%halloween_villager_quest_description%", "%halloween_villager_quest_story%",
+    "%halloween_villager_quest_reward%"
+):
+    if placeholder not in dialogue_text:
+        fail(f"random villager dialogue is missing required placeholder {placeholder}")
+for command in (
+    "/halloween quest offer", "/halloween quest accept-offer",
+    "/halloween quest decline-offer", "/halloween quest turnin-offer"
+):
+    if command not in dialogue_text:
+        fail(f"random villager dialogue is missing command {command}")
 
 print("Scope check passed: 25 dialogue quests with random offers, configured rewards/key odds, protected tiered rooms/chests and retained sweet textures.")
