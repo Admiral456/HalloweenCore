@@ -222,6 +222,14 @@ public final class HalloweenQuestManager {
         return new TreeSet<>(catalog.getKeys(false));
     }
 
+    public List<String> getInvalidQuestIds() {
+        List<String> invalid = new ArrayList<>();
+        for (String id : getCatalogIds()) {
+            if (!isReadyForOffer(id)) invalid.add(id);
+        }
+        return List.copyOf(invalid);
+    }
+
     /**
      * Prepares one weighted random quest for a villager conversation. The offered quest
      * remains stable until accepted or declined. A player can have only one villager
