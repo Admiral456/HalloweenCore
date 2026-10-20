@@ -242,6 +242,7 @@ public final class HalloweenQuestManager {
 
         if (candidates.isEmpty() || !Double.isFinite(totalWeight) || totalWeight <= 0.0D) {
             setVillagerQuest(playerId, "", "none");
+            data.set(playerRoot(playerId) + ".villager-quest-turnin-result", "");
             save();
             return false;
         }
@@ -285,6 +286,7 @@ public final class HalloweenQuestManager {
         if (isConfiguredQuest(declinedId) && !declined.contains(declinedId)) declined.add(declinedId);
         data.set(playerRoot(playerId) + ".villager-declined-quests", declined);
         setVillagerQuest(playerId, "", "none");
+        data.set(playerRoot(playerId) + ".villager-quest-turnin-result", "");
         save();
         return true;
     }
@@ -312,6 +314,14 @@ public final class HalloweenQuestManager {
         if (!safeResult.matches("[a-z0-9:_-]{0,160}")) safeResult = "error";
         data.set(playerRoot(player.getUniqueId()) + ".villager-quest-turnin-result", safeResult);
         save();
+    }
+
+    public String getVillagerQuestTurnInStatus(UUID playerId) {
+        String result = getVillagerQuestTurnInResult(playerId);
+        if (result.equals("completed")) return "completed";
+        if (result.startsWith("missing:") || result.equals("objective-missing")) return "missing";
+        if (result.isBlank() || result.equals("not-active")) return "none";
+        return "error";
     }
 
     public boolean isCurrentVillagerQuestActive(Player player, String id) {
