@@ -251,6 +251,7 @@ public final class HalloweenQuestManager {
             roll -= weights.get(i);
             if (roll < 0.0D || i == candidates.size() - 1) {
                 setVillagerQuest(playerId, candidates.get(i), "offered");
+                data.set(playerRoot(playerId) + ".villager-quest-turnin-result", "");
                 save();
                 return true;
             }
@@ -268,6 +269,7 @@ public final class HalloweenQuestManager {
             return false;
         }
         setVillagerQuest(playerId, id, "active");
+        data.set(playerRoot(playerId) + ".villager-quest-turnin-result", "");
         // Acceptance starts a fresh cycle of unaccepted offers after this quest is done.
         data.set(playerRoot(playerId) + ".villager-declined-quests", new ArrayList<String>());
         save();
@@ -298,6 +300,18 @@ public final class HalloweenQuestManager {
     public boolean hasVillagerQuest(UUID playerId) {
         String id = getVillagerQuestId(playerId);
         return !id.isBlank() && !"none".equals(getVillagerQuestStatus(playerId)) && isConfiguredQuest(id);
+    }
+
+    public String getVillagerQuestTurnInResult(UUID playerId) {
+        return data.getString(playerRoot(playerId) + ".villager-quest-turnin-result", "");
+    }
+
+    public void recordVillagerQuestTurnInResult(Player player, String result) {
+        if (player == null) return;
+        String safeResult = result == null ? "" : result;
+        if (!safeResult.matches("[a-z0-9:_-]{0,160}")) safeResult = "error";
+        data.set(playerRoot(player.getUniqueId()) + ".villager-quest-turnin-result", safeResult);
+        save();
     }
 
     public boolean isCurrentVillagerQuestActive(Player player, String id) {
