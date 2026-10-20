@@ -614,6 +614,15 @@ public final class HalloweenQuestManager {
         return Math.max(0L, data.getLong(playerRoot(playerId) + ".fragments", 0L));
     }
 
+    /** Awards fragments from a secret-room chest using the same balance as villager quests. */
+    public void awardFragments(Player player, long amount) {
+        if (player == null || amount <= 0L) return;
+        UUID playerId = player.getUniqueId();
+        data.set(playerRoot(playerId) + ".fragments",
+                addWithoutOverflow(getFragments(playerId), amount));
+        save();
+    }
+
     public Set<String> getQuestIds(UUID playerId) {
         ConfigurationSection section = data.getConfigurationSection(playerRoot(playerId) + ".quests");
         if (section == null) {
