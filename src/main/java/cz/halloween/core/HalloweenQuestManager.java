@@ -43,7 +43,8 @@ public final class HalloweenQuestManager {
     public boolean start(Player player, String rawId) {
         String id = normalizeId(rawId);
         if (player == null || !isValidId(id) || !isConfiguredQuest(id)
-                || isCompleted(player.getUniqueId(), id) || isActive(player.getUniqueId(), id)) {
+                || (isCompleted(player.getUniqueId(), id) && !isRepeatable(id))
+                || isActive(player.getUniqueId(), id)) {
             return false;
         }
         String root = questRoot(player.getUniqueId(), id);
@@ -170,6 +171,16 @@ public final class HalloweenQuestManager {
         return catalog != null && catalog.isConfigurationSection(id);
     }
 
+    /**
+     * Villager tasks are repeatable by default so a random-job pool does not run dry.
+     * Narrative milestones can explicitly opt out with repeatable: false.
+     */
+    public boolean isRepeatable(String rawId) {
+        String id = normalizeId(rawId);
+        return isConfiguredQuest(id)
+                && plugin.getConfig().getBoolean("quests.definitions." + id + ".repeatable", true);
+    }
+
     public Set<String> getCatalogIds() {
         ConfigurationSection catalog = plugin.getConfig().getConfigurationSection("quests.definitions");
         if (catalog == null) return Set.of();
@@ -199,7 +210,8 @@ public final class HalloweenQuestManager {
 
         List<String> available = new ArrayList<>();
         for (String id : getCatalogIds()) {
-            if (!isConfiguredQuest(id) || isActive(playerId, id) || isCompleted(playerId, id)) continue;
+            if (!isConfiguredQuest(id) || isActive(playerId, id)
+                    || (isCompleted(playerId, id) && !isRepeatable(id))) continue;
             double weight = plugin.getConfig().getDouble("quests.definitions." + id + ".villager-offer-weight", 1.0D);
             if (Double.isFinite(weight) && weight > 0.0D) available.add(id);
         }
@@ -251,7 +263,8 @@ public final class HalloweenQuestManager {
         UUID playerId = player.getUniqueId();
         String id = getVillagerQuestId(playerId);
         if (!"offered".equals(getVillagerQuestStatus(playerId)) || !isConfiguredQuest(id)
-                || isActive(playerId, id) || isCompleted(playerId, id) || !start(player, id)) {
+                || isActive(playerId, id) || (isCompleted(playerId, id) && !isRepeatable(id))
+                || !start(player, id)) {
             return false;
         }
         setVillagerQuest(playerId, id, "active");
