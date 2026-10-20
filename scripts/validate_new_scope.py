@@ -206,7 +206,7 @@ for alias in ("PlayerCommandPreprocessEvent", 'command.equals("/locate")',
     if alias not in core_java:
         fail(f"locate alias contract is missing: {alias}")
 
-for feature in ("migrateLegacyQuestDefaults", "legacyDefaultRequirements", "updateOldRewardDefault", "config-version"):
+for feature in ("migrateLegacyQuestDefaults", "legacyDefaultRequirements", "legacyDefaultDescriptions", "updateOldRewardDefault", "config-version"):
     if feature not in core_java:
         fail(f"existing-config migration is missing: {feature}")
 
