@@ -42,7 +42,7 @@ public final class HalloweenQuestManager {
 
     public boolean start(Player player, String rawId) {
         String id = normalizeId(rawId);
-        if (player == null || !isValidId(id) || !isConfiguredQuest(id)
+        if (player == null || !isValidId(id) || !isReadyForOffer(id)
                 || (isCompleted(player.getUniqueId(), id) && !isRepeatable(id))
                 || isActive(player.getUniqueId(), id)) {
             return false;
@@ -172,6 +172,41 @@ public final class HalloweenQuestManager {
     }
 
     /**
+     * Reject malformed custom tasks before they enter the random offer pool.
+     * This build supports deliveries and the two secret-room exploration objectives.
+     */
+    public boolean isReadyForOffer(String rawId) {
+        String id = normalizeId(rawId);
+        if (!isConfiguredQuest(id)) return false;
+        String root = "quests.definitions." + id;
+        String title = plugin.getConfig().getString(root + ".title", "");
+        String description = plugin.getConfig().getString(root + ".description", "");
+        if (title == null || title.isBlank() || description == null || description.isBlank()) return false;
+
+        String objective = plugin.getConfig().getString(root + ".objective-type", "delivery");
+        if (objective == null) return false;
+        objective = objective.toLowerCase(java.util.Locale.ROOT);
+        if (!java.util.Set.of("delivery", "explore-room", "explore-and-deliver").contains(objective)) return false;
+
+        int target = plugin.getConfig().getInt(root + ".target", 0);
+        if (target < 1 || target > 100000 || !plugin.getConfig().contains(root + ".required-items")) return false;
+        List<Map<?, ?>> requirements = plugin.getConfig().getMapList(root + ".required-items");
+        if (requirements.isEmpty() && !objective.equals("explore-room")) return false;
+
+        for (Map<?, ?> requirement : requirements) {
+            Object rawItemId = requirement.get("id");
+            Object rawAmount = requirement.get("amount");
+            if (!(rawItemId instanceof String itemId) || itemId.isBlank()
+                    || !(rawAmount instanceof Number number)
+                    || number.doubleValue() != Math.rint(number.doubleValue())
+                    || number.longValue() < 1L || number.longValue() > 2304L) return false;
+            ItemStack template = plugin.getKeyItemFactory().createConfiguredItem(itemId);
+            if (template == null || template.getType().isAir()) return false;
+        }
+        return true;
+    }
+
+    /**
      * Villager tasks are repeatable by default so a random-job pool does not run dry.
      * Narrative milestones can explicitly opt out with repeatable: false.
      */
@@ -210,7 +245,7 @@ public final class HalloweenQuestManager {
 
         List<String> available = new ArrayList<>();
         for (String id : getCatalogIds()) {
-            if (!isConfiguredQuest(id) || isActive(playerId, id)
+            if (!isReadyForOffer(id) || isActive(playerId, id)
                     || (isCompleted(playerId, id) && !isRepeatable(id))) continue;
             double weight = plugin.getConfig().getDouble("quests.definitions." + id + ".villager-offer-weight", 1.0D);
             if (Double.isFinite(weight) && weight > 0.0D) available.add(id);
@@ -369,6 +404,7 @@ public final class HalloweenQuestManager {
         if (player == null || !isValidId(id) || !isConfiguredQuest(id)) {
             return new TurnInResult(false, "unknown");
         }
+        if (!isReadyForOffer(id)) return new TurnInResult(false, "invalid-config");
         UUID playerId = player.getUniqueId();
         if (isCompleted(playerId, id)) return new TurnInResult(false, "completed");
         if (!isActive(playerId, id)) return new TurnInResult(false, "not-active");
