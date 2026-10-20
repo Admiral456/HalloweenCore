@@ -113,6 +113,15 @@ for item_id in ("secret_room_key_rare:", "secret_room_key_legendary:"):
     if item_id not in items_yml:
         fail(f"rarity key is not registered in ItemsAdder: {item_id}")
 
+registry_text = (ROOT / "src/main/resources/content-registry.yml").read_text(encoding="utf-8")
+for item_id in (
+    "warriorland_halloween:secret_room_key",
+    "warriorland_halloween:secret_room_key_rare",
+    "warriorland_halloween:secret_room_key_legendary",
+):
+    if item_id not in registry_text:
+        fail(f"content registry is missing a key rarity: {item_id}")
+
 config = (ROOT / "src/main/resources/config.yml").read_text(encoding="utf-8").lower()
 for old in ("random-events:", "special-mobs:", "grave-encounters:", "headless-nick:",
             "witching-hour:", "atmosphere:", "rewards:", "season:"):
@@ -125,6 +134,8 @@ for old in ("MythicMobs", "ModelEngine", "halloweencore.event.manage", "bosses")
         fail(f"retired integration remains in plugin.yml: {old}")
 
 config_text = (ROOT / "src/main/resources/config.yml").read_text(encoding="utf-8")
+if not re.search(r"^config-version:\s*2$", config_text, flags=re.MULTILINE):
+    fail("config-version 2 is missing")
 quest_block = config_text.split("quests:\n", 1)[1].split("\nrooms:", 1)[0]
 quest_ids = re.findall(r"^    ([a-z][a-z0-9_-]*):$", quest_block, flags=re.MULTILINE)
 expected_quests = {
@@ -195,6 +206,10 @@ for alias in ("PlayerCommandPreprocessEvent", 'command.equals("/locate")',
     if alias not in core_java:
         fail(f"locate alias contract is missing: {alias}")
 
+for feature in ("migrateLegacyQuestDefaults", "legacyDefaultRequirements", "updateOldRewardDefault", "config-version"):
+    if feature not in core_java:
+        fail(f"existing-config migration is missing: {feature}")
+
 quest_java = (JAVA_DIR / "HalloweenQuestManager.java").read_text(encoding="utf-8")
 for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
                 ".removeItem(", "objective-missing", "prepareVillagerOffer",
@@ -204,6 +219,8 @@ for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
                 "villager-offer-weight", "default-reward-fragments", "rollBonusKeyDrop(player, id)", "keyDropChance", "keyDropTier", "quest-key-drop-chances-by-difficulty"):
     if feature not in quest_java:
         fail(f"quest turn-in/random-offer contract is missing: {feature}")
+if "seenItemIds.add(itemId.toLowerCase(java.util.Locale.ROOT))" not in quest_java:
+    fail("quest validation must reject duplicate required-item IDs")
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
 for feature in ('action.equals("turnin")', 'action.equals("validate")', "rooms generate", "private boolean handleLocate",
                 "/locate halloweenroom"):
@@ -252,13 +269,22 @@ for choice in ("zeptat se na podrobnosti", "odmítám", "Přijímám úkol", "Vr
     if choice.lower() not in dialogue_text.lower():
         fail(f"random villager dialogue tree is missing player choice: {choice}")
 
-for quest_id in expected_quests:
+for quest_id in quest_ids:
     quest_pattern = rf"^    {re.escape(quest_id)}:\n([\s\S]*?)(?=^    [a-z][a-z0-9_-]*:\s*$|^rooms:)"
     quest_match = re.search(quest_pattern, config_text, flags=re.MULTILINE)
     if not quest_match:
         fail(f"could not find quest config block {quest_id}")
     if "dialogue-story:" not in quest_match.group(1):
         fail(f"quest {quest_id} is missing its story dialogue text")
+
+    item_ids = re.findall(r"^\s+- id: ([^\n]+)$", quest_match.group(1), flags=re.MULTILINE)
+    normalized_item_ids = [value.strip().lower() for value in item_ids]
+    if len(normalized_item_ids) != len(set(normalized_item_ids)):
+        fail(f"quest {quest_id} contains duplicate required-item IDs")
+
+for required_new_quest in ("dried_ghast_delivery", "iron_mining_contract", "diamond_quota", "trident_hunt"):
+    if required_new_quest not in quest_ids:
+        fail(f"high-difficulty quest is missing: {required_new_quest}")
 
 for quest_id, legendary_chance in (
     ("dried_ghast_delivery", "0.18"),
