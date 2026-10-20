@@ -197,16 +197,35 @@ public final class HalloweenQuestManager {
             return true;
         }
 
-        List<String> candidates = new ArrayList<>();
-        List<Double> weights = new ArrayList<>();
-        double totalWeight = 0.0D;
+        List<String> available = new ArrayList<>();
         for (String id : getCatalogIds()) {
             if (!isConfiguredQuest(id) || isActive(playerId, id) || isCompleted(playerId, id)) continue;
             double weight = plugin.getConfig().getDouble("quests.definitions." + id + ".villager-offer-weight", 1.0D);
-            if (!Double.isFinite(weight) || weight <= 0.0D) continue;
+            if (Double.isFinite(weight) && weight > 0.0D) available.add(id);
+        }
+
+        // Avoid immediately offering a quest the player just declined. If the player
+        // declines every available quest, reset the declined set so the pool can cycle.
+        List<String> declined = new ArrayList<>(data.getStringList(playerRoot(playerId) + ".villager-declined-quests"));
+        List<String> candidates = new ArrayList<>();
+        List<Double> weights = new ArrayList<>();
+        double totalWeight = 0.0D;
+        for (String id : available) {
+            if (declined.contains(id)) continue;
+            double weight = plugin.getConfig().getDouble("quests.definitions." + id + ".villager-offer-weight", 1.0D);
             candidates.add(id);
             weights.add(weight);
             totalWeight += weight;
+        }
+        if (candidates.isEmpty() && !available.isEmpty()) {
+            declined.clear();
+            data.set(playerRoot(playerId) + ".villager-declined-quests", declined);
+            candidates.addAll(available);
+            for (String id : candidates) {
+                double weight = plugin.getConfig().getDouble("quests.definitions." + id + ".villager-offer-weight", 1.0D);
+                weights.add(weight);
+                totalWeight += weight;
+            }
         }
 
         if (candidates.isEmpty() || !Double.isFinite(totalWeight) || totalWeight <= 0.0D) {
@@ -236,6 +255,8 @@ public final class HalloweenQuestManager {
             return false;
         }
         setVillagerQuest(playerId, id, "active");
+        // Acceptance starts a fresh cycle of unaccepted offers after this quest is done.
+        data.set(playerRoot(playerId) + ".villager-declined-quests", new ArrayList<String>());
         save();
         return true;
     }
@@ -244,6 +265,10 @@ public final class HalloweenQuestManager {
         if (player == null) return false;
         UUID playerId = player.getUniqueId();
         if (!"offered".equals(getVillagerQuestStatus(playerId))) return false;
+        String declinedId = getVillagerQuestId(playerId);
+        List<String> declined = new ArrayList<>(data.getStringList(playerRoot(playerId) + ".villager-declined-quests"));
+        if (isConfiguredQuest(declinedId) && !declined.contains(declinedId)) declined.add(declinedId);
+        data.set(playerRoot(playerId) + ".villager-declined-quests", declined);
         setVillagerQuest(playerId, "", "none");
         save();
         return true;
