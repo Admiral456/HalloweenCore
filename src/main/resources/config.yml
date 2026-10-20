@@ -24,10 +24,18 @@ quest-key-drop-chances-by-difficulty:
 
 quests:
   default-reward-fragments:
-    light: 4
-    medium: 7
-    hard: 12
-    very-hard: 20
+    light:
+      min: 3
+      max: 5
+    medium:
+      min: 6
+      max: 9
+    hard:
+      min: 10
+      max: 15
+    very-hard:
+      min: 16
+      max: 25
   # Bonus key roll after a successful NPC quest turn-in. Remaining chance awards no key.
   key-drop-chances:
     common: 0.40
