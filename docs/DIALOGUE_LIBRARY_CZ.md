@@ -112,6 +112,7 @@ Podmínky viditelnosti těchto možností nastav ve vizuálním editoru. Po př�
 - **„Děkuji za pomoc“** → podmínka `%halloween_villager_quest_turnin_status% == completed`; cíl **QUEST_COMPLETE**.
 - **„Ještě to doplním“** → podmínka `%halloween_villager_quest_turnin_status% == missing`; cíl **NOT_READY**.
 - **„Je potřeba ověřit zadání“** → podmínka `%halloween_villager_quest_turnin_status% == error`; cíl **QUEST_ERROR**.
+- **„Úkol už není aktivní“** → podmínka `%halloween_villager_quest_turnin_status% == none`; cíl **START**.
 
 Úspěšná i neúspěšná akce `turnin-offer` už nepřidává vlastní zprávu do chatu; text viditelný hráči podává tento dialogový strom.
 
