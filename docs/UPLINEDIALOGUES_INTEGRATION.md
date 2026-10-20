@@ -39,7 +39,8 @@ UplineDialogues conditions can use PlaceholderAPI placeholders. PlaceholderAPI m
 - New Overworld chunks have a 5% configured chance to try generating one room. This applies only when Minecraft first generates a chunk; already generated chunks are not retroactively scanned.
 - The generator now makes up to 64 safe-volume attempts per eligible chunk, but terrain can still reject every attempt. A successful room is saved in `plugins/HalloweenCore/secret-rooms.yml`.
 - `/halloween rooms status` shows the configured chance and the number of recorded rooms.
-- `/halloween locate room` finds the nearest recorded room in the player's current world and prints its coordinates.
+- `/locate secretroom` (also `/locate room` and `/locate rooms`) finds the nearest recorded room in the player's current world and prints its coordinates. Other `/locate` arguments are forwarded to Minecraft's vanilla locate command.
+- `/halloween locate room` is also available.
 - Admins can test generation with `/halloween rooms generate` while standing in a suitable underground chunk. It uses the same natural-stone safety check and records successful rooms.
 - This is a plugin-specific locate command rather than overriding vanilla `/locate`, so ordinary vanilla structure locating remains intact.
 
