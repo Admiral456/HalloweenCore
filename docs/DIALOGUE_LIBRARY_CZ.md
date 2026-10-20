@@ -2,7 +2,7 @@
 
 ## Jak má systém fungovat
 
-Všichni vybraní vesničané mohou používat jeden společný dialogový strom. Když se hráč zeptá na práci, HalloweenCore mu náhodně vybere úkol z `quests.definitions`. Výběr zůstane stejný, dokud hráč úkol nepřijme nebo neodmítne. Opakovatelné úkoly se mohou po splnění nabídnout znovu; jednorázové příběhové milníky se po dokončení vyřadí.
+Všichni vybraní vesničané mohou používat jeden společný dialogový strom. HalloweenCore ale sám nevytváří vesničany, dialog jim automaticky nepřiřazuje a nenasazuje jim pumpkin hlavy; vzhled a přiřazení NPC se nastavuje zvlášť na serveru. Když se hráč zeptá na práci, HalloweenCore mu náhodně vybere úkol z `quests.definitions`. Výběr zůstane stejný, dokud hráč úkol nepřijme nebo neodmítne. Opakovatelné úkoly se mohou po splnění nabídnout znovu; jednorázové příběhové milníky se po dokončení vyřadí.
 
 Hráč může:
 - zeptat se na podrobnosti a příběhové pozadí;
