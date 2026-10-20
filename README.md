@@ -16,7 +16,7 @@ HalloweenCore je plugin pro Paper/Purpur 1.21.10 a Java 21. Aktuální rozsah tv
 
 - UplineDialogues je samostatný plugin. Markdown strom v `docs/DIALOGUE_LIBRARY_CZ.md` se **neimportuje automaticky**. Musí se vytvořit a uložit v `/updialog panel`, poté přiřadit k vybraným NPC.
 - HalloweenCore **nevytváří vesničany a automaticky jim nenasazuje pumpkin hlavy**. V této větvi není implementována automatická úprava vzhledu villagerů.
-- Tajné místnosti mají zamčenou truhlu, ale **jejich loot zůstává zatím prázdný/ne nakonfigurovaný**, protože konkrétní obsah nebyl domluven.
+- Tajné místnosti mají zamčenou truhlu, ale **loot se generuje při prvním odemčení** podle rarity a obsahuje pouze vanilla suroviny, jídlo, fragmenty, očarované knihy/nástroje a velmi vzácné bonusy. Nejsou potřeba žádné nové textury.
 - GitHub Actions ověřuje statické kontrakty, kompilaci a balíčkování. Nenahrazuje test na skutečném Paper/Purpur serveru; do UplineDialogues ani do živého serveru nemám přístup.
 
 ## Dialogy a příkazy
