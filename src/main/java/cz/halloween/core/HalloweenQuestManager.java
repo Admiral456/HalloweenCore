@@ -176,6 +176,115 @@ public final class HalloweenQuestManager {
         return new TreeSet<>(catalog.getKeys(false));
     }
 
+    /**
+     * Prepares one weighted random quest for a villager conversation. The offered quest
+     * remains stable until accepted or declined. A player can have only one villager
+     * quest in progress; every quest present in the config is eligible by default.
+     * Setting villager-offer-weight to 0 disables a quest from the random pool.
+     */
+    public boolean prepareVillagerOffer(Player player) {
+        if (player == null) return false;
+        UUID playerId = player.getUniqueId();
+        String status = getVillagerQuestStatus(playerId);
+        String currentId = getVillagerQuestId(playerId);
+
+        if ("offered".equals(status) && isConfiguredQuest(currentId)
+                && !isActive(playerId, currentId) && !isCompleted(playerId, currentId)) {
+            return true;
+        }
+        if ("active".equals(status) && isConfiguredQuest(currentId)
+                && isActive(playerId, currentId) && !isCompleted(playerId, currentId)) {
+            return true;
+        }
+
+        List<String> candidates = new ArrayList<>();
+        List<Double> weights = new ArrayList<>();
+        double totalWeight = 0.0D;
+        for (String id : getCatalogIds()) {
+            if (!isConfiguredQuest(id) || isActive(playerId, id) || isCompleted(playerId, id)) continue;
+            double weight = plugin.getConfig().getDouble("quests.definitions." + id + ".villager-offer-weight", 1.0D);
+            if (!Double.isFinite(weight) || weight <= 0.0D) continue;
+            candidates.add(id);
+            weights.add(weight);
+            totalWeight += weight;
+        }
+
+        if (candidates.isEmpty() || !Double.isFinite(totalWeight) || totalWeight <= 0.0D) {
+            setVillagerQuest(playerId, "", "none");
+            save();
+            return false;
+        }
+
+        double roll = java.util.concurrent.ThreadLocalRandom.current().nextDouble(totalWeight);
+        for (int i = 0; i < candidates.size(); i++) {
+            roll -= weights.get(i);
+            if (roll < 0.0D || i == candidates.size() - 1) {
+                setVillagerQuest(playerId, candidates.get(i), "offered");
+                save();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean acceptVillagerOffer(Player player) {
+        if (player == null) return false;
+        UUID playerId = player.getUniqueId();
+        String id = getVillagerQuestId(playerId);
+        if (!"offered".equals(getVillagerQuestStatus(playerId)) || !isConfiguredQuest(id)
+                || isActive(playerId, id) || isCompleted(playerId, id) || !start(player, id)) {
+            return false;
+        }
+        setVillagerQuest(playerId, id, "active");
+        save();
+        return true;
+    }
+
+    public boolean declineVillagerOffer(Player player) {
+        if (player == null) return false;
+        UUID playerId = player.getUniqueId();
+        if (!"offered".equals(getVillagerQuestStatus(playerId))) return false;
+        setVillagerQuest(playerId, "", "none");
+        save();
+        return true;
+    }
+
+    public String getVillagerQuestId(UUID playerId) {
+        return data.getString(playerRoot(playerId) + ".villager-quest-id", "");
+    }
+
+    public String getVillagerQuestStatus(UUID playerId) {
+        return data.getString(playerRoot(playerId) + ".villager-quest-status", "none");
+    }
+
+    public boolean hasVillagerQuest(UUID playerId) {
+        String id = getVillagerQuestId(playerId);
+        return !id.isBlank() && !"none".equals(getVillagerQuestStatus(playerId)) && isConfiguredQuest(id);
+    }
+
+    public boolean isCurrentVillagerQuestActive(Player player, String id) {
+        if (player == null || id == null) return false;
+        UUID playerId = player.getUniqueId();
+        return id.equalsIgnoreCase(getVillagerQuestId(playerId))
+                && "active".equals(getVillagerQuestStatus(playerId))
+                && isActive(playerId, id);
+    }
+
+    public void markVillagerQuestCompleted(Player player, String id) {
+        if (player == null || id == null) return;
+        UUID playerId = player.getUniqueId();
+        if (id.equalsIgnoreCase(getVillagerQuestId(playerId)) && isCompleted(playerId, id)) {
+            setVillagerQuest(playerId, id, "completed");
+            save();
+        }
+    }
+
+    private void setVillagerQuest(UUID playerId, String id, String status) {
+        String root = playerRoot(playerId);
+        data.set(root + ".villager-quest-id", id == null ? "" : id);
+        data.set(root + ".villager-quest-status", status);
+    }
+
     public String getDifficulty(String id) {
         return plugin.getConfig().getString("quests.definitions." + id + ".difficulty", "neurčeno");
     }
@@ -252,7 +361,36 @@ public final class HalloweenQuestManager {
         if (!complete(player, id)) {
             return new TurnInResult(false, "completion-failed");
         }
+        rollBonusKeyDrop(player);
         return new TurnInResult(true, "completed");
+    }
+
+    private void rollBonusKeyDrop(Player player) {
+        double roll = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
+        double common = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.common", 0.40D));
+        double rare = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.rare", 0.10D));
+        double legendary = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.legendary", 0.05D));
+        double total = common + rare + legendary;
+        // Normalize only if a custom config sets a combined chance above 100%.
+        if (total > 1.0D) {
+            common /= total;
+            rare /= total;
+            legendary /= total;
+        }
+        KeyItemFactory.Rarity rarity;
+        if (roll < common) rarity = KeyItemFactory.Rarity.COMMON;
+        else if (roll < common + rare) rarity = KeyItemFactory.Rarity.RARE;
+        else if (roll < common + rare + legendary) rarity = KeyItemFactory.Rarity.LEGENDARY;
+        else return;
+
+        plugin.getKeyItemFactory().give(player, rarity, 1);
+        player.sendMessage(plugin.color("&5&lBONUSOVÁ ODMĚNA &8» &7Za splnění úkolu jsi získal "
+                + rarity.color() + rarity.displayName() + " klíč tajné místnosti&7."));
+    }
+
+    private double clampProbability(double value) {
+        if (!Double.isFinite(value)) return 0.0D;
+        return Math.max(0.0D, Math.min(1.0D, value));
     }
 
     private int countMatchingItems(Player player, ItemStack template) {
@@ -289,7 +427,18 @@ public final class HalloweenQuestManager {
     }
 
     public long getConfiguredFragmentReward(String id) {
-        return Math.max(0L, plugin.getConfig().getLong("quests.definitions." + id + ".reward-fragments", 0L));
+        String path = "quests.definitions." + id;
+        if (!isConfiguredQuest(id)) return 0L;
+        if (plugin.getConfig().contains(path + ".reward-fragments")) {
+            return Math.max(0L, plugin.getConfig().getLong(path + ".reward-fragments", 0L));
+        }
+        String difficulty = getDifficulty(id).toLowerCase(java.util.Locale.ROOT);
+        String tier;
+        if (difficulty.contains("velmi")) tier = "very-hard";
+        else if (difficulty.contains("těž") || difficulty.contains("tez")) tier = "hard";
+        else if (difficulty.contains("střed") || difficulty.contains("stred")) tier = "medium";
+        else tier = "light";
+        return Math.max(0L, plugin.getConfig().getLong("quests.default-reward-fragments." + tier, 0L));
     }
 
     public String getTitle(String id) {
