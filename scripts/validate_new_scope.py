@@ -145,12 +145,21 @@ if len(quest_ids) != len(set(quest_ids)):
 for difficulty in ("Lehký", "Střední", "Těžký", "Velmi těžký"):
     if difficulty not in quest_block:
         fail(f"quest catalogue is missing the {difficulty} difficulty tier")
-for reward in ("light: 3", "medium: 5", "hard: 8", "very-hard: 12"):
+for reward in ("light: 4", "medium: 7", "hard: 12", "very-hard: 20"):
     if reward not in quest_block:
         fail(f"default villager reward tier is missing: {reward}")
 for drop_chance in ("common: 0.40", "rare: 0.10", "legendary: 0.05"):
     if drop_chance not in quest_block:
         fail(f"villager quest key drop chance is missing: {drop_chance}")
+
+for tier_block in (
+    "  light:\n    common: 0.10\n    rare: 0.01\n    legendary: 0.001",
+    "  medium:\n    common: 0.15\n    rare: 0.035\n    legendary: 0.005",
+    "  hard:\n    common: 0.20\n    rare: 0.06\n    legendary: 0.02",
+    "  very-hard:\n    common: 0.25\n    rare: 0.10\n    legendary: 0.08",
+):
+    if tier_block not in config_text:
+        fail(f"difficulty-based key odds are missing: {tier_block!r}")
 
 rooms_config = config_text.split("rooms:\n", 1)[1]
 if "chance-per-new-chunk: 0.025" not in rooms_config:
@@ -251,10 +260,21 @@ for quest_id in expected_quests:
     if "dialogue-story:" not in quest_match.group(1):
         fail(f"quest {quest_id} is missing its story dialogue text")
 
+for quest_id, legendary_chance in (
+    ("cactus_delivery", "0.06"),
+    ("iron_mining_contract", "0.10"),
+    ("diamond_quota", "0.14"),
+    ("trident_hunt", "0.20"),
+):
+    quest_pattern = rf"^    {re.escape(quest_id)}:\\n([\\s\\S]*?)(?=^    [a-z][a-z0-9_-]*:\\s*$|^rooms:)"
+    quest_match = re.search(quest_pattern, config_text, flags=re.MULTILINE)
+    if not quest_match or f"legendary: {legendary_chance}" not in quest_match.group(1):
+        fail(f"hard quest {quest_id} must configure its own legendary-key chance")
+
 for one_time_id in ("hidden_room_report", "sealed_archive"):
     quest_pattern = rf"^    {re.escape(one_time_id)}:\n([\s\S]*?)(?=^    [a-z][a-z0-9_-]*:\s*$|^rooms:)"
     quest_match = re.search(quest_pattern, config_text, flags=re.MULTILINE)
     if not quest_match or "repeatable: false" not in quest_match.group(1):
         fail(f"secret-room milestone {one_time_id} must remain one-time")
 
-print("Scope check passed: random story-driven villager dialogue, 25 quest stories, repeatability, reward/key odds, protected rooms and retained sweet textures.")
+print("Scope check passed: random story-driven villager dialogue, baseline/custom quest stories, difficulty-scaled rewards and key odds, protected rooms and retained sweet textures.")

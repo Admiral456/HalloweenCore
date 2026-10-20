@@ -467,15 +467,17 @@ public final class HalloweenQuestManager {
         if (!complete(player, id)) {
             return new TurnInResult(false, "completion-failed");
         }
-        rollBonusKeyDrop(player);
+        rollBonusKeyDrop(player, id);
         return new TurnInResult(true, "completed");
     }
 
-    private void rollBonusKeyDrop(Player player) {
+    private void rollBonusKeyDrop(Player player, String rawQuestId) {
+        String questId = normalizeId(rawQuestId);
+        String tier = keyDropTier(getDifficulty(questId));
         double roll = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
-        double common = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.common", 0.40D));
-        double rare = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.rare", 0.10D));
-        double legendary = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.legendary", 0.05D));
+        double common = keyDropChance(questId, tier, "common", 0.40D);
+        double rare = keyDropChance(questId, tier, "rare", 0.10D);
+        double legendary = keyDropChance(questId, tier, "legendary", 0.05D);
         double total = common + rare + legendary;
         // Normalize only if a custom config sets a combined chance above 100%.
         if (total > 1.0D) {
@@ -492,6 +494,27 @@ public final class HalloweenQuestManager {
         plugin.getKeyItemFactory().give(player, rarity, 1);
         player.sendMessage(plugin.color("&5&lBONUSOVÁ ODMĚNA &8» &7Za splnění úkolu jsi získal "
                 + rarity.color() + rarity.displayName() + " klíč tajné místnosti&7."));
+    }
+
+
+    private double keyDropChance(String questId, String tier, String rarity, double globalFallback) {
+        String questPath = "quests.definitions." + questId + ".key-drop-chances." + rarity;
+        if (plugin.getConfig().contains(questPath)) {
+            return clampProbability(plugin.getConfig().getDouble(questPath, globalFallback));
+        }
+        String tierPath = "quest-key-drop-chances-by-difficulty." + tier + "." + rarity;
+        if (plugin.getConfig().contains(tierPath)) {
+            return clampProbability(plugin.getConfig().getDouble(tierPath, globalFallback));
+        }
+        return clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances." + rarity, globalFallback));
+    }
+
+    private String keyDropTier(String difficulty) {
+        String normalized = difficulty == null ? "" : difficulty.toLowerCase(java.util.Locale.ROOT);
+        if (normalized.contains("velmi")) return "very-hard";
+        if (normalized.contains("těž") || normalized.contains("tez")) return "hard";
+        if (normalized.contains("střed") || normalized.contains("stred")) return "medium";
+        return "light";
     }
 
     private double clampProbability(double value) {

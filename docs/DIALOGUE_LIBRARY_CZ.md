@@ -198,7 +198,7 @@ V `src/main/resources/config.yml` přidej novou položku do `quests.definitions`
 - `reward-fragments: 10` — vlastní počet fragmentů. Pokud pole chybí, použije se výchozí odměna podle obtížnosti;
 - `reward-items:` — volitelný seznam dalších předmětů s `id` a `amount`.
 
-Výchozí fragmentová odměna je 3 za lehký, 5 za střední, 8 za těžký a 12 za velmi těžký úkol. Po úspěšném odevzdání se navíc provede nezávislý hod na klíč. Výchozí šance jsou 40 % běžný, 10 % vzácný a 5 % legendární klíč; v ostatních 45 % případech žádný klíč nepadne. Všechny hodnoty lze změnit v `config.yml`.
+Výchozí fragmentová odměna je 4 za lehký, 7 za střední, 12 za těžký a 20 za velmi těžký úkol. Šance na klíč roste s obtížností: lehký 10 % běžný / 1 % vzácný / 0,1 % legendární, střední 15 % / 3,5 % / 0,5 %, těžký 20 % / 6 % / 2 % a velmi těžký 25 % / 10 % / 8 %. Nejtěžší zakázky mají ještě vlastní šanci: 20 kaktusů 6 % na legendární klíč, 40 železných ingotů 10 %, 5 diamantů 14 % a trojzubec 20 %. Jde o jeden společný hod; pokud nepadne žádný z těchto klíčů, odměna klíč neobsahuje. Všechny hodnoty lze změnit v `config.yml`.
 
 ## Limity
 
