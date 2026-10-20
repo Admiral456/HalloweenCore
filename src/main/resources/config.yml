@@ -419,4 +419,144 @@ rooms:
     common: 70
     rare: 25
     legendary: 5
-  # Chest loot is still intentionally unconfigured until its contents are agreed.
+  # Rarity-based loot uses vanilla materials only. Contents are rolled once when the correct key unlocks the chest.
+  loot:
+    common:
+      min-fragments: 8
+      max-fragments: 16
+      items:
+        - material: COAL
+          min: 4
+          max: 12
+          chance: 0.90
+        - material: IRON_INGOT
+          min: 3
+          max: 8
+          chance: 0.85
+        - material: GOLD_INGOT
+          min: 1
+          max: 4
+          chance: 0.45
+        - material: EMERALD
+          min: 1
+          max: 3
+          chance: 0.30
+        - material: BREAD
+          min: 2
+          max: 5
+          chance: 0.50
+        - material: COOKED_BEEF
+          min: 2
+          max: 5
+          chance: 0.50
+        - material: REDSTONE
+          min: 4
+          max: 12
+          chance: 0.40
+        - material: DIAMOND
+          min: 1
+          max: 1
+          chance: 0.03
+    rare:
+      min-fragments: 20
+      max-fragments: 35
+      items:
+        - material: DIAMOND
+          min: 1
+          max: 3
+          chance: 0.95
+        - material: GOLD_INGOT
+          min: 4
+          max: 10
+          chance: 0.80
+        - material: IRON_INGOT
+          min: 8
+          max: 16
+          chance: 0.85
+        - material: EMERALD
+          min: 2
+          max: 6
+          chance: 0.60
+        - material: ENCHANTED_BOOK
+          min: 1
+          max: 1
+          chance: 0.40
+          enchantments:
+            - "unbreaking:2"
+            - "efficiency:2"
+            - "protection:2"
+        - material: DIAMOND_PICKAXE
+          min: 1
+          max: 1
+          chance: 0.12
+          enchantments:
+            - "efficiency:2"
+            - "unbreaking:2"
+        - material: DIAMOND_SWORD
+          min: 1
+          max: 1
+          chance: 0.10
+          enchantments:
+            - "sharpness:2"
+            - "unbreaking:2"
+        - material: GOLDEN_APPLE
+          min: 1
+          max: 1
+          chance: 0.10
+    legendary:
+      min-fragments: 40
+      max-fragments: 70
+      items:
+        - material: DIAMOND
+          min: 4
+          max: 8
+          chance: 0.95
+        - material: EMERALD
+          min: 4
+          max: 10
+          chance: 0.80
+        - material: GOLD_INGOT
+          min: 8
+          max: 16
+          chance: 0.80
+        - material: ENCHANTED_BOOK
+          min: 1
+          max: 1
+          chance: 0.24
+          enchantments:
+            - "mending:1"
+            - "sharpness:4"
+            - "protection:4"
+        - material: DIAMOND_SWORD
+          min: 1
+          max: 1
+          chance: 0.20
+          enchantments:
+            - "sharpness:3"
+            - "unbreaking:3"
+        - material: DIAMOND_PICKAXE
+          min: 1
+          max: 1
+          chance: 0.20
+          enchantments:
+            - "efficiency:3"
+            - "unbreaking:2"
+        - material: DIAMOND_CHESTPLATE
+          min: 1
+          max: 1
+          chance: 0.10
+          enchantments:
+            - "protection:3"
+            - "unbreaking:2"
+        - material: GOLDEN_APPLE
+          min: 1
+          max: 2
+          chance: 0.25
+        - material: NETHERITE_SCRAP
+          min: 1
+          max: 2
+          chance: 0.06
+        - material: TOTEM_OF_UNDYING
+          min: 1
+          max: 1
+          chance: 0.02
