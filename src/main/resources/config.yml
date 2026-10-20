@@ -1,3 +1,4 @@
+config-version: 2
 # Only NPC dialogue quests and locked underground rooms remain in this build.
 # UplineDialogues shows a random eligible quest from quests.definitions to the player.
 # Add a quest by adding a definition; it joins the random pool by default.
