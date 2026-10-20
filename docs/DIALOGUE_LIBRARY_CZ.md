@@ -2,7 +2,7 @@
 
 ## Jak má systém fungovat
 
-Všichni vybraní vesničané mohou používat jeden společný dialogový strom. Když se hráč zeptá na práci, HalloweenCore mu náhodně vybere jeden dosud nedokončený úkol z `quests.definitions`. Výběr zůstane stejný, dokud hráč úkol nepřijme nebo neodmítne.
+Všichni vybraní vesničané mohou používat jeden společný dialogový strom. Když se hráč zeptá na práci, HalloweenCore mu náhodně vybere úkol z `quests.definitions`. Výběr zůstane stejný, dokud hráč úkol nepřijme nebo neodmítne. Opakovatelné úkoly se mohou po splnění nabídnout znovu; jednorázové příběhové milníky se po dokončení vyřadí.
 
 Hráč může:
 - zeptat se na podrobnosti a příběhové pozadí;
@@ -12,7 +12,7 @@ Hráč může:
 - po přijetí se vrátit, znovu si přečíst zadání a zkusit úkol odevzdat;
 - po úspěšném splnění získat fragmenty a navíc samostatnou náhodnou šanci na klíč od tajné místnosti.
 
-Quest nabídky se vybírají z konfigurace, ne z pevně zadrátovaného seznamu v dialogu. Každá nová platná definice pod `quests.definitions` je automaticky součástí náhodného poolu, pokud nemá `villager-offer-weight: 0`. Hráč nedostane znovu úkol, který už dokončil. Dokud má aktivní úkol od vesničana, jiný mu tato nabídka nepřidělí.
+Quest nabídky se vybírají z konfigurace, ne z pevně zadrátovaného seznamu v dialogu. Každá nová platná definice pod `quests.definitions` je automaticky součástí náhodného poolu, pokud nemá `villager-offer-weight: 0`. Úkoly jsou opakovatelné ve výchozím nastavení, takže seznam nikdy nedojde. Do definice jednorázového milníku přidej `repeatable: false`. Dokud má hráč aktivní úkol od vesničana, jiný mu tato nabídka nepřidělí. Odmítnuté zadání se přeskočí, dokud hráč nevyčerpá jiné dostupné nabídky; potom se cyklus odmítnutých obnoví.
 
 ## Vytvoření dialogového stromu
 
@@ -54,7 +54,7 @@ Pod tím zobraz:
 - **Úkol:** `%halloween_villager_quest_title%`
 - **Zadání:** `%halloween_villager_quest_description%`
 - **Obtížnost:** `%halloween_villager_quest_difficulty%`
-- **Odměna:** `%halloween_villager_quest_reward% fragmentů a samostatná šance na klíč tajné místnosti.
+- **Odměna:** `%halloween_villager_quest_reward%` fragmentů a samostatná šance na klíč tajné místnosti.
 
 Možnosti:
 - **„Zeptat se na podrobnosti“** → uzel **OFFER_DETAILS**.
@@ -169,6 +169,7 @@ Příkazy pro akce dialogu:
 V `src/main/resources/config.yml` přidej novou položku do `quests.definitions`. Vyplň unikátní ID, `title`, `difficulty`, `description`, `objective-type`, `target` a `required-items`. Volitelně přidej:
 - `dialogue-story: "Krátké příběhové pozadí, které NPC řekne při nabídce"`;
 - `villager-offer-weight: 1.0` — vyšší číslo znamená častější nabídku, `0` nabídku vypne. Pokud pole chybí, váha je 1;
+- `repeatable: false` — úkol se po dokončení už znovu nenabídne. Pokud pole chybí, úkol je opakovatelný;
 - `reward-fragments: 10` — vlastní počet fragmentů. Pokud pole chybí, použije se výchozí odměna podle obtížnosti;
 - `reward-items:` — volitelný seznam dalších předmětů s `id` a `amount`.
 
