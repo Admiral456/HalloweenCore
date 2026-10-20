@@ -186,11 +186,12 @@ for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
                 ".removeItem(", "objective-missing", "prepareVillagerOffer",
                 "acceptVillagerOffer", "declineVillagerOffer", "markVillagerQuestCompleted",
                 "getVillagerQuestStatus", "getVillagerQuestTurnInStatus", "recordVillagerQuestTurnInResult",
-                "isRepeatable", "villager-offer-weight", "default-reward-fragments"):
+                "isRepeatable", "isReadyForOffer", "getInvalidQuestIds",
+                "villager-offer-weight", "default-reward-fragments"):
     if feature not in quest_java:
         fail(f"quest turn-in/random-offer contract is missing: {feature}")
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
-for feature in ('action.equals("turnin")', "rooms generate", "private boolean handleLocate",
+for feature in ('action.equals("turnin")', 'action.equals("validate")', "rooms generate", "private boolean handleLocate",
                 "/locate halloweenroom"):
     if feature not in command_java:
         fail(f"required player/admin command is missing: {feature}")
