@@ -150,20 +150,30 @@ def main() -> None:
             fail(f"quest override {quest_id} must be a mapping")
         if "difficulty" in override and override["difficulty"] not in DIFFICULTIES:
             fail(f"quest override {quest_id} has an invalid difficulty")
+        effective_difficulty = override.get("difficulty", default_difficulty)
+        base_tier = difficulties[effective_difficulty]
         if "fragments" in override:
             number(override["fragments"], f"quest override {quest_id}.fragments", 0, 2_000_000_000)
-        elif "min-fragments" in override or "max-fragments" in override:
-            validate_range(override, f"quest override {quest_id}", "min-fragments", "max-fragments")
-        if "key-chances" in override:
-            chances = override["key-chances"]
-            if not isinstance(chances, dict):
-                fail(f"quest override {quest_id}.key-chances must be a mapping")
-            total = 0.0
-            for rarity in RARITIES:
-                if rarity in chances:
-                    total += number(chances[rarity], f"quest override {quest_id}.key-chances.{rarity}", 0, 1)
-            if total > 1:
-                fail(f"quest override {quest_id} key chances sum to more than 100%")
+        else:
+            low = number(
+                override.get("min-fragments", base_tier["min-fragments"]),
+                f"quest override {quest_id}.min-fragments", 0, 2_000_000_000)
+            high = number(
+                override.get("max-fragments", base_tier["max-fragments"]),
+                f"quest override {quest_id}.max-fragments", 0, 2_000_000_000)
+            if low > high:
+                fail(f"quest override {quest_id} min-fragments must not exceed max-fragments")
+
+        # Check the resulting probabilities, including tier defaults for omitted override values.
+        chances = override.get("key-chances", {})
+        if not isinstance(chances, dict):
+            fail(f"quest override {quest_id}.key-chances must be a mapping")
+        total = 0.0
+        for rarity in RARITIES:
+            value = chances.get(rarity, base_tier["key-chances"][rarity])
+            total += number(value, f"quest override {quest_id}.effective-key-chances.{rarity}", 0, 1)
+        if total > 1:
+            fail(f"quest override {quest_id} effective key chances sum to more than 100%")
 
     code = (ROOT / "src/main/java/cz/halloween/core/SecretRoomManager.java").read_text(encoding="utf-8")
     required_room_safety = ("hasMatchingKey", "consumeKey", "rollRoomRarity", "populateChest",
