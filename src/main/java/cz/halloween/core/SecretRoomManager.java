@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.enchantments.Enchantment;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.block.Block;
@@ -33,6 +34,8 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.EnchantmentStorageMeta;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.configuration.ConfigurationSection;
@@ -238,11 +241,18 @@ public final class SecretRoomManager implements Listener {
         }
 
         consumeOne(player, inMainHand);
+        long fragmentReward = populateLoot(chest, requiredRarity);
+        if (fragmentReward > 0L) {
+            plugin.getQuestManager().awardFragments(player, fragmentReward);
+        }
         chest.getPersistentDataContainer().remove(lockedKey);
         // Keep managed/rarity markers permanently so an unlocked chest remains protected.
         chest.update(true, false);
         player.sendMessage(plugin.color("&5&lTRUHLA ODEMČENA &8» &d" + requiredRarity.displayName()
                 + " truhla je odemčená. Klíč byl spotřebován."));
+        if (fragmentReward > 0L) {
+            player.sendMessage(plugin.color("&d+" + fragmentReward + " fragmentů &7za otevření tajné truhly."));
+        }
         player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_CHEST_OPEN, 0.8f, 0.8f);
 
         Block chestBlock = clicked;
@@ -252,6 +262,79 @@ public final class SecretRoomManager implements Listener {
                 player.openInventory(unlockedChest.getBlockInventory());
             }
         });
+    }
+
+    /**
+     * Generates the chest contents once, at the successful unlock. Loot tables contain
+     * only vanilla materials, so no extra custom item textures or models are needed.
+     */
+    private long populateLoot(Chest chest, KeyItemFactory.Rarity rarity) {
+        String root = "rooms.loot." + rarity.id();
+        Inventory inventory = chest.getBlockInventory();
+        inventory.clear();
+
+        List<Map<?, ?>> entries = plugin.getConfig().getMapList(root + ".items");
+        for (Map<?, ?> entry : entries) {
+            Object rawMaterial = entry.get("material");
+            if (!(rawMaterial instanceof String materialName)) continue;
+            Material material = Material.matchMaterial(materialName);
+            if (material == null || material.isAir() || material.isLegacy()) {
+                plugin.getLogger().warning("Ignoring invalid secret-room loot material '" + materialName
+                        + "' in " + root + ".items");
+                continue;
+            }
+            double chance = number(entry.get("chance"), 1.0D);
+            if (ThreadLocalRandom.current().nextDouble() >= Math.max(0.0D, Math.min(1.0D, chance))) continue;
+
+            int min = Math.max(1, (int) number(entry.get("min"), 1.0D));
+            int max = Math.max(min, (int) number(entry.get("max"), min));
+            int amount = min == max ? min : ThreadLocalRandom.current().nextInt(min, max + 1);
+            ItemStack item = new ItemStack(material, Math.min(amount, 2304));
+            applyConfiguredEnchant(item, entry.get("enchantments"));
+            Map<Integer, ItemStack> leftovers = inventory.addItem(item);
+            leftovers.values().forEach(leftover ->
+                    chest.getWorld().dropItemNaturally(chest.getLocation().add(0.5, 0.5, 0.5), leftover));
+        }
+        chest.update(true, false);
+
+        long minFragments = Math.max(0L, plugin.getConfig().getLong(root + ".min-fragments", 0L));
+        long maxFragments = Math.max(minFragments, plugin.getConfig().getLong(root + ".max-fragments", minFragments));
+        if (maxFragments <= minFragments) return minFragments;
+        long width = maxFragments - minFragments;
+        if (width == Long.MAX_VALUE) return ThreadLocalRandom.current().nextLong(minFragments, maxFragments);
+        return minFragments + ThreadLocalRandom.current().nextLong(width + 1L);
+    }
+
+    private void applyConfiguredEnchant(ItemStack item, Object rawOptions) {
+        if (!(rawOptions instanceof List<?> options) || options.isEmpty()) return;
+        Object selected = options.get(ThreadLocalRandom.current().nextInt(options.size()));
+        String[] parts = String.valueOf(selected).split(":", 2);
+        if (parts.length != 2) return;
+        int level;
+        try {
+            level = Integer.parseInt(parts[1]);
+        } catch (NumberFormatException exception) {
+            return;
+        }
+        if (level < 1 || level > 5) return;
+        Enchantment enchantment = Enchantment.getByKey(NamespacedKey.minecraft(parts[0].toLowerCase(Locale.ROOT)));
+        if (enchantment == null) return;
+        ItemMeta meta = item.getItemMeta();
+        if (meta instanceof EnchantmentStorageMeta book) {
+            book.addStoredEnchant(enchantment, level, true);
+            item.setItemMeta(book);
+        } else if (meta != null) {
+            item.addUnsafeEnchantment(enchantment, level);
+        }
+    }
+
+    private double number(Object value, double fallback) {
+        if (value instanceof Number number) return number.doubleValue();
+        try {
+            return Double.parseDouble(String.valueOf(value));
+        } catch (NumberFormatException exception) {
+            return fallback;
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
