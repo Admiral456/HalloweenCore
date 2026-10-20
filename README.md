@@ -5,7 +5,7 @@ HalloweenCore is being narrowed to the new agreed scope for Paper/Purpur 1.21.10
 ## What remains
 
 - UplineDialogues handles NPC conversations, answer choices and branching dialogue trees.
-- HalloweenCore stores quest state and progress, prevents repeat completions, and supports a per-quest fragment reward value. No quest reward amount is configured by default.
+- HalloweenCore stores quest state and progress, prevents repeat completions, and supports one-time configured fragment and item rewards. The default quest list is empty, fragment rewards default to 0, and item rewards default to an empty list.
 - Newly generated Overworld chunks can rarely contain a small sealed underground room built only into solid natural stone.
 - Each generated room contains one locked chest. A special key is required the first time it is opened; one key is consumed and the chest remains unlocked afterwards.
 - The ItemsAdder content keeps the 13 imported Stev's Halloween sweet sprites under their MIT licence, plus the new custom key texture.
@@ -28,7 +28,7 @@ Optional PlaceholderAPI integration exposes:
 
 ## Quest rewards are deliberately unset
 
-The default configuration has no quest definitions. If a quest is added later, its reward-fragments defaults to 0. No money, equipment, loot, candy reward or key source is assumed. The quest's exact contents and reward must be chosen before it is configured.
+The default configuration has no quest definitions. A later-defined quest may optionally configure reward-fragments and reward-items, but defaults to 0 fragments and no items. If a quest is completed before its reward is agreed, completion is saved without payment; once a reward is configured, it can be claimed once with /halloween quest claim <id>. No money, equipment, chest loot, candy payout or key source is assumed. The exact contents and reward must be chosen before they are configured.
 
 ## Secret rooms and keys
 

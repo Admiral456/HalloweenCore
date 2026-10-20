@@ -24,7 +24,9 @@ public final class KeyItemFactory {
     }
 
     public ItemStack createKey() {
-        ItemStack stack = createItemsAdderStack();
+        String configuredId = plugin.getConfig().getString("rooms.key-item-id", ITEMSADDER_ID);
+        if (configuredId == null || configuredId.isBlank()) configuredId = ITEMSADDER_ID;
+        ItemStack stack = createItemsAdderStack(configuredId);
         if (stack == null) {
             stack = new ItemStack(Material.TRIPWIRE_HOOK);
         } else {
@@ -42,6 +44,21 @@ public final class KeyItemFactory {
             stack.setItemMeta(meta);
         }
         return stack;
+    }
+
+    public ItemStack createConfiguredItem(String itemId) {
+        if (itemId == null || itemId.isBlank()) return null;
+        String configuredKeyId = plugin.getConfig().getString("rooms.key-item-id", ITEMSADDER_ID);
+        if (configuredKeyId == null || configuredKeyId.isBlank()) configuredKeyId = ITEMSADDER_ID;
+        if (itemId.equalsIgnoreCase(configuredKeyId) || itemId.equalsIgnoreCase(ITEMSADDER_ID)) {
+            return createKey();
+        }
+        if (itemId.regionMatches(true, 0, "minecraft:", 0, "minecraft:".length())) {
+            Material material = Material.matchMaterial(itemId.substring("minecraft:".length()));
+            if (material == null || material.isAir()) return null;
+            return new ItemStack(material);
+        }
+        return createItemsAdderStack(itemId);
     }
 
     public boolean isKey(ItemStack stack) {
@@ -64,7 +81,7 @@ public final class KeyItemFactory {
         }
     }
 
-    private ItemStack createItemsAdderStack() {
+    private ItemStack createItemsAdderStack(String itemId) {
         org.bukkit.plugin.Plugin itemsAdder = plugin.getServer().getPluginManager().getPlugin("ItemsAdder");
         if (itemsAdder == null) {
             return null;
@@ -73,15 +90,15 @@ public final class KeyItemFactory {
             ClassLoader loader = itemsAdder.getClass().getClassLoader();
             Class<?> customStackClass = Class.forName("dev.lone.itemsadder.api.CustomStack", true, loader);
             Method getInstance = customStackClass.getMethod("getInstance", String.class);
-            Object customStack = getInstance.invoke(null, ITEMSADDER_ID);
+            Object customStack = getInstance.invoke(null, itemId);
             if (customStack == null) {
-                warnItemsAdder("ItemsAdder is present, but " + ITEMSADDER_ID + " is not registered yet.");
+                warnItemsAdder("ItemsAdder is present, but " + itemId + " is not registered yet.");
                 return null;
             }
             Object result = customStackClass.getMethod("getItemStack").invoke(customStack);
             return result instanceof ItemStack item ? item : null;
         } catch (ReflectiveOperationException | LinkageError ex) {
-            warnItemsAdder("Could not request the custom key from the ItemsAdder API; using a vanilla fallback. "
+            warnItemsAdder("Could not request an item from the ItemsAdder API; using a vanilla fallback for the key if needed. "
                     + ex.getClass().getSimpleName());
             return null;
         }

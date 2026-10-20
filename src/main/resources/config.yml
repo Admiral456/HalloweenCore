@@ -6,7 +6,9 @@ worlds:
 
 quests:
   # Leave definitions empty until quest objectives and rewards are agreed.
-  # A quest without a definition has target 1 and a fragment reward of 0.
+  # A quest without a definition has target 1, 0 fragments and no item reward.
+  # When agreed, a definition may contain title, target, reward-fragments and reward-items.
+  # Keep reward-fragments at 0 and reward-items empty until the exact rewards are decided.
   definitions: {}
 
 rooms:

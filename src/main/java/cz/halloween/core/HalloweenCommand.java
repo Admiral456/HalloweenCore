@@ -60,6 +60,38 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
+        if (action.equals("claim")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(plugin.color("&cOdměnu může vyzvednout pouze hráč."));
+                return true;
+            }
+            if (args.length != 3) {
+                sender.sendMessage(plugin.color("&cPoužití: /halloween quest claim <id>"));
+                return true;
+            }
+            var manager = plugin.getQuestManager();
+            String id = manager.normalizeId(args[2]);
+            if (!manager.isValidId(id)) {
+                sender.sendMessage(plugin.color("&cNeplatné ID úkolu."));
+            } else if (!manager.isCompleted(player.getUniqueId(), id)) {
+                sender.sendMessage(plugin.color("&cTento úkol ještě není dokončený."));
+            } else if (manager.isRewardPaid(player.getUniqueId(), id)) {
+                sender.sendMessage(plugin.color("&eJednorázová odměna už byla vyplacena."));
+            } else if (!manager.hasConfiguredReward(id)) {
+                sender.sendMessage(plugin.color("&7Odměna tohoto úkolu zatím nebyla domluvena ani nastavena."));
+            } else if (manager.claimConfiguredReward(player, id)) {
+                long fragments = manager.getConfiguredFragmentReward(id);
+                if (fragments > 0L) {
+                    player.sendMessage(plugin.color("&5&lODMĚNA VYZVEDNUTA &8» &d+" + fragments + " fragmentů."));
+                } else {
+                    player.sendMessage(plugin.color("&5&lODMĚNA VYZVEDNUTA &8» &dPředměty podle konfigurace."));
+                }
+            } else {
+                sender.sendMessage(plugin.color("&cOdměnu se nepodařilo vyzvednout; zkontroluj ID předmětů v konfiguraci."));
+            }
+            return true;
+        }
+
         if (action.equals("start")) {
             if (args.length < 3 || args.length > 4) {
                 sender.sendMessage(plugin.color("&cPoužití: /halloween quest start <id> [hráč]"));
@@ -144,10 +176,18 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                 sender.sendMessage(plugin.color("&cÚkol není připraven k dokončení: &d"
                         + manager.getProgress(target.getUniqueId(), id) + "&7/&d" + manager.getTarget(id) + "&c."));
             } else if (manager.complete(target, id)) {
-                long reward = manager.getConfiguredFragmentReward(id);
                 target.sendMessage(plugin.color("&5&lÚKOL DOKONČEN &8» &d" + manager.getTitle(id)));
-                if (reward > 0) {
-                    target.sendMessage(plugin.color("&7Jednorázová odměna: &d+" + reward + " fragmentů."));
+                if (manager.isRewardPaid(target.getUniqueId(), id)) {
+                    long reward = manager.getConfiguredFragmentReward(id);
+                    if (reward > 0L) {
+                        target.sendMessage(plugin.color("&7Jednorázová odměna: &d+" + reward + " fragmentů."));
+                    } else {
+                        target.sendMessage(plugin.color("&7Jednorázová odměna podle konfigurace byla vydána."));
+                    }
+                } else if (!manager.hasConfiguredReward(id)) {
+                    target.sendMessage(plugin.color("&7Odměna zatím není nastavena; quest se zaznamenal bez odměny."));
+                } else {
+                    target.sendMessage(plugin.color("&eQuest byl uložen. Odměna zatím nebyla vyplacena; zkontroluj konfiguraci a použij claim."));
                 }
                 sender.sendMessage(plugin.color("&aÚkol &f" + id + " &abyl jednorázově dokončen hráčem &f" + target.getName() + "&a."));
             } else {
@@ -282,7 +322,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return filter(List.of("quest", "quests", "fragments", "rooms", "key", "reload"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quest") || args[0].equalsIgnoreCase("quests"))) {
-            return filter(List.of("start", "progress", "complete", "status"), args[1]);
+            return filter(List.of("start", "progress", "complete", "claim", "status"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("rooms")) {
             return filter(List.of("status"), args[1]);

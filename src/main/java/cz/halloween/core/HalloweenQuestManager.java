@@ -1,11 +1,16 @@
 package cz.halloween.core;
 
+import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
@@ -63,8 +68,9 @@ public final class HalloweenQuestManager {
     }
 
     /**
-     * Completes a started quest only after its configured progress target is reached.
-     * Fragment payout is config-driven and defaults to zero until the owner sets a reward.
+     * Completes an active quest after its configured target is reached. If a reward
+     * is configured, it is paid once. A zero/empty reward does not consume the claim,
+     * so a later-agreed reward can still be claimed without resetting the quest.
      */
     public boolean complete(Player player, String rawId) {
         String id = normalizeId(rawId);
@@ -73,21 +79,88 @@ public final class HalloweenQuestManager {
             return false;
         }
 
-        String root = questRoot(player.getUniqueId(), id);
-        if (data.getBoolean(root + ".reward-paid", false)) {
+        data.set(questRoot(player.getUniqueId(), id) + ".status", "completed");
+        save();
+        grantConfiguredReward(player, id);
+        return true;
+    }
+
+    public boolean claimConfiguredReward(Player player, String rawId) {
+        String id = normalizeId(rawId);
+        if (player == null || !isValidId(id) || !isCompleted(player.getUniqueId(), id)) {
+            return false;
+        }
+        return grantConfiguredReward(player, id);
+    }
+
+    private boolean grantConfiguredReward(Player player, String id) {
+        UUID playerId = player.getUniqueId();
+        String questRoot = questRoot(playerId, id);
+        if (isRewardPaid(playerId, id) || !hasConfiguredReward(id)) {
             return false;
         }
 
-        long reward = getConfiguredFragmentReward(id);
-        data.set(root + ".status", "completed");
-        data.set(root + ".reward-paid", true);
-        if (reward > 0L) {
-            data.set(playerRoot(player.getUniqueId()) + ".fragments",
-                    Math.addExact(getFragments(player.getUniqueId()), reward));
+        List<ItemStack> rewardItems = buildRewardStacks(id);
+        if (rewardItems == null) {
+            plugin.getLogger().warning("Cannot pay configured reward for quest '" + id
+                    + "' to " + player.getName() + ": a reward item ID is invalid or unavailable.");
+            return false;
         }
-        // Completion marker and any configured fragment payout are saved together.
+
+        long fragments = getConfiguredFragmentReward(id);
+        // Save the once-only marker and fragment balance before giving items. This
+        // prefers no duplicate payout after a crash; the player can never claim twice.
+        data.set(questRoot + ".reward-paid", true);
+        if (fragments > 0L) {
+            data.set(playerRoot(playerId) + ".fragments",
+                    addWithoutOverflow(getFragments(playerId), fragments));
+        }
         save();
+
+        for (ItemStack stack : rewardItems) {
+            player.getInventory().addItem(stack).values()
+                    .forEach(leftover -> player.getWorld().dropItemNaturally(player.getLocation(), leftover));
+        }
         return true;
+    }
+
+    private List<ItemStack> buildRewardStacks(String id) {
+        List<Map<?, ?>> definitions = plugin.getConfig().getMapList("quests.definitions." + id + ".reward-items");
+        List<ItemStack> result = new ArrayList<>();
+        for (Map<?, ?> definition : definitions) {
+            Object rawId = definition.get("id");
+            Object rawAmount = definition.get("amount");
+            if (!(rawId instanceof String itemId) || itemId.isBlank() || !(rawAmount instanceof Number number)) {
+                return null;
+            }
+            double numericAmount = number.doubleValue();
+            if (numericAmount != Math.rint(numericAmount) || numericAmount < 1 || numericAmount > 2304) {
+                return null;
+            }
+            ItemStack base = plugin.getKeyItemFactory().createConfiguredItem(itemId);
+            if (base == null || base.getType().isAir()) {
+                return null;
+            }
+            int remaining = (int) numericAmount;
+            int maxStack = Math.max(1, base.getMaxStackSize());
+            while (remaining > 0) {
+                int size = Math.min(remaining, maxStack);
+                ItemStack stack = base.clone();
+                stack.setAmount(size);
+                result.add(stack);
+                remaining -= size;
+            }
+        }
+        return result;
+    }
+
+    public boolean hasConfiguredReward(String id) {
+        return getConfiguredFragmentReward(id) > 0L
+                || !plugin.getConfig().getMapList("quests.definitions." + id + ".reward-items").isEmpty();
+    }
+
+    public boolean isRewardPaid(UUID playerId, String id) {
+        return data.getBoolean(questRoot(playerId, id) + ".reward-paid", false);
     }
 
     public boolean isActive(UUID playerId, String id) {
@@ -157,8 +230,17 @@ public final class HalloweenQuestManager {
                 player.sendMessage(plugin.color("&f" + getTitle(id) + " &8(" + id + ")"));
                 player.sendMessage(plugin.color("&7Stav: &e" + status));
                 player.sendMessage(plugin.color("&7Postup: &d" + getProgress(playerId, id) + "&7/&d" + getTarget(id)));
-                player.sendMessage(plugin.color("&7Jednorázová odměna ve fragmentech: &d"
-                        + (status.equals("completed") ? "již vyřízeno" : getConfiguredFragmentReward(id))));
+                String rewardStatus;
+                if (!status.equals("completed")) {
+                    rewardStatus = hasConfiguredReward(id) ? "nastavena v konfiguraci" : "zatím není domluvena";
+                } else if (isRewardPaid(playerId, id)) {
+                    rewardStatus = "vyplacena";
+                } else if (hasConfiguredReward(id)) {
+                    rewardStatus = "čeká na vyzvednutí";
+                } else {
+                    rewardStatus = "zatím není domluvena";
+                }
+                player.sendMessage(plugin.color("&7Jednorázová odměna: &d" + rewardStatus));
             }
             player.sendMessage(plugin.color("&8&m--------------------------------"));
             return;
@@ -185,6 +267,11 @@ public final class HalloweenQuestManager {
         } catch (IOException ex) {
             plugin.getLogger().severe("Could not save quest progress: " + ex.getMessage());
         }
+    }
+
+    private long addWithoutOverflow(long current, long addition) {
+        if (addition <= 0L) return current;
+        return Long.MAX_VALUE - current < addition ? Long.MAX_VALUE : current + addition;
     }
 
     private String playerRoot(UUID playerId) {

@@ -10,19 +10,20 @@ Use UplineDialogues as the dialogue editor and HalloweenCore as the persistent q
 4. Build response choices and branch each option to the next dialogue node in the editor.
 5. Where a branch should start a quest, add a command action run as the player: halloween quest start <quest-id>.
 6. Where a branch verifies that an item was provided, first configure the UplineDialogues condition and inventory action. Only on the successful branch add the command action halloween quest progress <quest-id> 1 and then halloween quest complete <quest-id>. Set these state-changing actions to run as OP; normal players cannot directly alter quest progress or completion.
-7. Do not set a fragment amount or grant an item/key until that reward is explicitly agreed. A quest with no reward configuration pays zero fragments.
+7. Do not set a fragment amount or grant an item/key until that reward is explicitly agreed. A quest with no reward configuration pays no fragments and gives no items.
 
 ## Quest commands
 
 - /halloween quest start <id> starts an unfinished quest for the command's player.
 - /halloween quest progress <id> <amount> advances an active quest; admin/OP action only.
 - /halloween quest complete <id> marks an active quest completed once its configured target is met; admin/OP action only.
-- /halloween quest status [id] shows progress.
+- /halloween quest status [id] shows progress and reward status.
+- /halloween quest claim <id> claims a configured reward once if the quest was completed before a reward was configured.
 - /halloween fragments shows the player's accumulated fragments.
 
 IDs may contain lowercase letters, numbers, dashes and underscores, up to 48 characters. If no definition exists, the title is based on the ID, target defaults to 1 and reward-fragments defaults to 0.
 
-To define a title, target or reward amount, add a definition under quests.definitions in config.yml. Leave the section empty while the quest design is still being agreed. A configured reward-fragments value is paid when the quest is completed and is protected against duplicate payment.
+To define a title, target or reward amount, add a definition under quests.definitions in config.yml. Leave the section empty while the quest design is still being agreed. Optional fields are title, target, reward-fragments and reward-items. reward-items accepts configured item IDs and amounts, but do not populate it until the exact items and amounts are agreed. A configured reward is paid when the quest is completed and is protected against duplicate payment. If a reward is configured only after the quest was completed, the player can claim it once with /halloween quest claim <id>.
 
 ## Placeholders (PlaceholderAPI optional)
 
