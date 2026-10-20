@@ -1,9 +1,5 @@
 # Only the new dialogue-quest and secret-room systems are configured here.
 # The legacy mobs, bosses, random events, music, shader, shop and old progression systems were removed.
-worlds:
-  blocked:
-    - Spawn
-
 quests:
   # Leave definitions empty until quest objectives and rewards are agreed.
   # A quest without a definition has target 1, 0 fragments and no item reward.
@@ -20,5 +16,4 @@ rooms:
   blocked-worlds:
     - Spawn
   key-item-id: warriorland_halloween:secret_room_key
-  # Intentionally empty. Chest contents must be agreed before they are configured.
-  chest-contents: []
+  # The generated chest is intentionally empty until the exact contents are agreed.

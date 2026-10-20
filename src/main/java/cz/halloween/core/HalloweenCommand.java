@@ -10,7 +10,6 @@ import org.bukkit.entity.Player;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class HalloweenCommand implements CommandExecutor, TabCompleter {
@@ -82,7 +81,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             } else if (manager.claimConfiguredReward(player, id)) {
                 long fragments = manager.getConfiguredFragmentReward(id);
                 if (fragments > 0L) {
-                    player.sendMessage(plugin.color("&5&lODMĚNA VYZVEDNUTA &8» &d+" + fragments + " fragmentů."));
+                    player.sendMessage(plugin.color("&5&lODMĚNA VYZVEDNUTA &8» &d+" + fragments + " fragmentů; případné předměty dle konfigurace."));
                 } else {
                     player.sendMessage(plugin.color("&5&lODMĚNA VYZVEDNUTA &8» &dPředměty podle konfigurace."));
                 }
@@ -308,6 +307,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&5&lHALLOWEENCORE — NOVÁ VERZE"));
         sender.sendMessage(plugin.color("&d/halloween quest status [id] &7- stav a postup úkolů"));
         sender.sendMessage(plugin.color("&d/halloween quest start <id> &7- přijmout úkol z rozhovoru"));
+        sender.sendMessage(plugin.color("&d/halloween quest claim <id> &7- jednorázově vyzvednout později nastavenou odměnu"));
         sender.sendMessage(plugin.color("&d/halloween fragments &7- tvoje fragmenty z dokončených úkolů"));
         sender.sendMessage(plugin.color("&d/halloween rooms status &7- stav generování tajných místností"));
         sender.sendMessage(plugin.color("&d/halloween key give <počet> &7- administrační nástroj pro klíče"));
@@ -331,7 +331,8 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return filter(List.of("give"), args[1]);
         }
         if (args.length == 3 && (args[0].equalsIgnoreCase("quest") || args[0].equalsIgnoreCase("quests"))
-                && args[1].equalsIgnoreCase("status") && sender instanceof Player player) {
+                && (args[1].equalsIgnoreCase("status") || args[1].equalsIgnoreCase("claim") || args[1].equalsIgnoreCase("complete"))
+                && sender instanceof Player player) {
             return filter(new ArrayList<>(plugin.getQuestManager().getQuestIds(player.getUniqueId())), args[2]);
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")

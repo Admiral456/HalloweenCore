@@ -28,7 +28,7 @@ Optional PlaceholderAPI integration exposes:
 
 ## Quest rewards are deliberately unset
 
-The default configuration has no quest definitions. A later-defined quest may optionally configure reward-fragments and reward-items, but defaults to 0 fragments and no items. If a quest is completed before its reward is agreed, completion is saved without payment; once a reward is configured, it can be claimed once with /halloween quest claim <id>. No money, equipment, chest loot, candy payout or key source is assumed. The exact contents and reward must be chosen before they are configured.
+The default configuration has no quest definitions. A later-defined quest may optionally configure reward-fragments and reward-items, but defaults to 0 fragments and no items. If a quest is completed before its reward is agreed, completion is saved without payment; once a reward is configured, it can be claimed once with /halloween quest claim <id>. No money, equipment, chest loot, candy payout or key source is configured by default. Item rewards are supported by configuration but remain empty until the exact contents and reward are agreed.
 
 ## Secret rooms and keys
 
