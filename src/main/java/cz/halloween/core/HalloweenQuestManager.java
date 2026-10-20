@@ -108,7 +108,7 @@ public final class HalloweenQuestManager {
             return false;
         }
 
-        long fragments = getConfiguredFragmentReward(id);
+        long fragments = rollConfiguredFragmentReward(id);
         // Save the once-only marker and fragment balance before giving items. This
         // prefers no duplicate payout after a crash; the player can never claim twice.
         data.set(questRoot + ".reward-paid", true);
@@ -586,13 +586,45 @@ public final class HalloweenQuestManager {
         if (plugin.getConfig().contains(path + ".reward-fragments")) {
             return Math.max(0L, plugin.getConfig().getLong(path + ".reward-fragments", 0L));
         }
+        return rewardRange(id)[0];
+    }
+
+    /** Text shown in UplineDialogues; it reflects the same configured range used at payout. */
+    public String getConfiguredFragmentRewardDisplay(String id) {
+        String path = "quests.definitions." + id;
+        if (!isConfiguredQuest(id)) return "0";
+        if (plugin.getConfig().contains(path + ".reward-fragments")) {
+            return Long.toString(Math.max(0L, plugin.getConfig().getLong(path + ".reward-fragments", 0L)));
+        }
+        long[] range = rewardRange(id);
+        return range[0] == range[1] ? Long.toString(range[0]) : range[0] + "–" + range[1];
+    }
+
+    private long rollConfiguredFragmentReward(String id) {
+        String path = "quests.definitions." + id;
+        if (plugin.getConfig().contains(path + ".reward-fragments")) {
+            return Math.max(0L, plugin.getConfig().getLong(path + ".reward-fragments", 0L));
+        }
+        long[] range = rewardRange(id);
+        if (range[1] <= range[0]) return range[0];
+        return range[0] + java.util.concurrent.ThreadLocalRandom.current().nextLong(range[1] - range[0] + 1L);
+    }
+
+    private long[] rewardRange(String id) {
         String difficulty = getDifficulty(id).toLowerCase(java.util.Locale.ROOT);
         String tier;
         if (difficulty.contains("velmi")) tier = "very-hard";
         else if (difficulty.contains("těž") || difficulty.contains("tez")) tier = "hard";
         else if (difficulty.contains("střed") || difficulty.contains("stred")) tier = "medium";
         else tier = "light";
-        return Math.max(0L, plugin.getConfig().getLong("quests.default-reward-fragments." + tier, 0L));
+        String root = "quests.default-reward-fragments." + tier;
+        if (plugin.getConfig().contains(root + ".min")) {
+            long min = Math.max(0L, plugin.getConfig().getLong(root + ".min", 0L));
+            long max = Math.max(min, plugin.getConfig().getLong(root + ".max", min));
+            return new long[]{min, max};
+        }
+        long fixed = Math.max(0L, plugin.getConfig().getLong(root, 0L));
+        return new long[]{fixed, fixed};
     }
 
     public String getTitle(String id) {
