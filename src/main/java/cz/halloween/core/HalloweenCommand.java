@@ -45,7 +45,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             if (sender instanceof Player player) {
                 plugin.getQuestManager().showStatus(player, null);
             } else {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween quest <start|turnin|progress|complete|claim|status> ..."));
+                sender.sendMessage(plugin.color("&cPoužití: /halloween quest <offer|accept-offer|decline-offer|turnin-offer|start|turnin|progress|complete|claim|status> ..."));
             }
             return true;
         }
@@ -61,19 +61,62 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
 
 
-        if (action.equals("turnin")) {
+        if (action.equals("offer")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(plugin.color("&cNáhodnou nabídku úkolu může připravit pouze hráč ve hře."));
+                return true;
+            }
+            // Deliberately silent on success: UplineDialogues displays the returned quest via PlaceholderAPI.
+            plugin.getQuestManager().prepareVillagerOffer(player);
+            return true;
+        }
+
+        if (action.equals("accept-offer")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(plugin.color("&cNabídku může přijmout pouze hráč ve hře."));
+                return true;
+            }
+            if (plugin.getQuestManager().acceptVillagerOffer(player)) {
+                return true; // The dialogue itself displays the confirmation.
+            }
+            player.sendMessage(plugin.color("&cNemáš připravenou novou nabídku. Otevři rozhovor s vesničanem a požádej o práci."));
+            return true;
+        }
+
+        if (action.equals("decline-offer")) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(plugin.color("&cNabídku může odmítnout pouze hráč ve hře."));
+                return true;
+            }
+            if (!plugin.getQuestManager().declineVillagerOffer(player)) {
+                player.sendMessage(plugin.color("&cNemáš nabídku, kterou by šlo odmítnout."));
+            }
+            return true; // The dialogue displays the decline response.
+        }
+
+        if (action.equals("turnin") || action.equals("turnin-offer")) {
             if (!(sender instanceof Player player)) {
                 sender.sendMessage(plugin.color("&cOdevzdání úkolu může provést pouze hráč ve hře."));
                 return true;
             }
-            if (args.length != 3) {
-                sender.sendMessage(plugin.color("&cPoužití: /halloween quest turnin <id>"));
+            boolean offeredQuest = action.equals("turnin-offer");
+            if ((!offeredQuest && args.length != 3) || (offeredQuest && args.length != 2)) {
+                sender.sendMessage(plugin.color(offeredQuest
+                        ? "&cPoužití: /halloween quest turnin-offer"
+                        : "&cPoužití: /halloween quest turnin <id>"));
                 return true;
             }
             var manager = plugin.getQuestManager();
-            String id = manager.normalizeId(args[2]);
+            String id = offeredQuest
+                    ? manager.getVillagerQuestId(player.getUniqueId())
+                    : manager.normalizeId(args[2]);
+            if (offeredQuest && !manager.isCurrentVillagerQuestActive(player, id)) {
+                player.sendMessage(plugin.color("&cNemáš aktivní náhodný úkol od vesničana, který by šlo odevzdat."));
+                return true;
+            }
             HalloweenQuestManager.TurnInResult result = manager.turnIn(player, id);
             if (result.success()) {
+                if (offeredQuest) manager.markVillagerQuestCompleted(player, id);
                 player.sendMessage(plugin.color("&5&lÚKOL DOKONČEN &8» &d" + manager.getTitle(id)));
                 if (manager.isRewardPaid(player.getUniqueId(), id)) {
                     long fragments = manager.getConfiguredFragmentReward(id);
@@ -484,6 +527,10 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
         sender.sendMessage(plugin.color("&5&lHALLOWEENCORE — NOVÁ VERZE"));
+        sender.sendMessage(plugin.color("&d/halloween quest offer &7- připravit náhodný úkol do dialogu NPC"));
+        sender.sendMessage(plugin.color("&d/halloween quest accept-offer &7- přijmout aktuální nabídku NPC"));
+        sender.sendMessage(plugin.color("&d/halloween quest decline-offer &7- odmítnout aktuální nabídku NPC"));
+        sender.sendMessage(plugin.color("&d/halloween quest turnin-offer &7- odevzdat aktuální úkol od vesničana"));
         sender.sendMessage(plugin.color("&d/halloween quest status [id] &7- stav a postup úkolů"));
         sender.sendMessage(plugin.color("&d/halloween quest start <id> &7- přijmout úkol z rozhovoru"));
         sender.sendMessage(plugin.color("&d/halloween quest turnin <id> &7- zkontroluje a odebere požadované předměty; dokončí úkol"));
@@ -508,7 +555,7 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             return filter(List.of("quest", "quests", "fragments", "rooms", "locate", "key", "reload"), args[0]);
         }
         if (args.length == 2 && (args[0].equalsIgnoreCase("quest") || args[0].equalsIgnoreCase("quests"))) {
-            return filter(List.of("start", "turnin", "progress", "complete", "claim", "status"), args[1]);
+            return filter(List.of("offer", "accept-offer", "decline-offer", "turnin-offer", "start", "turnin", "progress", "complete", "claim", "status"), args[1]);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("rooms")) {
             return filter(List.of("status", "generate", "verify", "list"), args[1]);
