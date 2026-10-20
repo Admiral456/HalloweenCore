@@ -239,23 +239,17 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         }
 
         Player target;
-        if (cursor < args.length) {
-            target = Bukkit.getPlayerExact(args[cursor]);
-            if (target == null) {
-                sender.sendMessage(ChatColor.RED + "Hráč musí být online.");
+        int amount = 1;
+        if (cursor >= args.length) {
+            if (!(sender instanceof Player player)) {
+                sender.sendMessage(ChatColor.YELLOW
+                        + "Použití z konzole: /halloween key give [common|rare|legendary] <hráč> [počet]");
                 return;
             }
-            cursor++;
-        } else if (sender instanceof Player player) {
             target = player;
-        } else {
-            sender.sendMessage(ChatColor.YELLOW
-                    + "Použití z konzole: /halloween key give [common|rare|legendary] <hráč> [počet]");
-            return;
-        }
-
-        int amount = 1;
-        if (cursor < args.length) {
+        } else if (sender instanceof Player player && isPositiveInteger(args[cursor])) {
+            // Convenient self-grant forms: /halloween key give 3 and /halloween key give rare 3.
+            target = player;
             try {
                 amount = Integer.parseInt(args[cursor]);
             } catch (NumberFormatException exception) {
@@ -263,7 +257,24 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
                 return;
             }
             cursor++;
+        } else {
+            target = Bukkit.getPlayerExact(args[cursor]);
+            if (target == null) {
+                sender.sendMessage(ChatColor.RED + "Hráč musí být online.");
+                return;
+            }
+            cursor++;
+            if (cursor < args.length) {
+                try {
+                    amount = Integer.parseInt(args[cursor]);
+                } catch (NumberFormatException exception) {
+                    sender.sendMessage(ChatColor.RED + "Počet musí být celé číslo.");
+                    return;
+                }
+                cursor++;
+            }
         }
+
         if (cursor < args.length) {
             sender.sendMessage(ChatColor.YELLOW
                     + "Použití: /halloween key give [common|rare|legendary] [hráč] [počet]");
@@ -287,6 +298,14 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         target.sendMessage(ChatColor.GOLD + "Získal jsi " + amount + "× " + rarityLabel
                 + " klíč tajné místnosti.");
         if (sender != target) sender.sendMessage(ChatColor.GREEN + "Klíče předány hráči " + target.getName() + ".");
+    }
+
+    private boolean isPositiveInteger(String value) {
+        try {
+            return Integer.parseInt(value) > 0;
+        } catch (NumberFormatException exception) {
+            return false;
+        }
     }
 
     private void sendHelp(CommandSender sender) {
