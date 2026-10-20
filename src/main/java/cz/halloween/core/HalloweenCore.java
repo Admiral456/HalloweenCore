@@ -14,7 +14,11 @@ import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public final class HalloweenCore extends JavaPlugin implements Listener {
     private HalloweenQuestManager questManager;
@@ -24,8 +28,10 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
     @Override
     public void onEnable() {
         saveDefaultConfig();
+        migrateLegacyQuestDefaults();
         removeLegacyConfiguration();
         getConfig().options().copyDefaults(true);
+        getConfig().set("config-version", 2);
         saveConfig();
 
         keyItemFactory = new KeyItemFactory(this);
@@ -151,6 +157,101 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
             }
         }
         return removed;
+    }
+
+
+    /**
+     * Upgrade stock tasks from pre-v2 configs without overwriting custom amounts.
+     * A task is migrated only when its requirements still exactly match the known
+     * old defaults. Custom quest IDs and customized requirements are preserved.
+     */
+    private void migrateLegacyQuestDefaults() {
+        if (getConfig().getValues(false).containsKey("config-version")) return;
+
+        try (var stream = getResource("config.yml")) {
+            if (stream == null) {
+                getLogger().warning("Cannot migrate quest defaults: bundled config.yml is missing.");
+                return;
+            }
+            YamlConfiguration defaults = YamlConfiguration.loadConfiguration(
+                    new InputStreamReader(stream, StandardCharsets.UTF_8));
+            int migrated = 0;
+            for (Map.Entry<String, Map<String, Integer>> entry : legacyDefaultRequirements().entrySet()) {
+                String id = entry.getKey();
+                String root = "quests.definitions." + id;
+                if (!matchesRequiredItems(getConfig().getMapList(root + ".required-items"), entry.getValue())) {
+                    continue;
+                }
+                getConfig().set(root + ".required-items", defaults.getMapList(root + ".required-items"));
+                String newDescription = defaults.getString(root + ".description");
+                if (newDescription != null) getConfig().set(root + ".description", newDescription);
+                migrated++;
+            }
+
+            updateOldRewardDefault(defaults, "light", 3);
+            updateOldRewardDefault(defaults, "medium", 5);
+            updateOldRewardDefault(defaults, "hard", 8);
+            updateOldRewardDefault(defaults, "very-hard", 12);
+            getConfig().set("config-version", 2);
+            if (migrated > 0) {
+                getLogger().info("Updated " + migrated
+                        + " unchanged built-in quest definition(s) to schema v2. Custom quest definitions were preserved.");
+            } else {
+                getLogger().info("Migrated existing HalloweenCore configuration to schema v2; custom quest definitions were preserved.");
+            }
+            saveConfig();
+        } catch (Exception ex) {
+            getLogger().severe("Could not migrate HalloweenCore config to schema v2: " + ex.getMessage());
+        }
+    }
+
+    private void updateOldRewardDefault(YamlConfiguration defaults, String tier, long oldValue) {
+        String path = "quests.default-reward-fragments." + tier;
+        if (getConfig().getLong(path, Long.MIN_VALUE) == oldValue) {
+            getConfig().set(path, defaults.getLong(path));
+        }
+    }
+
+    private boolean matchesRequiredItems(List<Map<?, ?>> actual, Map<String, Integer> expected) {
+        if (actual.size() != expected.size()) return false;
+        Map<String, Integer> parsed = new HashMap<>();
+        for (Map<?, ?> requirement : actual) {
+            Object id = requirement.get("id");
+            Object amount = requirement.get("amount");
+            if (!(id instanceof String itemId) || !(amount instanceof Number number)
+                    || number.doubleValue() != Math.rint(number.doubleValue())) return false;
+            if (parsed.put(itemId.toLowerCase(java.util.Locale.ROOT), number.intValue()) != null) return false;
+        }
+        return parsed.equals(expected);
+    }
+
+    private Map<String, Map<String, Integer>> legacyDefaultRequirements() {
+        return Map.ofEntries(
+                Map.entry("fresh_harvest", Map.of("minecraft:wheat", 16)),
+                Map.entry("stone_for_repairs", Map.of("minecraft:cobblestone", 24)),
+                Map.entry("paper_trail", Map.of("minecraft:paper", 12)),
+                Map.entry("food_for_watch", Map.of("minecraft:bread", 8)),
+                Map.entry("village_library", Map.of("minecraft:book", 4)),
+                Map.entry("copper_samples", Map.of("minecraft:copper_ingot", 16)),
+                Map.entry("iron_requisition", Map.of("minecraft:iron_ingot", 12)),
+                Map.entry("amethyst_study", Map.of("minecraft:amethyst_shard", 6)),
+                Map.entry("alchemist_components", Map.of("minecraft:spider_eye", 8, "minecraft:glass_bottle", 8, "minecraft:blaze_powder", 4)),
+                Map.entry("archivist_records", Map.of("minecraft:book", 8, "minecraft:paper", 12)),
+                Map.entry("blacksmith_order", Map.of("minecraft:iron_ingot", 24, "minecraft:gold_ingot", 12)),
+                Map.entry("deep_expedition", Map.of("minecraft:ender_pearl", 3, "minecraft:blaze_powder", 8)),
+                Map.entry("sealed_archive", Map.of("minecraft:book", 8, "minecraft:paper", 16, "minecraft:amethyst_shard", 6)),
+                Map.entry("night_research", Map.of("minecraft:spider_eye", 8, "minecraft:iron_ingot", 16, "minecraft:ender_pearl", 4)),
+                Map.entry("mushroom_samples", Map.of("minecraft:red_mushroom", 12, "minecraft:brown_mushroom", 12)),
+                Map.entry("wool_for_bedding", Map.of("minecraft:white_wool", 16)),
+                Map.entry("river_catch", Map.of("minecraft:cod", 8, "minecraft:salmon", 4)),
+                Map.entry("clay_for_potter", Map.of("minecraft:clay_ball", 24)),
+                Map.entry("lantern_supplies", Map.of("minecraft:torch", 16)),
+                Map.entry("honey_for_healer", Map.of("minecraft:honey_bottle", 4)),
+                Map.entry("forest_materials", Map.of("minecraft:oak_log", 16)),
+                Map.entry("leather_repair", Map.of("minecraft:leather", 12)),
+                Map.entry("map_and_compass", Map.of("minecraft:compass", 1, "minecraft:paper", 8)),
+                Map.entry("miner_samples", Map.of("minecraft:coal", 12, "minecraft:raw_iron", 8))
+        );
     }
 
     private void removeLegacyConfiguration() {
