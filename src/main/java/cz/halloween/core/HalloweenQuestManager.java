@@ -252,36 +252,7 @@ public final class HalloweenQuestManager {
         if (!complete(player, id)) {
             return new TurnInResult(false, "completion-failed");
         }
-        rollBonusKeyDrop(player);
         return new TurnInResult(true, "completed");
-    }
-
-    private void rollBonusKeyDrop(Player player) {
-        // Absolute mutually exclusive probabilities, not relative rarity weights.
-        double roll = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
-        double common = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.common", 0.40D));
-        double rare = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.rare", 0.10D));
-        double legendary = clampProbability(plugin.getConfig().getDouble("quests.key-drop-chances.legendary", 0.05D));
-
-        KeyItemFactory.Rarity rarity;
-        if (roll < common) {
-            rarity = KeyItemFactory.Rarity.COMMON;
-        } else if (roll < common + rare) {
-            rarity = KeyItemFactory.Rarity.RARE;
-        } else if (roll < common + rare + legendary) {
-            rarity = KeyItemFactory.Rarity.LEGENDARY;
-        } else {
-            return; // No key this time: 45% with the default configuration.
-        }
-
-        plugin.getKeyItemFactory().give(player, rarity, 1);
-        player.sendMessage(plugin.color("&5&lBONUSOVÁ ODMĚNA &8» &7Štěstí! Získal jsi "
-                + rarity.color() + rarity.displayName() + " klíč tajné místnosti&7."));
-    }
-
-    private double clampProbability(double value) {
-        if (!Double.isFinite(value)) return 0.0D;
-        return Math.max(0.0D, Math.min(1.0D, value));
     }
 
     private int countMatchingItems(Player player, ItemStack template) {
