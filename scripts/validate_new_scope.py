@@ -201,7 +201,7 @@ for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
                 "acceptVillagerOffer", "declineVillagerOffer", "markVillagerQuestCompleted",
                 "getVillagerQuestStatus", "getVillagerQuestTurnInStatus", "recordVillagerQuestTurnInResult",
                 "isRepeatable", "isReadyForOffer", "getInvalidQuestIds",
-                "villager-offer-weight", "default-reward-fragments"):
+                "villager-offer-weight", "default-reward-fragments", "rollBonusKeyDrop(player, id)", "keyDropChance", "keyDropTier", "quest-key-drop-chances-by-difficulty"):
     if feature not in quest_java:
         fail(f"quest turn-in/random-offer contract is missing: {feature}")
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
@@ -266,9 +266,19 @@ for quest_id, legendary_chance in (
     ("diamond_quota", "0.14"),
     ("trident_hunt", "0.20"),
 ):
-    quest_pattern = rf"^    {re.escape(quest_id)}:\\n([\\s\\S]*?)(?=^    [a-z][a-z0-9_-]*:\\s*$|^rooms:)"
-    quest_match = re.search(quest_pattern, config_text, flags=re.MULTILINE)
-    if not quest_match or f"legendary: {legendary_chance}" not in quest_match.group(1):
+    quest_lines = config_text.splitlines()
+    quest_start = next((i for i, line in enumerate(quest_lines) if line == f"    {quest_id}:"), -1)
+    if quest_start < 0:
+        fail(f"hard quest definition is missing: {quest_id}")
+    quest_end = len(quest_lines)
+    for line_no in range(quest_start + 1, len(quest_lines)):
+        line = quest_lines[line_no]
+        indentation = len(line) - len(line.lstrip(" "))
+        if line == "rooms:" or (line.endswith(":") and indentation == 4):
+            quest_end = line_no
+            break
+    quest_text = "\\n".join(quest_lines[quest_start:quest_end])
+    if f"legendary: {legendary_chance}" not in quest_text:
         fail(f"hard quest {quest_id} must configure its own legendary-key chance")
 
 for one_time_id in ("hidden_room_report", "sealed_archive"):
