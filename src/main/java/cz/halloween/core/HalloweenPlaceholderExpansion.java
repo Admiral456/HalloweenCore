@@ -60,7 +60,7 @@ public final class HalloweenPlaceholderExpansion extends PlaceholderExpansion {
                 case "description" -> manager.getDescription(id);
                 case "story" -> plugin.getConfig().getString("quests.definitions." + id + ".dialogue-story", manager.getDescription(id));
                 case "difficulty" -> manager.getDifficulty(id);
-                case "reward" -> Long.toString(manager.getConfiguredFragmentReward(id));
+                case "reward" -> manager.getConfiguredFragmentRewardDisplay(id);
                 case "reward_items" -> manager.getConfiguredRewardItemsDescription(id);
                 default -> null;
             };
