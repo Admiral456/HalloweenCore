@@ -196,7 +196,7 @@ for feature in ('action.equals("turnin")', "rooms generate", "private boolean ha
 if "verifyRecordedRooms" not in command_java or 'action.equals("verify")' not in command_java:
     fail("admin room integrity verification command is missing")
 placeholder_java = (JAVA_DIR / "HalloweenPlaceholderExpansion.java").read_text(encoding="utf-8")
-for field in ("villager_quest_", 'case "story"', 'case "reward"'):
+for field in ("villager_quest_", 'case "story"', 'case "reward"', 'case "reward_items"'):
     if field not in placeholder_java:
         fail(f"random villager dialogue placeholder support is missing: {field}")
 
@@ -207,7 +207,7 @@ dialogue_text = dialogue_library.read_text(encoding="utf-8")
 for placeholder in (
     "%halloween_villager_quest_status%", "%halloween_villager_quest_title%",
     "%halloween_villager_quest_description%", "%halloween_villager_quest_story%",
-    "%halloween_villager_quest_reward%"
+    "%halloween_villager_quest_reward%", "%halloween_villager_quest_reward_items%"
 ):
     if placeholder not in dialogue_text:
         fail(f"random villager dialogue is missing required placeholder {placeholder}")
