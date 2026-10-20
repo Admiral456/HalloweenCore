@@ -69,12 +69,11 @@ for legacy in ("random-events:", "grave-encounters:", "witching-hour:", "automat
     if legacy in config:
         raise SystemExit(f"Legacy configuration remains: {legacy}")
 
-# Guard the agreed reward economy so a later edit cannot accidentally remove a tier or
+# Guard the agreed reward economy so a later edit cannot remove a tier or
 # introduce a custom-texture dependency into the loot tables.
-if "\\nquest-rewards:" not in config:
+if "quest-rewards:" not in config:
     raise SystemExit("Missing quest-rewards configuration")
-room_config = config.split("\\nquest-rewards:", 1)[0]
-reward_config = config.split("\\nquest-rewards:", 1)[1]
+room_config, reward_config = config.rsplit("quest-rewards:", 1)
 for required in (
     "rarity-weights:",
     "min-fragments: 8", "max-fragments: 16",
