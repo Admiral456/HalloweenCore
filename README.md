@@ -16,6 +16,10 @@ Tato pracovní verze je omezená na dohodnutý rozsah: dialogové questy s Uplin
 
 ## Dialogy s vesničany
 
+Podrobný ruční scénář pro editor NPC dialogů je v [docs/DIALOGUE_LIBRARY_CZ.md](docs/DIALOGUE_LIBRARY_CZ.md). Není to automaticky importovatelný soubor; uzly musí být vytvořeny a přiřazeny NPC v UplineDialogues.
+
+**Důležité:** HalloweenCore eviduje stav a odměnu, ale samo neověřuje dodání konkrétních předmětů, zabití mobů ani navštívení místa. Dialog musí mít skutečné podmínky před akcí `/halloween quest complete <id>`; jinak by šlo úkol obejít.
+
 UplineDialogues zajišťuje editor NPC rozhovorů, volby odpovědí, větvení a akce příkazů. HalloweenCore používá jeho akce jako rozhraní do questové evidence; nevytváří vlastní dialogové GUI.
 
 Příklady příkazů pro dialog (ID jsou jen ukázky, nejsou to předem definované questy):
