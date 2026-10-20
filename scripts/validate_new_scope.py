@@ -135,8 +135,13 @@ expected_quests = {
     "clay_for_potter", "lantern_supplies", "honey_for_healer", "forest_materials",
     "leather_repair", "map_and_compass", "miner_samples",
 }
-if set(quest_ids) != expected_quests:
-    fail(f"quest catalogue mismatch: found {sorted(quest_ids)}")
+missing_base_quests = expected_quests - set(quest_ids)
+if missing_base_quests:
+    fail(f"base quest catalogue is missing: {sorted(missing_base_quests)}")
+if len(quest_ids) != len(set(quest_ids)):
+    fail("quest catalogue contains duplicate IDs")
+
+# Additional custom quest definitions are intentionally allowed in quests.definitions.
 for difficulty in ("Lehký", "Střední", "Těžký", "Velmi těžký"):
     if difficulty not in quest_block:
         fail(f"quest catalogue is missing the {difficulty} difficulty tier")
