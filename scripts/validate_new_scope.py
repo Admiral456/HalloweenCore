@@ -162,6 +162,7 @@ for feature in (
     "generateTestRoom", "findAccessTunnel", "isSafeTunnelCeiling", "world.isChunkLoaded", "isNaturalCaveOpening", "decorateEntranceArch", "locateNearest", "locateAll", "onPlayerEnterSecretRoom",
     "setDecorationIfAir", "secret_room_locked", "secret_room_rarity", "secret_room_managed", "consumeOne",
     "migrateLegacyRoomRecords", "rollRarity", "roomShellMaterial", "getChestRarity",
+    "ROOM_SHELL_MATERIALS", "snapshotCandidateBlocks", "restoreCandidateBlocks",
     "getType().isAir()", "protectRecordedChestsInLoadedChunks", "isRoomStructureIntact",
     "verifyRecordedRooms", "onProtectedChestBreak",
     "onProtectedChestBurn", "onEntityExplosion", "onBlockExplosion", "onProtectedChestPistonExtend",

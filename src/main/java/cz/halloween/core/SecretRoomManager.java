@@ -60,6 +60,14 @@ public final class SecretRoomManager implements Listener {
             Material.SMOOTH_BASALT
     );
 
+    // Exact palette used by all three generated room tiers and their entrance arches.
+    private static final Set<Material> ROOM_SHELL_MATERIALS = Set.of(
+            Material.DEEPSLATE_BRICKS, Material.COBBLED_DEEPSLATE, Material.DEEPSLATE_TILES,
+            Material.CRACKED_DEEPSLATE_BRICKS, Material.POLISHED_DEEPSLATE, Material.CHISELED_DEEPSLATE,
+            Material.AMETHYST_BLOCK, Material.GILDED_BLACKSTONE, Material.GOLD_BLOCK,
+            Material.POLISHED_BLACKSTONE_BRICKS, Material.CHISELED_POLISHED_BLACKSTONE
+    );
+
     private final HalloweenCore plugin;
     private final KeyItemFactory keyItemFactory;
     private final NamespacedKey lockedKey;
@@ -164,7 +172,7 @@ public final class SecretRoomManager implements Listener {
         }
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
     public void onNewChunk(ChunkLoadEvent event) {
         if (!event.isNewChunk() || !plugin.getConfig().getBoolean("rooms.enabled", true)) return;
         Chunk chunk = event.getChunk();
@@ -446,6 +454,34 @@ public final class SecretRoomManager implements Listener {
         player.sendMessage(plugin.color("&8Místnost je ukrytá v přírodním kameni; hledej bezpečný vstup."));
     }
 
+    private List<BlockState> snapshotCandidateBlocks(World world, int x, int y, int z,
+                                                       AccessTunnel accessTunnel) {
+        List<BlockState> states = new ArrayList<>();
+        for (int dx = 0; dx < ROOM_WIDTH; dx++) {
+            for (int dy = 0; dy < ROOM_HEIGHT; dy++) {
+                for (int dz = 0; dz < ROOM_DEPTH; dz++) {
+                    states.add(world.getBlockAt(x + dx, y + dy, z + dz).getState());
+                }
+            }
+        }
+        for (TunnelBlock block : accessTunnel.blocks()) {
+            states.add(world.getBlockAt(block.x(), y + 1, block.z()).getState());
+            states.add(world.getBlockAt(block.x(), y + 2, block.z()).getState());
+        }
+        return states;
+    }
+
+    private void restoreCandidateBlocks(List<BlockState> states) {
+        for (int index = states.size() - 1; index >= 0; index--) {
+            BlockState state = states.get(index);
+            if (!state.update(true, false)) {
+                plugin.getLogger().severe("Could not roll back a failed secret-room candidate at "
+                        + state.getWorld().getName() + " " + state.getX() + " " + state.getY() + " "
+                        + state.getZ() + ".");
+            }
+        }
+    }
+
     private boolean isRoomStructureIntact(World world, int chestX, int chestY, int chestZ) {
         int x = chestX - ROOM_WIDTH / 2;
         int y = chestY - 1;
@@ -462,9 +498,10 @@ public final class SecretRoomManager implements Listener {
                     boolean possibleDoorCell = (dy == 1 || dy == 2)
                             && (((dx == 0 || dx == ROOM_WIDTH - 1) && dz == ROOM_DEPTH / 2)
                             || ((dz == 0 || dz == ROOM_DEPTH - 1) && dx == ROOM_WIDTH / 2));
-                    if (!possibleDoorCell && world.getBlockAt(x + dx, y + dy, z + dz).getType().isAir()) {
-                        return false;
-                    }
+                    Material shellType = world.getBlockAt(x + dx, y + dy, z + dz).getType();
+                    if (possibleDoorCell && shellType.isAir()) continue;
+                    // Water, lava, arbitrary blocks, and missing shell blocks must not count as intact.
+                    if (!ROOM_SHELL_MATERIALS.contains(shellType)) return false;
                 }
             }
         }
@@ -575,13 +612,15 @@ public final class SecretRoomManager implements Listener {
             if (accessTunnel == null) continue;
 
             KeyItemFactory.Rarity rarity = rollRarity("rooms.rarity-weights");
+            List<BlockState> originalBlocks = snapshotCandidateBlocks(world, x, y, z, accessTunnel);
             buildRoom(world, x, y, z, accessTunnel, rarity);
             int chestX = x + ROOM_WIDTH / 2;
             int chestY = y + 1;
             int chestZ = z + ROOM_DEPTH / 2;
             if (!isProtectedChest(world.getBlockAt(chestX, chestY, chestZ))
                     || !isRoomStructureIntact(world, chestX, chestY, chestZ)) {
-                plugin.getLogger().warning("Generated secret room failed the post-build integrity check at "
+                restoreCandidateBlocks(originalBlocks);
+                plugin.getLogger().warning("Room candidate was rolled back after failing the post-build integrity check at "
                         + world.getName() + " " + chestX + " " + chestY + " " + chestZ + ".");
                 return false;
             }

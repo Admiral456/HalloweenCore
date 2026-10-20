@@ -495,7 +495,9 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         sender.sendMessage(plugin.color("&d/locate halloweenroom &7- nejbližší zaznamenaná místnost"));
         sender.sendMessage(plugin.color("&d/locateall halloweenroom &7- všechny místnosti v tomto světě (admin)"));
         sender.sendMessage(plugin.color("&d/halloween rooms generate &7- testovací generování (admin)"));
-        sender.sendMessage(plugin.color("&d/halloween key give <počet> &7- administrační nástroj pro klíče"));
+        sender.sendMessage(plugin.color("&d/halloween key give <počet> &7- běžné klíče sobě (admin)"));
+        sender.sendMessage(plugin.color("&d/halloween key give <common|rare|legendary> <počet> [hráč] &7- klíče podle vzácnosti"));
+        sender.sendMessage(plugin.color("&d/halloween rooms verify &7- kontrola evidovaných místností (admin)"));
         sender.sendMessage(plugin.color("&d/halloween reload &7- reload konfigurace (admin)"));
         sender.sendMessage(plugin.color("&8Moby, bossové a původní eventy jsou z této verze odstraněni."));
         sender.sendMessage(plugin.color("&8&m--------------------------------"));
@@ -527,13 +529,17 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
         }
         if (args.length == 4 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")) {
             if (parseRarity(args[2]) != null) return filter(List.of("1", "3", "5"), args[3]);
-            return filter(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[3]);
+            if (Bukkit.getOnlinePlayers().stream().anyMatch(p -> p.getName().equalsIgnoreCase(args[2]))) {
+                return filter(List.of("1", "3", "5"), args[3]);
+            }
+            return filter(List.of("1", "3", "5"), args[3]);
         }
         if (args.length == 5 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")) {
             if (parseRarity(args[2]) != null) {
                 return filter(Bukkit.getOnlinePlayers().stream().map(Player::getName).toList(), args[4]);
             }
-            return filter(List.of("common", "rare", "legendary"), args[3]);
+            if (parseRarity(args[3]) != null) return filter(List.of("1", "3", "5"), args[4]);
+            return List.of();
         }
         return List.of();
     }
