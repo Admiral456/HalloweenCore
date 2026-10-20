@@ -1,47 +1,56 @@
-# HalloweenCore — dialogue quests and secret rooms
+# HalloweenCore — NPC dialogy a tajné podzemní místnosti
 
-HalloweenCore is being narrowed to the new agreed scope for Paper/Purpur 1.21.10 and Java 21.
+HalloweenCore je zúžený update pro Paper/Purpur 1.21.10 a Java 21. Aktivní obsah této verze tvoří questy napojené na UplineDialogues, speciální klíč a skryté podzemní místnosti.
 
-## What remains
+## Co funguje v kódu
 
-- UplineDialogues handles NPC conversations, answer choices and branching dialogue trees.
-- HalloweenCore stores quest state and progress, prevents repeat completions, and supports one-time configured fragment and item rewards. The default quest list is empty, fragment rewards default to 0, and item rewards default to an empty list.
-- Newly generated Overworld chunks can rarely contain a small sealed underground room built only into solid natural stone.
-- Each generated room contains one locked chest. A special key is required the first time it is opened; one key is consumed and the chest remains unlocked afterwards.
-- The ItemsAdder content keeps the 13 imported Stev's Halloween sweet sprites under their MIT licence, plus the new custom key texture.
+- UplineDialogues je samostatný plugin pro tvorbu a editaci rozhovorů. HalloweenCore poskytuje bezpečné questové příkazy, persistentní postup a placeholders.
+- Výchozí konfigurace obsahuje 15 questů se třemi úrovněmi obtížnosti. Požadované předměty jsou definované v konfiguraci; příkaz /halloween quest turnin je ověří všechny předem a odebere je až po úspěšné kontrole.
+- Quest lze přijmout jen jednou, průběh je uložen podle hráče a dokončený quest nelze opakovat. Žádné fragmentové ani předmětové odměny nejsou bez dohody přednastavené.
+- Nové chunky Overworldu mají 2,5% šanci na pokus o generování malé skryté místnosti. Generátor zkouší více bezpečných umístění v chunku, vyžaduje přírodní kamenný obal a nevyřezává cesty, tekutiny, kontejnery ani hráčské stavby.
+- Každá místnost má speciálním PDC označenou zamčenou truhlu. Klíč se při prvním odemčení spotřebuje; potom truhla zůstane odemčená. Truhla je chráněná před rozbitím a výbuchy.
+- Vstup do zaznamenané místnosti automaticky posune quest hidden_room_report a průzkumnou část sealed_archive.
 
-## Explicitly removed
+## Dialogy
 
-The old Halloween mob system, custom mob models, bosses, grave encounters, random Halloween events, seasonal scheduler, Halloween shop/gear, old fragment farming, world decoration, Halloween audio, sky shader, haunted-village discovery and the old nine-chapter combat story are not part of this version. They are not re-enabled by configuration and are not packaged.
+UplineDialogues nainstaluj zvlášť a otevři jeho editor příkazem /updialog panel. Připravil jsem českou knihovnu 15 rozhovorů a návod na navázání questů: docs/DIALOGUE_LIBRARY_CZ.md. Knihovna obsahuje texty, větve a přesné příkazy pro každého zadavatele.
 
-Existing tagged Halloween mobs and bosses are removed when their chunks are loaded. Old world blocks/structures are not mass-deleted: automatic block removal could destroy player builds. Do not use old cemetery/village generators; remove any already-built old structures manually after taking a world backup.
+Důležitě: uložené dialogové stromy jsou spravované vlastním editorem UplineDialogues na serveru. Samotný Markdown katalog se neimportuje automaticky do dat UplineDialogues; uzly je třeba vložit/vytvořit v jeho editoru. HalloweenCore ale už poskytuje skutečné příkazy pro přijetí a odevzdání questů.
 
-## Dialogue integration
+## Příkazy
 
-Install UplineDialogues separately; it is not bundled into HalloweenCore. Version 3 provides an in-plugin editor at /updialog panel, branched dialogue maps, conditions, inventory actions and command actions. Follow docs/UPLINEDIALOGUES_INTEGRATION.md to connect a dialogue node to a quest command.
+- /halloween quest status [id] — stav, postup a obtížnost.
+- /halloween quest start <id> — přijmout jeden z 15 questů.
+- /halloween quest turnin <id> — ověřit a odevzdat požadované předměty.
+- /halloween quest claim <id> — jednorázově vyzvednout později nakonfigurovanou odměnu.
+- /halloween rooms status — počítadla generování, šance, hloubka a poslední místnost.
+- /halloween rooms generate [radius] — ruční bezpečný test (správce, Overworld).
+- /locate halloweenroom [max-vzdálenost] — najde nejbližší zaznamenanou místnost v aktuálním světě.
+- /locateall halloweenroom — vypíše všechny zaznamenané místnosti aktuálního světa (správce).
+- /halloween locate room [max-vzdálenost] — alternativa pro vyhledání.
 
-Optional PlaceholderAPI integration exposes:
-- %halloween_fragments%
-- %halloween_quest_<id>_started%
-- %halloween_quest_<id>_progress%
-- %halloween_quest_<id>_completed%
+PlaceholderAPI je volitelný. Rozhovory mohou používat %halloween_quest_<id>_started%, %halloween_quest_<id>_progress% a %halloween_quest_<id>_completed%.
 
-## Quest rewards are deliberately unset
+## Tajné místnosti a kontrola generování
 
-The default configuration has no quest definitions. A later-defined quest may optionally configure reward-fragments and reward-items, but defaults to 0 fragments and no items. If a quest is completed before its reward is agreed, completion is saved without payment; once a reward is configured, it can be claimed once with /halloween quest claim <id>. No money, equipment, chest loot, candy payout or key source is configured by default. Item rewards are supported by configuration but remain empty until the exact contents and reward are agreed.
+Generování automaticky zkouší jen nově vytvořené chunky Overworldu; staré, už existující chunky se automaticky znovu neprohledávají. Výchozí rozsah hloubky je Y=-36 až Y=-8, maximálně 48 pokusů na nový chunk. Terén může místo odmítnout, proto je součástí /halloween rooms status i /halloween rooms generate pro testování na existujícím světě.
 
-## Secret rooms and keys
+Souřadnice každé úspěšně vygenerované místnosti se zapisují do plugins/HalloweenCore/secret-rooms.yml. Příkaz /locate vyhledává nejbližší z těchto skutečných záznamů, ne náhodné souřadnice.
 
-Rooms are considered only when a new Overworld chunk is generated. Default generation chance is 5% per new chunk, restricted to solid natural stone between Y=-36 and Y=24, and excluded from the world named Spawn. It will not carve caves, ores, liquids, block entities, or existing blocks other than natural stone in a new chunk.
+Truhly jsou záměrně prázdné, dokud nebude dohodnut jejich obsah a způsob získávání klíčů. Ruční vydání klíče přes /halloween key give je administrátorská testovací pomůcka.
 
-The chest intentionally has no configured loot. The key is created by HalloweenCore using the ItemsAdder item ID warriorland_halloween:secret_room_key when ItemsAdder is installed, with a named vanilla fallback otherwise. The admin key command is for testing only; no drop, NPC payout or automatic acquisition source is configured until the agreed system specifies it.
+## Zachovaný obsah a odstraněné systémy
 
-## Build and install
+ItemsAdder obsah tvoří originální 32×32 pixelartová textura klíče a přesně 13 původních 16×16 textur sladkostí ze Stev's Halloween, které zůstávají beze změny s MIT licencí a hashi. Balíček neobsahuje staré Halloween moby, bosse, ModelEngine/MythicMobs, staré eventy, hřbitov, vesnici, shader, hudbu, obchod, staré zbroje ani starou devítikapitolovou kampaň.
 
-1. Build with Java 21 using Maven: mvn -B clean package.
-2. Install target/HalloweenCore.jar in plugins and restart the server.
-3. Copy the warriorland_halloween folder from the ItemsAdder ZIP into plugins/ItemsAdder/contents/.
-4. Run /iazip and verify delivery using /iainfo.
-5. Install UplineDialogues separately and build NPC conversation trees in its panel.
+Již postavené staré stavby v hráčských světech se automaticky nemažou; bez jasných souřadnic by tím mohly být zničeny stavby hráčů.
 
-The CI build validates the retained asset set, compiles the plugin and packages the ItemsAdder content. A live Purpur/ItemsAdder/UplineDialogues test is still required before production rollout.
+## Build a instalace
+
+1. Sestav JAR přes Java 21: mvn -B clean package.
+2. Zkopíruj target/HalloweenCore.jar do plugins a restartuj server.
+3. Zkopíruj namespace warriorland_halloween z ItemsAdder ZIPu do plugins/ItemsAdder/contents/.
+4. Spusť /iazip a zkontroluj /iainfo; obyčejné ikonky klíče a sladkostí nevyžadují OptiFine.
+5. Nainstaluj UplineDialogues zvlášť, otevři /updialog panel a vytvoř dialogové stromy podle docs/DIALOGUE_LIBRARY_CZ.md.
+
+GitHub Actions kontroluje rozsah zdrojů a assetů, kompiluje JAR a balí ItemsAdder obsah. To ověřuje sestavení, nikoli živé chování na produkčním serveru: před nasazením ještě otestuj nové chunk-generování, ruční test, klíč, truhlu a dialogové akce na staging serveru.

@@ -1,6 +1,7 @@
 from pathlib import Path
 import hashlib
 import json
+import re
 import struct
 import sys
 
@@ -120,4 +121,64 @@ for old in ("MythicMobs", "ModelEngine", "halloweencore.event.manage", "bosses")
     if old in plugin_yml:
         fail(f"retired integration remains in plugin.yml: {old}")
 
-print("Scope check passed: only dialogue quests, secret-room keys and retained sweet textures remain.")
+config_text = (ROOT / "src/main/resources/config.yml").read_text(encoding="utf-8")
+quest_block = config_text.split("quests:\n", 1)[1].split("\nrooms:", 1)[0]
+quest_ids = re.findall(r"^    ([a-z][a-z0-9_-]*):$", quest_block, flags=re.MULTILINE)
+expected_quests = {
+    "fresh_harvest", "stone_for_repairs", "paper_trail", "food_for_watch", "village_library",
+    "copper_samples", "iron_requisition", "amethyst_study", "alchemist_components",
+    "archivist_records", "blacksmith_order", "deep_expedition", "hidden_room_report",
+    "sealed_archive", "night_research",
+}
+if set(quest_ids) != expected_quests:
+    fail(f"quest catalogue mismatch: found {sorted(quest_ids)}")
+for difficulty in ("Lehký", "Střední", "Těžký", "Velmi těžký"):
+    if difficulty not in quest_block:
+        fail(f"quest catalogue is missing the {difficulty} difficulty tier")
+if "reward-fragments:" in quest_block or "reward-items:" in quest_block:
+    fail("quest rewards were configured before being agreed")
+
+rooms_config = config_text.split("rooms:\n", 1)[1]
+if "chance-per-new-chunk: 0.025" not in rooms_config:
+    fail("default secret-room generation chance must remain 2.5% per new chunk")
+if "min-y: -36" not in rooms_config or "max-y: -8" not in rooms_config:
+    fail("default room generation height should stay underground at Y=-36 through Y=-8")
+
+room_java = (JAVA_DIR / "SecretRoomManager.java").read_text(encoding="utf-8")
+for feature in (
+    "event.isNewChunk()", "chunkAttemptedKey", "isSafeRoomVolume", "recordGeneratedRoom",
+    "generateTestRoom", "locateNearest", "locateAll", "onPlayerEnterSecretRoom",
+    "setDecorationIfAir", "secret_room_locked", "consumeOne"
+):
+    if feature not in room_java:
+        fail(f"secret-room runtime contract is missing: {feature}")
+
+core_java = (JAVA_DIR / "HalloweenCore.java").read_text(encoding="utf-8")
+for alias in ("PlayerCommandPreprocessEvent", 'command.equals("/locate")',
+              'command.equals("/locateall")', "onSecretRoomLocateAlias"):
+    if alias not in core_java:
+        fail(f"locate alias contract is missing: {alias}")
+
+quest_java = (JAVA_DIR / "HalloweenQuestManager.java").read_text(encoding="utf-8")
+for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
+                ".removeItem(", "objective-missing"):
+    if feature not in quest_java:
+        fail(f"quest turn-in contract is missing: {feature}")
+
+command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
+for feature in ('action.equals("turnin")', "rooms generate", "private boolean handleLocate",
+                "/locate halloweenroom"):
+    if feature not in command_java:
+        fail(f"required player/admin command is missing: {feature}")
+
+dialogue_library = ROOT / "docs/DIALOGUE_LIBRARY_CZ.md"
+if not dialogue_library.is_file():
+    fail("the Czech dialogue catalogue is missing")
+dialogue_text = dialogue_library.read_text(encoding="utf-8")
+if len(re.findall(r"^## \d+\.", dialogue_text, flags=re.MULTILINE)) != 15:
+    fail("the Czech dialogue catalogue must contain all 15 quest dialogues")
+for quest_id in expected_quests:
+    if quest_id not in dialogue_text:
+        fail(f"dialogue catalogue is missing quest {quest_id}")
+
+print("Scope check passed: 15 dialogue quests, safe recorded rooms, locate aliases and only retained sweet textures.")

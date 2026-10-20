@@ -2,14 +2,14 @@ package cz.halloween.core;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
-import org.bukkit.Sound;
 import org.bukkit.World;
-import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.Chest;
+import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
@@ -19,6 +19,7 @@ import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockExplodeEvent;
 import org.bukkit.event.entity.EntityExplodeEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -27,9 +28,12 @@ import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -37,14 +41,18 @@ public final class SecretRoomManager implements Listener {
     private static final int ROOM_WIDTH = 7;
     private static final int ROOM_HEIGHT = 5;
     private static final int ROOM_DEPTH = 7;
+
     private static final Set<Material> NATURAL_STONE = Set.of(
             Material.STONE, Material.DEEPSLATE, Material.TUFF, Material.GRANITE,
-            Material.DIORITE, Material.ANDESITE, Material.CALCITE, Material.DRIPSTONE_BLOCK
+            Material.DIORITE, Material.ANDESITE, Material.CALCITE, Material.DRIPSTONE_BLOCK,
+            Material.SMOOTH_BASALT
     );
 
     private final HalloweenCore plugin;
     private final KeyItemFactory keyItemFactory;
     private final NamespacedKey lockedKey;
+    private final NamespacedKey chunkAttemptedKey;
+    private final NamespacedKey chunkHasRoomKey;
     private final File dataFile;
     private final YamlConfiguration data;
 
@@ -52,6 +60,8 @@ public final class SecretRoomManager implements Listener {
         this.plugin = plugin;
         this.keyItemFactory = keyItemFactory;
         this.lockedKey = new NamespacedKey(plugin, "secret_room_locked");
+        this.chunkAttemptedKey = new NamespacedKey(plugin, "secret_room_attempted_v1");
+        this.chunkHasRoomKey = new NamespacedKey(plugin, "secret_room_anchor_v1");
         this.dataFile = new File(plugin.getDataFolder(), "secret-rooms.yml");
         this.data = YamlConfiguration.loadConfiguration(dataFile);
     }
@@ -61,15 +71,32 @@ public final class SecretRoomManager implements Listener {
         if (!event.isNewChunk() || !plugin.getConfig().getBoolean("rooms.enabled", true)) return;
         Chunk chunk = event.getChunk();
         if (!isAllowedWorld(chunk.getWorld())) return;
-        double chance = Math.max(0.0, Math.min(1.0,
-                plugin.getConfig().getDouble("rooms.chance-per-new-chunk", 0.025)));
-        if (ThreadLocalRandom.current().nextDouble() >= chance) return;
 
-        // Defer the actual block changes until the chunk-load event is complete.
+        var chunkData = chunk.getPersistentDataContainer();
+        if (chunkData.has(chunkAttemptedKey, PersistentDataType.BYTE)) return;
+
+        // One roll per newly generated chunk. The marker is stored on the chunk,
+        // so reloads cannot silently re-roll an unsuccessful chunk forever.
+        chunkData.set(chunkAttemptedKey, PersistentDataType.BYTE, (byte) 1);
+        incrementStat("stats.chunks-checked", false);
+
+        double chance = clamp(plugin.getConfig().getDouble("rooms.chance-per-new-chunk", 0.025D), 0.0D, 1.0D);
+        if (ThreadLocalRandom.current().nextDouble() >= chance) {
+            saveIfCounterCheckpoint();
+            return;
+        }
+
+        incrementStat("stats.chance-passed", false);
         Bukkit.getScheduler().runTask(plugin, () -> {
-            if (chunk.isLoaded() && isAllowedWorld(chunk.getWorld())) {
-                generateRoomInChunk(chunk);
+            if (!chunk.isLoaded() || !isAllowedWorld(chunk.getWorld())) return;
+            if (hasRoomInChunk(chunk)) return;
+
+            int attempts = clamp(plugin.getConfig().getInt("rooms.attempts-per-chunk", 48), 1, 256);
+            if (!generateRoomInChunk(chunk, attempts)) {
+                incrementStat("stats.generation-failed", true);
+                return;
             }
+            chunk.getPersistentDataContainer().set(chunkHasRoomKey, PersistentDataType.BYTE, (byte) 1);
         });
     }
 
@@ -80,17 +107,14 @@ public final class SecretRoomManager implements Listener {
         if (clicked == null || clicked.getType() != Material.CHEST) return;
 
         BlockState state = clicked.getState();
-        if (!(state instanceof Chest chest)) return;
-        Byte locked = chest.getPersistentDataContainer().get(lockedKey, PersistentDataType.BYTE);
-        if (locked == null || locked != (byte) 1) return;
+        if (!(state instanceof Chest chest) || !isLocked(chest)) return;
 
         event.setCancelled(true);
         Player player = event.getPlayer();
         ItemStack held = player.getInventory().getItemInMainHand();
         boolean inMainHand = keyItemFactory.isKey(held);
-        if (!inMainHand) {
-            held = player.getInventory().getItemInOffHand();
-        }
+        if (!inMainHand) held = player.getInventory().getItemInOffHand();
+
         if (!keyItemFactory.isKey(held)) {
             player.sendMessage(plugin.color("&5&lZAMČENÁ TRUHLA &8» &7Potřebuješ speciální klíč."));
             return;
@@ -100,7 +124,7 @@ public final class SecretRoomManager implements Listener {
         chest.getPersistentDataContainer().remove(lockedKey);
         chest.update(true, false);
         player.sendMessage(plugin.color("&5&lTRUHLA ODEMČENA &8» &dKlíč byl spotřebován. Truhla zůstane odemčená."));
-        player.playSound(player.getLocation(), Sound.BLOCK_CHEST_OPEN, 0.8f, 0.8f);
+        player.playSound(player.getLocation(), org.bukkit.Sound.BLOCK_CHEST_OPEN, 0.8f, 0.8f);
 
         Block chestBlock = clicked;
         Bukkit.getScheduler().runTask(plugin, () -> {
@@ -111,14 +135,11 @@ public final class SecretRoomManager implements Listener {
         });
     }
 
-
     @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
     public void onLockedChestBreak(BlockBreakEvent event) {
         if (!isLockedChest(event.getBlock())) return;
         event.setCancelled(true);
-        if (event.getPlayer() != null) {
-            event.getPlayer().sendMessage(plugin.color("&5&lZAMČENÁ TRUHLA &8» &7Bez speciálního klíče ji nelze otevřít ani rozbít."));
-        }
+        event.getPlayer().sendMessage(plugin.color("&5&lZAMČENÁ TRUHLA &8» &7Bez speciálního klíče ji nelze rozbít."));
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -131,99 +152,209 @@ public final class SecretRoomManager implements Listener {
         event.blockList().removeIf(this::isLockedChest);
     }
 
-    private boolean isLockedChest(Block block) {
-        if (block == null || block.getType() != Material.CHEST) return false;
-        BlockState state = block.getState();
-        if (!(state instanceof Chest chest)) return false;
-        Byte locked = chest.getPersistentDataContainer().get(lockedKey, PersistentDataType.BYTE);
-        return locked != null && locked == (byte) 1;
+    @EventHandler(ignoreCancelled = true)
+    public void onPlayerEnterSecretRoom(PlayerMoveEvent event) {
+        if (event.getTo() == null || sameBlock(event.getFrom(), event.getTo())) return;
+        Player player = event.getPlayer();
+        if (!isInsideRecordedRoom(event.getTo())) return;
+
+        for (String questId : plugin.getQuestManager().getCatalogIds()) {
+            String objectiveType = plugin.getQuestManager().getObjectiveType(questId);
+            boolean explorationQuest = objectiveType.equalsIgnoreCase("explore-room")
+                    || objectiveType.equalsIgnoreCase("explore-and-deliver");
+            if (!explorationQuest
+                    || !plugin.getQuestManager().isActive(player.getUniqueId(), questId)
+                    || plugin.getQuestManager().getProgress(player.getUniqueId(), questId)
+                    >= plugin.getQuestManager().getTarget(questId)) {
+                continue;
+            }
+            if (plugin.getQuestManager().addProgress(player, questId, 1)) {
+                player.sendMessage(plugin.color("&5&lTAJNÁ MÍSTNOST &8» &dPrůzkumný postup uložen: "
+                        + plugin.getQuestManager().getTitle(questId) + ". Vrať se k zadavateli."));
+            }
+        }
     }
 
     public int getGeneratedCount() {
-        return Math.max(0, data.getInt("stats.generated", 0));
+        return Math.max(data.getMapList("locations").size(), Math.max(0, data.getInt("stats.generated", 0)));
+    }
+
+    public long getCheckedChunkCount() {
+        return Math.max(0L, data.getLong("stats.chunks-checked", 0L));
+    }
+
+    public long getChancePassedCount() {
+        return Math.max(0L, data.getLong("stats.chance-passed", 0L));
+    }
+
+    public long getGenerationFailedCount() {
+        return Math.max(0L, data.getLong("stats.generation-failed", 0L));
+    }
+
+    public String getLastRoomSummary() {
+        if (!data.contains("last.world")) return "zatím žádná";
+        return data.getString("last.world", "?") + " " + data.getInt("last.x", 0) + " "
+                + data.getInt("last.y", 0) + " " + data.getInt("last.z", 0);
     }
 
     public void save() {
         try {
             data.save(dataFile);
         } catch (IOException ex) {
-            plugin.getLogger().severe("Could not save secret-room stats: " + ex.getMessage());
+            plugin.getLogger().severe("Could not save secret-room data: " + ex.getMessage());
         }
     }
 
-    private boolean generateRoomInChunk(Chunk chunk) {
+    /**
+     * Admin test generator. It scans a small radius around the admin in the current
+     * Overworld and still requires a completely natural-rock outer shell. It never
+     * overwrites player-placed blocks, ores in the shell, liquids or containers.
+     */
+    public boolean generateTestRoom(Player player, int radiusChunks) {
+        if (player == null || !player.isOnline() || !isAllowedWorld(player.getWorld())) return false;
+        int radius = clamp(radiusChunks, 1, 6);
+        int centerX = player.getLocation().getChunk().getX();
+        int centerZ = player.getLocation().getChunk().getZ();
+        List<ChunkOffset> offsets = new ArrayList<>();
+        for (int dx = -radius; dx <= radius; dx++) {
+            for (int dz = -radius; dz <= radius; dz++) {
+                offsets.add(new ChunkOffset(dx, dz, dx * dx + dz * dz));
+            }
+        }
+        offsets.sort(Comparator.comparingInt(ChunkOffset::distanceSquared));
+
+        int attempts = clamp(plugin.getConfig().getInt("rooms.manual-attempts-per-chunk", 96), 1, 512);
+        for (ChunkOffset offset : offsets) {
+            Chunk chunk = player.getWorld().getChunkAt(centerX + offset.dx(), centerZ + offset.dz());
+            if (!isAllowedWorld(chunk.getWorld()) || hasRoomInChunk(chunk)) continue;
+            if (generateRoomInChunk(chunk, attempts)) {
+                chunk.getPersistentDataContainer().set(chunkHasRoomKey, PersistentDataType.BYTE, (byte) 1);
+                incrementStat("stats.manual-generated", true);
+                return true;
+            }
+        }
+        incrementStat("stats.manual-failed", true);
+        return false;
+    }
+
+    public void locateNearest(Player player, double maxDistance) {
+        if (player == null) return;
+        List<Map<?, ?>> locations = currentWorldLocations(player.getWorld().getName());
+        if (locations.isEmpty()) {
+            player.sendMessage(plugin.color("&5&lTAJNÉ MÍSTNOSTI &8» &7V tomto světě zatím není zaznamenaná žádná vygenerovaná místnost."));
+            player.sendMessage(plugin.color("&7Zkontroluj /halloween rooms status nebo jako správce použij /halloween rooms generate."));
+            return;
+        }
+
+        Location origin = player.getLocation();
+        Map<?, ?> nearest = null;
+        double nearestDistanceSquared = Double.MAX_VALUE;
+        for (Map<?, ?> entry : locations) {
+            double dx = origin.getX() - value(entry.get("x"));
+            double dy = origin.getY() - value(entry.get("y"));
+            double dz = origin.getZ() - value(entry.get("z"));
+            double distanceSquared = dx * dx + dy * dy + dz * dz;
+            if (distanceSquared < nearestDistanceSquared) {
+                nearestDistanceSquared = distanceSquared;
+                nearest = entry;
+            }
+        }
+
+        double distance = Math.sqrt(nearestDistanceSquared);
+        if (maxDistance > 0.0D && distance > maxDistance) {
+            player.sendMessage(plugin.color("&5&lTAJNÉ MÍSTNOSTI &8» &7Ve vzdálenosti do &d"
+                    + Math.round(maxDistance) + " &7bloků žádná místnost není."));
+            return;
+        }
+
+        int x = (int) Math.floor(value(nearest.get("x")));
+        int y = (int) Math.floor(value(nearest.get("y")));
+        int z = (int) Math.floor(value(nearest.get("z")));
+        player.sendMessage(plugin.color("&5&lNEJBLIŽŠÍ TAJNÁ MÍSTNOST"));
+        player.sendMessage(plugin.color("&7Svět: &f" + player.getWorld().getName()));
+        player.sendMessage(plugin.color("&7Souřadnice truhly: &dX " + x + " Y " + y + " Z " + z));
+        player.sendMessage(plugin.color("&7Vzdálenost: &d" + Math.round(distance) + " bloků"));
+        player.sendMessage(plugin.color("&8Místnost je ukrytá v přírodním kameni; hledej bezpečný vstup."));
+    }
+
+    public void locateAll(CommandSender sender) {
+        if (!sender.hasPermission("halloweencore.admin")) {
+            sender.sendMessage(plugin.color("&cVýpis všech souřadnic je pouze pro správce."));
+            return;
+        }
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(plugin.color("&cTento příkaz vyžaduje hráče a jeho svět."));
+            return;
+        }
+        List<Map<?, ?>> locations = currentWorldLocations(player.getWorld().getName());
+        if (locations.isEmpty()) {
+            player.sendMessage(plugin.color("&7V tomto světě zatím nejsou zaznamenané žádné tajné místnosti."));
+            return;
+        }
+        player.sendMessage(plugin.color("&5&lTAJNÉ MÍSTNOSTI &8» &7" + locations.size() + " nalezených záznamů:"));
+        locations.stream()
+                .sorted(Comparator.comparingDouble(entry -> distanceSquared(player.getLocation(), entry)))
+                .forEach(entry -> player.sendMessage(plugin.color("&d" + (int) value(entry.get("x")) + " "
+                        + (int) value(entry.get("y")) + " " + (int) value(entry.get("z"))
+                        + " &8— &7" + Math.round(Math.sqrt(distanceSquared(player.getLocation(), entry))) + " bloků")));
+    }
+
+    private boolean generateRoomInChunk(Chunk chunk, int attempts) {
         World world = chunk.getWorld();
-        int minY = Math.max(world.getMinHeight() + 8,
-                plugin.getConfig().getInt("rooms.min-y", -36));
+        if (!isAllowedWorld(world) || hasRoomInChunk(chunk)) return false;
+
+        int minY = Math.max(world.getMinHeight() + 8, plugin.getConfig().getInt("rooms.min-y", -36));
         int maxY = Math.min(world.getMaxHeight() - ROOM_HEIGHT - 2,
-                plugin.getConfig().getInt("rooms.max-y", 24));
+                plugin.getConfig().getInt("rooms.max-y", -8));
         if (maxY < minY) return false;
 
         int baseX = chunk.getX() << 4;
         int baseZ = chunk.getZ() << 4;
-        for (int attempt = 0; attempt < 64; attempt++) {
-            // Keep the whole 7x7 footprint away from chunk edges.
+        for (int attempt = 0; attempt < attempts; attempt++) {
+            // The entire 7x7 footprint remains inside the current chunk.
             int x = baseX + 2 + ThreadLocalRandom.current().nextInt(8);
             int z = baseZ + 2 + ThreadLocalRandom.current().nextInt(8);
             int y = minY + ThreadLocalRandom.current().nextInt(maxY - minY + 1);
-            if (!isSolidNaturalRock(world, x, y, z)) continue;
+            if (!isSafeRoomVolume(world, x, y, z)) continue;
 
             buildRoom(world, x, y, z);
-            data.set("stats.generated", getGeneratedCount() + 1);
-            String roomId = world.getName() + "_" + (x + ROOM_WIDTH / 2) + "_" + (y + 1) + "_" + (z + ROOM_DEPTH / 2);
-            String roomPath = "rooms." + roomId;
-            data.set(roomPath + ".world", world.getName());
-            data.set(roomPath + ".x", x + ROOM_WIDTH / 2);
-            data.set(roomPath + ".y", y + 1);
-            data.set(roomPath + ".z", z + ROOM_DEPTH / 2);
-            data.set("last.world", world.getName());
-            data.set("last.x", x + ROOM_WIDTH / 2);
-            data.set("last.y", y + 1);
-            data.set("last.z", z + ROOM_DEPTH / 2);
-            save();
-            plugin.getLogger().fine("Generated a locked secret room in " + world.getName()
-                    + " at " + (x + 3) + "," + (y + 1) + "," + (z + 3) + ".");
+            recordGeneratedRoom(world, x + ROOM_WIDTH / 2, y + 1, z + ROOM_DEPTH / 2);
+            chunk.getPersistentDataContainer().set(chunkHasRoomKey, PersistentDataType.BYTE, (byte) 1);
+            plugin.getLogger().info("Generated locked secret room at " + world.getName() + " "
+                    + (x + 3) + " " + (y + 1) + " " + (z + 3) + ".");
             return true;
         }
-        plugin.getLogger().fine("No safe solid-stone volume found for a secret room in chunk "
-                + chunk.getX() + "," + chunk.getZ() + " (" + world.getName() + ") after 64 attempts.");
         return false;
     }
 
-    public Location findNearestRoom(Location origin) {
-        if (origin == null || origin.getWorld() == null) return null;
-        var rooms = data.getConfigurationSection("rooms");
-        if (rooms == null) return null;
-        return rooms.getKeys(false).stream()
-                .map(id -> {
-                    String path = "rooms." + id;
-                    World world = Bukkit.getWorld(data.getString(path + ".world", ""));
-                    if (world == null || !world.equals(origin.getWorld())) return null;
-                    return new Location(world, data.getInt(path + ".x"), data.getInt(path + ".y"),
-                            data.getInt(path + ".z"));
-                })
-                .filter(location -> location != null)
-                .min(Comparator.comparingDouble(location -> location.distanceSquared(origin)))
-                .orElse(null);
-    }
-
-    public boolean generateTestRoom(Location origin) {
-        if (origin == null || origin.getWorld() == null || !isAllowedWorld(origin.getWorld())) return false;
-        Chunk chunk = origin.getChunk();
-        return generateRoomInChunk(chunk);
-    }
-
-    private boolean isSolidNaturalRock(World world, int x, int y, int z) {
-        // Do not carve existing caves, ores, liquids, tile entities or player-built blocks.
+    private boolean isSafeRoomVolume(World world, int x, int y, int z) {
         for (int dx = 0; dx < ROOM_WIDTH; dx++) {
             for (int dy = 0; dy < ROOM_HEIGHT; dy++) {
                 for (int dz = 0; dz < ROOM_DEPTH; dz++) {
-                    Material type = world.getBlockAt(x + dx, y + dy, z + dz).getType();
-                    if (!NATURAL_STONE.contains(type)) return false;
+                    Block block = world.getBlockAt(x + dx, y + dy, z + dz);
+                    Material type = block.getType();
+                    boolean shell = dx == 0 || dx == ROOM_WIDTH - 1
+                            || dz == 0 || dz == ROOM_DEPTH - 1
+                            || dy == 0 || dy == ROOM_HEIGHT - 1;
+
+                    if (shell) {
+                        if (!NATURAL_STONE.contains(type)) return false;
+                    } else if (!(NATURAL_STONE.contains(type) || type.isAir() || isOre(type))) {
+                        return false;
+                    }
+                    // Keep containers, tile entities, plants, structures, fluids and
+                    // non-natural blocks out of every generated footprint.
+                    if (block.getState() instanceof org.bukkit.block.TileState) return false;
                 }
             }
         }
-        return true;
+
+        Material chestMaterial = world.getBlockAt(x + ROOM_WIDTH / 2, y + 1, z + ROOM_DEPTH / 2).getType();
+        return NATURAL_STONE.contains(chestMaterial) || chestMaterial.isAir();
+    }
+
+    private boolean isOre(Material material) {
+        return material.name().endsWith("_ORE") || material == Material.ANCIENT_DEBRIS;
     }
 
     private void buildRoom(World world, int x, int y, int z) {
@@ -234,10 +365,23 @@ public final class SecretRoomManager implements Listener {
                             || dz == 0 || dz == ROOM_DEPTH - 1
                             || dy == 0 || dy == ROOM_HEIGHT - 1;
                     Block block = world.getBlockAt(x + dx, y + dy, z + dz);
-                    block.setType(shell ? Material.DEEPSLATE_BRICKS : Material.AIR, false);
+                    if (shell) {
+                        block.setType(Material.DEEPSLATE_BRICKS, false);
+                    } else if (NATURAL_STONE.contains(block.getType())) {
+                        block.setType(Material.AIR, false);
+                    }
+                    // Existing ore inside the room is preserved rather than destroyed.
                 }
             }
         }
+
+        // Small vanilla decorations keep rooms readable without adding a new asset pack.
+        setDecorationIfAir(world, x + 1, y + 1, z + 1, Material.SOUL_LANTERN);
+        setDecorationIfAir(world, x + ROOM_WIDTH - 2, y + 1, z + 1, Material.SOUL_LANTERN);
+        setDecorationIfAir(world, x + 1, y + 1, z + ROOM_DEPTH - 2, Material.LANTERN);
+        setDecorationIfAir(world, x + ROOM_WIDTH - 2, y + 1, z + ROOM_DEPTH - 2, Material.LANTERN);
+        setDecorationIfAir(world, x + 1, y + ROOM_HEIGHT - 2, z + 1, Material.COBWEB);
+        setDecorationIfAir(world, x + ROOM_WIDTH - 2, y + ROOM_HEIGHT - 2, z + ROOM_DEPTH - 2, Material.COBWEB);
 
         Block chestBlock = world.getBlockAt(x + ROOM_WIDTH / 2, y + 1, z + ROOM_DEPTH / 2);
         chestBlock.setType(Material.CHEST, false);
@@ -246,16 +390,110 @@ public final class SecretRoomManager implements Listener {
             chest.getPersistentDataContainer().set(lockedKey, PersistentDataType.BYTE, (byte) 1);
             chest.update(true, false);
         }
-        // The chest intentionally remains empty until its agreed contents are specified.
+        // Intentionally no loot: chest contents were not agreed and must not be invented.
+    }
+
+    private void setDecorationIfAir(World world, int x, int y, int z, Material decoration) {
+        Block block = world.getBlockAt(x, y, z);
+        // Preserve any ore found inside the otherwise valid room volume.
+        if (block.getType().isAir()) block.setType(decoration, false);
+    }
+
+    private void recordGeneratedRoom(World world, int x, int y, int z) {
+        List<Map<?, ?>> existing = new ArrayList<>(data.getMapList("locations"));
+        Map<String, Object> entry = new LinkedHashMap<>();
+        entry.put("id", "room-" + String.format(Locale.ROOT, "%05d", getGeneratedCount() + 1));
+        entry.put("world", world.getName());
+        entry.put("x", x);
+        entry.put("y", y);
+        entry.put("z", z);
+        existing.add(entry);
+        data.set("locations", existing);
+        data.set("stats.generated", existing.size());
+        data.set("last.world", world.getName());
+        data.set("last.x", x);
+        data.set("last.y", y);
+        data.set("last.z", z);
+        save();
+    }
+
+    private boolean hasRoomInChunk(Chunk chunk) {
+        if (chunk.getPersistentDataContainer().has(chunkHasRoomKey, PersistentDataType.BYTE)) return true;
+        for (Map<?, ?> entry : data.getMapList("locations")) {
+            if (chunk.getWorld().getName().equals(String.valueOf(entry.get("world")))
+                    && ((int) value(entry.get("x")) >> 4) == chunk.getX()
+                    && ((int) value(entry.get("z")) >> 4) == chunk.getZ()) return true;
+        }
+        return false;
+    }
+
+    private List<Map<?, ?>> currentWorldLocations(String worldName) {
+        return data.getMapList("locations").stream()
+                .filter(entry -> worldName.equals(String.valueOf(entry.get("world"))))
+                .toList();
+    }
+
+    private boolean isInsideRecordedRoom(Location location) {
+        for (Map<?, ?> entry : currentWorldLocations(location.getWorld().getName())) {
+            double dx = Math.abs(location.getBlockX() - value(entry.get("x")));
+            double dy = location.getBlockY() - value(entry.get("y"));
+            double dz = Math.abs(location.getBlockZ() - value(entry.get("z")));
+            if (dx <= 2 && dz <= 2 && dy >= 0 && dy <= 2) return true;
+        }
+        return false;
+    }
+
+    private boolean isLockedChest(Block block) {
+        if (block == null || block.getType() != Material.CHEST) return false;
+        BlockState state = block.getState();
+        return state instanceof Chest chest && isLocked(chest);
+    }
+
+    private boolean isLocked(Chest chest) {
+        Byte locked = chest.getPersistentDataContainer().get(lockedKey, PersistentDataType.BYTE);
+        return locked != null && locked == (byte) 1;
     }
 
     private boolean isAllowedWorld(World world) {
         if (world.getEnvironment() != World.Environment.NORMAL) return false;
         List<String> blocked = plugin.getConfig().getStringList("rooms.blocked-worlds");
-        for (String name : blocked) {
-            if (name.equalsIgnoreCase(world.getName())) return false;
-        }
-        return true;
+        return blocked.stream().noneMatch(name -> name.equalsIgnoreCase(world.getName()));
+    }
+
+    private void incrementStat(String key, boolean saveNow) {
+        data.set(key, Math.max(0L, data.getLong(key, 0L)) + 1L);
+        if (saveNow || data.getLong("stats.chunks-checked", 0L) % 25L == 0L) save();
+    }
+
+    private void saveIfCounterCheckpoint() {
+        if (data.getLong("stats.chunks-checked", 0L) % 25L == 0L) save();
+    }
+
+    private double distanceSquared(Location playerLocation, Map<?, ?> entry) {
+        double dx = playerLocation.getX() - value(entry.get("x"));
+        double dy = playerLocation.getY() - value(entry.get("y"));
+        double dz = playerLocation.getZ() - value(entry.get("z"));
+        return dx * dx + dy * dy + dz * dz;
+    }
+
+    private double value(Object object) {
+        return object instanceof Number number ? number.doubleValue() : 0.0D;
+    }
+
+    private boolean sameBlock(Location first, Location second) {
+        return first.getWorld() != null && second.getWorld() != null
+                && first.getWorld().getUID().equals(second.getWorld().getUID())
+                && first.getBlockX() == second.getBlockX()
+                && first.getBlockY() == second.getBlockY()
+                && first.getBlockZ() == second.getBlockZ();
+    }
+
+    private int clamp(int number, int min, int max) {
+        return Math.max(min, Math.min(max, number));
+    }
+
+    private double clamp(double number, double min, double max) {
+        return Math.max(min, Math.min(max, number));
     }
 
     private void consumeOne(Player player, boolean mainHand) {
@@ -270,4 +508,6 @@ public final class SecretRoomManager implements Listener {
             else player.getInventory().setItemInOffHand(stack);
         }
     }
+
+    private record ChunkOffset(int dx, int dz, int distanceSquared) {}
 }

@@ -1,19 +1,184 @@
-# Only the new dialogue-quest and secret-room systems are configured here.
-# The legacy mobs, bosses, random events, music, shader, shop and old progression systems were removed.
+# Only NPC dialogue quests and locked underground rooms remain in this build.
+# Quest dialogue trees are authored with UplineDialogues. Quest IDs and turn-in requirements are registered here.
 quests:
-  # Leave definitions empty until quest objectives and rewards are agreed.
-  # A quest without a definition has target 1, 0 fragments and no item reward.
-  # When agreed, a definition may contain title, target, reward-fragments and reward-items.
-  # Keep reward-fragments at 0 and reward-items empty until the exact rewards are decided.
-  definitions: {}
+  definitions:
+    fresh_harvest:
+      title: "Čerstvá sklizeň"
+      difficulty: "Lehký"
+      description: "Přines 16 pšenic místnímu farmáři."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:wheat
+          amount: 16
+
+    stone_for_repairs:
+      title: "Kámen na opravy"
+      difficulty: "Lehký"
+      description: "Přines 24 kamenných kostek na opravu cesty."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:cobblestone
+          amount: 24
+
+    paper_trail:
+      title: "Papírová stopa"
+      difficulty: "Lehký"
+      description: "Přines 12 papírů pro kartografa."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:paper
+          amount: 12
+
+    food_for_watch:
+      title: "Jídlo pro hlídku"
+      difficulty: "Lehký"
+      description: "Přines 8 chlebů pro stráž u cesty."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:bread
+          amount: 8
+
+    village_library:
+      title: "Základy knihovny"
+      difficulty: "Střední"
+      description: "Dodej 4 knihy do vesnické knihovny."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:book
+          amount: 4
+
+    copper_samples:
+      title: "Měděné vzorky"
+      difficulty: "Střední"
+      description: "Přines 16 měděných ingotů kováři."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:copper_ingot
+          amount: 16
+
+    iron_requisition:
+      title: "Železná žádanka"
+      difficulty: "Střední"
+      description: "Přines 12 železných ingotů pro opravu nářadí."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:iron_ingot
+          amount: 12
+
+    amethyst_study:
+      title: "Fialové krystaly"
+      difficulty: "Střední"
+      description: "Přines 6 ametystových úlomků badatelce."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:amethyst_shard
+          amount: 6
+
+    alchemist_components:
+      title: "Sada pro alchymistku"
+      difficulty: "Těžký"
+      description: "Dodej 8 pavoučích očí, 8 skleněných lahví a 4 plamenné prášky."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:spider_eye
+          amount: 8
+        - id: minecraft:glass_bottle
+          amount: 8
+        - id: minecraft:blaze_powder
+          amount: 4
+
+    archivist_records:
+      title: "Ztracené záznamy"
+      difficulty: "Těžký"
+      description: "Přines 8 knih a 12 papírů archiváři."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:book
+          amount: 8
+        - id: minecraft:paper
+          amount: 12
+
+    blacksmith_order:
+      title: "Zakázka kováře"
+      difficulty: "Těžký"
+      description: "Přines 24 železných a 12 zlatých ingotů."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:iron_ingot
+          amount: 24
+        - id: minecraft:gold_ingot
+          amount: 12
+
+    deep_expedition:
+      title: "Výprava do hlubin"
+      difficulty: "Velmi těžký"
+      description: "Přines 3 enderové perly a 8 plamenných prášků."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:ender_pearl
+          amount: 3
+        - id: minecraft:blaze_powder
+          amount: 8
+
+    hidden_room_report:
+      title: "Zpráva ze skryté místnosti"
+      difficulty: "Těžký"
+      description: "Najdi jednu zaznamenanou tajnou místnost a vrať se k badateli."
+      objective-type: explore-room
+      target: 1
+      required-items: []
+
+    sealed_archive:
+      title: "Zapečetěný archiv"
+      difficulty: "Velmi těžký"
+      description: "Nejdřív vstup do tajné místnosti, potom přines 8 knih, 16 papírů a 6 ametystových úlomků."
+      objective-type: explore-and-deliver
+      target: 1
+      required-items:
+        - id: minecraft:book
+          amount: 8
+        - id: minecraft:paper
+          amount: 16
+        - id: minecraft:amethyst_shard
+          amount: 6
+
+    night_research:
+      title: "Výzkum po setmění"
+      difficulty: "Velmi těžký"
+      description: "Přines 8 pavoučích očí, 16 železných ingotů a 4 enderové perly."
+      objective-type: delivery
+      target: 1
+      required-items:
+        - id: minecraft:spider_eye
+          amount: 8
+        - id: minecraft:iron_ingot
+          amount: 16
+        - id: minecraft:ender_pearl
+          amount: 4
 
 rooms:
   enabled: true
-  # Chance that a newly generated Overworld chunk contains one small secret room.
-  chance-per-new-chunk: 0.05
+  # Probability per newly generated Overworld chunk. Existing chunks are not auto-rescanned.
+  chance-per-new-chunk: 0.025
+  # Keep the room underground by default. Worlds with no solid volume simply skip that candidate.
   min-y: -36
-  max-y: 24
+  max-y: -8
+  attempts-per-chunk: 48
+  manual-attempts-per-chunk: 128
+  manual-search-radius-chunks: 3
   blocked-worlds:
     - Spawn
   key-item-id: warriorland_halloween:secret_room_key
-  # The generated chest is intentionally empty until the exact contents are agreed.
+  # Chests remain empty until the intended loot is agreed.

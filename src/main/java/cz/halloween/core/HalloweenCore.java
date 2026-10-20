@@ -5,9 +5,12 @@ import org.bukkit.Chunk;
 import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.event.player.PlayerCommandPreprocessEvent;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -71,6 +74,49 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (secretRoomManager != null) {
             secretRoomManager.save();
         }
+    }
+
+    
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = true)
+    public void onSecretRoomLocateAlias(PlayerCommandPreprocessEvent event) {
+        if (secretRoomManager == null) return;
+        String[] parts = event.getMessage().trim().split("\\s+");
+        if (parts.length < 2) return;
+        String command = parts[0].toLowerCase(java.util.Locale.ROOT);
+        String target = parts[1].toLowerCase(java.util.Locale.ROOT);
+        if (command.equals("/locate") && isSecretRoomLocateTarget(target)) {
+            double radius = 0.0D;
+            if (parts.length > 3) {
+                event.getPlayer().sendMessage(color("&cPoužití: /locate halloweenroom [max-vzdálenost]"));
+                event.setCancelled(true);
+                return;
+            }
+            if (parts.length == 3) {
+                try {
+                    radius = Double.parseDouble(parts[2]);
+                    if (!Double.isFinite(radius) || radius < 0.0D) throw new NumberFormatException();
+                } catch (NumberFormatException ex) {
+                    event.getPlayer().sendMessage(color("&cVzdálenost musí být nezáporné číslo v blocích."));
+                    event.setCancelled(true);
+                    return;
+                }
+            }
+            event.setCancelled(true);
+            secretRoomManager.locateNearest(event.getPlayer(), radius);
+            return;
+        }
+
+        if (command.equals("/locateall") && isSecretRoomLocateTarget(target)) {
+            event.setCancelled(true);
+            secretRoomManager.locateAll(event.getPlayer());
+        }
+    }
+
+    private boolean isSecretRoomLocateTarget(String target) {
+        return java.util.Set.of(
+                "halloweenroom", "halloweenrooms", "halloween_room", "halloween_rooms",
+                "secretroom", "secret_room", "room", "rooms", "skrytamistnost", "skryta_mistnost"
+        ).contains(target);
     }
 
     @EventHandler

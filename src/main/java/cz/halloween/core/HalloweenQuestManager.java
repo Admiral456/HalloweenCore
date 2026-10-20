@@ -42,8 +42,8 @@ public final class HalloweenQuestManager {
 
     public boolean start(Player player, String rawId) {
         String id = normalizeId(rawId);
-        if (player == null || !isValidId(id) || isCompleted(player.getUniqueId(), id)
-                || isActive(player.getUniqueId(), id)) {
+        if (player == null || !isValidId(id) || !isConfiguredQuest(id)
+                || isCompleted(player.getUniqueId(), id) || isActive(player.getUniqueId(), id)) {
             return false;
         }
         String root = questRoot(player.getUniqueId(), id);
@@ -56,8 +56,8 @@ public final class HalloweenQuestManager {
 
     public boolean addProgress(Player player, String rawId, int amount) {
         String id = normalizeId(rawId);
-        if (player == null || !isValidId(id) || amount < 1 || amount > 10000
-                || !isActive(player.getUniqueId(), id)) {
+        if (player == null || !isValidId(id) || !isConfiguredQuest(id)
+                || amount < 1 || amount > 10000 || !isActive(player.getUniqueId(), id)) {
             return false;
         }
         int previous = getProgress(player.getUniqueId(), id);
@@ -163,6 +163,110 @@ public final class HalloweenQuestManager {
         return data.getBoolean(questRoot(playerId, id) + ".reward-paid", false);
     }
 
+    public boolean isConfiguredQuest(String rawId) {
+        String id = normalizeId(rawId);
+        if (!isValidId(id)) return false;
+        ConfigurationSection catalog = plugin.getConfig().getConfigurationSection("quests.definitions");
+        return catalog != null && catalog.isConfigurationSection(id);
+    }
+
+    public Set<String> getCatalogIds() {
+        ConfigurationSection catalog = plugin.getConfig().getConfigurationSection("quests.definitions");
+        if (catalog == null) return Set.of();
+        return new TreeSet<>(catalog.getKeys(false));
+    }
+
+    public String getDifficulty(String id) {
+        return plugin.getConfig().getString("quests.definitions." + id + ".difficulty", "neurčeno");
+    }
+
+    public String getDescription(String id) {
+        return plugin.getConfig().getString("quests.definitions." + id + ".description", "");
+    }
+
+    public String getObjectiveType(String id) {
+        return plugin.getConfig().getString("quests.definitions." + id + ".objective-type", "delivery");
+    }
+
+    /**
+     * Turn in configured items atomically: all requirements are checked before any
+     * item is removed. Exploration quests require their automatic room-discovery
+     * progress before allowing the player to turn in the quest.
+     */
+    public TurnInResult turnIn(Player player, String rawId) {
+        String id = normalizeId(rawId);
+        if (player == null || !isValidId(id) || !isConfiguredQuest(id)) {
+            return new TurnInResult(false, "unknown");
+        }
+        UUID playerId = player.getUniqueId();
+        if (isCompleted(playerId, id)) return new TurnInResult(false, "completed");
+        if (!isActive(playerId, id)) return new TurnInResult(false, "not-active");
+
+        String objectiveType = getObjectiveType(id);
+        boolean requiresExploration = objectiveType.equalsIgnoreCase("explore-room")
+                || objectiveType.equalsIgnoreCase("explore-and-deliver");
+        if (requiresExploration && getProgress(playerId, id) < getTarget(id)) {
+            return new TurnInResult(false, "objective-missing");
+        }
+
+        List<Map<?, ?>> requirements = plugin.getConfig().getMapList("quests.definitions." + id + ".required-items");
+        List<RequiredItem> parsed = new ArrayList<>();
+        for (Map<?, ?> requirement : requirements) {
+            Object rawItemId = requirement.get("id");
+            Object rawAmount = requirement.get("amount");
+            if (!(rawItemId instanceof String itemId) || itemId.isBlank()
+                    || !(rawAmount instanceof Number number)
+                    || number.doubleValue() != Math.rint(number.doubleValue())
+                    || number.longValue() < 1L || number.longValue() > 2304L) {
+                return new TurnInResult(false, "invalid-config");
+            }
+            ItemStack template = plugin.getKeyItemFactory().createConfiguredItem(itemId);
+            if (template == null || template.getType().isAir()) {
+                return new TurnInResult(false, "invalid-item:" + itemId);
+            }
+            int amount = number.intValue();
+            int found = countMatchingItems(player, template);
+            if (found < amount) {
+                return new TurnInResult(false, "missing:" + itemId + ":" + (amount - found));
+            }
+            parsed.add(new RequiredItem(itemId, amount, template));
+        }
+
+        // All preconditions passed, so there is no expected partial item removal.
+        for (RequiredItem requirement : parsed) {
+            ItemStack removal = requirement.template().clone();
+            removal.setAmount(requirement.amount());
+            Map<Integer, ItemStack> leftovers = player.getInventory().removeItem(removal);
+            if (!leftovers.isEmpty()) {
+                plugin.getLogger().severe("Quest turn-in inventory changed unexpectedly while removing items for "
+                        + player.getName() + " / " + id + ".");
+                return new TurnInResult(false, "inventory-changed");
+            }
+        }
+
+        if (!requiresExploration) {
+            data.set(questRoot(playerId, id) + ".progress", getTarget(id));
+            save();
+        }
+
+        if (!complete(player, id)) {
+            return new TurnInResult(false, "completion-failed");
+        }
+        return new TurnInResult(true, "completed");
+    }
+
+    private int countMatchingItems(Player player, ItemStack template) {
+        int total = 0;
+        for (ItemStack stack : player.getInventory().getStorageContents()) {
+            if (stack == null || stack.getType().isAir() || !stack.isSimilar(template)) continue;
+            total += stack.getAmount();
+        }
+        return total;
+    }
+
+    public record TurnInResult(boolean success, String reason) {}
+    private record RequiredItem(String id, int amount, ItemStack template) {}
+
     public boolean isActive(UUID playerId, String id) {
         return "active".equalsIgnoreCase(data.getString(questRoot(playerId, id) + ".status", "none"));
     }
@@ -228,6 +332,9 @@ public final class HalloweenQuestManager {
             } else {
                 String status = getStatus(playerId, id);
                 player.sendMessage(plugin.color("&f" + getTitle(id) + " &8(" + id + ")"));
+                player.sendMessage(plugin.color("&7Obtížnost: &e" + getDifficulty(id)));
+                String description = getDescription(id);
+                if (!description.isBlank()) player.sendMessage(plugin.color("&7" + description));
                 player.sendMessage(plugin.color("&7Stav: &e" + status));
                 player.sendMessage(plugin.color("&7Postup: &d" + getProgress(playerId, id) + "&7/&d" + getTarget(id)));
                 String rewardStatus;
