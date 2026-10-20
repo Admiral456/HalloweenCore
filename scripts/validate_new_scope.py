@@ -149,7 +149,7 @@ if "min-y: -36" not in rooms_config or "max-y: -8" not in rooms_config:
 room_java = (JAVA_DIR / "SecretRoomManager.java").read_text(encoding="utf-8")
 for feature in (
     "event.isNewChunk()", "chunkAttemptedKey", "isSafeRoomVolume", "recordGeneratedRoom",
-    "generateTestRoom", "findAccessTunnel", "isNaturalCaveOpening", "decorateEntranceArch", "locateNearest", "locateAll", "onPlayerEnterSecretRoom",
+    "generateTestRoom", "findAccessTunnel", "isSafeTunnelCeiling", "world.isChunkLoaded", "isNaturalCaveOpening", "decorateEntranceArch", "locateNearest", "locateAll", "onPlayerEnterSecretRoom",
     "setDecorationIfAir", "secret_room_locked", "consumeOne", "migrateLegacyRoomRecords"
 ):
     if feature not in room_java:

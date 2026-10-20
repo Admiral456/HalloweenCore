@@ -483,8 +483,14 @@ public final class SecretRoomManager implements Listener {
             for (int step = 0; step <= MAX_ACCESS_TUNNEL_LENGTH; step++) {
                 int px = wallX + direction.dx() * step;
                 int pz = wallZ + direction.dz() * step;
+
+                // Do not load or generate an adjacent chunk as a side effect of probing.
+                // Automatic generation must only inspect chunks already loaded by the server.
+                if (!world.isChunkLoaded(px >> 4, pz >> 4)) break;
+
                 Block lower = world.getBlockAt(px, y + 1, pz);
                 Block upper = world.getBlockAt(px, y + 2, pz);
+                Block ceiling = world.getBlockAt(px, y + 3, pz);
 
                 if (step > 0 && lower.getType() == Material.AIR && upper.getType() == Material.AIR) {
                     if (isNaturalCaveOpening(world, px, y, pz, direction)) {
@@ -494,7 +500,8 @@ public final class SecretRoomManager implements Listener {
                 }
 
                 if (!isSafeTunnelCarve(lower) || !isSafeTunnelCarve(upper)
-                        || !isSafeTunnelFloor(world.getBlockAt(px, y, pz))) {
+                        || !isSafeTunnelFloor(world.getBlockAt(px, y, pz))
+                        || !isSafeTunnelCeiling(ceiling)) {
                     break;
                 }
                 path.add(new TunnelBlock(px, pz));
@@ -510,6 +517,14 @@ public final class SecretRoomManager implements Listener {
 
     private boolean isSafeTunnelFloor(Block block) {
         Material type = block.getType();
+        return (NATURAL_STONE.contains(type) || isOre(type))
+                && !(block.getState() instanceof org.bukkit.block.TileState);
+    }
+
+    private boolean isSafeTunnelCeiling(Block block) {
+        Material type = block.getType();
+        // Avoid digging beneath sand, gravel, fluids, structures, or other falling/
+        // non-natural blocks that could collapse into the new tunnel.
         return (NATURAL_STONE.contains(type) || isOre(type))
                 && !(block.getState() instanceof org.bukkit.block.TileState);
     }
