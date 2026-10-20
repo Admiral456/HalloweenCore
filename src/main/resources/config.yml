@@ -18,6 +18,7 @@ quests:
       title: "Čerstvá sklizeň"
       difficulty: "Lehký"
       description: "Přines 16 pšenic místnímu farmáři."
+      dialogue-story: "Poslední povozy z okolí přijely s menší zásobou, než se čekalo. Hugo nechce nechat vesnici bez jídla, dokud se nezjistí, proč se dodávky zpožďují."
       objective-type: delivery
       target: 1
       required-items:
@@ -28,6 +29,7 @@ quests:
       title: "Kámen na opravy"
       difficulty: "Lehký"
       description: "Přines 24 kamenných kostek na opravu cesty."
+      dialogue-story: "Na severní cestě se objevují nové praskliny. Kameník slyšel v noci zpod kopce duté rány, ale zatím nechce šířit poplach."
       objective-type: delivery
       target: 1
       required-items:
@@ -38,6 +40,7 @@ quests:
       title: "Papírová stopa"
       difficulty: "Lehký"
       description: "Přines 12 papírů pro kartografa."
+      dialogue-story: "Ela našla na staré mapě začerněnou oblast. Než ji bude zkoumat, musí obnovit běžné mapy a ověřit, že nejde jen o poškozený záznam."
       objective-type: delivery
       target: 1
       required-items:
@@ -48,6 +51,7 @@ quests:
       title: "Jídlo pro hlídku"
       difficulty: "Lehký"
       description: "Přines 8 chlebů pro stráž u cesty."
+      dialogue-story: "Noční hlídka hlásí slabé světlo u severního svahu. Tonda chce nejdřív zajistit, aby jeho lidé vydrželi celou směnu na stanovišti."
       objective-type: delivery
       target: 1
       required-items:
@@ -58,6 +62,7 @@ quests:
       title: "Základy knihovny"
       difficulty: "Střední"
       description: "Dodej 4 knihy do vesnické knihovny."
+      dialogue-story: "Některé knihy se vracejí bez posledních stran a na polici zůstává jemný kamenný prach. Mara chce nejprve obnovit katalog, než začne pátrat dál."
       objective-type: delivery
       target: 1
       required-items:
@@ -68,6 +73,7 @@ quests:
       title: "Měděné vzorky"
       difficulty: "Střední"
       description: "Přines 16 měděných ingotů kováři."
+      dialogue-story: "Oldřich si všiml, že některé měděné předměty ze starých štol časem zčernají. Potřebuje běžné vzorky, se kterými může porovnat nalezený kov."
       objective-type: delivery
       target: 1
       required-items:
@@ -78,6 +84,7 @@ quests:
       title: "Železná žádanka"
       difficulty: "Střední"
       description: "Přines 12 železných ingotů pro opravu nářadí."
+      dialogue-story: "Horníci hlásí, že se i nové nástroje lámou rychleji než dřív. Radovan chce připravit náhradní součásti, než se někdo vydá do vzdálenějších štol."
       objective-type: delivery
       target: 1
       required-items:
@@ -88,6 +95,7 @@ quests:
       title: "Fialové krystaly"
       difficulty: "Střední"
       description: "Přines 6 ametystových úlomků badatelce."
+      dialogue-story: "Nela našla v jeskyni krystaly, které vypadají jinak podle světla a hloubky. Nechce ničit celou geodu, stačí jí několik malých vzorků."
       objective-type: delivery
       target: 1
       required-items:
@@ -98,6 +106,7 @@ quests:
       title: "Sada pro alchymistku"
       difficulty: "Těžký"
       description: "Dodej 8 pavoučích očí, 8 skleněných lahví a 4 plamenné prášky."
+      dialogue-story: "Na ošetřovnu se vrátil horník s popáleninami, přestože tvrdil, že se lávy nedotkl. Žofie připravuje ochrannou směs a potřebuje doplnit laboratorní suroviny."
       objective-type: delivery
       target: 1
       required-items:
@@ -112,6 +121,7 @@ quests:
       title: "Ztracené záznamy"
       difficulty: "Těžký"
       description: "Přines 8 knih a 12 papírů archiváři."
+      dialogue-story: "Viktor objevil ve starých zápisech popisy chodeb, které na mapách vůbec nejsou. Originály jsou křehké, proto chce vytvořit bezpečné kopie."
       objective-type: delivery
       target: 1
       required-items:
@@ -124,6 +134,7 @@ quests:
       title: "Zakázka kováře"
       difficulty: "Těžký"
       description: "Přines 24 železných a 12 zlatých ingotů."
+      dialogue-story: "Mistr kovář chystá opravu výstroje pro výpravu k místům, která někdo kdysi vyškrtnul z map. Než kohokoli vyšle, potřebuje mít všechen materiál připravený."
       objective-type: delivery
       target: 1
       required-items:
@@ -136,6 +147,7 @@ quests:
       title: "Výprava do hlubin"
       difficulty: "Velmi těžký"
       description: "Přines 3 enderové perly a 8 plamenných prášků."
+      dialogue-story: "Emil připravuje navigační značky pro hlubší průchody. Některé chodby vypadají na starých mapách kratší, než ve skutečnosti jsou."
       objective-type: delivery
       target: 1
       required-items:
@@ -148,6 +160,7 @@ quests:
       title: "Zpráva ze skryté místnosti"
       difficulty: "Těžký"
       description: "Najdi jednu zaznamenanou tajnou místnost a vrať se k badateli."
+      dialogue-story: "Irena shromažďuje ověřené zprávy o podzemních místnostech, které v mapách chybějí. Nezajímá ji pověst ani odhad — potřebuje, aby někdo skutečně vstoupil dovnitř."
       objective-type: explore-room
       target: 1
       required-items: []
@@ -156,6 +169,7 @@ quests:
       title: "Zapečetěný archiv"
       difficulty: "Velmi těžký"
       description: "Nejdřív vstup do tajné místnosti, potom přines 8 knih, 16 papírů a 6 ametystových úlomků."
+      dialogue-story: "Strážce archivu hledá důkaz, že podzemní místnosti souvisejí se starými záznamy. Nejdřív musí být nález prozkoumán a pak bezpečně zapsán do několika kopií."
       objective-type: explore-and-deliver
       target: 1
       required-items:
@@ -170,6 +184,7 @@ quests:
       title: "Výzkum po setmění"
       difficulty: "Velmi těžký"
       description: "Přines 8 pavoučích očí, 16 železných ingotů a 4 enderové perly."
+      dialogue-story: "Pavel si všiml, že se výsledky jeho měření po setmění mění. Chce ověřit, jestli je příčinou chyba přístrojů, nebo něco v okolí hlubokých štol."
       objective-type: delivery
       target: 1
       required-items:
@@ -184,6 +199,7 @@ quests:
       title: "Vzorky z lesa"
       difficulty: "Lehký"
       description: "Přines 12 červených a 12 hnědých hub lesní sběratelce."
+      dialogue-story: "Běla porovnává lesní houby z různých stran potoka. Na místech s nezvykle tvrdým kamenem se objevily druhy, které tam podle starých poznámek nerostly."
       objective-type: delivery
       target: 1
       required-items:
@@ -196,6 +212,7 @@ quests:
       title: "Lůžka pro hostinec"
       difficulty: "Lehký"
       description: "Dodej 16 bílých vln pro nové postele v hostinci."
+      dialogue-story: "Do hostince přijíždí více cestujících než obvykle. Róza chce připravit další lůžka, protože se několik horníků vrací z cest a nemá kde přenocovat."
       objective-type: delivery
       target: 1
       required-items:
@@ -206,6 +223,7 @@ quests:
       title: "Úlovek z řeky"
       difficulty: "Střední"
       description: "Přines 8 tresek a 4 lososy kuchaři."
+      dialogue-story: "Matěj čeká hosty, kteří se mají po setmění ptát na starou cestu pod kopcem. Připravuje jídlo, ale nechce kvůli tomu vyprázdnit řeku."
       objective-type: delivery
       target: 1
       required-items:
@@ -218,6 +236,7 @@ quests:
       title: "Hlína pro hrnčíře"
       difficulty: "Lehký"
       description: "Přines 24 hliněných kuliček hrnčíři."
+      dialogue-story: "Některé nádoby na vodu popraskaly zevnitř, jako by na ně tlačil kámen. Jáchym chce vyrobit náhrady dřív, než se zásoby začnou ztrácet."
       objective-type: delivery
       target: 1
       required-items:
@@ -228,6 +247,7 @@ quests:
       title: "Světlo na cestu"
       difficulty: "Střední"
       description: "Přines 16 pochodní pro osvětlení staré cesty."
+      dialogue-story: "U severního svahu je stará šachta, jejíž hloubku nikdo nezná. Bohdan chce nejdřív bezpečně osvětlit cestu, aby se k ní lidé nepřiblížili ve tmě."
       objective-type: delivery
       target: 1
       required-items:
@@ -238,6 +258,7 @@ quests:
       title: "Med pro léčitelku"
       difficulty: "Střední"
       description: "Dodej 4 lahve medu do vesnické ošetřovny."
+      dialogue-story: "Několik vesničanů si stěžovalo na zvláštní kovovou chuť vody z hlubší studny. Anežka doplňuje zásoby na ošetřovně a čeká na další ověřené zprávy."
       objective-type: delivery
       target: 1
       required-items:
@@ -248,6 +269,7 @@ quests:
       title: "Dřevo pro truhláře"
       difficulty: "Střední"
       description: "Přines 16 dubových klád na opravu nábytku."
+      dialogue-story: "Jedna lavice ve společenské síni se propadla a pod podlahou se ukázala dutina, která na půdorysu není. Vít zatím opravuje nábytek a nechce nic rozebírat bez důvodu."
       objective-type: delivery
       target: 1
       required-items:
@@ -258,6 +280,7 @@ quests:
       title: "Kožené řemeny"
       difficulty: "Těžký"
       description: "Přines 12 kusů kůže sedláři."
+      dialogue-story: "Na brašnách vrácených z dolů jsou oděrky z vnitřní strany, jako by se opíraly o ostré kameny. Kamil chce vyměnit řemeny dřív, než se další výprava vydá na cestu."
       objective-type: delivery
       target: 1
       required-items:
@@ -268,6 +291,7 @@ quests:
       title: "Směr do podzemí"
       difficulty: "Těžký"
       description: "Přines 1 kompas a 8 papírů kartografovi."
+      dialogue-story: "Ela našla několik starých map, na nichž čáry končí uprostřed skály. Potřebuje porovnat směr kompasu se záznamy, než začne zakreslovat nové podzemní průchody."
       objective-type: delivery
       target: 1
       required-items:
@@ -280,6 +304,7 @@ quests:
       title: "Hornické vzorky"
       difficulty: "Těžký"
       description: "Přines 12 uhlí a 8 surového železa pro průzkum hlubin."
+      dialogue-story: "Zdeněk mapuje nové štoly, kde se skladba kamene liší od starých chodeb. Chce vzorky z více míst a žádá, aby nikdo nerozšiřoval neznámé průchody."
       objective-type: delivery
       target: 1
       required-items:
