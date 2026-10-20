@@ -1,68 +1,61 @@
-# UplineDialogues a HalloweenCore — funkční propojení
+# HalloweenCore + UplineDialogues — aktuální integrace
 
-UplineDialogues je samostatný plugin pro editor dialogů. HalloweenCore jej nepřebaluje ani nenahrazuje: dodává persistentní questy, ověřování předmětů, jednorázové dokončení, průzkumný cíl tajných místností a placeholders.
+HalloweenCore zajišťuje náhodnou nabídku úkolu, uložení hráčova postupu, kontrolu předmětů, fragmentové odměny a hod na klíč. UplineDialogues zajišťuje editor a samotné uzly rozhovoru. Plugin automaticky nevytváří villagery, nepřiřazuje jim dialogy a nenasazuje jim pumpkin hlavy.
 
-Oficiální popis UplineDialogues 3.0 uvádí lokální editor přes /updialog panel, větvení rozhovorů, podmínky, inventářové akce a příkazy spouštěné jako hráč, OP nebo konzole. Viz https://www.spigotmc.org/resources/uplinedialogues.112285/.
+## Co musí být nainstalováno
 
-## Instalace a tvorba dialogů
+- HalloweenCore JAR
+- UplineDialogues
+- PlaceholderAPI (potřebná pro dynamické placeholdery a podmíněné větve)
+- ItemsAdder (volitelný pro vlastní vzhled klíčů; bez něj má klíč vanilla fallback)
 
-1. Nainstaluj UplineDialogues samostatně a restartuj server.
-2. Spusť /updialog panel a otevři adresu, kterou příkaz vypíše.
-3. Pro každého zadavatele vytvoř v editoru rozhovor s uzly: úvod, vysvětlení úkolu, přijetí, odevzdání, úspěch, již dokončeno a odchod.
-4. Do větve „Přijmout úkol“ přidej akci jako hráč: /halloween quest start <id>.
-5. Do větve „Odevzdat“ přidej akci jako hráč: /halloween quest turnin <id>. HalloweenCore ověří a odebere požadované předměty sám, takže není nutné skládat samostatné podmínky a příkazy pro každý předmět.
-6. Pro viditelnost možností použij PlaceholderAPI podmínky. Příklad: nabídku přijetí skryj, pokud %halloween_quest_fresh_harvest_started% je true; po dokončení ukaž větev s poděkováním, pokud %halloween_quest_fresh_harvest_completed% je true.
-7. Pro questy hidden_room_report a sealed_archive se nejprve musí hráč fyzicky dostat do prostoru zaznamenané tajné místnosti. Potom se průzkumný postup uloží a dialog mu dovolí quest odevzdat.
-8. Textový katalog 25 hotových dialogů je v docs/DIALOGUE_LIBRARY_CZ.md. UplineDialogues používá vlastní lokální formát stromů; tento dokument je obsahová specifikace k přepsání do editoru, nikoli neověřený automatický importní soubor.
+## Zapojení sdíleného náhodného stromu
 
-## Ověření propojení panelu s herními questy
+1. Spusť `/updialog panel` a vytvoř strom například `Village Work`.
+2. Přiřaď jej každému NPC, které má nabízet náhodné úkoly. Přiřazení se ukládá v UplineDialogues na serveru, ne v tomto repozitáři.
+3. V uzlu `START` při volbě „Máš pro mě nějakou práci?“ spusť jako **hráč** `/halloween quest offer`, poté přejdi do `OFFER_ROUTER`.
+4. V `OFFER_ROUTER` zobrazuj podmíněně jednu z možností:
+   - `%halloween_villager_quest_status% == offered` → `OFFER`
+   - `%halloween_villager_quest_status% == active` → `ACTIVE`
+   - `%halloween_villager_quest_status% == none` → `NO_WORK`
+5. V `OFFER` ukaž `%halloween_villager_quest_title%`, `%halloween_villager_quest_description%`, `%halloween_villager_quest_difficulty%`, `%halloween_villager_quest_reward%` a příběh z `%halloween_villager_quest_story%`.
+6. Volba přijetí spustí jako hráč `/halloween quest accept-offer`; odmítnutí spustí `/halloween quest decline-offer`.
+7. U aktivního úkolu nabídka odevzdání spustí jako hráč `/halloween quest turnin-offer`. Hráč musí být vykonavatelem příkazu, aby se ověřil jeho inventář.
+8. V `TURNIN_ROUTER` podle `%halloween_villager_quest_turnin_status%` větvi úspěch na `completed`, chybějící požadavky na `missing` a chybu zadání na `error`.
+9. Ulož strom. Zkontroluj, že každé NPC, které má zadávat úkoly, je skutečně přiřazené ke stejnému sdílenému stromu.
 
-HalloweenCore zpracovává akce z panelu přes skutečné Bukkit příkazy. Příkaz `/halloween` má oprávnění `halloweencore.use` s výchozí hodnotou `true`; přijetí a odevzdání vlastního questu nevyžadují OP. Pro odevzdání zvol akci jako **hráč**, aby HalloweenCore četl inventář osoby, která mluví s NPC.
+Kompletní české texty a názvy všech uzlů jsou v `docs/DIALOGUE_LIBRARY_CZ.md`. Je to obsahový scénář, nikoli importní soubor pro UplineDialogues.
 
-1. Spusť `/updialog panel` na serveru a otevři adresu vypsanou příkazem. UplineDialogues 3.0 podle popisu autora ukládá stromy lokálně u své konfigurace a změny mají být živé po uložení.
-2. V panelu vytvoř nebo otevři rozhovor a přiřaď ho konkrétní entitě/NPC. Vytvoř větve: úvod, vysvětlení, přijetí, odevzdání, neúspěšné odevzdání a dokončeno. Ulož změny.
-3. Do akce volby přijetí přidej **Run command → as player** s `halloween quest start fresh_harvest`. Použij úvodní lomítko pouze tehdy, pokud ho pole editoru vyžaduje. Potom připoj repliku potvrzující přijetí.
-4. Do volby odevzdání přidej **Run command → as player** s `halloween quest turnin fresh_harvest` (stejné pravidlo k lomítku). Nedávej tuto akci jako OP ani konzoli — inventář musí patřit mluvícímu hráči.
-5. Pro skrývání voleb použij v panelu podmínku PlaceholderAPI: `%halloween_quest_fresh_harvest_started%` je `true`, když je úkol aktivní nebo dokončený; `%halloween_quest_fresh_harvest_completed%` je `true` po dokončení. To vyžaduje PlaceholderAPI. Bez něj se backend stále brání druhému přijetí a opakovanému dokončení.
-6. **Test s ne-OP hráčem:** bez 16 pšenic klikni na odevzdání — má to odmítnout odevzdání a nic nesmí odebrat. Potom přines 16 pšenic a zopakuj — quest se dokončí. Znovu zkus přijetí i odevzdání; dokončení se nesmí započítat podruhé.
-7. Pokud se dialog v herním světě vůbec neotevře, ověř uložení rozhovoru, přiřazení ke správné entitě/NPC a chybové zprávy UplineDialogues v konzoli. To je odlišné od samotné questové akce.
+## Testy na serveru
 
-**Hranice ověření:** příkazy, oprávnění a backend jsou ověřitelné v repozitáři. Nemám přístup k tvému běžícímu serveru ani k lokálním souborům UplineDialogues, takže nemůžu potvrdit již uložený NPC strom na serveru. Markdown katalog se do panelu sám neimportuje.
+- Na testovacím účtu požádej o úkol a ověř, že se náhodná nabídka zachová, dokud ji nepřijmeš nebo neodmítneš.
+- Nabídku odmítni a otevři dialog znovu. Jiný dostupný úkol by měl být přednostně nabídnut.
+- Přijmi úkol, zavři dialog, vrať se a ověř, že zůstává aktivní.
+- Zkus odevzdání bez všech předmětů. Dialog má ukázat větev `missing` a inventář se nesmí změnit.
+- Dodej všechny požadavky a odevzdej úkol. Zkontroluj fragmenty, stav dokončení a případný bonusový klíč.
+- Ověř i dvě jednorázové úlohy tajných místností: jejich průzkumný cíl se splní až po skutečném vstupu do zaznamenané místnosti.
+- Na admin účtu spusť `/halloween quest validate`, `/halloween rooms generate 3` a `/halloween rooms verify`.
 
-## Bonusový klíč z villager questů
+## Přímé úkoly podle ID
 
-Po úspěšném odevzdání questu příkazem `/halloween quest turnin <id>` proběhne jeden náhodný hod pro bonusový klíč: **40 % běžný, 10 % vzácný, 5 % legendární**. Jde o absolutní a vzájemně se vylučující šance; v 45 % případů nepadne žádný klíč. Quest se dokončí i tehdy, když klíč nepadne. Ruční administrátorské dokončení questu klíč nelosuje — bonus je jen za skutečné odevzdání hráčem.
+Pro speciální skriptovanou větev lze stále použít `/halloween quest start <id>` a `/halloween quest turnin <id>`. Nepoužívej tyto dva příkazy pro nový náhodný strom místo `offer`, `accept-offer` a `turnin-offer`, jinak se neaktualizuje dialogový stav náhodné nabídky.
 
-Šance jsou v `quests.key-drop-chances.common`, `quests.key-drop-chances.rare` a `quests.key-drop-chances.legendary` jako čísla od 0 do 1. Běžná odměna se nastavuje nezávisle přes `reward-fragments` nebo `reward-items` u jednotlivých questů; není nahrazena klíčem.
+## Šance na klíč a odměny
 
-## Připravené questy
+Základní šance podle obtížnosti:
 
-Quest IDs jsou definovaná v src/main/resources/config.yml. Obtížnost a popis se zobrazují v quest statusu a required-items obsahuje požadavky na odevzdání. Konkrétní běžné odměny nejsou nastavené, protože jejich položky a množství zatím nebyly určeny.
+| Obtížnost | Běžný | Vzácný | Legendární |
+|---|---:|---:|---:|
+| Lehký | 10 % | 1 % | 0,1 % |
+| Střední | 15 % | 3,5 % | 0,5 % |
+| Těžký | 20 % | 6 % | 2 % |
+| Velmi těžký | 25 % | 10 % | 8 % |
 
-## Quest příkazy
+Speciální legendární šance: 20 bloků vysušeného ghasta — 18 %; 40 železných ingotů — 10 %; 5 diamantů — 14 %; trojzubec — 20 %. Jednotlivé pravděpodobnosti jsou vzájemně se vylučující výsledek jednoho hodu; u výchozí velmi těžké úlohy bez vlastní úpravy je 57 % šance, že nepadne žádný klíč. Fragmenty se vyplácejí nezávisle: 4 / 7 / 12 / 20 podle obtížnosti.
 
-- /halloween quest start <id> — přijme nakonfigurovaný quest hráče; nejde jej znovu přijmout po dokončení.
-- /halloween quest turnin <id> — zkontroluje všechny required-items, a až když má hráč vše, odebere předměty a dokončí quest. Pokud mu něco chybí nebo není splněný průzkumný cíl, nic neodebere.
-- /halloween quest status [id] — ukáže stav, obtížnost, popis a postup.
-- /halloween quest claim <id> — jednorázově vyzvedne odměnu nastavenou až dodatečně, pokud nějaká existuje.
-- /halloween fragments — ukáže uložený zůstatek fragmentů.
+## Limity
 
-IDs mají malá písmena, čísla, pomlčky nebo podtržítka, maximálně 48 znaků.
-
-## PlaceholderAPI
-
-PlaceholderAPI je volitelné. Jsou dostupné:
-- %halloween_fragments%
-- %halloween_quest_<id>_started%
-- %halloween_quest_<id>_progress%
-- %halloween_quest_<id>_completed%
-
-## Tajné místnosti a locate
-
-- /halloween rooms status zobrazuje počítadla, konfiguraci a poslední zaznamenanou místnost.
-- /halloween rooms generate [radius] je administrátorský test v Overworldu; zkouší bezpečné umístění v okruhu několika chunků.
-- /halloween rooms verify zkontroluje zaznamenané místnosti v již načtených chunkech včetně povolené palety obvodových bloků a jediného průchodu, a vypíše chybějící či nechráněné truhly; nenačtené chunky neotevírá.
-- /locate halloweenroom [max-vzdálenost] nebo /halloween locate room hledá nejbližší skutečně zaznamenanou místnost.
-- /locateall halloweenroom vypisuje všechny zaznamenané místnosti aktuálního světa pouze správci.
-- Automatické generování se spouští na nově vytvořeném Overworld chunku; již existující chunky se automaticky neprohledávají. Výchozí šance 2,5 % je šancí na pokus, nikoli zárukou místnosti v každém novém chunku; kandidát musí projít kontrolou kamenného obalu i bezpečné cesty do přírodní jeskyně. Použij /halloween rooms generate jako test a /halloween rooms verify ke kontrole záznamů.
-- Truhly zůstávají chráněné i po odemčení proti rozbití, ohni, výbuchům TNT/creeperů, přesunu písty, destruktivním změnám od entit, dispenserům/dropperům a automatickému vkládání/vytahování hopperem či hopper-minecartem. Po odemčení je lze ručně otevřít.
+- Stromy v editoru nejsou verzovány v tomto repozitáři a nejsou automaticky importovány.
+- Pumpkin hlavy ani automatická úprava vzhledu vesničanů nejsou v současném HalloweenCore implementované.
+- Truhly tajných místností jsou zamčené a chráněné, ale zatím nemají dohodnutou loot tabulku.
+- Úspěšné CI ověřuje kompilaci, statické kontroly a balení, nikoli živé chování serveru či správnost uloženého stromu v UplineDialogues.
