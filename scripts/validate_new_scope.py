@@ -140,8 +140,12 @@ if set(quest_ids) != expected_quests:
 for difficulty in ("Lehký", "Střední", "Těžký", "Velmi těžký"):
     if difficulty not in quest_block:
         fail(f"quest catalogue is missing the {difficulty} difficulty tier")
-if "reward-fragments:" in quest_block or "reward-items:" in quest_block:
-    fail("quest rewards were configured before being agreed")
+for reward in ("light: 3", "medium: 5", "hard: 8", "very-hard: 12"):
+    if reward not in quest_block:
+        fail(f"default villager reward tier is missing: {reward}")
+for drop_chance in ("common: 0.40", "rare: 0.10", "legendary: 0.05"):
+    if drop_chance not in quest_block:
+        fail(f"villager quest key drop chance is missing: {drop_chance}")
 
 rooms_config = config_text.split("rooms:\n", 1)[1]
 if "chance-per-new-chunk: 0.025" not in rooms_config:
@@ -200,4 +204,4 @@ for quest_id in expected_quests:
     if quest_id not in dialogue_text:
         fail(f"dialogue catalogue is missing quest {quest_id}")
 
-print("Scope check passed: 25 dialogue quests, no unapproved quest rewards, protected tiered rooms/chests and retained sweet textures.")
+print("Scope check passed: 25 dialogue quests with random offers, configured rewards/key odds, protected tiered rooms/chests and retained sweet textures.")
