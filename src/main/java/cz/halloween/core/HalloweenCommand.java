@@ -111,12 +111,17 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
                     ? manager.getVillagerQuestId(player.getUniqueId())
                     : manager.normalizeId(args[2]);
             if (offeredQuest && !manager.isCurrentVillagerQuestActive(player, id)) {
-                player.sendMessage(plugin.color("&cNemáš aktivní náhodný úkol od vesničana, který by šlo odevzdat."));
+                manager.recordVillagerQuestTurnInResult(player, "not-active");
                 return true;
             }
             HalloweenQuestManager.TurnInResult result = manager.turnIn(player, id);
+            if (offeredQuest) {
+                manager.recordVillagerQuestTurnInResult(player, result.reason());
+                if (result.success()) manager.markVillagerQuestCompleted(player, id);
+                // The UplineDialogues tree owns the player-facing success/failure text.
+                return true;
+            }
             if (result.success()) {
-                if (offeredQuest) manager.markVillagerQuestCompleted(player, id);
                 player.sendMessage(plugin.color("&5&lÚKOL DOKONČEN &8» &d" + manager.getTitle(id)));
                 if (manager.isRewardPaid(player.getUniqueId(), id)) {
                     long fragments = manager.getConfiguredFragmentReward(id);
