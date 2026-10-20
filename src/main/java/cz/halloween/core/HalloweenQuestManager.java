@@ -464,6 +464,29 @@ public final class HalloweenQuestManager {
         return Math.max(1, Math.min(configured, 100000));
     }
 
+    public String getConfiguredRewardItemsDescription(String rawId) {
+        String id = normalizeId(rawId);
+        if (!isConfiguredQuest(id)) return "";
+        List<Map<?, ?>> definitions = plugin.getConfig().getMapList("quests.definitions." + id + ".reward-items");
+        List<String> parts = new ArrayList<>();
+        for (Map<?, ?> definition : definitions) {
+            Object rawItemId = definition.get("id");
+            Object rawAmount = definition.get("amount");
+            if (!(rawItemId instanceof String itemId) || itemId.isBlank()
+                    || !(rawAmount instanceof Number number)
+                    || number.doubleValue() != Math.rint(number.doubleValue())
+                    || number.longValue() < 1L || number.longValue() > 2304L) continue;
+            int separator = itemId.indexOf(':');
+            String name = separator >= 0 ? itemId.substring(separator + 1) : itemId;
+            name = name.replace('_', ' ').replace('-', ' ').trim();
+            if (!name.isEmpty()) {
+                name = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+            }
+            parts.add(number.intValue() + "× " + name);
+        }
+        return String.join(", ", parts);
+    }
+
     public long getConfiguredFragmentReward(String id) {
         String path = "quests.definitions." + id;
         if (!isConfiguredQuest(id)) return 0L;
