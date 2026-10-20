@@ -19,8 +19,12 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
+      - name: Install reward validator dependency
+        run: python3 -m pip install --disable-pip-version-check PyYAML==6.0.2
       - name: Validate the agreed content scope
         run: python3 scripts/validate_new_scope.py
+      - name: Validate quest rewards and secret-room loot
+        run: python3 scripts/validate_rewards.py
       - name: Build plugin
         run: mvn -B clean package
       - name: Package ItemsAdder content
