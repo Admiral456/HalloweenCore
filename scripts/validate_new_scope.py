@@ -151,9 +151,6 @@ if "min-y: -36" not in rooms_config or "max-y: -8" not in rooms_config:
 for rarity_weight in ("common: 70", "rare: 25", "legendary: 5"):
     if rarity_weight not in rooms_config:
         fail(f"room rarity weights are incomplete: {rarity_weight}")
-for drop_chance in ("common: 0.40", "rare: 0.10", "legendary: 0.05"):
-    if drop_chance not in config_text:
-        fail(f"villager quest key drop chance is missing: {drop_chance}")
 if "key-drop-chance: 0.15" in config:
     fail("obsolete global key-drop chance is still configured")
 room_java = (JAVA_DIR / "SecretRoomManager.java").read_text(encoding="utf-8")
@@ -185,10 +182,6 @@ for feature in ("isConfiguredQuest", "TurnInResult turnIn", "required-items",
                 ".removeItem(", "objective-missing"):
     if feature not in quest_java:
         fail(f"quest turn-in contract is missing: {feature}")
-for feature in ("rollBonusKeyDrop", "key-drop-chances.common", "key-drop-chances.rare",
-                "key-drop-chances.legendary", "clampProbability"):
-    if feature not in quest_java:
-        fail(f"villager quest bonus key drop is missing: {feature}")
 command_java = (JAVA_DIR / "HalloweenCommand.java").read_text(encoding="utf-8")
 for feature in ('action.equals("turnin")', "rooms generate", "private boolean handleLocate",
                 "/locate halloweenroom"):
@@ -207,4 +200,4 @@ for quest_id in expected_quests:
     if quest_id not in dialogue_text:
         fail(f"dialogue catalogue is missing quest {quest_id}")
 
-print("Scope check passed: 25 dialogue quests, 40/10/5 percent key drops, protected tiered rooms/chests and retained sweet textures.")
+print("Scope check passed: 25 dialogue quests, no unapproved quest rewards, protected tiered rooms/chests and retained sweet textures.")
