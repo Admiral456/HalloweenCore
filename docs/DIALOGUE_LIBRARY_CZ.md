@@ -26,13 +26,17 @@ PlaceholderAPI musí být nainstalované a jeho placeholdery musí UplineDialogu
 „Zdravím tě, poutníku. V poslední době se kolem vesnice objevují podivné zprávy a každý tu má plné ruce práce. Co tě přivádí?“
 
 Možnosti:
-- **„Máš pro mě nějakou práci?“** → akce příkazem `/halloween quest offer`; potom přesměruj podle `%halloween_villager_quest_status%`:
-  - `offered` → uzel **OFFER**;
-  - `active` → uzel **ACTIVE**;
-  - `none` → uzel **NO_WORK**;
-  - `completed` se po novém zavolání `offer` normálně změní na novou nabídku nebo `none`, pokud už není co nabídnout.
+- **„Máš pro mě nějakou práci?“** → spusť jako hráč `/halloween quest offer` a přejdi do uzlu **OFFER_ROUTER**.
 - **„Co se tu v poslední době děje?“** → uzel **VILLAGE_STORY**.
 - **„Teď ne, díky.“** → uzel **GOODBYE**.
+
+### Uzel OFFER_ROUTER — zvolení správné větve
+
+Tento mezilehlý uzel je nutný: UplineDialogues zobrazí možnosti podle jejich podmínek, ale scénář nespoléhá na automatické přesměrování po příkazu. Nastav podmínky viditelnosti ve vizuálním editoru tak, aby byla viditelná vždy jen správná možnost:
+
+- **„Podívat se na nabídku“** → podmínka `%halloween_villager_quest_status% == offered`; cíl **OFFER**.
+- **„Pokračovat v rozpracovaném úkolu“** → podmínka `%halloween_villager_quest_status% == active`; cíl **ACTIVE**.
+- **„Teď pro mě nic nemáš“** → podmínka `%halloween_villager_quest_status% == none`; cíl **NO_WORK**.
 
 ### Uzel VILLAGE_STORY — příběhové povídání
 
@@ -40,7 +44,7 @@ Možnosti:
 „Lidé mluví o starých mapách, dutých ranách pod zemí a cestách, které na některých záznamech vůbec nejsou. Zatím jsou to jen zprávy. Nechci tě strašit, ale pokud se něco dozvíš, promluv si s místními.“
 
 Možnosti:
-- **„Zeptat se na práci“** → stejné jako první možnost START: spusť `/halloween quest offer` a přejdi do větve podle stavu nabídky.
+- **„Zeptat se na práci“** → spusť jako hráč `/halloween quest offer` a přejdi do uzlu **OFFER_ROUTER**.
 - **„Děkuji za zprávy.“** → GOODBYE.
 
 ### Uzel OFFER — nová náhodná nabídka
@@ -89,9 +93,7 @@ Možnosti:
 
 Možnosti:
 - **„Připomenout zadání“** → ACTIVE_DETAILS.
-- **„Mám vše, co potřebuješ.“** → spusť `/halloween quest turnin-offer`; poté zkontroluj `%halloween_villager_quest_status%`:
-  - `completed` → QUEST_COMPLETE;
-  - `active` → NOT_READY.
+- **„Mám vše, co potřebuješ.“** → spusť jako hráč `/halloween quest turnin-offer` a přejdi do **TURNIN_ROUTER**.
 - **„Ještě potřebuji čas.“** → GOODBYE, úkol zůstává aktivní.
 
 ### Uzel ACTIVE_DETAILS — připomenutí zadání
@@ -100,8 +102,18 @@ Možnosti:
 „Tvůj úkol je **%halloween_villager_quest_title%**. %halloween_villager_quest_description% Při odevzdání ověřím všechny požadavky najednou. Pokud něco chybí, nic z požadovaných předmětů se ti neodebere.“
 
 Možnosti:
-- **„Zkusit odevzdat“** → `/halloween quest turnin-offer` → podle stavu `completed` přejdi na QUEST_COMPLETE, jinak na NOT_READY.
+- **„Zkusit odevzdat“** → spusť jako hráč `/halloween quest turnin-offer` a přejdi do **TURNIN_ROUTER**.
 - **„Zpět“** → ACTIVE.
+
+### Uzel TURNIN_ROUTER — výsledek odevzdání
+
+Podmínky viditelnosti těchto možností nastav ve vizuálním editoru. Po příkazu se uloží výsledek a router podle něj nabídne odpovídající větev:
+
+- **„Děkuji za pomoc“** → podmínka `%halloween_villager_quest_turnin_status% == completed`; cíl **QUEST_COMPLETE**.
+- **„Ještě to doplním“** → podmínka `%halloween_villager_quest_turnin_status% == missing`; cíl **NOT_READY**.
+- **„Je potřeba ověřit zadání“** → podmínka `%halloween_villager_quest_turnin_status% == error`; cíl **QUEST_ERROR**.
+
+Úspěšná i neúspěšná akce `turnin-offer` už nepřidává vlastní zprávu do chatu; text viditelný hráči podává tento dialogový strom.
 
 ### Uzel NOT_READY — něco chybí
 
@@ -111,6 +123,15 @@ Možnosti:
 Možnosti:
 - **„Připomenout zadání“** → ACTIVE_DETAILS.
 - **„Vrátím se později.“** → GOODBYE.
+
+### Uzel QUEST_ERROR — chyba v nastavení úkolu
+
+**NPC:**
+„Něco nesedí v zápisu úkolu a nechci po tobě chtít, abys to zkoušel pořád dokola. Tvoje předměty nebyly odebrány, pokud kontrola úkolu neproběhla úspěšně. Oznam správci, že se tento úkol nedá dokončit.“
+
+Možnosti:
+- **„Vrátit se k zadání“** → ACTIVE_DETAILS.
+- **„Na shledanou.“** → GOODBYE.
 
 ### Uzel QUEST_COMPLETE — úspěšné dokončení
 
@@ -159,6 +180,7 @@ HalloweenCore poskytuje přes PlaceholderAPI:
 - `%halloween_villager_quest_difficulty%` — obtížnost úkolu.
 - `%halloween_villager_quest_reward%` — počet fragmentů za splnění.
 - `%halloween_villager_quest_reward_items%` — volitelné další předměty z `reward-items`; pokud není nastaven žádný předmět, placeholder je prázdný.
+- `%halloween_villager_quest_turnin_status%` — `completed`, `missing`, `error` nebo `none`; používá se v uzlu TURNIN_ROUTER.
 
 Příkazy pro akce dialogu:
 - `/halloween quest offer` — vybere náhodný úkol do rozhovoru, úspěšně připravená nabídka nevypisuje další chatovou hlášku.
