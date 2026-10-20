@@ -1,6 +1,18 @@
 # Only NPC dialogue quests and locked underground rooms remain in this build.
-# Quest dialogue trees are authored with UplineDialogues. Quest IDs and turn-in requirements are registered here.
+# UplineDialogues shows a random eligible quest from quests.definitions to the player.
+# Add a quest by adding a definition; it joins the random pool by default.
+# Set villager-offer-weight: 0 on a definition to exclude it, or a higher value to make it more likely.
 quests:
+  default-reward-fragments:
+    light: 3
+    medium: 5
+    hard: 8
+    very-hard: 12
+  # Bonus key roll after a successful NPC quest turn-in. Remaining chance awards no key.
+  key-drop-chances:
+    common: 0.40
+    rare: 0.10
+    legendary: 0.05
   definitions:
     fresh_harvest:
       title: "Čerstvá sklizeň"
