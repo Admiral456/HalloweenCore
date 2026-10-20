@@ -5,7 +5,7 @@ HalloweenCore je zúžený update pro Paper/Purpur 1.21.10 a Java 21. Aktivní o
 ## Co funguje v kódu
 
 - UplineDialogues je samostatný plugin pro tvorbu a editaci rozhovorů. HalloweenCore poskytuje bezpečné questové příkazy, persistentní postup a placeholders.
-- Výchozí konfigurace obsahuje 25 questů se třemi úrovněmi obtížnosti. Požadované předměty jsou definované v konfiguraci; příkaz /halloween quest turnin je ověří všechny předem a odebere je až po úspěšné kontrole.
+- Výchozí konfigurace obsahuje 25 questů ve čtyřech úrovních obtížnosti. Požadované předměty jsou definované v konfiguraci; příkaz /halloween quest turnin je ověří všechny předem a odebere je až po úspěšné kontrole.
 - Quest lze přijmout jen jednou, průběh je uložen podle hráče a dokončený quest nelze opakovat. Žádné fragmentové ani předmětové odměny nejsou bez dohody přednastavené.
 - Nové chunky Overworldu mají 2,5% šanci na pokus o generování malé skryté místnosti. Generátor zkouší více bezpečných umístění, vyžaduje přírodní kamenný obal i nalezenou přírodní jeskyni do 14 bloků a otevře k ní úzký přístupový tunel. Tunel vyřezává pouze přírodní kámen, nikoli rudy, tekutiny, kontejnery nebo hráčské stavby.
 - Každá místnost má speciálním PDC označenou zamčenou truhlu. Klíč se při prvním odemčení spotřebuje; potom truhla zůstane odemčená. Truhla je chráněná před rozbitím a výbuchy.
