@@ -193,6 +193,7 @@ public final class HalloweenQuestManager {
         List<Map<?, ?>> requirements = plugin.getConfig().getMapList(root + ".required-items");
         if (requirements.isEmpty() && !objective.equals("explore-room")) return false;
 
+        Set<String> seenItemIds = new java.util.HashSet<>();
         for (Map<?, ?> requirement : requirements) {
             Object rawItemId = requirement.get("id");
             Object rawAmount = requirement.get("amount");
@@ -200,6 +201,7 @@ public final class HalloweenQuestManager {
                     || !(rawAmount instanceof Number number)
                     || number.doubleValue() != Math.rint(number.doubleValue())
                     || number.longValue() < 1L || number.longValue() > 2304L) return false;
+            if (!seenItemIds.add(itemId.toLowerCase(java.util.Locale.ROOT))) return false;
             ItemStack template = plugin.getKeyItemFactory().createConfiguredItem(itemId);
             if (template == null || template.getType().isAir()) return false;
         }
