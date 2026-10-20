@@ -454,7 +454,7 @@ public final class SecretRoomManager implements Listener {
         setDecorationIfAir(world, x + ROOM_WIDTH - 2, y + ROOM_HEIGHT - 2,
                 z + ROOM_DEPTH - 2, Material.COBWEB);
         setDecorationIfAir(world, x + ROOM_WIDTH / 2, y + ROOM_HEIGHT - 2,
-                z + ROOM_DEPTH - 2, Material.CHAIN);
+                z + ROOM_DEPTH - 2, Material.COBWEB);
 
         Block chestBlock = world.getBlockAt(x + ROOM_WIDTH / 2, y + 1, z + ROOM_DEPTH / 2);
         chestBlock.setType(Material.CHEST, false);
