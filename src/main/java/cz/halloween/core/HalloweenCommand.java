@@ -41,7 +41,6 @@ public final class HalloweenCommand implements CommandExecutor, TabCompleter {
             case "key" -> handleKey(sender, args);
             case "rooms" -> handleRooms(sender, args);
             case "locate" -> handleLocate(sender, args);
-            case "locate" -> handleLocate(sender, args);
             case "reload" -> reload(sender);
             default -> {
                 sendHelp(sender);
