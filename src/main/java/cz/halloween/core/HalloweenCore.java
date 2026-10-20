@@ -184,8 +184,12 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
                     continue;
                 }
                 getConfig().set(root + ".required-items", defaults.getMapList(root + ".required-items"));
-                String newDescription = defaults.getString(root + ".description");
-                if (newDescription != null) getConfig().set(root + ".description", newDescription);
+                String legacyDescription = legacyDefaultDescriptions().get(id);
+                String currentDescription = getConfig().getString(root + ".description");
+                if (legacyDescription != null && legacyDescription.equals(currentDescription)) {
+                    String newDescription = defaults.getString(root + ".description");
+                    if (newDescription != null) getConfig().set(root + ".description", newDescription);
+                }
                 migrated++;
             }
 
@@ -211,6 +215,36 @@ public final class HalloweenCore extends JavaPlugin implements Listener {
         if (getConfig().getLong(path, Long.MIN_VALUE) == oldValue) {
             getConfig().set(path, defaults.getLong(path));
         }
+    }
+
+
+    private Map<String, String> legacyDefaultDescriptions() {
+        return Map.ofEntries(
+                Map.entry("fresh_harvest", "Přines 16 pšenic místnímu farmáři."),
+                Map.entry("stone_for_repairs", "Přines 24 kamenných kostek na opravu cesty."),
+                Map.entry("paper_trail", "Přines 12 papírů pro kartografa."),
+                Map.entry("food_for_watch", "Přines 8 chlebů pro stráž u cesty."),
+                Map.entry("village_library", "Dodej 4 knihy do vesnické knihovny."),
+                Map.entry("copper_samples", "Přines 16 měděných ingotů kováři."),
+                Map.entry("iron_requisition", "Přines 12 železných ingotů pro opravu nářadí."),
+                Map.entry("amethyst_study", "Přines 6 ametystových úlomků badatelce."),
+                Map.entry("alchemist_components", "Dodej 8 pavoučích očí, 8 skleněných lahví a 4 plamenné prášky."),
+                Map.entry("archivist_records", "Přines 8 knih a 12 papírů archiváři."),
+                Map.entry("blacksmith_order", "Přines 24 železných a 12 zlatých ingotů."),
+                Map.entry("deep_expedition", "Přines 3 enderové perly a 8 plamenných prášků."),
+                Map.entry("sealed_archive", "Nejdřív vstup do tajné místnosti, potom přines 8 knih, 16 papírů a 6 ametystových úlomků."),
+                Map.entry("night_research", "Přines 8 pavoučích očí, 16 železných ingotů a 4 enderové perly."),
+                Map.entry("mushroom_samples", "Přines 12 červených a 12 hnědých hub lesní sběratelce."),
+                Map.entry("wool_for_bedding", "Dodej 16 bílých vln pro nové postele v hostinci."),
+                Map.entry("river_catch", "Přines 8 tresek a 4 lososy kuchaři."),
+                Map.entry("clay_for_potter", "Přines 24 hliněných kuliček hrnčíři."),
+                Map.entry("lantern_supplies", "Přines 16 pochodní pro osvětlení staré cesty."),
+                Map.entry("honey_for_healer", "Dodej 4 lahve medu do vesnické ošetřovny."),
+                Map.entry("forest_materials", "Přines 16 dubových klád na opravu nábytku."),
+                Map.entry("leather_repair", "Přines 12 kusů kůže sedláři."),
+                Map.entry("map_and_compass", "Přines 1 kompas a 8 papírů kartografovi."),
+                Map.entry("miner_samples", "Přines 12 uhlí a 8 surového železa pro průzkum hlubin.")
+        );
     }
 
     private boolean matchesRequiredItems(List<Map<?, ?>> actual, Map<String, Integer> expected) {
