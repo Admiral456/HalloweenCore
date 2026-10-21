@@ -1,4 +1,7 @@
 # Nastav ID skutečného Citizens NPC až po jeho vytvoření na serveru.
+items:
+  wheat: "simple WHEAT"
+
 # Příklad:
 # npcs:
 #   Farmar: "citizens 21"
