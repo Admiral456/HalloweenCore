@@ -34,6 +34,9 @@ if not isinstance(package.get("npcs"), dict) or not isinstance(package.get("npc_
     fail("package.yml must define the npcs and npc_conversations mappings")
 if package["npcs"] or package["npc_conversations"]:
     fail("the sample package must not guess a live Citizens NPC ID; bind it on the server")
+items = package.get("items")
+if not isinstance(items, dict) or items.get("wheat") != "simple WHEAT":
+    fail('package.yml must define "wheat: \\"simple WHEAT\\""; BetonQuest items must be declared before they are referenced')
 
 actions = actions_doc.get("actions")
 conditions = conditions_doc.get("conditions")
@@ -85,6 +88,12 @@ if "opsudo halloween quest complete farmer_wheat" not in actions["complete_hallo
     fail("turn-in must call HalloweenCore's one-time completion/reward system")
 if conditions.get("has_farmer_wheat") != "item wheat:10":
     fail("sample quest must verify ten real wheat items")
+if actions.get("take_farmer_wheat") != "take wheat:10 abort":
+    fail("turn-in must atomically take ten declared wheat items")
+if actions.get("accept_farmer_quest") != "folder start_halloween_farmer_quest,add_farmer_started_tag":
+    fail("acceptance must start the HalloweenCore quest and persist the BetonQuest tag")
+if actions.get("finish_farmer_quest_sequence") != "folder take_farmer_wheat,complete_halloween_farmer_quest,add_farmer_completed_tag":
+    fail("turn-in sequence must consume the wheat before completing and tagging the quest")
 reward = config.get("quest-rewards", {}).get("quests", {}).get("farmer_wheat")
 if not isinstance(reward, dict) or reward.get("fragments") != 5:
     fail("farmer_wheat must have the explicit sample reward of five fragments")
