@@ -209,4 +209,12 @@ quest-rewards:
         common: 0.25
         rare: 0.10
         legendary: 0.08
-  quests: {}
+  quests:
+    # Testovací BetonQuest dialog; částku můžeš změnit, nebo položku odstranit.
+    farmer_wheat:
+      difficulty: light
+      fragments: 5
+      key-chances:
+        common: 0.0
+        rare: 0.0
+        legendary: 0.0
