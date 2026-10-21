@@ -179,7 +179,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
     private void handleQuestCommand(CommandSender sender, String[] args) {
         if (!(sender instanceof Player player)) {
             sender.sendMessage(ChatColor.RED
-                    + "Questové příkazy spusť jako hráč, se kterým vede dialog UplineDialogues.");
+                    + "Questové příkazy spusť jako hráč, se kterým vede dialog BetonQuest.");
             return;
         }
         if (args.length < 2) {
@@ -191,7 +191,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         if (List.of("start", "progress", "step", "complete", "finish").contains(action)
                 && !player.hasPermission("halloweencore.quest.dialogue")) {
             player.sendMessage(ChatColor.RED
-                    + "Tuto akci smí spustit jen nakonfigurovaný dialog. V UplineDialogues použij běh příkazu jako OP.");
+                    + "Tuto akci smí spustit jen nakonfigurovaný dialog. V BetonQuest použij akci opsudo pro spuštění příkazu.");
             return;
         }
         if (action.equals("list") || (action.equals("status") && args.length < 3)) {
