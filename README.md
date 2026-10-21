@@ -1,6 +1,18 @@
-# HalloweenCore — nová verze
+# HalloweenCore — questy, fragmenty a tajné místnosti
 
-Tato pracovní verze je omezená na dohodnutý rozsah: dialogové questy s UplineDialogues, evidenci postupu a jednorázového dokončení úkolů, fragmenty, tajné podzemní místnosti se zamčenou truhlou a speciální klíč. Zachovává také třináct sladkostí a jejich původní textury převzaté ze Stev's Halloween pod licencí MIT.
+Tato verze je omezená na dialogové questy, evidenci jejich stavu, fragmenty, tajné podzemní místnosti se zamčenou truhlou a speciální klíč. Zachovává také třináct sladkostí a jejich původní textury ze Stev's Halloween pod licencí MIT.
+
+## Dialogy přes BetonQuest
+
+Dialogy a kontrolu cílů zajišťuje BetonQuest 3.2+. Připravený příklad najdeš v balíčku betonquest/QuestPackages/warriorland_halloween_dialogues; GitHub Actions z něj vytváří ZIP artefakt WarriorLand-Halloween-BetonQuest.
+
+- Dialogy se upravují v YAML souborech, nikoli přes webový editor.
+- Pro přiřazení dialogu potřebuješ Citizens NPC. Přirozeně spawnutý villager nemá Citizens ID; vytvoř NPC typu villager a jeho skutečné ID vlož do package.yml.
+- Ukázkový dialog je pouze test: farmář požádá o 10 pšenic. BetonQuest ověří inventář a odebere předměty; HalloweenCore potom jednorázově připíše 5 fragmentů.
+- V ukázkovém questu jsou bonusové klíče vypnuté. Odměnu můžeš změnit v plugins/HalloweenCore/config.yml.
+- Podrobný návod: docs/DIALOGUE_LIBRARY_CZ.md.
+
+BetonQuest a Citizens je potřeba nainstalovat samostatně. UplineDialogues už není vyžadován.
 
 ## Odstraněno
 
@@ -14,52 +26,26 @@ Tato pracovní verze je omezená na dohodnutý rozsah: dialogové questy s Uplin
 
 Žádný ze starých mobů, bossů ani původních eventů se v této verzi znovu nezapíná.
 
-## Dialogy s vesničany
+## Odměny za questy
 
-Podrobný ruční scénář pro editor NPC dialogů je v [docs/DIALOGUE_LIBRARY_CZ.md](docs/DIALOGUE_LIBRARY_CZ.md). Není to automaticky importovatelný soubor; uzly musí být vytvořeny a přiřazeny NPC v UplineDialogues.
+HalloweenCore odmění quest pouze při prvním úspěšném volání /halloween quest complete <id>. Pro konkrétní ID lze nastavit pevný počet fragmentů nebo obtížnost a rozsah v quest-rewards.quests.<id>. Šance na klíče se konfigurují samostatně. Ukázkové ID farmer_wheat je nastaveno na pět fragmentů bez bonusového klíče.
 
-**Důležité:** HalloweenCore eviduje stav a odměnu, ale samo neověřuje dodání konkrétních předmětů, zabití mobů ani navštívení místa. Dialog musí mít skutečné podmínky před akcí `/halloween quest complete <id>`; jinak by šlo úkol obejít.
-
-UplineDialogues zajišťuje editor NPC rozhovorů, volby odpovědí, větvení a akce příkazů. HalloweenCore používá jeho akce jako rozhraní do questové evidence; nevytváří vlastní dialogové GUI.
-
-Příklady příkazů pro dialog (ID jsou jen ukázky, nejsou to předem definované questy):
-- Spustit jako OP: /halloween quest start archivist_intro
-- Posunout postup jako OP: /halloween quest progress archivist_intro 1
-- Dokončit jako OP: /halloween quest complete archivist_intro
-- Zobrazit stav: /halloween quest status archivist_intro
-
-Při změně stavu úkolu v UplineDialogues použij spuštění příkazu jako OP. Příkaz se stále provede pro hráče, který vede dialog, ale běžný hráč nemůže ručně dokončit quest v chatu. Volitelné PlaceholderAPI zástupné hodnoty pro větvení:
-- %halloween_fragments%
-- %halloween_quest_progress_archivist_intro%
-- %halloween_quest_started_archivist_intro%
-- %halloween_quest_completed_archivist_intro%
-
-### Odměny za questy a klíče
-
-HalloweenCore při prvním dokončení úkolu připíše fragmenty podle nastavené obtížnosti a provede jeden nezávislý hod na klíč. Výchozí fragmentové rozsahy jsou:
-- Lehký: 3–5 fragmentů; šance na klíč: common 10 %, rare 1 %, legendary 0,1 %.
-- Střední: 6–9 fragmentů; common 15 %, rare 3,5 %, legendary 0,5 %.
-- Těžký: 10–15 fragmentů; common 20 %, rare 6 %, legendary 2 %.
-- Velmi těžký: 16–25 fragmentů; common 25 %, rare 10 %, legendary 8 %.
-
-ID úkolů a jejich příběh zůstávají v UplineDialogues; není vymyšlen žádný přednastavený quest ani cíl. Neznámé ID dostane výchozí lehkou odměnu. Pro konkrétní ID lze v `config.yml` nastavit `quest-rewards.quests.<id>.difficulty`, přepsat fragmenty nebo jednotlivé šance na klíč. Stav dokončení a použitá odměna se uloží, takže opakované dokončení stejného ID nevyplatí odměnu znovu. Připravené jsou pouze fragmenty a klíče; nepřidávají se žádné vlastní předměty, schopnosti, peníze ani další textury.
-
-Klíče mají tři serverem ověřované rarity: common, rare a legendary. Všechny používají tutéž existující ItemsAdder texturu `warriorland_halloween:secret_key`; rarita je uložená v PersistentDataContainer a nepoznává se podle názvu. Přímá akce UplineDialogues Give item vydá obyčejný klíč. Vyšší rarity může vydat questová odměna nebo správce příkazem `/halloween key give rare [hráč] [počet]` či `/halloween key give legendary [hráč] [počet]`.
+Klíče mají tři serverem ověřované rarity: common, rare a legendary. Všechny používají tutéž existující ItemsAdder texturu warriorland_halloween:secret_key; rarita je uložená v PersistentDataContainer, neodvozuje se od názvu předmětu.
 
 ## Tajné podzemní místnosti
 
 - Generují se jen v nově vytvořených chunkech; staré oblasti se zpětně neprokopávají.
 - Výchozí šance je 1 % na nový chunk. Místnost vznikne jen uvnitř souvislého přírodního kamene, pokud prostor neobsahuje rudu, vodu, vzduch, stavbu ani jiné bloky.
 - Místnost má velikost 5×4×5, skrytý krátký vstup a jednu evidovanou truhlu.
-- Každá místnost má jednu ze tří rarit: common / rare / legendary. Poměr při generování je výchozí 70 / 25 / 5 a jde změnit v konfiguraci.
-- Truhlu nelze otevřít ani rozbít bez klíče přesně odpovídající rarity; chrání ji také kontrola výbuchu a automatického přenosu přes hopper. Použití klíče ji trvale odemkne a spotřebuje jeden klíč.
-- Při prvním odemčení dostane hráč jednorázově 8–16 / 20–35 / 40–70 fragmentů podle rarity a truhla se naplní nastavenými vanilla surovinami, jídlem, očarovanými knihami/nástroji a malou šancí na vzácnější bonus. Loot se znovu nehází při opětovném otevření.
+- Rarity common / rare / legendary mají výchozí váhy 70 / 25 / 5.
+- Truhlu nelze otevřít ani rozbít bez klíče stejné rarity; chrání ji také kontrola výbuchu a automatického přenosu přes hopper.
+- Při prvním odemčení se připíšou fragmenty podle rarity a truhla se naplní nastavenými vanilla předměty. Loot se znovu nehází při opětovném otevření.
 
-Nastavení je v config.yml v sekci secret-rooms. Název hlavního herního světa není předpokládán: doplň jeho skutečný název do secret-rooms.worlds. Dokud je seznam prázdný, nic se negeneruje. Svět Spawn zůstává vyloučený i tehdy, když ho někdo omylem přidá do seznamu.
+Nastavení je v plugins/HalloweenCore/config.yml v sekci secret-rooms. Přidej skutečný název herního světa do secret-rooms.worlds. Dokud je seznam prázdný, nic se negeneruje. Svět Spawn zůstává vyloučený.
 
 ## Zachovaný ItemsAdder obsah
 
-Zůstalo pouze třináct licencovaných sladkostí s nezměněnými texturami a nová vlastní 32×32 pixel-art textura klíče. Licenční poznámky a zdrojové SHA-256 záznamy ke sladkostem zůstávají zachované. Staré moby, bossové, eventy, shop, vybavení, relikvie, náhrobky, dekorace, zvuky, obloha a shader nejsou součástí nového balíčku.
+Zůstalo třináct licencovaných sladkostí s nezměněnými texturami a vlastní 32×32 pixel-art textura klíče. Licenční poznámky a zdrojové SHA-256 záznamy ke sladkostem zůstávají zachované. Staré moby, bossové, eventy, obchod, vybavení, relikvie, náhrobky, dekorace, zvuky, obloha a shader nejsou součástí nového balíčku.
 
 ## Příkazy
 
@@ -75,6 +61,11 @@ Zůstalo pouze třináct licencovaných sladkostí s nezměněnými texturami a 
 
 ## Sestavení a nasazení
 
-Po sestavení stáhni artefakt HalloweenCore JAR a ItemsAdder ZIP z GitHub Actions. JAR vlož do plugins, samostatně nainstaluj UplineDialogues a volitelně ItemsAdder + PlaceholderAPI. ItemsAdder obsah zkopíruj do plugins/ItemsAdder/contents/warriorland_halloween/, spusť /iazip a ověř doručení resource packu klientům. Po změně JARu server restartuj.
+GitHub Actions sestaví plugin JAR a vytvoří dva obsahové ZIP balíčky: ItemsAdder a BetonQuest. Z úspěšného běhu stáhni artefakty:
+- HalloweenCore-JAR
+- WarriorLand-Halloween-ItemsAdder
+- WarriorLand-Halloween-BetonQuest
 
-CI run [39424417548](https://github.com/Admiral456/HalloweenCore/actions/runs/39424417548) prošel validací konfigurace a loot tabulek, Maven sestavením i zabalením JARu a ItemsAdder ZIPu. Živé testování na staging serveru a vlastní dialogové mapy v UplineDialogues jsou stále samostatné kroky.
+JAR vlož do plugins/ a server restartuj. ItemsAdder obsah zkopíruj do plugins/ItemsAdder/contents/warriorland_halloween/, spusť /iazip a ověř doručení resource packu. BetonQuest ZIP rozbal do plugins/BetonQuest/ a postupuj podle návodu pro přiřazení Citizens NPC ID.
+
+CI ověřuje konfigurace, loot tabulky, ukázkový BetonQuest balíček, Maven sestavení i zabalení artefaktů. Po sestavení je stále nutný živý test na serveru — zejména ověření NPC ID, konverzace a reward flow.
