@@ -22,5 +22,5 @@ permissions:
     description: Administrátorské vydávání speciálních klíčů.
     default: op
   halloweencore.quest.dialogue:
-    description: Oprávnění pro změnu questu z akce UplineDialogues.
+    description: Oprávnění pro řízení questů z dialogů BetonQuest.
     default: op
