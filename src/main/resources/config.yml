@@ -164,20 +164,9 @@ secret-rooms:
           max: 1
           chance: 0.02
 
-# UplineDialogues si dál drží svoje texty a ID questů. Neznámá ID automaticky dostávají
-# lehkou odměnu; pro střední/těžké úkoly vytvoř položku v quest-rewards.quests.<id>.
-# Příklad:
-# quest-rewards:
-#   default-difficulty: light
-#   difficulties: (viz níže)
-#   quests:
-#     doruc_zelezo:
-#       difficulty: medium
-#       # Volitelně lze použít pevný počet fragmentů místo rozsahu.
-#       # fragments: 8
-#       # Volitelné přepsání jednotlivých šancí na klíč.
-#       # key-chances:
-#       #   legendary: 0.14
+# BetonQuest drží texty, nabídky a podmínky dialogů. HalloweenCore vyplácí odměny.
+# Pro konkrétní ID nastav quest-rewards.quests.<id>; ukázkový farmar_wheat dává 5 fragmentů
+# bez klíče. Ostatní neznámá ID používají výchozí obtížnost.
 quest-rewards:
   default-difficulty: light
   difficulties:
