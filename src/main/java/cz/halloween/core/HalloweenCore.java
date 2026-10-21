@@ -93,6 +93,14 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.common", 0.25);
         getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.rare", 0.10);
         getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.legendary", 0.08);
+
+        // Configurable example used by the bundled BetonQuest dialogue package.
+        // The sample gives five fragments once and intentionally does not grant a key.
+        getConfig().addDefault("quest-rewards.quests.farmer_wheat.difficulty", "light");
+        getConfig().addDefault("quest-rewards.quests.farmer_wheat.fragments", 5);
+        getConfig().addDefault("quest-rewards.quests.farmer_wheat.key-chances.common", 0.0);
+        getConfig().addDefault("quest-rewards.quests.farmer_wheat.key-chances.rare", 0.0);
+        getConfig().addDefault("quest-rewards.quests.farmer_wheat.key-chances.legendary", 0.0);
         getConfig().options().copyDefaults(true);
         saveConfig();
     }
