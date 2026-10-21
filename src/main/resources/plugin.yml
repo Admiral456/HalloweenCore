@@ -4,7 +4,7 @@ main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
 description: Dialogové questy a tajné podzemní místnosti se speciálním klíčem.
-softdepend: [ItemsAdder, PlaceholderAPI, UplineDialogues]
+softdepend: [ItemsAdder, PlaceholderAPI, BetonQuest, Citizens]
 commands:
   halloween:
     description: Questové příkazy, fragmenty a tajné místnosti.
