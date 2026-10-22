@@ -269,6 +269,19 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.rare", 0.10);
         getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.legendary", 0.08);
 
+        // Migrate the previous bundled defaults once, without overriding deliberate admin choices.
+        if (getConfig().getInt("activeWindow.startDay", 27) == 27
+                && getConfig().getInt("activeWindow.endDay", 31) == 31) {
+            getConfig().set("activeWindow.startDay", 23);
+            getConfig().set("activeWindow.endDay", 2);
+        }
+        if (getConfig().getBoolean("secret-rooms.enabled", false)) {
+            getConfig().set("secret-rooms.enabled", false);
+        }
+        if (getConfig().getBoolean("fog.enabled", false)) {
+            getConfig().set("fog.enabled", false);
+        }
+
         // The sample gives five fragments once and intentionally does not grant a key.
         getConfig().options().copyDefaults(true);
         saveConfig();
