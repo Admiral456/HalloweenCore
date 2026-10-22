@@ -87,6 +87,8 @@ weather_mutators = (
 for mutator in weather_mutators:
     if mutator in horror_source:
         raise SystemExit(f"Horror Nights must not change world weather: {mutator}")
+if "core.isInSeasonWindow()" not in horror_source:
+    raise SystemExit("Automatic Horror Nights must respect the configured season window")
 
 if not (java / "DailyQuestManager.java").is_file():
     raise SystemExit("Daily quest manager missing")
