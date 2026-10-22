@@ -3,12 +3,12 @@ version: 0.3.0
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
-description: Halloween questy, fragmenty, halloweenský obchod a sezónní atmosférické funkce.
-softdepend: [ItemsAdder, PlaceholderAPI, WorldGuard, GriefPrevention, CustomJukebox]
+description: Denní Halloween questy, fragmenty a halloweenský obchod.
+softdepend: [ItemsAdder]
 commands:
   halloween:
-    description: Questy, fragmenty, obchod a strašidelné noci.
-    usage: /halloween [quest|fragments|shop|horror|reload]
+    description: Questy, fragmenty a halloweenský obchod.
+    usage: /halloween [quest|fragments|shop|reload]
     aliases: [hallow]
     permission: halloweencore.use
   quest:
@@ -16,44 +16,13 @@ commands:
     usage: /quest
     aliases: [dailyquest]
     permission: halloweencore.use
-  pumpkinrain:
-    description: Spustí nebo zastaví déšť dýní.
-    usage: /pumpkinrain <start|stop>
-    permission: spooky.pumpkinrain
-  bloodrain:
-    description: Spustí nebo zastaví krvavý déšť.
-    usage: /bloodrain <start|stop>
-    permission: spooky.bloodrain
-  spooky:
-    description: Správa sezónních funkcí, stavu, odměn a osobních preferencí.
-    usage: /spooky <on|off|status|reload|rewards|spawn|optout|top|menu>
-  spookyvolume:
-    description: Nastavení osobní hlasitosti strašidelných zvuků.
-    usage: /spookyvolume <ambient|ghost|rain|reset> [0.0-1.0]
-  spookyboss:
-    description: Správa sezónního bosse.
-    usage: /spookyboss <spawn|remove|info|set|armor|ability|loot>
-    permission: spooky.admin
-  spookyraid:
-    description: Správa vlnového nájezdu nemrtvých.
-    usage: /spookyraid <start|stop|status|stats|target|zone>
-    permission: spooky.admin
 permissions:
   halloweencore.use:
     description: Používání příkazů HalloweenCore.
     default: true
   halloweencore.admin:
-    description: Správa HalloweenCore.
+    description: Správa konfigurace HalloweenCore.
     default: op
   halloweencore.quest.dialogue:
     description: Řízení questů z dialogové integrace.
-    default: op
-  spooky.pumpkinrain:
-    description: Ovládání dýňového deště.
-    default: op
-  spooky.bloodrain:
-    description: Ovládání krvavého deště.
-    default: op
-  spooky.admin:
-    description: Administrace sezónních funkcí.
     default: op
