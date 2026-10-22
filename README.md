@@ -28,7 +28,7 @@ Selected SpookySeason 1.7.0 source files are included under the MIT License. The
 
 - `/halloween quest start <id>`, `/halloween quest progress <id> [amount]`, `/halloween quest complete <id>`, `/halloween quest status [id]`
 - `/halloween fragments`, `/halloween key give [common|rare|legendary] [player] [amount]`, `/halloween rooms status`
-- `/halloween horror <start|stop|status> [world]`, `/halloween reload`
+- `/halloween horror <start|stop|status> [world]`, `/horrornights <start|stop|status|reload|help> [world]`, `/halloween reload`
 - `/spooky on|off|status|reload|rewards|optout|top|menu`
 - `/spookyvolume <ambient|ghost|rain|reset> [0.0-1.0]`
 - `/pumpkinrain <start|stop>`, `/bloodrain <start|stop>`, `/spookyboss ...`, `/spookyraid ...`

@@ -124,7 +124,8 @@ public final class HorrorNightManager implements Listener {
     }
 
     public boolean startManually(World world) {
-        if (world == null || sessions.containsKey(world.getUID()) || !isAllowedWorld(world)) return false;
+        if (world == null || !plugin.getConfig().getBoolean("horrorNights.enabled", true)
+                || sessions.containsKey(world.getUID()) || !isAllowedWorld(world)) return false;
         long timeOfDay = world.getTime();
         if (timeOfDay < 13000L || timeOfDay > 23000L) return false;
         startSession(world);

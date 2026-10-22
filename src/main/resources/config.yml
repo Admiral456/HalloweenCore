@@ -540,10 +540,11 @@ horrorNights:
   check-interval-ticks: 6000 # 5 minutes
   spawn-interval-ticks: 60 # 3 seconds
   max-mobs-per-world: 30
-  spawn-count: 1
+  spawn-count: 3
   spawn-min-radius: 20
   spawn-max-radius: 40
   invisible-chance: 30.0
+  invisible-particle-count: 3
   invisible-particle: SOUL_FIRE_FLAME
   health-multiplier: 2.0
   speed-boost: true
@@ -552,14 +553,15 @@ horrorNights:
   show-custom-name: true
   name-prefix: "&4&lHORROR "
   mob-types: [ZOMBIE, SKELETON, SPIDER, CREEPER, ENDERMAN, WITCH, PHANTOM]
+  spawn-custom-mobs: true
   thunderstorm: true
   player-effects: true
   effect-chance: 0.35
   effect-duration-ticks: 100
-  effect-types: [DARKNESS, BLINDNESS, NAUSEA]
+  effect-types: [DARKNESS, BLINDNESS, CONFUSION]
   ambient-sounds: true
   ambient-sound-interval-ticks: 200
-  sound-types: [ENTITY_WOLF_HOWL, ENTITY_WITCH_AMBIENT, ENTITY_GHAST_SCREAM, ENTITY_ENDERMAN_SCREAM]
+  sound-types: [ENTITY_WOLF_HOWL, ENTITY_WITCH_AMBIENT, ENTITY_GHAST_SCREAM, ENTITY_ENDER_DRAGON_GROWL, ENTITY_WITHER_AMBIENT, ENTITY_ENDERMAN_SCREAM]
   manual-max-duration-ticks: 12000
   messages:
     horror-night-start: "&4&lVarování: začala hororová noc!"
