@@ -731,32 +731,65 @@ raid:
       durationSeconds: 20
 
 
-# Samostatná implementace strašidelných nocí; nekopíruje kód ani assety HorrorNights.
+# Samostatná implementace strašidelných nocí; nevychází z kódu ani assetů HorrorNights.
 horrorNights:
   enabled: true
+  # Prázdný seznam znamená všechny světy; jinak pouze vyjmenované světy.
   worlds: []
+  # Pravděpodobnost spuštění při každém novém dni/noci (0.10 = 10 %).
   chancePerNight: 0.10
   manualDurationSeconds: 240
-  spawnIntervalTicks: 240
+  # Četnost spawn vln; výchozí 60 ticků = 3 sekundy.
+  spawnIntervalTicks: 60
+  effects:
+    thunderstorm: true
+    spawnCustomMobs: true
   mobs:
     enabled: true
-    minPerPlayer: 1
-    maxPerPlayer: 2
-    spawnRadius: 18
-    healthMultiplier: 1.7
-    damageMultiplier: 1.4
-    invisibleChance: 0.20
+    # Počet hororových mobů v jedné vlně.
+    spawnCount: 3
+    spawnMinRadius: 20
+    spawnMaxRadius: 40
     types:
       - ZOMBIE
       - SKELETON
+      - CREEPER
       - SPIDER
       - CAVE_SPIDER
+      - ENDERMAN
+      - WITCH
+      - PHANTOM
+      - DROWNED
+      - HUSK
       - STRAY
+      - WITHER_SKELETON
+      - ZOMBIE_VILLAGER
+    invisibleChance: 0.30
+    invisibleParticle: SOUL_FIRE_FLAME
+    invisibleParticleCount: 3
+    healthMultiplier: 2.0
+    damageMultiplier: 1.4
+    showCustomName: true
+    namePrefix: '&4&lHORROR '
+    glowing: true
+    speedBoost: true
+    strengthBoost: true
   playerEffects:
     enabled: true
     chance: 0.12
-    durationTicks: 60
+    types:
+      - DARKNESS
+      - BLINDNESS
+      - CONFUSION
+    durationTicks: 100
   ambience:
     enabled: true
     volume: 0.45
     soundChancePerPulse: 0.18
+    sounds:
+      - ENTITY_WOLF_HOWL
+      - ENTITY_WITCH_AMBIENT
+      - ENTITY_GHAST_SCREAM
+      - ENTITY_ENDER_DRAGON_GROWL
+      - ENTITY_WITHER_AMBIENT
+      - ENTITY_ENDERMAN_SCREAM

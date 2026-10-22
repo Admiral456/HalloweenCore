@@ -215,8 +215,11 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
             return;
         }
         if ("start".equals(action)) {
-            horrorNightsManager.startManually(world);
-            sender.sendMessage(ChatColor.GREEN + "Strašidelná noc spuštěna ve světě " + world.getName() + ".");
+            if (horrorNightsManager.startManually(world)) {
+                sender.sendMessage(ChatColor.GREEN + "Strašidelná noc spuštěna ve světě " + world.getName() + ".");
+            } else {
+                sender.sendMessage(ChatColor.RED + "Strašidelné noci jsou vypnuté nebo tento svět není v horrorNights.worlds povolený.");
+            }
         } else if ("stop".equals(action)) {
             horrorNightsManager.stopWorld(world, true);
             sender.sendMessage(ChatColor.GREEN + "Strašidelná noc ukončena ve světě " + world.getName() + ".");
@@ -508,6 +511,12 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
             return partial(args[1], List.of("start", "progress", "complete", "status", "list"));
         if (args.length == 2 && args[0].equalsIgnoreCase("key")) return partial(args[1], List.of("give"));
         if (args.length == 2 && args[0].equalsIgnoreCase("rooms")) return partial(args[1], List.of("status"));
+        if (args.length == 2 && args[0].equalsIgnoreCase("horror")) return partial(args[1], List.of("start", "stop", "status"));
+        if (args.length == 3 && args[0].equalsIgnoreCase("horror")) {
+            List<String> names = new ArrayList<>();
+            for (World world : Bukkit.getWorlds()) names.add(world.getName());
+            return partial(args[2], names);
+        }
         if (args.length == 3 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")) {
             List<String> names = new ArrayList<>();
             for (Player player : Bukkit.getOnlinePlayers()) names.add(player.getName());
