@@ -1,9 +1,10 @@
-# Audit implementace HalloweenCore
+# Audit aktuální implementace HalloweenCore
 
-- `/quest` přiděluje denní úkol: zombie/kostlivci, železná ruda nebo dýně. Po splnění připíše výchozí 1 fragment.
-- `/halloween shop` otevře dvoustránkový inventářový obchod za fragmenty.
-- Nabízí 13 sladkostí, suroviny, netherit, totem, jablka, trojzubec, Mace, netheritovou výbavu a Elytru. Kopí pouze pokud jej API podporuje.
-- Sezóna je 23. 10.–2. 11. včetně a migruje starý rozsah.
-- Fog/darkness je vypnutý. Java kód, konfigurace, textura i ItemsAdder definice klíčů a generování místností jsou odstraněny; 13 sladkostí zůstává beze změny.
-- Bez resource packu/modelu nejde přebarvit vanilla ikonu zbraně, jen nastavit oranžové jméno a glow.
-- V repozitáři nebyl nalezen generátor hrobu ani shader oblohy; externí pack/plugin mimo repo nelze ovládat. Živý server nebyl dostupný.
+- Aktivní plugin obsahuje jen denní questy, fragmenty a halloweenský obchod. Starý SpookySeason/HorrorNights gameplay kód a jeho příkazy byly z větve odstraněny.
+- Příkaz `/quest` přiděluje jeden denní úkol: zabíjení zombie/kostlivců, těžbu železné rudy nebo lámání dýní. Ukládá se postup i dokončení do `plugins/HalloweenCore/players.yml`; za dokončení je výchozí odměna 1 fragment.
+- Úkoly a obchod jsou dostupné v období 23. října až 2. listopadu včetně podle časového pásma `Europe/Prague`. Staré nastavení 27.–31. října se při startu migruje.
+- Příkaz `/halloween shop` otevírá černo-oranžové GUI. Nabízí 13 zachovaných sladkostí, suroviny, vzácné předměty a drahou koncovou výbavu; nákup odečítá fragmenty a kontroluje místo v inventáři.
+- Tajné místnosti, klíče, jejich textury/ItemsAdder definice a starý BetonQuest testovací balíček jsou odstraněné.
+- Ikony vanilla zbraní nelze přebarvit jen Java kódem. Obchod používá oranžovo-zlaté názvy a enchant glow; skutečná změna ikon vyžaduje resource pack/model.
+- V repozitáři není generátor hrobu ani asset pro shader/oblohu. Pokud oblohu mění jiný serverový plugin, resource pack nebo klientský shader, musí se upravit samostatně.
+- CI ověřuje 13 candy PNG, SHA-256 manifest, konfiguraci a ceny, sestavuje JAR přes Maven a testuje ZIP s ItemsAdder obsahem. Úspěšný build není náhradou živého testu na Paper/Purpur serveru.
