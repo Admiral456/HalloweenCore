@@ -1,0 +1,7 @@
+HalloweenCore third-party notices
+
+SpookySeason 1.7.0 by BoondockSulfur: selected source files and language resources are integrated under the MIT License. See META-INF/THIRD_PARTY_LICENSES/SpookySeason-MIT.txt.
+
+HorrorNights 1.0.0: no source code, compiled classes, textures, sounds, or other assets were copied. Its public feature description was used as behavioral reference for the independently written HorrorNightManager.
+
+The existing 13 candy textures retain their separate MIT notices under the ItemsAdder content package.

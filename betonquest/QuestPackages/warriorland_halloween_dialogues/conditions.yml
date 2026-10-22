@@ -1,0 +1,4 @@
+conditions:
+  farmer_started: "tag farmer_started"
+  farmer_completed: "tag farmer_completed"
+  has_farmer_wheat: "item wheat:10"
