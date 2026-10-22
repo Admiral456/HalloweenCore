@@ -97,12 +97,15 @@ if not (java / "HalloweenShopManager.java").is_file():
 
 core_source = (java / "HalloweenCore.java").read_text()
 required_wiring = {
-    "daily quest manager": "new DailyQuestManager(this)",
-    "/quest command executor": 'getCommand("quest").setExecutor(dailyQuestManager)',
-    "/halloween shop route": 'case "shop" -> shopManager.open(sender);',
+    "daily quest manager": ("new DailyQuestManager(this)",),
+    "/quest command executor": (
+        'getCommand("quest").setExecutor(dailyQuestManager)',
+        "dailyQuest.setExecutor(dailyQuestManager)",
+    ),
+    "/halloween shop route": ('case "shop" -> shopManager.open(sender);',),
 }
-for label, fragment in required_wiring.items():
-    if fragment not in core_source:
+for label, fragments in required_wiring.items():
+    if not any(fragment in core_source for fragment in fragments):
         raise SystemExit(f"Missing command/manager wiring: {label}")
 
 plugin_yml = (root / "src/main/resources/plugin.yml").read_text()
