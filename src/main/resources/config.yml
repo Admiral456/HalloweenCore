@@ -109,7 +109,7 @@ bloodRain:
   maxDurationSeconds: 90
   # Heartbeat and, without playerWeather, the rain sound. Players' /spookyvolume rain applies.
   volume: 0.5
-  # Real (vanilla, blue) rain and a dark sky for the players under the blood rain only.
+  # Compatibility setting only; this event uses particles and never overrides world/player weather.
   playerWeather: false
   # The undead around players grow stronger while it lasts. Raid attackers and the Headless
   # Horseman are left out - their strength is balanced separately.
@@ -557,7 +557,8 @@ horrorNights:
   name-prefix: "&4&lHORROR "
   mob-types: [ZOMBIE, SKELETON, SPIDER, CREEPER, ENDERMAN, WITCH, PHANTOM]
   spawn-custom-mobs: true
-  thunderstorm: true
+  # HorrorNights deliberately uses particles and sounds without changing weather or sky.
+  thunderstorm: false
   player-effects: true
   effect-chance: 0.35
   effect-duration-ticks: 100

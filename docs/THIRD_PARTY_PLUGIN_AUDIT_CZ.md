@@ -1,6 +1,8 @@
 # Audit třetích stran
 
-- Aktivní Java plugin obsahuje vlastní implementaci denních questů, ukládání fragmentů a inventářového obchodu. Kód ani gameplay funkce z projektů SpookySeason nebo HorrorNights nejsou součástí výsledného JARu; staré eventové zdrojové soubory byly z této větve odstraněny.
-- Zachovaných 13 ikon sladkostí pochází z assetové sady Stev's Halloween. Jejich licence, atribuce a SHA-256 manifest zůstávají v repozitáři. Textury jsou validovány v CI a jejich obrazová data nebyla pozměněna.
-- Aktivní runtime závislostí je Paper API (poskytuje ji server). ItemsAdder je volitelný: při jeho dostupnosti plugin používá vlastní candy itemy; jinak použije náhrady Minecraftu.
-- Resource pack/model pro obarvení skutečných vanilla ikon zbraní není součástí této změny. Oranžovo-zlaté názvy a enchant glow se nastavují v pluginu.
+- Plný zdrojový modul **SpookySeason 1.7.0** od BoondockSulfur je integrován pod MIT licencí; text licence je v `THIRD_PARTY_LICENSES/SpookySeason-MIT.txt` a zdrojové soubory mají atribuční hlavičky.
+- **HorrorNights** je nadále vlastní implementace inspirovaná veřejně popsanými funkcemi; jeho zdrojový kód ani assety nejsou kopírovány.
+- Aktivní runtime závislostí je Paper API. PlaceholderAPI, ItemsAdder, WorldGuard, GriefPrevention a CustomJukebox jsou volitelné integrace; při jejich nedostupnosti musí plugin bezpečně zůstat funkční s odpovídajícími náhradami.
+- Zachovaných 13 ikon sladkostí pochází z assetové sady Stev's Halloween. Jejich licence, atribuce a SHA-256 manifest zůstávají v repozitáři.
+- Oranžové zbraně se generují jako ItemsAdder item definice pomocí moderního `graphics.color`; nevytváří se ani nekopírují nové PNG textury. Tato funkce vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi. Viz [oficiální dokumentace ItemsAdder](https://wiki.itemsadder.com/adding-content/colored-items/).
+- Tajné místnosti, klíče, klíčová textura a nefunkční generátor hrobů jsou mimo aktuální rozsah.

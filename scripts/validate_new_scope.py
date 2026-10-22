@@ -105,4 +105,17 @@ shop = (java / "cz/halloween/core/HalloweenShopManager.java").read_text(encoding
 for item_id in candy_ids:
     if f'"{item_id}"' not in shop:
         raise SystemExit(f"Candy not connected to shop: {item_id}")
-print("Full event wiring, no-weather rule, season dates, daily/shop systems and all 13 candy textures validated.")
+orange_script = root / "scripts/generate_orange_weapon_items.py"
+orange_config_path = base / "configs/orange_weapons.yml"
+orange_config = orange_config_path.read_text(encoding="utf-8") if orange_config_path.is_file() else ""
+for orange_id in ["orange_trident", "orange_mace", "orange_netherite_sword",
+                  "orange_netherite_axe", "orange_netherite_spear"]:
+    if f"  {orange_id}:" not in orange_config:
+        raise SystemExit(f"Missing orange ItemsAdder weapon definition: {orange_id}")
+if not orange_script.is_file():
+    raise SystemExit("Orange weapon config generator is missing")
+for orange_id in ["orange_trident", "orange_mace", "orange_netherite_sword",
+                  "orange_netherite_axe", "orange_netherite_spear"]:
+    if f"warriorland_halloween:{orange_id}" not in shop:
+        raise SystemExit(f"Orange weapon is not connected to the shop: {orange_id}")
+print("Full event wiring, no-weather rule, season dates, daily/shop systems, candy textures and orange weapons validated.")

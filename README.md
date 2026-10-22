@@ -1,23 +1,45 @@
 # HalloweenCore
 
-Denní Halloween questy, fragmenty a obchod pro Paper/Purpur. Staré Halloween moby a eventy i jejich zdrojové soubory jsou odstraněné. Tajné místnosti a klíče jsou odstraněné.
+HalloweenCore spojuje plnou implementaci sezónních funkcí SpookySeason, nezávislou implementaci HorrorNights a vlastní systém denních questů, fragmentů a obchodu pro Paper/Purpur.
 
-## Denní úkol
+## SpookySeason
 
-Příkaz `/quest` přidělí jeden úkol na den: zabíjení zombie/kostlivců, těžbu železné rudy nebo lámání dýní. Postup se ukládá do `plugins/HalloweenCore/players.yml`; po splnění dostaneš výchozí **1 fragment**. Další úkol přijde další den podle `Europe/Prague`. Denní úkoly jsou aktivní v Halloween sezóně.
+Integrovaný modul obsahuje Trick-or-Treat u dveří i vesničanů, halloweenské sladkosti a negativní setkání, strašidelné noci, duchy, jumpscare efekty, roje netopýrů, dýňový déšť, krvavý déšť vykreslený částicemi, Headless Horseman bosse, halloweenské chování mobů, nájezdy nemrtvých s cíli a vlnami, sezonní odměny, žebříček nasbíraných sladkostí, menu a individuální nastavení zvuků/opt-outu. Zachované jsou také integrace pro PlaceholderAPI a volitelné WorldGuard, GriefPrevention a CustomJukebox.
 
-## Obchod
+## HorrorNights
 
-`/halloween shop` otevře černo-oranžový inventářový obchod. Nabízí 13 sladkostí, suroviny, netherit, totem, zlatá jablka, trojzubec, Mace, netheritovou výbavu a Elytru; kopí jen pokud ho API serveru podporuje. Platí se fragmenty, ceny jsou v `shop.prices`.
+Nezávislý modul má náhodné spouštění hororových nocí, nebezpečnější a označené moby, ambientní zvuky, částice a náhodné efekty. **Hororové eventy nemění počasí ani oblohu** a krvavý déšť používá pouze částice a zvuky.
 
-Zbraně mají oranžovo-zlatý název a enchant glow. **Vanilla ikonu nelze bez resource packu/modelu přebarvit pouze Java kódem.** Sladkosti používají ItemsAdder API, je-li dostupné; jinak se použije vanilla náhrada.
+Výchozí sezóna je **23. října až 2. listopadu včetně** v časovém pásmu `Europe/Prague`.
 
-## Sezóna a obsah
+## Denní questy a obchod
 
-Výchozí sezóna je **23. října až 2. listopadu včetně**, podle časového pásma `Europe/Prague`. Staré nastavení období 27.–31. října se při startu migruje. Při startu se také odstraní staré konfigurační sekce mobů a eventů z již existující instalace.
+Příkaz `/quest` přiděluje jeden úkol na den: zabíjení zombie/kostlivců, těžbu železné rudy nebo lámání dýní. Postup a dokončení se ukládají do `plugins/HalloweenCore/players.yml`; výchozí odměna je **1 fragment**.
 
-Zůstává 13 licencovaných sladkostí Stev's Halloween a jejich MIT licence/hash manifest. Textura klíče i její ItemsAdder definice jsou odstraněny. V repozitáři není generátor hrobu ani shader oblohy; změny oblohy z externího pluginu/resource packu mimo tento repozitář musí být odstraněny tam.
+Příkaz `/halloween shop` otevírá černo-oranžový inventářový obchod. Obsahuje 13 zachovaných sladkostí, suroviny, netherit, totem, zlatá jablka a výbavu včetně trojzubce, palcátu, netheritového meče/sekery a kopí (pokud jej daná verze serveru podporuje). Platí se fragmenty.
 
-Příkazy: `/quest`, `/halloween shop`, `/halloween fragments`, `/halloween quest start|progress|complete|status <id>`, `/halloween reload`.
+## Oranžové zbraně
 
-GitHub Actions ověřuje textury a konfiguraci, sestavuje JAR přes Maven a balí ItemsAdder ZIP. Build nenahrazuje živý test. JAR vlož do `plugins/` a restartuj; obsah ItemsAdder nahraj do `plugins/ItemsAdder/contents/warriorland_halloween/` a spusť `/iazip`.
+`scripts/generate_orange_weapon_items.py` generuje definice ItemsAdder pro oranžové varianty trojzubce, palcátu, netheritového meče, sekery a kopí. Používá se obarvení vestavěné do moderního systému `graphics.color`, takže nejsou potřeba nové PNG textury. Je potřeba ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi; viz [dokumentace ItemsAdder – Colored Items](https://wiki.itemsadder.com/adding-content/colored-items/). Nákupy těchto zbraní použijí vlastní ItemsAdder item, pokud je ItemsAdder aktivní; jinak zůstává vanilla náhrada. Po změně obsahu vytvoř resource pack příkazem `/iazip` a ověř, že klient resource pack přijal.
+
+## Záměrně odstraněný obsah
+
+Tajné místnosti, klíče a jejich textura zůstávají odstraněné. Nefunkční generátor hrobů/tajné podzemní struktury se neobnovuje. Žádný event násilně nemění počasí nebo oblohu. Zachovaných 13 licencovaných sladkostí Stev's Halloween má dál svou MIT licenci a SHA-256 manifest.
+
+## Příkazy
+
+- `/quest` — denní úkol
+- `/halloween shop`, `/halloween fragments`, `/halloween reload`
+- `/halloween quest start|progress|complete|status <id>` — integrační questy
+- `/spooky on|off|status|reload|rewards|optout|top|menu`
+- `/spookyboss`, `/spookyraid`, `/spookyvolume`
+- `/pumpkinrain start|stop`, `/bloodrain start|stop`
+- `/horrornights start|stop|status|reload [svět]`
+
+## Build a nasazení
+
+CI ověřuje textury, konfiguraci, questy/obchod a oranžové zbraně, sestavuje JAR přes Maven a balí ItemsAdder obsah. Úspěšný build nenahrazuje živý test na skutečném serveru.
+
+1. Vezmi `HalloweenCore.jar` z úspěšného GitHub Actions buildu a nahraď starý JAR v `plugins/`.
+2. Nahraj obsah `itemsadder/contents/warriorland_halloween/` do `plugins/ItemsAdder/contents/warriorland_halloween/`.
+3. Restartuj server, zkontroluj konzoli a spusť `/iazip`; hráči musí přijmout resource pack.
