@@ -1,34 +1,5 @@
 package cz.halloween.core;
 
-import cz.halloween.core.horrornights.HorrorNightsManager;
-import cz.halloween.core.spooky.cmd.BloodRainCommand;
-import cz.halloween.core.spooky.cmd.PumpkinRainCommand;
-import cz.halloween.core.spooky.cmd.SpookyBossCommand;
-import cz.halloween.core.spooky.cmd.SpookyRaidCommand;
-import cz.halloween.core.spooky.cmd.SpookyToggleCommand;
-import cz.halloween.core.spooky.cmd.SpookyVolumeCommand;
-import cz.halloween.core.spooky.feature.BatSwarmManager;
-import cz.halloween.core.spooky.feature.BloodRainManager;
-import cz.halloween.core.spooky.feature.EntityCleanupListener;
-import cz.halloween.core.spooky.feature.GhostListener;
-import cz.halloween.core.spooky.feature.HalloweenBossManager;
-import cz.halloween.core.spooky.feature.HalloweenMobListener;
-import cz.halloween.core.spooky.feature.HauntedNightManager;
-import cz.halloween.core.spooky.feature.JumpScareListener;
-import cz.halloween.core.spooky.feature.PumpkinRainManager;
-import cz.halloween.core.spooky.feature.SeasonRewardManager;
-import cz.halloween.core.spooky.feature.SpookyMenuGUI;
-import cz.halloween.core.spooky.feature.TrickOrTreatListener;
-import cz.halloween.core.spooky.feature.raid.RaidManager;
-import cz.halloween.core.spooky.integration.CustomJukeboxHook;
-import cz.halloween.core.spooky.integration.RegionIntegration;
-import cz.halloween.core.spooky.integration.SpookyPlaceholders;
-import cz.halloween.core.spooky.lang.Lang;
-import cz.halloween.core.spooky.prefs.PlayerPrefs;
-import cz.halloween.core.spooky.prefs.PlayerStats;
-import cz.halloween.core.spooky.util.Attributes;
-import cz.halloween.core.spooky.util.ConfigMerger;
-import cz.halloween.core.spooky.util.Scheduler;
 import java.io.File;
 import java.io.IOException;
 import java.time.ZoneId;
@@ -36,204 +7,75 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.NamespacedKey;
 import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
-
-/**
- * Includes adapted lifecycle and integration methods from SpookySeason 1.7.0 by BoondockSulfur.
- * Those portions are redistributed under MIT; see THIRD_PARTY_NOTICES.md and
- * META-INF/licenses/spookyseason-MIT.txt.
- */
 public final class HalloweenCore extends JavaPlugin implements CommandExecutor, TabCompleter {
+    private static final Set<String> CONFIG_ROOTS =
+            Set.of("season", "activeWindow", "quest-rewards", "daily-quest", "shop");
+
     private File playerDataFile;
     private YamlConfiguration playerData;
     private DialogQuestManager questManager;
     private DailyQuestManager dailyQuestManager;
     private HalloweenShopManager shopManager;
-    private static HalloweenCore instance;
-    /** Configuration paths of removed features; cleaned up on every start. */
-    private static final List<String> OBSOLETE_CONFIG_PATHS = List.of("seasonEndRewards.commands");
-    /** Sections whose entries the admin may delete; the merge must not bring them back. */
-    private static final List<String> FREE_FORM_CONFIG_PATHS = List.of(
-            "seasonEndRewards.ranks", "raid.waves.names", "raid.target.zones");
-    private NamespacedKey entityMarker;
-    private NamespacedKey ghostMarker;
-    private NamespacedKey raidMarker;
-    private HauntedNightManager hauntedNightManager;
-    private PumpkinRainManager pumpkinRainManager;
-    private BloodRainManager bloodRainManager;
-    private HalloweenBossManager bossManager;
-    private BatSwarmManager batSwarmManager;
-    private SeasonRewardManager rewardManager;
-    private SpookyMenuGUI menuGUI;
-    private PlayerPrefs prefs;
-    private PlayerStats stats;
-    private RegionIntegration regionIntegration;
-    private CustomJukeboxHook customJukeboxHook;
-    private RaidManager raidManager;
-
-
-    private HorrorNightsManager horrorNightsManager;
 
     @Override
     public void onEnable() {
-        instance = this;
-        saveDefaultConfig();
-        mergeConfig();
-        installDefaults();
         if (!getDataFolder().exists() && !getDataFolder().mkdirs()) {
             getLogger().severe("Nelze vytvořit datovou složku HalloweenCore.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
+
+        saveDefaultConfig();
+        migrateLegacyConfig();
+        reloadConfig();
+        installDefaults();
+
         playerDataFile = new File(getDataFolder(), "players.yml");
         playerData = YamlConfiguration.loadConfiguration(playerDataFile);
         questManager = new DialogQuestManager(this);
         dailyQuestManager = new DailyQuestManager(this);
         getServer().getPluginManager().registerEvents(dailyQuestManager, this);
         shopManager = new HalloweenShopManager(this);
-        if (getCommand("quest") != null) {
-            getCommand("quest").setExecutor(dailyQuestManager);
-            getCommand("quest").setTabCompleter(dailyQuestManager);
+
+        PluginCommand dailyQuest = getCommand("quest");
+        if (dailyQuest != null) {
+            dailyQuest.setExecutor(dailyQuestManager);
+            dailyQuest.setTabCompleter(dailyQuestManager);
         }
-        if (getCommand("halloween") != null) {
-            getCommand("halloween").setExecutor(this);
-            getCommand("halloween").setTabCompleter(this);
+        PluginCommand halloween = getCommand("halloween");
+        if (halloween != null) {
+            halloween.setExecutor(this);
+            halloween.setTabCompleter(this);
         }
-        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
-            new HalloweenPlaceholders(this).register();
-        }
-        enableSpookySeason();
-        horrorNightsManager = new HorrorNightsManager(this);
-        horrorNightsManager.start();
-        getLogger().info("HalloweenCore načten: denní questy, fragmenty, obchod a sezónní funkce.");
+
+        getLogger().info("HalloweenCore načten: denní questy, fragmenty a obchod. Staré moby a eventy jsou vypnuté.");
     }
 
-
-    private void enableSpookySeason() {
-        Attributes.init();
-        entityMarker = new NamespacedKey(this, "spooky_entity");
-        ghostMarker = new NamespacedKey(this, "spooky_ghost");
-        raidMarker = new NamespacedKey(this, "spooky_raid");
-        Lang.load(this);
-        regionIntegration = new RegionIntegration(this);
-        customJukeboxHook = new CustomJukeboxHook(this);
-        prefs = new PlayerPrefs(this);
-        stats = new PlayerStats(this);
-        pumpkinRainManager = new PumpkinRainManager(this);
-        bloodRainManager = new BloodRainManager(this);
-        hauntedNightManager = new HauntedNightManager(this);
-        bossManager = new HalloweenBossManager(this);
-        batSwarmManager = new BatSwarmManager(this);
-        rewardManager = new SeasonRewardManager(this);
-        menuGUI = new SpookyMenuGUI();
-        raidManager = new RaidManager(this);
-        registerCommand("pumpkinrain", new PumpkinRainCommand(pumpkinRainManager));
-        registerCommand("bloodrain", new BloodRainCommand(bloodRainManager));
-        registerCommand("spooky", new SpookyToggleCommand());
-        registerCommand("spookyvolume", new SpookyVolumeCommand());
-        registerCommand("spookyboss", new SpookyBossCommand());
-        registerCommand("spookyraid", new SpookyRaidCommand());
-        Bukkit.getPluginManager().registerEvents(new TrickOrTreatListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new GhostListener(), this);
-        Bukkit.getPluginManager().registerEvents(new JumpScareListener(this), this);
-        Bukkit.getPluginManager().registerEvents(new HalloweenMobListener(this), this);
-        Bukkit.getPluginManager().registerEvents(bossManager, this);
-        Bukkit.getPluginManager().registerEvents(rewardManager, this);
-        Bukkit.getPluginManager().registerEvents(menuGUI, this);
-        Bukkit.getPluginManager().registerEvents(raidManager, this);
-        Bukkit.getPluginManager().registerEvents(new EntityCleanupListener(this), this);
-        startAll();
-        if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) hookPlaceholderAPI();
-    }
-
-    private void disableSpookySeason() {
-        safeStop(hauntedNightManager == null ? null : hauntedNightManager::stop, "hauntedNight");
-        safeStop(pumpkinRainManager == null ? null : pumpkinRainManager::stop, "pumpkinRain");
-        safeStop(bloodRainManager == null ? null : bloodRainManager::shutdown, "bloodRain");
-        safeStop(bossManager == null ? null : bossManager::stop, "boss");
-        safeStop(batSwarmManager == null ? null : batSwarmManager::stop, "batSwarm");
-        safeStop(rewardManager == null ? null : rewardManager::stop, "rewards");
-        safeStop(raidManager == null ? null : raidManager::stop, "raid");
-        if (prefs != null) prefs.flush();
-        if (stats != null) stats.flush();
-    }
-
-    public static HalloweenCore get() { return instance; }
-    public NamespacedKey entityMarker() { return entityMarker; }
-    public NamespacedKey ghostMarker() { return ghostMarker; }
-    public NamespacedKey raidMarker() { return raidMarker; }
-    public PlayerPrefs prefs() { return prefs; }
-    public PlayerStats stats() { return stats; }
-    public RegionIntegration regions() { return regionIntegration; }
-    public CustomJukeboxHook jukebox() { return customJukeboxHook; }
-    public HauntedNightManager haunted() { return hauntedNightManager; }
-    public PumpkinRainManager pumpkins() { return pumpkinRainManager; }
-    public BloodRainManager bloodRain() { return bloodRainManager; }
-    public HalloweenBossManager boss() { return bossManager; }
-    public SeasonRewardManager rewards() { return rewardManager; }
-    public SpookyMenuGUI menu() { return menuGUI; }
-    public RaidManager raid() { return raidManager; }
-
-    private void handleHorrorCommand(CommandSender sender, String[] args) {
-        if (!sender.hasPermission("halloweencore.admin")) {
-            sender.sendMessage(ChatColor.RED + "Na tento příkaz nemáš oprávnění.");
-            return;
-        }
-        if (horrorNightsManager == null) {
-            sender.sendMessage(ChatColor.RED + "Správce strašidelných nocí není načten.");
-            return;
-        }
-        if (args.length < 2 || args[1].equalsIgnoreCase("status")) {
-            sender.sendMessage(ChatColor.GOLD + "Strašidelné noci: " +
-                    (horrorNightsManager.isActiveAnywhere() ? ChatColor.GREEN + "aktivní" : ChatColor.GRAY + "neaktivní"));
-            sender.sendMessage(ChatColor.YELLOW + "Použití: /halloween horror <start|stop|status> [svět]");
-            return;
-        }
-        String action = args[1].toLowerCase(Locale.ROOT);
-        World world = args.length >= 3 ? Bukkit.getWorld(args[2])
-                : (sender instanceof Player player ? player.getWorld() : null);
-        if ((action.equals("start") || action.equals("stop")) && world == null) {
-            sender.sendMessage(ChatColor.RED + "Z konzole zadej název světa.");
-            return;
-        }
-        if ("start".equals(action)) {
-            if (horrorNightsManager.startManually(world)) {
-                sender.sendMessage(ChatColor.GREEN + "Strašidelná noc spuštěna ve světě " + world.getName() + ".");
-            } else {
-                sender.sendMessage(ChatColor.RED + "Strašidelné noci jsou vypnuté nebo tento svět není v horrorNights.worlds povolený.");
-            }
-        } else if ("stop".equals(action)) {
-            horrorNightsManager.stopWorld(world, true);
-            sender.sendMessage(ChatColor.GREEN + "Strašidelná noc ukončena ve světě " + world.getName() + ".");
-        } else {
-            sender.sendMessage(ChatColor.YELLOW + "Použití: /halloween horror <start|stop|status> [svět]");
-        }
+    @Override
+    public void onDisable() {
+        savePlayerData();
     }
 
     private void installDefaults() {
+        getConfig().addDefault("season.enabled", true);
         getConfig().addDefault("activeWindow.startMonth", 10);
         getConfig().addDefault("activeWindow.startDay", 23);
         getConfig().addDefault("activeWindow.endMonth", 11);
         getConfig().addDefault("activeWindow.endDay", 2);
-        getConfig().addDefault("fog.enabled", false);
+
         getConfig().addDefault("quest-rewards.default-difficulty", "light");
         getConfig().addDefault("quest-rewards.difficulties.light.min-fragments", 3);
         getConfig().addDefault("quest-rewards.difficulties.light.max-fragments", 5);
@@ -243,6 +85,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         getConfig().addDefault("quest-rewards.difficulties.hard.max-fragments", 15);
         getConfig().addDefault("quest-rewards.difficulties.very-hard.min-fragments", 16);
         getConfig().addDefault("quest-rewards.difficulties.very-hard.max-fragments", 25);
+
         getConfig().addDefault("daily-quest.enabled", true);
         getConfig().addDefault("daily-quest.reward-fragments", 1);
         getConfig().addDefault("shop.enabled", true);
@@ -270,12 +113,63 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         saveConfig();
     }
 
-    @Override
-    public void onDisable() {
-        if (horrorNightsManager != null) horrorNightsManager.stop();
-        disableSpookySeason();
-        removeAllPluginEntities();
-        savePlayerData();
+    /**
+     * Remove settings for the old mob/event bundle from an existing server config,
+     * while preserving quest progress settings and shop prices.
+     */
+    private void migrateLegacyConfig() {
+        File file = new File(getDataFolder(), "config.yml");
+        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+        int startMonth = cfg.getInt("activeWindow.startMonth", 10);
+        int startDay = cfg.getInt("activeWindow.startDay", 27);
+        int endMonth = cfg.getInt("activeWindow.endMonth", 10);
+        int endDay = cfg.getInt("activeWindow.endDay", 31);
+        if (startMonth == 10 && startDay == 27 && endMonth == 10 && endDay == 31) {
+            cfg.set("activeWindow.startMonth", 10);
+            cfg.set("activeWindow.startDay", 23);
+            cfg.set("activeWindow.endMonth", 11);
+            cfg.set("activeWindow.endDay", 2);
+        }
+        if (!cfg.contains("activeWindow.startMonth")) cfg.set("activeWindow.startMonth", 10);
+        if (!cfg.contains("activeWindow.startDay")) cfg.set("activeWindow.startDay", 23);
+        if (!cfg.contains("activeWindow.endMonth")) cfg.set("activeWindow.endMonth", 11);
+        if (!cfg.contains("activeWindow.endDay")) cfg.set("activeWindow.endDay", 2);
+
+        for (String key : new ArrayList<>(cfg.getKeys(false))) {
+            if (!CONFIG_ROOTS.contains(key)) cfg.set(key, null);
+        }
+        for (String tier : List.of("light", "medium", "hard", "very-hard")) {
+            cfg.set("quest-rewards.difficulties." + tier + ".key-chances", null);
+        }
+        ConfigurationSection overrides = cfg.getConfigurationSection("quest-rewards.quests");
+        if (overrides != null) {
+            for (String id : overrides.getKeys(false)) {
+                cfg.set("quest-rewards.quests." + id + ".key-chances", null);
+            }
+        }
+        try {
+            cfg.save(file);
+        } catch (IOException exception) {
+            getLogger().warning("Nepodařilo se vyčistit starou konfiguraci: " + exception.getMessage());
+        }
+    }
+
+    public boolean isSeasonActive() {
+        return getConfig().getBoolean("season.enabled", true) && isInSeasonWindow();
+    }
+
+    public boolean isInSeasonWindow() {
+        int startDay = getConfig().getInt("activeWindow.startDay", 0);
+        int endDay = getConfig().getInt("activeWindow.endDay", 0);
+        if (startDay == 0 || endDay == 0) return true;
+
+        int startMonth = Math.max(1, Math.min(12, getConfig().getInt("activeWindow.startMonth", 10)));
+        int endMonth = Math.max(1, Math.min(12, getConfig().getInt("activeWindow.endMonth", startMonth)));
+        ZonedDateTime now = ZonedDateTime.now(ZoneId.of("Europe/Prague"));
+        int current = now.getMonthValue() * 100 + now.getDayOfMonth();
+        int start = startMonth * 100 + startDay;
+        int end = endMonth * 100 + endDay;
+        return start <= end ? current >= start && current <= end : current >= start || current <= end;
     }
 
     public YamlConfiguration getPlayerData() {
@@ -308,18 +202,20 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
                     sender.sendMessage(ChatColor.RED + "Tento příkaz může použít jen hráč.");
                 } else {
                     sender.sendMessage(ChatColor.GOLD + "Máš " + ChatColor.YELLOW
-                            + questManager.getFragments(player.getUniqueId()) + ChatColor.GOLD + " fragmentů.");
+                            + questManager.getFragments(player.getUniqueId())
+                            + ChatColor.GOLD + " fragmentů.");
                 }
             }
             case "shop" -> shopManager.open(sender);
-            case "horror" -> handleHorrorCommand(sender, args);
             case "reload" -> {
                 if (!sender.hasPermission("halloweencore.admin")) {
                     sender.sendMessage(ChatColor.RED + "Na tento příkaz nemáš oprávnění.");
                     return true;
                 }
-                reload();
-                if (horrorNightsManager != null) horrorNightsManager.start();
+                migrateLegacyConfig();
+                reloadConfig();
+                installDefaults();
+                shopManager.refresh();
                 sender.sendMessage(ChatColor.GREEN + "Konfigurace načtena.");
             }
             default -> sendHelp(sender);
@@ -380,180 +276,29 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
     }
 
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage(ChatColor.GOLD+"HalloweenCore — příkazy");
-        sender.sendMessage(ChatColor.YELLOW+"/quest "+ChatColor.GRAY+"— denní úkol za fragment");
-        sender.sendMessage(ChatColor.YELLOW+"/halloween shop "+ChatColor.GRAY+"— halloweenský obchod");
-        sender.sendMessage(ChatColor.YELLOW+"/halloween quest start|progress|complete|status <id> "+ChatColor.GRAY+"— dialogové questy");
-        sender.sendMessage(ChatColor.YELLOW+"/halloween fragments "+ChatColor.GRAY+"— stav fragmentů");
-        sender.sendMessage(ChatColor.YELLOW+"/halloween horror <start|stop|status> [svět] "+ChatColor.GRAY+"— strašidelné noci");
-        if(sender.hasPermission("halloweencore.admin"))sender.sendMessage(ChatColor.YELLOW+"/halloween reload "+ChatColor.GRAY+"— načtení konfigurace");
+        sender.sendMessage(ChatColor.GOLD + "HalloweenCore — příkazy");
+        sender.sendMessage(ChatColor.YELLOW + "/quest " + ChatColor.GRAY + "— denní úkol za fragment");
+        sender.sendMessage(ChatColor.YELLOW + "/halloween shop " + ChatColor.GRAY + "— halloweenský obchod");
+        sender.sendMessage(ChatColor.YELLOW + "/halloween quest start|progress|complete|status <id> "
+                + ChatColor.GRAY + "— dialogové questy");
+        sender.sendMessage(ChatColor.YELLOW + "/halloween fragments " + ChatColor.GRAY + "— stav fragmentů");
+        sender.sendMessage(ChatColor.YELLOW + "/halloween reload " + ChatColor.GRAY + "— načtení konfigurace "
+                + "(admin)");
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender,Command command,String alias,String[] args) {
-        if(args.length==1)return partial(args[0],List.of("help","quest","fragments","shop","horror","reload"));
-        if(args.length==2&&args[0].equalsIgnoreCase("quest"))return partial(args[1],List.of("start","progress","complete","status","list"));
-        if(args.length==2&&args[0].equalsIgnoreCase("horror"))return partial(args[1],List.of("start","stop","status"));
-        if(args.length==3&&args[0].equalsIgnoreCase("horror")){List<String> names=new ArrayList<>();for(World w:Bukkit.getWorlds())names.add(w.getName());return partial(args[2],names);}
+    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (args.length == 1) {
+            return partial(args[0], List.of("help", "quest", "fragments", "shop", "reload"));
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("quest")) {
+            return partial(args[1], List.of("start", "progress", "complete", "status", "list"));
+        }
         return List.of();
     }
 
     private List<String> partial(String input, List<String> values) {
         String needle = input.toLowerCase(Locale.ROOT);
         return values.stream().filter(value -> value.toLowerCase(Locale.ROOT).startsWith(needle)).toList();
-    }
-    private void safeStop(Runnable stop, String name) {
-        if (stop == null) {
-            return;
-        }
-        try {
-            stop.run();
-        }
-        catch (Exception e) {
-            this.getLogger().warning("Cleanup of " + name + " failed during disable: " + e.getMessage());
-        }
-    }
-
-    public void stopAll() {
-        if (this.hauntedNightManager != null) {
-            this.hauntedNightManager.stop();
-        }
-        if (this.pumpkinRainManager != null) {
-            this.pumpkinRainManager.stop();
-        }
-        if (this.bloodRainManager != null) {
-            this.bloodRainManager.shutdown();
-        }
-        if (this.bossManager != null) {
-            this.bossManager.stop();
-        }
-        if (this.batSwarmManager != null) {
-            this.batSwarmManager.stop();
-        }
-        if (this.raidManager != null) {
-            // Announced: players in the middle of a raid would otherwise just see it vanish.
-            this.raidManager.stop(true);
-        }
-        this.removeAllPluginEntities();
-    }
-
-    public void removeAllPluginEntities() {
-        if (Scheduler.isFolia()) {
-            // On Folia a world's entity list belongs to no single thread and cannot be walked
-            // safely across regions. The managers clear their own active entities in stopAll();
-            // orphans left over from a crash or old chunks are removed by EntityCleanupListener
-            // on the next chunk load.
-            return;
-        }
-        for (World w : Bukkit.getWorlds()) {
-            for (Entity e : w.getEntities()) {
-                if (!e.getPersistentDataContainer().has(this.entityMarker, PersistentDataType.BYTE)) continue;
-                if (!e.isValid() || e.isDead()) continue;
-                e.remove();
-            }
-        }
-    }
-
-    public void startAll() {
-        if (this.hauntedNightManager != null) {
-            this.hauntedNightManager.start();
-        }
-        if (this.bossManager != null) {
-            this.bossManager.start();
-        }
-        if (this.batSwarmManager != null) {
-            this.batSwarmManager.start();
-        }
-        if (this.rewardManager != null) {
-            this.rewardManager.start();
-        }
-        if (this.raidManager != null) {
-            this.raidManager.start();
-        }
-        if (this.bloodRainManager != null) {
-            this.bloodRainManager.startTicker();
-        }
-    }
-
-    public void reload() {
-        this.mergeConfig();
-        if(this.shopManager!=null)this.shopManager.refresh();
-        Lang.load((Plugin)this);
-        this.hauntedNightManager.start();
-        this.bossManager.start();
-        this.batSwarmManager.start();
-        this.rewardManager.start();
-        // Deliberately only the ticker: a running raid carries on with its frozen configuration
-        // snapshot and is not torn down by a reload.
-        this.raidManager.start();
-        this.bloodRainManager.startTicker();
-    }
-
-    private void mergeConfig() {
-        File file = new File(this.getDataFolder(), "config.yml");
-        ConfigMerger.merge((Plugin)this, "config.yml", file, FREE_FORM_CONFIG_PATHS);
-        ConfigMerger.removeObsolete((Plugin)this, file, OBSOLETE_CONFIG_PATHS);
-        migrateLegacyConfig(file);
-        this.reloadConfig();
-    }
-
-    private void migrateLegacyConfig(File file) {
-        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
-        if (cfg.getInt("activeWindow.startMonth", -1) < 0) cfg.set("activeWindow.startMonth", 10);
-        if (cfg.getInt("activeWindow.endMonth", -1) < 0) {
-            int start=cfg.getInt("activeWindow.startDay",27), end=cfg.getInt("activeWindow.endDay",31);
-            cfg.set("activeWindow.endMonth",end<start?11:10);
-        }
-        if (cfg.getInt("activeWindow.startDay",-1)==27 && cfg.getInt("activeWindow.endDay",-1)==31) {
-            cfg.set("activeWindow.startMonth",10);cfg.set("activeWindow.startDay",23);
-            cfg.set("activeWindow.endMonth",11);cfg.set("activeWindow.endDay",2);
-        }
-        cfg.set("secret-rooms",null);cfg.set("fog.enabled",false);
-        for(String tier:List.of("light","medium","hard","very-hard"))cfg.set("quest-rewards.difficulties."+tier+".key-chances",null);
-        ConfigurationSection overrides=cfg.getConfigurationSection("quest-rewards.quests");
-        if(overrides!=null)for(String id:overrides.getKeys(false))cfg.set("quest-rewards.quests."+id+".key-chances",null);
-        try{cfg.save(file);}catch(IOException ex){getLogger().warning("Nepodařilo se migrovat starý config: "+ex.getMessage());}
-    }
-
-    public boolean isSeasonActive() {
-        return this.getConfig().getBoolean("active", true) && this.isInSeasonWindow();
-    }
-
-    /**
-     * The calendar window only, without the manual {@code active} switch.
-     *
-     * <p>The season-end rewards deliberately hang off this: otherwise a {@code /spooky off} in the
-     * middle of the season would count as the season ending, handing out rewards and resetting the
-     * treat statistics.
-     */
-    public boolean isInSeasonWindow() {
-        FileConfiguration cfg=this.getConfig();int sd=cfg.getInt("activeWindow.startDay",0),ed=cfg.getInt("activeWindow.endDay",0);
-        if(sd==0||ed==0)return true;
-        int sm=Math.max(1,Math.min(12,cfg.getInt("activeWindow.startMonth",10))),em=Math.max(1,Math.min(12,cfg.getInt("activeWindow.endMonth",sm)));
-        ZonedDateTime now=ZonedDateTime.now(ZoneId.of("Europe/Prague"));int current=now.getMonthValue()*100+now.getDayOfMonth(),start=sm*100+sd,end=em*100+ed;
-        return start<=end?current>=start&&current<=end:current>=start||current<=end;
-    }
-
-    public boolean isWorldEnabled(World world) {
-        List<String> enabled = this.getConfig().getStringList("enabledWorlds");
-        return enabled.isEmpty() || enabled.contains(world.getName());
-    }
-
-    private void hookPlaceholderAPI() {
-        new SpookyPlaceholders(this).register();
-        this.getLogger().info("PlaceholderAPI integration enabled.");
-    }
-
-    private void registerCommand(String name, Object executor) {
-        PluginCommand cmd = this.getCommand(name);
-        if (cmd == null) {
-            this.getLogger().severe("Command '" + name + "' not found in plugin.yml!");
-            return;
-        }
-        cmd.setExecutor((CommandExecutor)executor);
-        if (executor instanceof TabCompleter) {
-            TabCompleter tc = (TabCompleter)executor;
-            cmd.setTabCompleter(tc);
-        }
     }
 }
