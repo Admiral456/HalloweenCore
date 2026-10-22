@@ -45,7 +45,6 @@ public final class HorrorNightsManager implements Listener {
     private final Map<UUID, Long> checkedNightByWorld = new HashMap<>();
     private final Map<UUID, Long> nextSpawnByWorld = new HashMap<>();
     private final Map<UUID, Long> manualEndMillisByWorld = new HashMap<>();
-    private final Map<UUID, WeatherSnapshot> originalWeather = new HashMap<>();
     private BukkitTask ticker;
 
     public HorrorNightsManager(JavaPlugin plugin) {
@@ -108,7 +107,6 @@ public final class HorrorNightsManager implements Listener {
                 entity.remove();
             }
         }
-        restoreWeather(world);
         if (announce && wasActive) {
             Bukkit.broadcastMessage("§8§l[§5Halloween§8] §7Strašidelná noc ve světě §f"
                     + world.getName() + " §7skončila.");
@@ -136,7 +134,6 @@ public final class HorrorNightsManager implements Listener {
                     continue;
                 }
 
-                keepConfiguredWeather(world);
                 long next = nextSpawnByWorld.getOrDefault(id, 0L);
                 if (world.getFullTime() >= next) {
                     spawnWave(world);
@@ -162,13 +159,6 @@ public final class HorrorNightsManager implements Listener {
         nextSpawnByWorld.put(id, world.getFullTime() + 20L);
         manualEndMillisByWorld.remove(id);
 
-        if (world.getEnvironment() == World.Environment.NORMAL
-                && plugin.getConfig().getBoolean("horrorNights.effects.thunderstorm", true)) {
-            originalWeather.put(id, new WeatherSnapshot(world.hasStorm(), world.isThundering(),
-                    world.getWeatherDuration(), world.getThunderDuration()));
-            keepConfiguredWeather(world);
-        }
-
         for (Player player : world.getPlayers()) {
             player.playSound(player.getLocation(), Sound.ENTITY_WARDEN_HEARTBEAT, 0.35f, 0.65f);
         }
@@ -179,27 +169,6 @@ public final class HorrorNightsManager implements Listener {
     private boolean isWorldAllowed(World world) {
         List<String> worlds = plugin.getConfig().getStringList("horrorNights.worlds");
         return worlds.isEmpty() || worlds.stream().anyMatch(name -> name.equalsIgnoreCase(world.getName()));
-    }
-
-    private void keepConfiguredWeather(World world) {
-        if (world.getEnvironment() != World.Environment.NORMAL) return;
-        if (!plugin.getConfig().getBoolean("horrorNights.effects.thunderstorm", true)) {
-            restoreWeather(world);
-            return;
-        }
-        world.setStorm(true);
-        world.setThundering(true);
-        world.setWeatherDuration(20 * 60 * 5);
-        world.setThunderDuration(20 * 60 * 5);
-    }
-
-    private void restoreWeather(World world) {
-        WeatherSnapshot snapshot = originalWeather.remove(world.getUID());
-        if (snapshot == null || world.getEnvironment() != World.Environment.NORMAL) return;
-        world.setStorm(snapshot.storm);
-        world.setThundering(snapshot.thundering);
-        world.setWeatherDuration(Math.max(0, snapshot.weatherDuration));
-        world.setThunderDuration(Math.max(0, snapshot.thunderDuration));
     }
 
     private void spawnWave(World world) {
@@ -390,17 +359,4 @@ public final class HorrorNightsManager implements Listener {
         return Math.max(1.0, Math.min(max, value));
     }
 
-    private static final class WeatherSnapshot {
-        private final boolean storm;
-        private final boolean thundering;
-        private final int weatherDuration;
-        private final int thunderDuration;
-
-        private WeatherSnapshot(boolean storm, boolean thundering, int weatherDuration, int thunderDuration) {
-            this.storm = storm;
-            this.thundering = thundering;
-            this.weatherDuration = weatherDuration;
-            this.thunderDuration = thunderDuration;
-        }
-    }
 }
