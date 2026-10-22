@@ -2,7 +2,7 @@
 # Odměny používají pouze vanilla materiály; všechny rarity klíče sdílejí stejnou existující secret_key texturu.
 
 secret-rooms:
-  enabled: true
+  enabled: false
   # Doplň přesný název běžného herního světa. Prázdný seznam bezpečně vypíná generování.
   worlds: []
   excluded-worlds:
@@ -220,8 +220,8 @@ updateChecker: true
 # Optional active window in October (inclusive). 0 = always active.
 # The season counts as active only when 'active' is true AND this window matches.
 activeWindow:
-  startDay: 27
-  endDay: 31
+  startDay: 23
+  endDay: 2
 
 # ── World Filter ───────────────────────────────────────────
 # Leave empty to enable in ALL worlds. Add world names to restrict.
@@ -374,7 +374,7 @@ batSwarm:
 # ── Fog Effect ─────────────────────────────────────────────
 # Brief Darkness pulse during haunted nights.
 fog:
-  enabled: true
+  enabled: false
   intervalSeconds: 60
   durationTicks: 100
 
