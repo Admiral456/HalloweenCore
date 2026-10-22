@@ -80,7 +80,7 @@ public class HauntedNightManager {
         this.ghostSpawnEvery = cfg.getInt("hauntedNight.ghostSpawnEverySeconds", 25);
         this.ghostPerPlayer = cfg.getInt("hauntedNight.ghostPerPlayer", 1);
         this.ghostLifetimeTicks = this.ghostSpawnEvery * 20;
-        this.fogEnabled = cfg.getBoolean("fog.enabled", true);
+        this.fogEnabled = cfg.getBoolean("fog.enabled", false);
         this.fogIntervalSeconds = cfg.getInt("fog.intervalSeconds", 60);
         this.fogDurationTicks = cfg.getInt("fog.durationTicks", 100);
     }

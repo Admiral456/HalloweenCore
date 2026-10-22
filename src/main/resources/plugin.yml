@@ -3,13 +3,18 @@ version: 0.3.0
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
-description: Halloween questy, tajné místnosti a sezónní atmosférické funkce.
+description: Halloween questy, fragmenty, halloweenský obchod a sezónní atmosférické funkce.
 softdepend: [ItemsAdder, PlaceholderAPI, WorldGuard, GriefPrevention, CustomJukebox]
 commands:
   halloween:
-    description: Questy, fragmenty, klíče, tajné místnosti a strašidelné noci.
-    usage: /halloween [quest|fragments|key|rooms|horror|reload]
+    description: Questy, fragmenty, obchod a strašidelné noci.
+    usage: /halloween [quest|fragments|shop|horror|reload]
     aliases: [hallow]
+    permission: halloweencore.use
+  quest:
+    description: Získá nebo zobrazí denní úkol za fragment.
+    usage: /quest
+    aliases: [dailyquest]
     permission: halloweencore.use
   pumpkinrain:
     description: Spustí nebo zastaví déšť dýní.
@@ -39,9 +44,6 @@ permissions:
     default: true
   halloweencore.admin:
     description: Správa HalloweenCore.
-    default: op
-  halloweencore.key.give:
-    description: Administrátorské vydávání klíčů.
     default: op
   halloweencore.quest.dialogue:
     description: Řízení questů z dialogové integrace.

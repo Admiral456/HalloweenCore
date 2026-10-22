@@ -158,11 +158,3 @@ items:
       nutrition: 1
       saturation: 0.2
 
-  secret_key:
-    name: "&6&lKlíč tajné místnosti"
-    lore:
-      - "&7Odemkne zamčenou truhlu v tajné podzemní místnosti."
-      - "&8Po použití se klíč spotřebuje."
-    material: TRIPWIRE_HOOK
-    graphics:
-      texture: item/secret_key

@@ -1,28 +1,5 @@
 # Zachované ItemsAdder assety
 
-Namespace: warriorland_halloween
+Namespace `warriorland_halloween` obsahuje 13 licencovaných 16×16 PNG sladkostí: apple_core, candy_apple, candy_bag, caramel, caramel_apple, chocolate_bar, frosted_sugar_cookie, gumdrop, hard_candy, lollipop, peanut_butter_cup, sugar_cookie a toasted_pumpkin_seeds. Cesta: `resourcepack/assets/warriorland_halloween/textures/item/stev_candy/`.
 
-## Převzaté sladkosti
-
-Těchto třináct 16×16 PNG textur zůstává beze změny pod licencí MIT:
-- apple_core.png
-- candy_apple.png
-- candy_bag.png
-- caramel.png
-- caramel_apple.png
-- chocolate_bar.png
-- frosted_sugar_cookie.png
-- gumdrop.png
-- hard_candy.png
-- lollipop.png
-- peanut_butter_cup.png
-- sugar_cookie.png
-- toasted_pumpkin_seeds.png
-
-Cesta: resourcepack/assets/warriorland_halloween/textures/item/stev_candy/.
-
-## Vlastní klíč
-
-- resourcepack/assets/warriorland_halloween/textures/item/secret_key.png — 32×32 pixel-art ikona pro warriorland_halloween:secret_key.
-
-Další původní HalloweenCore assety nejsou součástí tohoto balíčku.
+Textura klíče i její definice jsou odstraněny. Další assety hrobu, oblohy nebo shaderu zde nejsou.

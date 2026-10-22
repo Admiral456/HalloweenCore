@@ -31,12 +31,10 @@ import cz.halloween.core.spooky.util.ConfigMerger;
 import cz.halloween.core.spooky.util.Scheduler;
 import java.io.File;
 import java.io.IOException;
-import java.time.Month;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.NamespacedKey;
@@ -46,12 +44,12 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.TabCompleter;
+import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -66,8 +64,8 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
     private File playerDataFile;
     private YamlConfiguration playerData;
     private DialogQuestManager questManager;
-    private KeyItemFactory keyItemFactory;
-    private SecretRoomManager secretRoomManager;
+    private DailyQuestManager dailyQuestManager;
+    private HalloweenShopManager shopManager;
     private static HalloweenCore instance;
     /** Configuration paths of removed features; cleaned up on every start. */
     private static final List<String> OBSOLETE_CONFIG_PATHS = List.of("seasonEndRewards.commands");
@@ -106,12 +104,13 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         }
         playerDataFile = new File(getDataFolder(), "players.yml");
         playerData = YamlConfiguration.loadConfiguration(playerDataFile);
-        keyItemFactory = new KeyItemFactory(this);
         questManager = new DialogQuestManager(this);
-        secretRoomManager = new SecretRoomManager(this, keyItemFactory);
-        getServer().getPluginManager().registerEvents(secretRoomManager, this);
-        if (getConfig().getStringList("secret-rooms.worlds").isEmpty()) {
-            getLogger().warning("Generování tajných místností je bezpečně vypnuté: nastav secret-rooms.worlds na přesný název herního světa. Svět Spawn je vždy vyloučen.");
+        dailyQuestManager = new DailyQuestManager(this);
+        getServer().getPluginManager().registerEvents(dailyQuestManager, this);
+        shopManager = new HalloweenShopManager(this);
+        if (getCommand("quest") != null) {
+            getCommand("quest").setExecutor(dailyQuestManager);
+            getCommand("quest").setTabCompleter(dailyQuestManager);
         }
         if (getCommand("halloween") != null) {
             getCommand("halloween").setExecutor(this);
@@ -123,7 +122,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         enableSpookySeason();
         horrorNightsManager = new HorrorNightsManager(this);
         horrorNightsManager.start();
-        getLogger().info("HalloweenCore načten: questy, tajné místnosti, sezónní funkce a strašidelné noci.");
+        getLogger().info("HalloweenCore načten: denní questy, fragmenty, obchod a sezónní funkce.");
     }
 
 
@@ -229,23 +228,11 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
     }
 
     private void installDefaults() {
-        getConfig().addDefault("secret-rooms.enabled", true);
-        getConfig().addDefault("secret-rooms.worlds", List.of());
-        getConfig().addDefault("secret-rooms.excluded-worlds", List.of("Spawn"));
-        getConfig().addDefault("secret-rooms.chance-per-new-chunk", 0.01);
-        getConfig().addDefault("secret-rooms.min-depth-below-surface", 16);
-        getConfig().addDefault("secret-rooms.max-depth-below-surface", 28);
-        getConfig().addDefault("secret-rooms.rarity-weights.common", 70);
-        getConfig().addDefault("secret-rooms.rarity-weights.rare", 25);
-        getConfig().addDefault("secret-rooms.rarity-weights.legendary", 5);
-
-        getConfig().addDefault("secret-rooms.loot.common.min-fragments", 8);
-        getConfig().addDefault("secret-rooms.loot.common.max-fragments", 16);
-        getConfig().addDefault("secret-rooms.loot.rare.min-fragments", 20);
-        getConfig().addDefault("secret-rooms.loot.rare.max-fragments", 35);
-        getConfig().addDefault("secret-rooms.loot.legendary.min-fragments", 40);
-        getConfig().addDefault("secret-rooms.loot.legendary.max-fragments", 70);
-
+        getConfig().addDefault("activeWindow.startMonth", 10);
+        getConfig().addDefault("activeWindow.startDay", 23);
+        getConfig().addDefault("activeWindow.endMonth", 11);
+        getConfig().addDefault("activeWindow.endDay", 2);
+        getConfig().addDefault("fog.enabled", false);
         getConfig().addDefault("quest-rewards.default-difficulty", "light");
         getConfig().addDefault("quest-rewards.difficulties.light.min-fragments", 3);
         getConfig().addDefault("quest-rewards.difficulties.light.max-fragments", 5);
@@ -255,34 +242,29 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         getConfig().addDefault("quest-rewards.difficulties.hard.max-fragments", 15);
         getConfig().addDefault("quest-rewards.difficulties.very-hard.min-fragments", 16);
         getConfig().addDefault("quest-rewards.difficulties.very-hard.max-fragments", 25);
-
-        getConfig().addDefault("quest-rewards.difficulties.light.key-chances.common", 0.10);
-        getConfig().addDefault("quest-rewards.difficulties.light.key-chances.rare", 0.01);
-        getConfig().addDefault("quest-rewards.difficulties.light.key-chances.legendary", 0.001);
-        getConfig().addDefault("quest-rewards.difficulties.medium.key-chances.common", 0.15);
-        getConfig().addDefault("quest-rewards.difficulties.medium.key-chances.rare", 0.035);
-        getConfig().addDefault("quest-rewards.difficulties.medium.key-chances.legendary", 0.005);
-        getConfig().addDefault("quest-rewards.difficulties.hard.key-chances.common", 0.20);
-        getConfig().addDefault("quest-rewards.difficulties.hard.key-chances.rare", 0.06);
-        getConfig().addDefault("quest-rewards.difficulties.hard.key-chances.legendary", 0.02);
-        getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.common", 0.25);
-        getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.rare", 0.10);
-        getConfig().addDefault("quest-rewards.difficulties.very-hard.key-chances.legendary", 0.08);
-
-        // Migrate the previous bundled defaults once, without overriding deliberate admin choices.
-        if (getConfig().getInt("activeWindow.startDay", 27) == 27
-                && getConfig().getInt("activeWindow.endDay", 31) == 31) {
-            getConfig().set("activeWindow.startDay", 23);
-            getConfig().set("activeWindow.endDay", 2);
-        }
-        if (getConfig().getBoolean("secret-rooms.enabled", false)) {
-            getConfig().set("secret-rooms.enabled", false);
-        }
-        if (getConfig().getBoolean("fog.enabled", false)) {
-            getConfig().set("fog.enabled", false);
-        }
-
-        // The sample gives five fragments once and intentionally does not grant a key.
+        getConfig().addDefault("daily-quest.enabled", true);
+        getConfig().addDefault("daily-quest.reward-fragments", 1);
+        getConfig().addDefault("shop.enabled", true);
+        getConfig().addDefault("shop.prices.candy", 3);
+        getConfig().addDefault("shop.prices.iron", 8);
+        getConfig().addDefault("shop.prices.gold", 15);
+        getConfig().addDefault("shop.prices.diamond", 35);
+        getConfig().addDefault("shop.prices.emerald", 25);
+        getConfig().addDefault("shop.prices.netherite-ingot", 150);
+        getConfig().addDefault("shop.prices.netherite-scrap", 70);
+        getConfig().addDefault("shop.prices.golden-apple", 18);
+        getConfig().addDefault("shop.prices.enchanted-golden-apple", 80);
+        getConfig().addDefault("shop.prices.totem", 350);
+        getConfig().addDefault("shop.prices.trident", 550);
+        getConfig().addDefault("shop.prices.mace", 800);
+        getConfig().addDefault("shop.prices.netherite-sword", 400);
+        getConfig().addDefault("shop.prices.netherite-axe", 350);
+        getConfig().addDefault("shop.prices.netherite-helmet", 250);
+        getConfig().addDefault("shop.prices.netherite-chestplate", 500);
+        getConfig().addDefault("shop.prices.netherite-leggings", 400);
+        getConfig().addDefault("shop.prices.netherite-boots", 200);
+        getConfig().addDefault("shop.prices.elytra", 1200);
+        getConfig().addDefault("shop.prices.netherite-spear", 900);
         getConfig().options().copyDefaults(true);
         saveConfig();
     }
@@ -293,9 +275,6 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         disableSpookySeason();
         removeAllPluginEntities();
         savePlayerData();
-        if (secretRoomManager != null) {
-            secretRoomManager.saveRooms();
-        }
     }
 
     public YamlConfiguration getPlayerData() {
@@ -304,10 +283,6 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
     public DialogQuestManager getQuestManager() {
         return questManager;
-    }
-
-    public KeyItemFactory getKeyItemFactory() {
-        return keyItemFactory;
     }
 
     public void savePlayerData() {
@@ -335,19 +310,8 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
                             + questManager.getFragments(player.getUniqueId()) + ChatColor.GOLD + " fragmentů.");
                 }
             }
-            case "key" -> handleKeyCommand(sender, args);
+            case "shop" -> shopManager.open(sender);
             case "horror" -> handleHorrorCommand(sender, args);
-            case "rooms" -> {
-                if (args.length > 1 && args[1].equalsIgnoreCase("status")) {
-                    sender.sendMessage(ChatColor.GOLD + "Tajné místnosti: "
-                            + (getConfig().getBoolean("secret-rooms.enabled", true)
-                            ? ChatColor.GREEN + "zapnuté" : ChatColor.RED + "vypnuté")
-                            + ChatColor.GOLD + "; zaregistrované truhly: "
-                            + ChatColor.YELLOW + secretRoomManager.getRoomCount());
-                } else {
-                    sender.sendMessage(ChatColor.YELLOW + "Použití: /halloween rooms status");
-                }
-            }
             case "reload" -> {
                 if (!sender.hasPermission("halloweencore.admin")) {
                     sender.sendMessage(ChatColor.RED + "Na tento příkaz nemáš oprávnění.");
@@ -355,7 +319,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
                 }
                 reload();
                 if (horrorNightsManager != null) horrorNightsManager.start();
-                sender.sendMessage(ChatColor.GREEN + "Konfigurace načtena. Již vytvořené místnosti se nemění.");
+                sender.sendMessage(ChatColor.GREEN + "Konfigurace načtena.");
             }
             default -> sendHelp(sender);
         }
@@ -414,127 +378,22 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         }
     }
 
-    private void handleKeyCommand(CommandSender sender, String[] args) {
-        if (args.length < 2 || !args[1].equalsIgnoreCase("give")) {
-            sender.sendMessage(ChatColor.YELLOW
-                    + "Použití: /halloween key give [common|rare|legendary] [hráč] [počet]");
-            return;
-        }
-        if (!sender.hasPermission("halloweencore.key.give")) {
-            sender.sendMessage(ChatColor.RED + "Na vydávání klíčů nemáš oprávnění.");
-            return;
-        }
-
-        String rarity = "common";
-        int cursor = 2;
-        if (cursor < args.length && KeyItemFactory.isValidRarity(args[cursor])) {
-            rarity = KeyItemFactory.normalizeRarity(args[cursor]);
-            cursor++;
-        }
-
-        Player target;
-        int amount = 1;
-        if (cursor >= args.length) {
-            if (!(sender instanceof Player player)) {
-                sender.sendMessage(ChatColor.YELLOW
-                        + "Použití z konzole: /halloween key give [common|rare|legendary] <hráč> [počet]");
-                return;
-            }
-            target = player;
-        } else if (sender instanceof Player player && isPositiveInteger(args[cursor])) {
-            // Convenient self-grant forms: /halloween key give 3 and /halloween key give rare 3.
-            target = player;
-            try {
-                amount = Integer.parseInt(args[cursor]);
-            } catch (NumberFormatException exception) {
-                sender.sendMessage(ChatColor.RED + "Počet musí být celé číslo.");
-                return;
-            }
-            cursor++;
-        } else {
-            target = Bukkit.getPlayerExact(args[cursor]);
-            if (target == null) {
-                sender.sendMessage(ChatColor.RED + "Hráč musí být online.");
-                return;
-            }
-            cursor++;
-            if (cursor < args.length) {
-                try {
-                    amount = Integer.parseInt(args[cursor]);
-                } catch (NumberFormatException exception) {
-                    sender.sendMessage(ChatColor.RED + "Počet musí být celé číslo.");
-                    return;
-                }
-                cursor++;
-            }
-        }
-
-        if (cursor < args.length) {
-            sender.sendMessage(ChatColor.YELLOW
-                    + "Použití: /halloween key give [common|rare|legendary] [hráč] [počet]");
-            return;
-        }
-        if (amount < 1 || amount > 64) {
-            sender.sendMessage(ChatColor.RED + "Počet klíčů musí být v rozsahu 1 až 64.");
-            return;
-        }
-
-        ItemStack key = keyItemFactory.createKey(rarity, amount);
-        Map<Integer, ItemStack> leftovers = target.getInventory().addItem(key);
-        for (ItemStack leftover : leftovers.values()) {
-            target.getWorld().dropItemNaturally(target.getLocation(), leftover);
-        }
-        String rarityLabel = switch (rarity) {
-            case "rare" -> "vzácný";
-            case "legendary" -> "legendární";
-            default -> "obyčejný";
-        };
-        target.sendMessage(ChatColor.GOLD + "Získal jsi " + amount + "× " + rarityLabel
-                + " klíč tajné místnosti.");
-        if (sender != target) sender.sendMessage(ChatColor.GREEN + "Klíče předány hráči " + target.getName() + ".");
-    }
-
-    private boolean isPositiveInteger(String value) {
-        try {
-            return Integer.parseInt(value) > 0;
-        } catch (NumberFormatException exception) {
-            return false;
-        }
-    }
-
     private void sendHelp(CommandSender sender) {
-        sender.sendMessage(ChatColor.GOLD + "HalloweenCore — nová verze");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween quest start <id> " + ChatColor.GRAY + "— přijmout úkol");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween quest progress <id> [množství] " + ChatColor.GRAY + "— postup");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween quest complete <id> " + ChatColor.GRAY + "— dokončit jednou");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween quest status [id] " + ChatColor.GRAY + "— stav úkolů");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween fragments " + ChatColor.GRAY + "— počet fragmentů");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween rooms status " + ChatColor.GRAY + "— stav místností");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween horror <start|stop|status> [svět] " + ChatColor.GRAY + "— strašidelné noci (admin)");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween key give [common|rare|legendary] [hráč] [počet] " + ChatColor.GRAY + "— administrátorské vydání klíče");
-        if (sender.hasPermission("halloweencore.admin")) {
-            sender.sendMessage(ChatColor.YELLOW + "/halloween reload " + ChatColor.GRAY + "— načíst konfiguraci");
-        }
+        sender.sendMessage(ChatColor.GOLD+"HalloweenCore — příkazy");
+        sender.sendMessage(ChatColor.YELLOW+"/quest "+ChatColor.GRAY+"— denní úkol za fragment");
+        sender.sendMessage(ChatColor.YELLOW+"/halloween shop "+ChatColor.GRAY+"— halloweenský obchod");
+        sender.sendMessage(ChatColor.YELLOW+"/halloween quest start|progress|complete|status <id> "+ChatColor.GRAY+"— dialogové questy");
+        sender.sendMessage(ChatColor.YELLOW+"/halloween fragments "+ChatColor.GRAY+"— stav fragmentů");
+        sender.sendMessage(ChatColor.YELLOW+"/halloween horror <start|stop|status> [svět] "+ChatColor.GRAY+"— strašidelné noci");
+        if(sender.hasPermission("halloweencore.admin"))sender.sendMessage(ChatColor.YELLOW+"/halloween reload "+ChatColor.GRAY+"— načtení konfigurace");
     }
 
     @Override
-    public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) return partial(args[0], List.of("help", "quest", "fragments", "key", "rooms", "horror", "reload"));
-        if (args.length == 2 && args[0].equalsIgnoreCase("quest"))
-            return partial(args[1], List.of("start", "progress", "complete", "status", "list"));
-        if (args.length == 2 && args[0].equalsIgnoreCase("key")) return partial(args[1], List.of("give"));
-        if (args.length == 2 && args[0].equalsIgnoreCase("rooms")) return partial(args[1], List.of("status"));
-        if (args.length == 2 && args[0].equalsIgnoreCase("horror")) return partial(args[1], List.of("start", "stop", "status"));
-        if (args.length == 3 && args[0].equalsIgnoreCase("horror")) {
-            List<String> names = new ArrayList<>();
-            for (World world : Bukkit.getWorlds()) names.add(world.getName());
-            return partial(args[2], names);
-        }
-        if (args.length == 3 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")) {
-            List<String> names = new ArrayList<>();
-            for (Player player : Bukkit.getOnlinePlayers()) names.add(player.getName());
-            return partial(args[2], names);
-        }
+    public List<String> onTabComplete(CommandSender sender,Command command,String alias,String[] args) {
+        if(args.length==1)return partial(args[0],List.of("help","quest","fragments","shop","horror","reload"));
+        if(args.length==2&&args[0].equalsIgnoreCase("quest"))return partial(args[1],List.of("start","progress","complete","status","list"));
+        if(args.length==2&&args[0].equalsIgnoreCase("horror"))return partial(args[1],List.of("start","stop","status"));
+        if(args.length==3&&args[0].equalsIgnoreCase("horror")){List<String> names=new ArrayList<>();for(World w:Bukkit.getWorlds())names.add(w.getName());return partial(args[2],names);}
         return List.of();
     }
 
@@ -617,6 +476,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
     public void reload() {
         this.mergeConfig();
+        if(this.shopManager!=null)this.shopManager.refresh();
         Lang.load((Plugin)this);
         this.hauntedNightManager.start();
         this.bossManager.start();
@@ -632,7 +492,26 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         File file = new File(this.getDataFolder(), "config.yml");
         ConfigMerger.merge((Plugin)this, "config.yml", file, FREE_FORM_CONFIG_PATHS);
         ConfigMerger.removeObsolete((Plugin)this, file, OBSOLETE_CONFIG_PATHS);
+        migrateLegacyConfig(file);
         this.reloadConfig();
+    }
+
+    private void migrateLegacyConfig(File file) {
+        YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
+        if (cfg.getInt("activeWindow.startMonth", -1) < 0) cfg.set("activeWindow.startMonth", 10);
+        if (cfg.getInt("activeWindow.endMonth", -1) < 0) {
+            int start=cfg.getInt("activeWindow.startDay",27), end=cfg.getInt("activeWindow.endDay",31);
+            cfg.set("activeWindow.endMonth",end<start?11:10);
+        }
+        if (cfg.getInt("activeWindow.startDay",-1)==27 && cfg.getInt("activeWindow.endDay",-1)==31) {
+            cfg.set("activeWindow.startMonth",10);cfg.set("activeWindow.startDay",23);
+            cfg.set("activeWindow.endMonth",11);cfg.set("activeWindow.endDay",2);
+        }
+        cfg.set("secret-rooms",null);cfg.set("fog.enabled",false);
+        for(String tier:List.of("light","medium","hard","very-hard"))cfg.set("quest-rewards.difficulties."+tier+".key-chances",null);
+        ConfigurationSection overrides=cfg.getConfigurationSection("quest-rewards.quests");
+        if(overrides!=null)for(String id:overrides.getKeys(false))cfg.set("quest-rewards.quests."+id+".key-chances",null);
+        try{cfg.save(file);}catch(IOException ex){getLogger().warning("Nepodařilo se migrovat starý config: "+ex.getMessage());}
     }
 
     public boolean isSeasonActive() {
@@ -647,22 +526,11 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
      * treat statistics.
      */
     public boolean isInSeasonWindow() {
-        FileConfiguration cfg = this.getConfig();
-        int start = cfg.getInt("activeWindow.startDay", 0);
-        int end = cfg.getInt("activeWindow.endDay", 0);
-        if (start == 0 || end == 0) {
-            return true;
-        }
-        ZonedDateTime now = ZonedDateTime.now();
-        int month = now.getMonthValue();
-        int day = now.getDayOfMonth();
-        // Same-month windows (for example 27–31 October).
-        if (start <= end) {
-            return month == Month.OCTOBER.getValue() && day >= start && day <= end;
-        }
-        // Cross-month Halloween windows (for example 23 October–2 November).
-        return (month == Month.OCTOBER.getValue() && day >= start)
-                || (month == Month.NOVEMBER.getValue() && day <= end);
+        FileConfiguration cfg=this.getConfig();int sd=cfg.getInt("activeWindow.startDay",0),ed=cfg.getInt("activeWindow.endDay",0);
+        if(sd==0||ed==0)return true;
+        int sm=Math.max(1,Math.min(12,cfg.getInt("activeWindow.startMonth",10))),em=Math.max(1,Math.min(12,cfg.getInt("activeWindow.endMonth",sm)));
+        ZonedDateTime now=ZonedDateTime.now();int current=now.getMonthValue()*100+now.getDayOfMonth(),start=sm*100+sd,end=em*100+ed;
+        return start<=end?current>=start&&current<=end:current>=start||current<=end;
     }
 
     public boolean isWorldEnabled(World world) {

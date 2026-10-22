@@ -7,7 +7,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 
 public final class DialogQuestManager {
     private final HalloweenCore plugin;
@@ -123,14 +122,10 @@ public final class DialogQuestManager {
             fragments = randomLongInclusive(min, max);
         }
 
-        String keyRarity = rollKeyReward(rewardPath, tierPath);
         plugin.getPlayerData().set(playerQuestPath + ".completed", true);
         plugin.getPlayerData().set(playerQuestPath + ".completed-at", Instant.now().toString());
         plugin.getPlayerData().set(playerQuestPath + ".reward.difficulty", difficulty);
         plugin.getPlayerData().set(playerQuestPath + ".reward.fragments", fragments);
-        if (keyRarity != null) {
-            plugin.getPlayerData().set(playerQuestPath + ".reward.key-rarity", keyRarity);
-        }
 
         if (fragments > 0L) {
             String fragmentPath = playerPath(uuid) + ".fragments";
@@ -159,39 +154,9 @@ public final class DialogQuestManager {
             player.sendMessage(ChatColor.GOLD + "Odměna: " + fragments + " fragmentů "
                     + ChatColor.GRAY + "(obtížnost: " + difficultyName(difficulty) + ").");
         }
-        if (keyRarity != null) {
-            ItemStack key = plugin.getKeyItemFactory().createKey(keyRarity, 1);
-            java.util.Map<Integer, ItemStack> leftovers = player.getInventory().addItem(key);
-            for (ItemStack leftover : leftovers.values()) {
-                player.getWorld().dropItemNaturally(player.getLocation(), leftover);
-            }
-            player.sendMessage(ChatColor.GOLD + "Navíc jsi získal " + KeyItemFactory.rarityName(keyRarity)
-                    + " klíč tajné místnosti.");
-        }
-        if (fragments == 0L && keyRarity == null && rewardCommands.isEmpty()) {
+        if (fragments == 0L && rewardCommands.isEmpty()) {
             player.sendMessage(ChatColor.GRAY + "Tento úkol nemá nastavenou další odměnu.");
         }
-    }
-
-    private String rollKeyReward(String rewardPath, String tierPath) {
-        double common = readChance(rewardPath + ".key-chances.common",
-                plugin.getConfig().getDouble(tierPath + ".key-chances.common", 0.0));
-        double rare = readChance(rewardPath + ".key-chances.rare",
-                plugin.getConfig().getDouble(tierPath + ".key-chances.rare", 0.0));
-        double legendary = readChance(rewardPath + ".key-chances.legendary",
-                plugin.getConfig().getDouble(tierPath + ".key-chances.legendary", 0.0));
-
-        double roll = java.util.concurrent.ThreadLocalRandom.current().nextDouble();
-        if (roll < legendary) return "legendary";
-        roll -= legendary;
-        if (roll < rare) return "rare";
-        roll -= rare;
-        if (roll < common) return "common";
-        return null;
-    }
-
-    private double readChance(String path, double fallback) {
-        return Math.max(0.0, Math.min(1.0, plugin.getConfig().getDouble(path, fallback)));
     }
 
     private long randomLongInclusive(long min, long max) {
