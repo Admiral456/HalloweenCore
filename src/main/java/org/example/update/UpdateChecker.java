@@ -138,10 +138,7 @@ implements Listener {
         }, 40L);
     }
 
-    /**
-     * The download line as clickable components rather than a typed-out URL, and both stores, so
-     * the notice does not tie anyone to a single source.
-     */
+    /** Keep the HalloweenCore release URL clickable in the player notification. */
     private static Component downloadLine(String releaseUrl) {
         return UpdateChecker.legacy(Lang.get("update.download-prefix", new String[0]))
                 .append(UpdateChecker.link("HalloweenCore releases", releaseUrl));
