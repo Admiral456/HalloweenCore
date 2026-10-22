@@ -27,6 +27,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
     private DailyQuestManager dailyQuestManager;
     private HalloweenShopManager shopManager;
     private HorrorNightManager horrorNightManager;
+    private HalloweenPlaceholders placeholders;
 
     @Override
     public void onEnable() {
@@ -44,6 +45,15 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         playerDataFile = new File(getDataFolder(), "players.yml");
         playerData = YamlConfiguration.loadConfiguration(playerDataFile);
         questManager = new DialogQuestManager(this);
+        if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            placeholders = new HalloweenPlaceholders(this);
+            if (placeholders.register()) {
+                getLogger().info("PlaceholderAPI expansion registered: %halloween_*%");
+            } else {
+                placeholders = null;
+                getLogger().warning("PlaceholderAPI expansion could not be registered.");
+            }
+        }
         dailyQuestManager = new DailyQuestManager(this);
         getServer().getPluginManager().registerEvents(dailyQuestManager, this);
         shopManager = new HalloweenShopManager(this);
@@ -74,6 +84,10 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
     @Override
     public void onDisable() {
+        if (placeholders != null) {
+            placeholders.unregister();
+            placeholders = null;
+        }
         if (horrorNightManager != null) horrorNightManager.shutdown();
         if (org.example.SpookySeason.get() != null) org.example.SpookySeason.get().disable();
         savePlayerData();
