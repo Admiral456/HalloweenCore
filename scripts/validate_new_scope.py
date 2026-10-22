@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from pathlib import Path
-import hashlib,json,struct,xml.etree.ElementTree as ET
+import hashlib,json,struct
 import yaml
 
 root=Path(__file__).resolve().parents[1]
@@ -94,10 +94,14 @@ if set(plugin.get("commands",{}))!={"halloween","quest"}:
 if set(plugin.get("permissions",{}))!={"halloweencore.use","halloweencore.admin","halloweencore.quest.dialogue"}:
     raise SystemExit("Legacy event permissions remain registered")
 
-pom=ET.parse(root/"pom.xml").getroot()
-ns={"m":"http://maven.apache.org/POM/4.0.0"}
-includes={node.text for node in pom.findall(".//m:plugin[m:artifactId='maven-compiler-plugin']/m:configuration/m:includes/m:include",ns)}
-needed={"cz/halloween/core/HalloweenCore.java","cz/halloween/core/DailyQuestManager.java","cz/halloween/core/DialogQuestManager.java","cz/halloween/core/HalloweenShopManager.java"}
-if includes!=needed:
-    raise SystemExit(f"Unexpected Maven compilation scope: {includes}")
+expected_sources={
+    "cz/halloween/core/HalloweenCore.java",
+    "cz/halloween/core/DailyQuestManager.java",
+    "cz/halloween/core/DialogQuestManager.java",
+    "cz/halloween/core/HalloweenShopManager.java",
+}
+actual_sources={p.relative_to(root/"src/main/java").as_posix()
+                for p in (root/"src/main/java").rglob("*.java")}
+if actual_sources!=expected_sources:
+    raise SystemExit(f"Unexpected Java source set: {actual_sources}")
 print("Content scope validation passed.")
