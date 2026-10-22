@@ -1,0 +1,428 @@
+package cz.halloween.core;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
+import org.bukkit.attribute.Attribute;
+import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scheduler.BukkitTask;
+
+/**
+ * Independent implementation inspired only by the public feature description of HorrorNights.
+ * This file does not contain copied or decompiled HorrorNights code or assets.
+ */
+public final class HorrorNightManager implements Listener {
+    private final JavaPlugin plugin;
+    private final NamespacedKey mobMarker;
+    private final Random random = new Random();
+    private final Map<UUID, Session> sessions = new HashMap<>();
+    private final Map<UUID, Long> lastRolledNight = new HashMap<>();
+    private BukkitTask task;
+    private long ticks;
+    private long lastScheduledCheck;
+
+    private static final class WeatherState {
+        final boolean storm;
+        final boolean thunder;
+        final int weatherDuration;
+        final int thunderDuration;
+
+        WeatherState(World world) {
+            storm = world.hasStorm();
+            thunder = world.isThundering();
+            weatherDuration = world.getWeatherDuration();
+            thunderDuration = world.getThunderDuration();
+        }
+
+        void restore(World world) {
+            world.setStorm(storm);
+            world.setThundering(thunder);
+            world.setWeatherDuration(Math.max(1, weatherDuration));
+            world.setThunderDuration(Math.max(1, thunderDuration));
+        }
+    }
+
+    private static final class Session {
+        final UUID worldId;
+        final WeatherState weather;
+        final long startedAt;
+        final long maxEndAt;
+        long nextSpawnAt;
+        long nextSoundAt;
+
+        Session(World world, long startedAt, long maxDuration) {
+            worldId = world.getUID();
+            weather = new WeatherState(world);
+            this.startedAt = startedAt;
+            maxEndAt = startedAt + maxDuration;
+            nextSpawnAt = startedAt;
+            nextSoundAt = startedAt;
+        }
+    }
+
+    public HorrorNightManager(JavaPlugin plugin) {
+        this.plugin = plugin;
+        mobMarker = new NamespacedKey(plugin, "horrornights_style_mob");
+        Bukkit.getPluginManager().registerEvents(this, plugin);
+    }
+
+    public void start() {
+        if (task != null) task.cancel();
+        task = Bukkit.getScheduler().runTaskTimer(plugin, this::tick, 20L, 20L);
+        lastScheduledCheck = ticks;
+    }
+
+    public void reload() {
+        stopAllSessions();
+        lastRolledNight.clear();
+        start();
+    }
+
+    public void shutdown() {
+        if (task != null) {
+            task.cancel();
+            task = null;
+        }
+        stopAllSessions();
+        removeTaggedMobs();
+    }
+
+    public List<String> getActiveWorldNames() {
+        List<String> names = new ArrayList<>();
+        for (Session session : sessions.values()) {
+            World world = Bukkit.getWorld(session.worldId);
+            if (world != null) names.add(world.getName());
+        }
+        names.sort(String.CASE_INSENSITIVE_ORDER);
+        return names;
+    }
+
+    public boolean startManually(World world) {
+        if (world == null || !plugin.getConfig().getBoolean("horrorNights.enabled", true)
+                || sessions.containsKey(world.getUID()) || !isAllowedWorld(world)) return false;
+        long timeOfDay = world.getTime();
+        if (timeOfDay < 13000L || timeOfDay > 23000L) return false;
+        startSession(world);
+        return sessions.containsKey(world.getUID());
+    }
+
+    public boolean stopWorld(World world) {
+        return world != null && endSession(world.getUID(), true);
+    }
+
+    private void tick() {
+        ticks += 20;
+        if (!plugin.getConfig().getBoolean("horrorNights.enabled", true)) {
+            if (!sessions.isEmpty()) stopAllSessions();
+            return;
+        }
+        long interval = Math.max(20L, plugin.getConfig().getLong("horrorNights.check-interval-ticks", 6000L));
+        if (ticks - lastScheduledCheck >= interval) {
+            lastScheduledCheck = ticks;
+            checkForRandomStarts();
+        }
+        for (Session session : new ArrayList<>(sessions.values())) {
+            World world = Bukkit.getWorld(session.worldId);
+            if (world == null || !isAllowedWorld(world)) {
+                endSession(session.worldId, true);
+                continue;
+            }
+            long timeOfDay = world.getTime();
+            if (ticks >= session.maxEndAt || timeOfDay > 23000L || timeOfDay < 12500L) {
+                endSession(session.worldId, true);
+                continue;
+            }
+            if (plugin.getConfig().getBoolean("horrorNights.thunderstorm", true)) {
+                world.setStorm(true);
+                world.setThundering(true);
+                world.setWeatherDuration(1200);
+                world.setThunderDuration(1200);
+            }
+            if (ticks >= session.nextSpawnAt) {
+                spawnHorrorMobs(world);
+                session.nextSpawnAt = ticks + Math.max(20L,
+                        plugin.getConfig().getLong("horrorNights.spawn-interval-ticks", 60L));
+            }
+            if (ticks >= session.nextSoundAt) {
+                playAmbientSound(world);
+                session.nextSoundAt = ticks + Math.max(20L,
+                        plugin.getConfig().getLong("horrorNights.ambient-sound-interval-ticks", 200L));
+            }
+            applyRandomEffects(world);
+            sendMobParticles(world);
+        }
+    }
+
+    private void checkForRandomStarts() {
+        double chance = clamp(plugin.getConfig().getDouble("horrorNights.horror-night-chance", 10.0), 0.0, 100.0);
+        for (World world : Bukkit.getWorlds()) {
+            if (!isAllowedWorld(world) || sessions.containsKey(world.getUID())) continue;
+            long time = world.getTime();
+            if (time < 13000L || time > 23000L || world.getPlayers().isEmpty()) continue;
+            long day = world.getFullTime() / 24000L;
+            Long alreadyRolled = lastRolledNight.get(world.getUID());
+            if (alreadyRolled != null && alreadyRolled.longValue() == day) continue;
+            lastRolledNight.put(world.getUID(), day);
+            if (random.nextDouble() * 100.0 < chance) startSession(world);
+        }
+    }
+
+    private boolean isAllowedWorld(World world) {
+        List<String> excluded = plugin.getConfig().getStringList("horrorNights.excluded-worlds");
+        for (String name : excluded) if (world.getName().equalsIgnoreCase(name)) return false;
+        List<String> allowed = plugin.getConfig().getStringList("horrorNights.enabled-worlds");
+        if (allowed.isEmpty()) return true;
+        for (String name : allowed) if (name.equals("*") || world.getName().equalsIgnoreCase(name)) return true;
+        return false;
+    }
+
+    private void startSession(World world) {
+        if (sessions.containsKey(world.getUID()) || !isAllowedWorld(world)) return;
+        long duration = Math.max(1200L,
+                plugin.getConfig().getLong("horrorNights.manual-max-duration-ticks", 12000L));
+        Session session = new Session(world, ticks, duration);
+        sessions.put(world.getUID(), session);
+        if (plugin.getConfig().getBoolean("horrorNights.thunderstorm", true)) {
+            world.setStorm(true);
+            world.setThundering(true);
+            world.setWeatherDuration((int) Math.min(Integer.MAX_VALUE, duration));
+            world.setThunderDuration((int) Math.min(Integer.MAX_VALUE, duration));
+        }
+        String message = plugin.getConfig().getString("horrorNights.messages.horror-night-start",
+                "&4&lVarování: začala hororová noc!");
+        world.getPlayers().forEach(player -> player.sendMessage(color(message)));
+        playConfiguredStartSound(world);
+        plugin.getLogger().info("Hororová noc začala ve světě " + world.getName() + ".");
+    }
+
+    private boolean endSession(UUID worldId, boolean announce) {
+        Session session = sessions.remove(worldId);
+        if (session == null) return false;
+        World world = Bukkit.getWorld(worldId);
+        if (world != null) {
+            session.weather.restore(world);
+            if (announce) {
+                String message = plugin.getConfig().getString("horrorNights.messages.horror-night-end",
+                        "&aHororová noc skončila… prozatím.");
+                world.getPlayers().forEach(player -> player.sendMessage(color(message)));
+            }
+            plugin.getLogger().info("Hororová noc skončila ve světě " + world.getName() + ".");
+        }
+        return true;
+    }
+
+    private void stopAllSessions() {
+        for (UUID worldId : new ArrayList<>(sessions.keySet())) endSession(worldId, false);
+    }
+
+    private void spawnHorrorMobs(World world) {
+        int maxMobs = Math.max(0, plugin.getConfig().getInt("horrorNights.max-mobs-per-world", 30));
+        if (maxMobs == 0 || countTaggedMobs(world) >= maxMobs) return;
+        List<String> configuredTypes = plugin.getConfig().getStringList("horrorNights.mob-types");
+        if (configuredTypes.isEmpty()) {
+            configuredTypes = List.of("ZOMBIE", "SKELETON", "SPIDER", "CREEPER", "WITCH");
+        }
+        int perPlayer = Math.max(1, Math.min(5, plugin.getConfig().getInt("horrorNights.spawn-count", 1)));
+        int minRadius = Math.max(8, plugin.getConfig().getInt("horrorNights.spawn-min-radius", 20));
+        int maxRadius = Math.max(minRadius, plugin.getConfig().getInt("horrorNights.spawn-max-radius", 40));
+        for (Player player : new ArrayList<>(world.getPlayers())) {
+            for (int index = 0; index < perPlayer; index++) {
+                if (countTaggedMobs(world) >= maxMobs) return;
+                EntityType type = validMobType(configuredTypes);
+                if (type == null) break;
+                Location location = findSpawnLocation(player, minRadius, maxRadius);
+                if (location == null) continue;
+                try {
+                    Entity entity = world.spawnEntity(location, type);
+                    if (!(entity instanceof LivingEntity living)) {
+                        entity.remove();
+                        continue;
+                    }
+                    living.getPersistentDataContainer().set(mobMarker, PersistentDataType.BYTE, (byte) 1);
+                    prepareMob(living);
+                } catch (IllegalArgumentException | IllegalStateException exception) {
+                    plugin.getLogger().fine("Nelze vytvořit hororovou entitu " + type + ": " + exception.getMessage());
+                }
+            }
+        }
+    }
+
+    private EntityType validMobType(List<String> types) {
+        List<EntityType> valid = new ArrayList<>();
+        for (String value : types) {
+            try {
+                EntityType type = EntityType.valueOf(value.trim().toUpperCase(Locale.ROOT));
+                if (type.isAlive() && type.isSpawnable() && type != EntityType.PLAYER && type != EntityType.ARMOR_STAND) {
+                    valid.add(type);
+                }
+            } catch (IllegalArgumentException ignored) {
+                plugin.getLogger().fine("Neznámý typ moba v horrorNights.mob-types: " + value);
+            }
+        }
+        return valid.isEmpty() ? null : valid.get(random.nextInt(valid.size()));
+    }
+
+    private Location findSpawnLocation(Player player, int minRadius, int maxRadius) {
+        World world = player.getWorld();
+        for (int attempt = 0; attempt < 6; attempt++) {
+            double angle = random.nextDouble() * Math.PI * 2.0;
+            int radius = minRadius + random.nextInt(Math.max(1, maxRadius - minRadius + 1));
+            int x = player.getLocation().getBlockX() + (int) Math.round(Math.cos(angle) * radius);
+            int z = player.getLocation().getBlockZ() + (int) Math.round(Math.sin(angle) * radius);
+            Block floor = world.getHighestBlockAt(x, z);
+            if (!floor.getType().isSolid() || floor.isLiquid()) continue;
+            Block feet = floor.getRelative(0, 1, 0);
+            Block head = floor.getRelative(0, 2, 0);
+            if (!feet.isPassable() || !head.isPassable()) continue;
+            return new Location(world, x + 0.5, floor.getY() + 1.0, z + 0.5);
+        }
+        return null;
+    }
+
+    private void prepareMob(LivingEntity living) {
+        double healthMultiplier = clamp(plugin.getConfig().getDouble("horrorNights.health-multiplier", 2.0), 1.0, 20.0);
+        try {
+            var maxHealth = living.getAttribute(Attribute.MAX_HEALTH);
+            if (maxHealth != null) {
+                double current = maxHealth.getBaseValue();
+                maxHealth.setBaseValue(Math.min(2048.0, Math.max(1.0, current * healthMultiplier)));
+                living.setHealth(maxHealth.getValue());
+            }
+        } catch (RuntimeException exception) {
+            plugin.getLogger().fine("Nepodařilo se upravit zdraví hororového moba: " + exception.getMessage());
+        }
+        if (plugin.getConfig().getBoolean("horrorNights.speed-boost", true)) {
+            living.addPotionEffect(new PotionEffect(PotionEffectType.SPEED, 20 * 60, 0, true, false, true));
+        }
+        if (plugin.getConfig().getBoolean("horrorNights.strength-boost", true)) {
+            living.addPotionEffect(new PotionEffect(PotionEffectType.STRENGTH, 20 * 60, 0, true, false, true));
+        }
+        if (plugin.getConfig().getBoolean("horrorNights.glowing", true)) living.setGlowing(true);
+        if (plugin.getConfig().getBoolean("horrorNights.show-custom-name", true)) {
+            String prefix = plugin.getConfig().getString("horrorNights.name-prefix", "&4&lHORROR ");
+            String name = prefix + living.getType().name().toLowerCase(Locale.ROOT).replace('_', ' ');
+            living.setCustomName(color(name));
+            living.setCustomNameVisible(true);
+        }
+        double invisibleChance = clamp(plugin.getConfig().getDouble("horrorNights.invisible-chance", 30.0), 0.0, 100.0);
+        if (random.nextDouble() * 100.0 < invisibleChance) {
+            living.addPotionEffect(new PotionEffect(PotionEffectType.INVISIBILITY, 20 * 60, 0, true, false, false));
+        }
+        if (living instanceof Mob mob) mob.setRemoveWhenFarAway(true);
+    }
+
+    private void applyRandomEffects(World world) {
+        if (!plugin.getConfig().getBoolean("horrorNights.player-effects", true)) return;
+        double chance = clamp(plugin.getConfig().getDouble("horrorNights.effect-chance", 0.35), 0.0, 1.0);
+        int duration = Math.max(20, plugin.getConfig().getInt("horrorNights.effect-duration-ticks", 100));
+        List<String> effectNames = plugin.getConfig().getStringList("horrorNights.effect-types");
+        if (effectNames.isEmpty()) effectNames = List.of("DARKNESS", "BLINDNESS", "NAUSEA");
+        for (Player player : world.getPlayers()) {
+            if (random.nextDouble() >= chance) continue;
+            String selected = effectNames.get(random.nextInt(effectNames.size())).toUpperCase(Locale.ROOT);
+            PotionEffectType effect = switch (selected) {
+                case "DARKNESS" -> PotionEffectType.DARKNESS;
+                case "BLINDNESS" -> PotionEffectType.BLINDNESS;
+                case "NAUSEA", "CONFUSION" -> PotionEffectType.NAUSEA;
+                default -> null;
+            };
+            if (effect != null) player.addPotionEffect(new PotionEffect(effect, duration, 0, true, false, true));
+        }
+    }
+
+    private void playAmbientSound(World world) {
+        if (!plugin.getConfig().getBoolean("horrorNights.ambient-sounds", true)) return;
+        List<String> configured = plugin.getConfig().getStringList("horrorNights.sound-types");
+        if (configured.isEmpty()) configured = List.of("ENTITY_WITCH_AMBIENT", "ENTITY_GHAST_SCREAM", "ENTITY_ENDERMAN_SCREAM");
+        List<Sound> valid = new ArrayList<>();
+        for (String name : configured) {
+            try {
+                valid.add(Sound.valueOf(name.toUpperCase(Locale.ROOT)));
+            } catch (IllegalArgumentException ignored) {
+                plugin.getLogger().fine("Neznámý zvuk v horrorNights.sound-types: " + name);
+            }
+        }
+        if (valid.isEmpty()) return;
+        Sound sound = valid.get(random.nextInt(valid.size()));
+        for (Player player : world.getPlayers()) {
+            player.playSound(player.getLocation(), sound, 0.6f, 0.6f + random.nextFloat() * 0.7f);
+        }
+    }
+
+    private void sendMobParticles(World world) {
+        String name = plugin.getConfig().getString("horrorNights.invisible-particle", "SOUL_FIRE_FLAME");
+        Particle particle;
+        try {
+            particle = Particle.valueOf(name.toUpperCase(Locale.ROOT));
+        } catch (IllegalArgumentException exception) {
+            particle = Particle.SOUL_FIRE_FLAME;
+        }
+        for (Entity entity : world.getEntities()) {
+            if (!(entity instanceof LivingEntity living)) continue;
+            if (!living.getPersistentDataContainer().has(mobMarker, PersistentDataType.BYTE)) continue;
+            if (!living.hasPotionEffect(PotionEffectType.INVISIBILITY)) continue;
+            world.spawnParticle(particle, living.getLocation().add(0, 0.8, 0), 3, 0.25, 0.35, 0.25, 0.01);
+        }
+    }
+
+    private int countTaggedMobs(World world) {
+        int total = 0;
+        for (Entity entity : world.getEntities()) {
+            if (entity instanceof LivingEntity living
+                    && living.getPersistentDataContainer().has(mobMarker, PersistentDataType.BYTE)
+                    && !living.isDead() && living.isValid()) total++;
+        }
+        return total;
+    }
+
+    private void removeTaggedMobs() {
+        for (World world : Bukkit.getWorlds()) {
+            for (Entity entity : world.getEntities()) {
+                if (entity.getPersistentDataContainer().has(mobMarker, PersistentDataType.BYTE)) entity.remove();
+            }
+        }
+    }
+
+    @EventHandler
+    public void onTaggedMobDeath(EntityDeathEvent event) {
+        event.getEntity().getPersistentDataContainer().remove(mobMarker);
+    }
+
+    private void playConfiguredStartSound(World world) {
+        for (Player player : world.getPlayers()) player.playSound(player.getLocation(), Sound.AMBIENT_CAVE, 0.6f, 0.65f);
+    }
+
+    private String color(String value) {
+        return ChatColor.translateAlternateColorCodes('&', value == null ? "" : value);
+    }
+
+    private double clamp(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
+    }
+}

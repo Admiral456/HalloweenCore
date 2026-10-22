@@ -57,7 +57,7 @@ for name in ("stev_apple_core", "stev_candy_apple", "stev_candy_bag", "stev_cara
         raise SystemExit(f"Missing ItemsAdder item definition: {name}")
 java_dir = root / "src/main/java/cz/halloween/core"
 expected_classes = {"HalloweenCore.java", "DialogQuestManager.java", "KeyItemFactory.java",
-                    "SecretRoomManager.java", "HalloweenPlaceholders.java"}
+                    "SecretRoomManager.java", "HalloweenPlaceholders.java", "HorrorNightManager.java"}
 actual_classes = {p.name for p in java_dir.glob("*.java")}
 if actual_classes != expected_classes:
     raise SystemExit(f"Unexpected Java classes: {sorted(actual_classes)}")
