@@ -24,7 +24,7 @@ conversations:
         text: "Výborně. Přines mi deset kusů pšenice a odměna bude tvoje."
 
       success:
-        text: "To je všechno. Tady máš pět Halloween fragmentů. Díky za pomoc!"
+        text: "Výborně, úkol je splněný a odměna byla připsána. Díky za pomoc!"
 
       reminder:
         text: "Vrať se, až budeš mít deset kusů pšenice."
