@@ -31,6 +31,7 @@ import cz.halloween.core.spooky.util.ConfigMerger;
 import cz.halloween.core.spooky.util.Scheduler;
 import java.io.File;
 import java.io.IOException;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -529,7 +530,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         FileConfiguration cfg=this.getConfig();int sd=cfg.getInt("activeWindow.startDay",0),ed=cfg.getInt("activeWindow.endDay",0);
         if(sd==0||ed==0)return true;
         int sm=Math.max(1,Math.min(12,cfg.getInt("activeWindow.startMonth",10))),em=Math.max(1,Math.min(12,cfg.getInt("activeWindow.endMonth",sm)));
-        ZonedDateTime now=ZonedDateTime.now();int current=now.getMonthValue()*100+now.getDayOfMonth(),start=sm*100+sd,end=em*100+ed;
+        ZonedDateTime now=ZonedDateTime.now(ZoneId.of("Europe/Prague"));int current=now.getMonthValue()*100+now.getDayOfMonth(),start=sm*100+sd,end=em*100+ed;
         return start<=end?current>=start&&current<=end:current>=start||current<=end;
     }
 
