@@ -42,6 +42,10 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             sender.sendMessage(ChatColor.RED + "Příkaz /quest může použít jen hráč.");
             return true;
         }
+        if (!plugin.isSeasonActive()) {
+            player.sendMessage(ChatColor.RED + "Halloween sezóna právě není aktivní.");
+            return true;
+        }
         if (!plugin.getConfig().getBoolean("daily-quest.enabled", true)) {
             player.sendMessage(ChatColor.RED + "Denní úkoly jsou vypnuté.");
             return true;
@@ -55,6 +59,8 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
 
     @EventHandler(priority = EventPriority.MONITOR)
     public void onJoin(PlayerJoinEvent event) {
+        if (!plugin.isSeasonActive()) return;
+
         Player player = event.getPlayer();
         if (!plugin.getConfig().getBoolean("daily-quest.enabled", true)) {
             return;
@@ -144,6 +150,8 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
     }
 
     private void increment(Player player, String taskId) {
+        if (!plugin.isSeasonActive()) return;
+
         if (!plugin.getConfig().getBoolean("daily-quest.enabled", true)) {
             return;
         }
