@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Validate the bundled BetonQuest 3.2 quest package and HalloweenCore bridge."""
+"""Validate the bundled BetonQuest sample package and HalloweenCore quest bridge."""
 from pathlib import Path
+import re
 import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -85,11 +86,21 @@ if "opsudo halloween quest complete farmer_wheat" not in actions["complete_hallo
     fail("turn-in must call HalloweenCore's one-time completion/reward system")
 if conditions.get("has_farmer_wheat") != "item wheat:10":
     fail("sample quest must verify ten real wheat items")
-reward = config.get("quest-rewards", {}).get("quests", {}).get("farmer_wheat")
-if not isinstance(reward, dict) or reward.get("fragments") != 5:
-    fail("farmer_wheat must have the explicit sample reward of five fragments")
-chances = reward.get("key-chances", {})
-if any(float(chances.get(rarity, -1)) != 0.0 for rarity in ("common", "rare", "legendary")):
-    fail("sample quest must not grant unrequested bonus keys")
 
-print("BetonQuest validation passed: YAML valid, option/action/condition references resolve, ten wheat are checked, and HalloweenCore grants the sample five-fragment reward once.")
+# The sample task uses HalloweenCore's configured default reward tier. Do not invent
+# a one-off fixed reward or restore the removed key reward system in sample data.
+reward_config = config.get("quest-rewards", {})
+tiers = {"light", "medium", "hard", "very-hard"}
+if reward_config.get("default-difficulty") not in tiers:
+    fail("quest-rewards.default-difficulty must name a configured tier")
+if "farmer_wheat" in reward_config.get("quests", {}):
+    fail("sample farmer_wheat quest must not impose an unrequested special reward override")
+config_text = CONFIG.read_text(encoding="utf-8")
+if "key-chances" in config_text:
+    fail("obsolete key reward configuration must stay removed")
+
+success_text = str(npc_options.get("success", {}).get("text", "")).lower()
+if re.search(r"\b(?:pět|five|5)\b", success_text):
+    fail("sample success dialogue must not promise an unconfigured fixed reward amount")
+
+print("BetonQuest validation passed: YAML and dialogue references resolve, ten wheat are checked, and reward is delegated to HalloweenCore's configured one-time quest reward.")
