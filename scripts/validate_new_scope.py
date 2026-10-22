@@ -98,7 +98,9 @@ if not required_commands.issubset(set(plugin.get("commands", {}))):
     raise SystemExit(f"Missing full event commands: {sorted(required_commands-set(plugin.get('commands', {})))}")
 core = (java / "cz/halloween/core/HalloweenCore.java").read_text(encoding="utf-8")
 for wiring in ["org.example.SpookySeason.enable(this)", "new HorrorNightManager(this)",
-               "new DailyQuestManager(this)", 'case "shop" -> shopManager.open(sender);']:
+               "new DailyQuestManager(this)", "new HalloweenPlaceholders(this)",
+               "placeholders.register()", "placeholders.unregister()",
+               'case "shop" -> shopManager.open(sender);']:
     if wiring not in core:
         raise SystemExit(f"Missing plugin wiring: {wiring}")
 shop = (java / "cz/halloween/core/HalloweenShopManager.java").read_text(encoding="utf-8")
