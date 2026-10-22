@@ -1,7 +1,6 @@
-# Audit převzetí funkcí a licencí
+# Audit třetích stran
 
-Adaptace SpookySeason 1.7.0 zůstává s deklarovanou MIT licencí, atribucí a licenčním souborem. Zachovány jsou sezónní eventy, trick-or-treat, zvuky, deště, netopýři, jumpscare, boss, nájezdy, statistiky, odměny a menu. Updater a bStats telemetry se nepřebírají.
-
-HorrorNights je publikován jako All Rights Reserved. Jeho kód, bytecode, texty ani assety nejsou převzaté; podobné funkce jsou napsané nezávisle.
-
-Třináct sladkostí Stev's Halloween zůstává s MIT licencí a SHA-256 manifestem. Textura klíče je odstraněna. V repozitáři není shader oblohy ani generátor hrobu.
+- Aktivní Java plugin obsahuje vlastní implementaci denních questů, ukládání fragmentů a inventářového obchodu. Kód ani gameplay funkce z projektů SpookySeason nebo HorrorNights nejsou součástí výsledného JARu; staré eventové zdrojové soubory byly z této větve odstraněny.
+- Zachovaných 13 ikon sladkostí pochází z assetové sady Stev's Halloween. Jejich licence, atribuce a SHA-256 manifest zůstávají v repozitáři. Textury jsou validovány v CI a jejich obrazová data nebyla pozměněna.
+- Aktivní runtime závislostí je Paper API (poskytuje ji server). ItemsAdder je volitelný: při jeho dostupnosti plugin používá vlastní candy itemy; jinak použije náhrady Minecraftu.
+- Resource pack/model pro obarvení skutečných vanilla ikon zbraní není součástí této změny. Oranžovo-zlaté názvy a enchant glow se nastavují v pluginu.
