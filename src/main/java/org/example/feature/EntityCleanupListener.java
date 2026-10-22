@@ -37,7 +37,7 @@ implements Listener {
             }
             // Remove one tick later: deleting entities in the middle of the load is delicate —
             // the server is busy with this very list at that moment.
-            Scheduler.runEntityLater(this.plugin, entity, () -> {
+            Scheduler.runEntityLater(this.plugin.plugin(), entity, () -> {
                 if (entity.isValid() && !entity.isDead()) {
                     entity.remove();
                 }

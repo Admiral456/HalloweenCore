@@ -215,7 +215,7 @@ implements Listener {
         }
         // Not INSTANT_EFFECT: from MC 26.x on that one requires Particle.Spell data.
         w.spawnParticle(Particle.WITCH, mob.getLocation().add(0.0, 1.0, 0.0), 16, 0.4, 0.6, 0.4, 0.01);
-        Scheduler.runEntityLater((Plugin)this.plugin, mob, () -> {
+        Scheduler.runEntityLater(this.plugin.plugin(), mob, () -> {
             if (mob.isValid() && !mob.isDead()) {
                 mob.remove();
             }
