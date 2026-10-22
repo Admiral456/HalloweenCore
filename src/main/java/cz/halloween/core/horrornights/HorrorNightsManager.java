@@ -1,5 +1,7 @@
 package cz.halloween.core.horrornights;
 
+import cz.halloween.core.HalloweenCore;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -142,7 +144,8 @@ public final class HorrorNightsManager implements Listener {
                     nextSpawnByWorld.put(id, world.getFullTime() + interval);
                 }
                 produceAmbientEffects(world);
-            } else if (worldTime >= 13000L && worldTime < 23000L) {
+            } else if (worldTime >= 13000L && worldTime < 23000L
+                    && plugin instanceof HalloweenCore core && core.isInSeasonWindow()) {
                 long nightNumber = Math.floorDiv(world.getFullTime(), 24000L);
                 if (checkedNightByWorld.getOrDefault(id, Long.MIN_VALUE) != nightNumber) {
                     checkedNightByWorld.put(id, nightNumber);
