@@ -26,8 +26,6 @@ import org.example.cmd.SpookyBossCommand;
 import org.example.cmd.SpookyRaidCommand;
 import org.example.cmd.SpookyToggleCommand;
 import org.example.cmd.SpookyVolumeCommand;
-import org.bstats.bukkit.Metrics;
-import org.bstats.charts.SimplePie;
 import org.example.feature.BatSwarmManager;
 import org.example.feature.BloodRainManager;
 import org.example.feature.EntityCleanupListener;
@@ -202,9 +200,7 @@ public final class SpookySeason {
         this.rewardManager.start();
         this.raidManager.start();
         this.bloodRainManager.startTicker();
-        Metrics metrics = new Metrics(this.host, 30933);
-        metrics.addCustomChart(new SimplePie("language", () -> this.getConfig().getString("language", "en")));
-        metrics.addCustomChart(new SimplePie("season_active", () -> this.isSeasonActive() ? "active" : "inactive"));
+        // Upstream bStats telemetry is intentionally not registered for the combined HalloweenCore plugin.
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             this.hookPlaceholderAPI();
         }
