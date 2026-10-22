@@ -1,7 +1,7 @@
 HalloweenCore third-party notices
 
-SpookySeason 1.7.0 by BoondockSulfur: selected source files and language resources are integrated under the MIT License. See META-INF/THIRD_PARTY_LICENSES/SpookySeason-MIT.txt.
+SpookySeason 1.7.0 by BoondockSulfur: the integrated gameplay module and English/German language resources are used under the MIT License. See META-INF/THIRD_PARTY_LICENSES/SpookySeason-MIT.txt. HalloweenCore intentionally excludes its secret-room/key system and failed underground structure generator.
 
-HorrorNights 1.0.0: no source code, compiled classes, textures, sounds, or other assets were copied. Its public feature description was used as behavioral reference for the independently written HorrorNightManager.
+HorrorNights-style behavior is implemented independently from public feature descriptions; no original source code or assets are copied or redistributed.
 
-The existing 13 candy textures retain their separate MIT notices under the ItemsAdder content package.
+The existing 13 Stev's Halloween candy textures retain their separate MIT license, attribution and SHA-256 asset manifest in the ItemsAdder content package.
