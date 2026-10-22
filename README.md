@@ -1,18 +1,23 @@
 # HalloweenCore
 
-Denní Halloween questy, fragmenty a obchod pro Paper/Purpur. Tajné místnosti a klíče jsou odstraněné; interní efekt fog/darkness je vypnutý.
+Denní Halloween questy, fragmenty a obchod pro Paper/Purpur. Staré Halloween moby a eventy jsou vypnuté a nejsou součástí výsledného JARu. Tajné místnosti a klíče jsou odstraněné.
 
-`/quest` přidělí jeden úkol na den: zabíjení zombie/kostlivců, těžbu železné rudy nebo lámání dýní. Postup se ukládá v `plugins/HalloweenCore/players.yml`; po splnění dostaneš výchozí **1 fragment**. Další úkol přijde další den podle `Europe/Prague`.
+## Denní úkol
 
-`/halloween shop` otevře dvoustránkový černo-oranžový inventářový obchod. Nabízí 13 sladkostí, suroviny, netherit, totem, zlatá jablka, trojzubec, Mace, netheritovou výbavu a Elytru; kopí jen pokud ho API serveru podporuje. Platí se fragmenty, ceny jsou v `shop.prices`.
+Příkaz `/quest` přidělí jeden úkol na den: zabíjení zombie/kostlivců, těžbu železné rudy nebo lámání dýní. Postup se ukládá do `plugins/HalloweenCore/players.yml`; po splnění dostaneš výchozí **1 fragment**. Další úkol přijde další den podle `Europe/Prague`. Denní úkoly jsou aktivní v Halloween sezóně.
 
-Zbraně mají oranžovo-zlatý název a enchant glow. **Vanilla ikonu nelze skriptem přebarvit bez resource packu/modelu.** Sladkosti používají ItemsAdder API, je-li dostupné; jinak se použije vanilla náhrada.
+## Obchod
 
-Výchozí sezóna je **23. října až 2. listopadu včetně**. Kód podporuje přechod mezi měsíci a migruje staré výchozí datum 27.–31. října.
-Automatické spuštění Horror Nights se řídí stejným sezónním oknem; ruční spuštění přes `/halloween horror start` zůstává dostupné pro administrátorské testování i mimo sezónu.
+`/halloween shop` otevře černo-oranžový inventářový obchod. Nabízí 13 sladkostí, suroviny, netherit, totem, zlatá jablka, trojzubec, Mace, netheritovou výbavu a Elytru; kopí jen pokud ho API serveru podporuje. Platí se fragmenty, ceny jsou v `shop.prices`.
 
-Zůstává 13 licencovaných sladkostí Stev's Halloween a jejich MIT licence/hash manifest. Kód a textura klíče i generování tajných místností jsou odstraněny. V repozitáři není generátor hrobu ani shader oblohy. Pokud oblohu mění externí plugin/pack mimo repo, musí se odstranit tam.
+Zbraně mají oranžovo-zlatý název a enchant glow. **Vanilla ikonu nelze bez resource packu/modelu přebarvit pouze Java kódem.** Sladkosti používají ItemsAdder API, je-li dostupné; jinak se použije vanilla náhrada.
 
-Příkazy: `/quest`, `/halloween shop`, `/halloween fragments`, `/halloween quest start|progress|complete|status <id>`, `/halloween horror start|stop|status [world]`, `/halloween reload`. Sezónní `/spooky`, `/spookyboss`, `/spookyraid`, `/pumpkinrain`, `/bloodrain` zůstávají.
+## Sezóna a obsah
 
-GitHub Actions ověřuje konfiguraci a obsah, sestavuje JAR přes Maven a balí ItemsAdder ZIP. Build nenahrazuje živý test. JAR vlož do `plugins/` a restartuj; ItemsAdder ZIP dej do `plugins/ItemsAdder/contents/warriorland_halloween/` a spusť `/iazip`.
+Výchozí sezóna je **23. října až 2. listopadu včetně**, podle časového pásma `Europe/Prague`. Staré nastavení období 27.–31. října se při startu migruje. Při startu se také odstraní staré konfigurační sekce mobů a eventů.
+
+Zůstává 13 licencovaných sladkostí Stev's Halloween a jejich MIT licence/hash manifest. Textura klíče i její ItemsAdder definice jsou odstraněny. V repozitáři není generátor hrobu ani shader oblohy; změny oblohy z externího pluginu/resource packu mimo tento repozitář musí být odstraněny tam.
+
+Příkazy: `/quest`, `/halloween shop`, `/halloween fragments`, `/halloween quest start|progress|complete|status <id>`, `/halloween reload`.
+
+GitHub Actions ověřuje textury a konfiguraci, sestavuje JAR přes Maven a balí ItemsAdder ZIP. Build nenahrazuje živý test. JAR vlož do `plugins/` a restartuj; obsah ItemsAdder nahraj do `plugins/ItemsAdder/contents/warriorland_halloween/` a spusť `/iazip`.
