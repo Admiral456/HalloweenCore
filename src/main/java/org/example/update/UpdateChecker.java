@@ -4,7 +4,6 @@
  */
 package org.example.update;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import java.net.URI;
@@ -26,9 +25,7 @@ import org.example.util.Scheduler;
 
 public class UpdateChecker
 implements Listener {
-    private static final String MODRINTH_API = "https://api.modrinth.com/v2/project/spookyseason/version?limit=1";
-    private static final String MODRINTH_VERSION_URL = "https://modrinth.com/project/spookyseason/version/";
-    private static final String CURSEFORGE_URL = "https://www.curseforge.com/minecraft/bukkit-plugins/spookyseason/files";
+    private static final String GITHUB_RELEASES_API = "https://api.github.com/repos/Admiral456/HalloweenCore/releases/latest";
     private final Plugin plugin;
     // Written on the async thread, read in the join event — volatile for visibility.
     private volatile String latestVersion;
@@ -45,27 +42,38 @@ implements Listener {
 
     private void check() {
         try {
-            JsonArray versions;
             HttpClient client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10L)).build();
-            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(MODRINTH_API)).timeout(Duration.ofSeconds(15L)).header("User-Agent", "SpookySeason/" + this.plugin.getDescription().getVersion()).GET().build();
+            HttpRequest request = HttpRequest.newBuilder().uri(URI.create(GITHUB_RELEASES_API))
+                    .timeout(Duration.ofSeconds(15L))
+                    .header("Accept", "application/vnd.github+json")
+                    .header("User-Agent", "HalloweenCore/" + this.plugin.getDescription().getVersion())
+                    .GET().build();
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() == 200 && !(versions = JsonParser.parseString((String)response.body()).getAsJsonArray()).isEmpty()) {
-                JsonObject latest = versions.get(0).getAsJsonObject();
-                String remoteVersion = latest.get("version_number").getAsString();
-                String currentVersion = this.plugin.getDescription().getVersion();
-                if (UpdateChecker.isNewer(remoteVersion, currentVersion)) {
-                    this.latestVersion = remoteVersion;
-                    this.downloadUrl = MODRINTH_VERSION_URL + remoteVersion;
-                    this.updateAvailable = true;
-                    this.plugin.getLogger().info("New version available: " + remoteVersion + " (current: " + currentVersion + ")");
-                }
+            if (response.statusCode() == 404) {
+                // No GitHub release has been published yet; do not report the upstream SpookySeason version.
+                return;
             }
-        }
-        catch (Exception e) {
-            this.plugin.getLogger().warning("Could not check for updates: " + e.getMessage());
+            if (response.statusCode() != 200) {
+                this.plugin.getLogger().fine("HalloweenCore update check returned HTTP " + response.statusCode());
+                return;
+            }
+            JsonObject latest = JsonParser.parseString(response.body()).getAsJsonObject();
+            if (!latest.has("tag_name") || latest.get("tag_name").isJsonNull()) return;
+            String remoteVersion = latest.get("tag_name").getAsString();
+            String currentVersion = this.plugin.getDescription().getVersion();
+            if (UpdateChecker.isNewer(remoteVersion, currentVersion)) {
+                this.latestVersion = remoteVersion;
+                this.downloadUrl = latest.has("html_url") && !latest.get("html_url").isJsonNull()
+                        ? latest.get("html_url").getAsString()
+                        : "https://github.com/Admiral456/HalloweenCore/releases";
+                this.updateAvailable = true;
+                this.plugin.getLogger().info("New HalloweenCore version available: " + remoteVersion
+                        + " (current: " + currentVersion + ")");
+            }
+        } catch (Exception e) {
+            this.plugin.getLogger().fine("Could not check for HalloweenCore updates: " + e.getMessage());
         }
     }
-
     /**
      * Compares the numeric blocks in order. A plain inequality test would report an "update" even
      * when the newest thing on Modrinth is actually an older version.
@@ -134,13 +142,10 @@ implements Listener {
      * The download line as clickable components rather than a typed-out URL, and both stores, so
      * the notice does not tie anyone to a single source.
      */
-    private static Component downloadLine(String modrinthUrl) {
+    private static Component downloadLine(String releaseUrl) {
         return UpdateChecker.legacy(Lang.get("update.download-prefix", new String[0]))
-                .append(UpdateChecker.link(Lang.get("update.modrinth", new String[0]), modrinthUrl))
-                .append(Component.text(" "))
-                .append(UpdateChecker.link(Lang.get("update.curseforge", new String[0]), CURSEFORGE_URL));
+                .append(UpdateChecker.link("HalloweenCore releases", releaseUrl));
     }
-
     private static Component link(String label, String url) {
         return UpdateChecker.legacy(label)
                 .clickEvent(ClickEvent.openUrl(url))

@@ -22,7 +22,7 @@ Selected SpookySeason 1.7.0 source files are included under the MIT License. The
 - `enabledWorlds` controls imported SpookySeason features. Empty means all worlds.
 - `activeWindow.startDay` and `.endDay` control seasonal features in October. The default window is October 27–31; set either value to `0` for no calendar restriction.
 - `horrorNights.enabled-worlds` empty means all worlds except `excluded-worlds`. Tune chance, spawn count, mob types and effects in `horrorNights`.
-- The combined plugin targets Paper/Purpur on Java 21. Folia is not enabled in this combined build.
+- Updates are checked against HalloweenCore GitHub Releases (an unpublished release is treated as no update). The combined plugin targets Paper/Purpur on Java 21. Folia is not enabled in this combined build.
 
 ## Commands
 

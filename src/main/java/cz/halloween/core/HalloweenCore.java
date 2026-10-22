@@ -218,7 +218,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         }
         if (action.equals("start")) {
             if (horrorNightManager.startManually(world)) sender.sendMessage(ChatColor.GREEN + "Hororová noc spuštěna ve světě " + world.getName() + ".");
-            else sender.sendMessage(ChatColor.YELLOW + "Hororová noc v tomto světě už běží nebo je svět vyloučen.");
+            else sender.sendMessage(ChatColor.YELLOW + "Hororová noc už běží, svět je vyloučený nebo právě není noc.");
         } else {
             if (horrorNightManager.stopWorld(world)) sender.sendMessage(ChatColor.GREEN + "Hororová noc zastavena ve světě " + world.getName() + ".");
             else sender.sendMessage(ChatColor.YELLOW + "V tomto světě žádná hororová noc neběží.");

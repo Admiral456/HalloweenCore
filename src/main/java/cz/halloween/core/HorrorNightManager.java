@@ -125,6 +125,8 @@ public final class HorrorNightManager implements Listener {
 
     public boolean startManually(World world) {
         if (world == null || sessions.containsKey(world.getUID()) || !isAllowedWorld(world)) return false;
+        long timeOfDay = world.getTime();
+        if (timeOfDay < 13000L || timeOfDay > 23000L) return false;
         startSession(world);
         return sessions.containsKey(world.getUID());
     }
@@ -214,6 +216,7 @@ public final class HorrorNightManager implements Listener {
         String message = plugin.getConfig().getString("horrorNights.messages.horror-night-start",
                 "&4&lVarování: začala hororová noc!");
         world.getPlayers().forEach(player -> player.sendMessage(color(message)));
+        playConfiguredStartSound(world);
         plugin.getLogger().info("Hororová noc začala ve světě " + world.getName() + ".");
     }
 
