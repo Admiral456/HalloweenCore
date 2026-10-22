@@ -579,7 +579,8 @@ horrorNights:
   # Četnost spawn vln; výchozí 60 ticků = 3 sekundy.
   spawnIntervalTicks: 60
   effects:
-    thunderstorm: true
+    # Strašidelné noci nemění počasí ani oblohu.
+    thunderstorm: false
     spawnCustomMobs: true
   mobs:
     enabled: true
