@@ -1,26 +1,58 @@
 name: HalloweenCore
-version: 0.2.0
+version: 0.3.0
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
-author: Admiral456
-description: Dialogové questy a tajné podzemní místnosti se speciálním klíčem.
-softdepend: [ItemsAdder, PlaceholderAPI, BetonQuest, Citizens]
+author: Admiral456; SpookySeason by BoondockSulfur
+description: Halloween quests, secret rooms, Trick-or-Treat, seasonal encounters and horror nights.
+folia-supported: false
+softdepend: [ItemsAdder, PlaceholderAPI, BetonQuest, Citizens, WorldGuard, GriefPrevention, CustomJukebox]
 commands:
   halloween:
-    description: Questové příkazy, fragmenty a tajné místnosti.
-    usage: /halloween [quest|fragments|key|rooms|reload]
+    description: Questové příkazy, fragmenty, tajné místnosti a hororové noci.
+    usage: /halloween [quest|fragments|key|rooms|horror|reload]
     aliases: [hallow]
     permission: halloweencore.use
+  pumpkinrain:
+    description: Starts/stops pumpkin rain.
+    usage: /pumpkinrain <start|stop>
+    permission: spooky.pumpkinrain
+  bloodrain:
+    description: Starts/stops blood rain.
+    usage: /bloodrain <start|stop>
+    permission: spooky.bloodrain
+  spooky:
+    description: Season toggle, status, rewards, opt-out and menu.
+    usage: /spooky <on|off|status|reload|rewards|spawn|optout|top|menu>
+  spookyvolume:
+    description: Set personal spooky sound volume.
+    usage: /spookyvolume <ambient|ghost|rain|reset> [0.0-1.0]
+  spookyboss:
+    description: Configure/control the Headless Horseman.
+    usage: /spookyboss <spawn|remove|info|set|armor|ability|loot>
+    permission: spooky.admin
+  spookyraid:
+    description: Start, stop and configure an undead raid.
+    usage: /spookyraid <start|stop|status|stats|target|zone>
+    permission: spooky.admin
 permissions:
   halloweencore.use:
-    description: Používání HalloweenCore questových příkazů.
+    description: Using HalloweenCore quest and room commands.
     default: true
   halloweencore.admin:
-    description: Správa konfigurace HalloweenCore.
+    description: Administer HalloweenCore and horror nights.
     default: op
   halloweencore.key.give:
-    description: Administrátorské vydávání speciálních klíčů.
+    description: Administering special keys.
     default: op
   halloweencore.quest.dialogue:
-    description: Oprávnění pro řízení questů z dialogů BetonQuest.
+    description: Permission for dialogue quest actions.
+    default: op
+  spooky.pumpkinrain:
+    description: Permission to control pumpkin rain.
+    default: op
+  spooky.bloodrain:
+    description: Permission to control blood rain.
+    default: op
+  spooky.admin:
+    description: Manage seasonal boss and undead raid.
     default: op

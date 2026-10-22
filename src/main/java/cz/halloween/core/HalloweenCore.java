@@ -23,6 +23,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
     private DialogQuestManager questManager;
     private KeyItemFactory keyItemFactory;
     private SecretRoomManager secretRoomManager;
+    private HorrorNightManager horrorNightManager;
 
     @Override
     public void onEnable() {
@@ -49,11 +50,19 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         if (getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
             new HalloweenPlaceholders(this).register();
         }
-        getLogger().info("Načtena nová verze: dialogové questy, fragmenty a zamčené tajné místnosti.");
-        getLogger().info("Staré Halloween eventy, mobové, bossové a staré struktury nejsou součástí této verze.");
+        org.example.SpookySeason.enable(this);
+        horrorNightManager = new HorrorNightManager(this);
+        horrorNightManager.start();
+        getLogger().info("HalloweenCore spuštěn: questy, fragmenty, tajné místnosti, Trick-or-Treat, sezónní eventy, nájezdy a hororové noci.");
     }
 
     private void installDefaults() {
+        getConfig().addDefault("horrorNights.enabled", true);
+        getConfig().addDefault("horrorNights.horror-night-chance", 10.0);
+        getConfig().addDefault("horrorNights.check-interval-ticks", 6000);
+        getConfig().addDefault("horrorNights.spawn-interval-ticks", 60);
+        getConfig().addDefault("horrorNights.enabled-worlds", List.of());
+        getConfig().addDefault("horrorNights.excluded-worlds", List.of("Spawn"));
         getConfig().addDefault("secret-rooms.enabled", true);
         getConfig().addDefault("secret-rooms.worlds", List.of());
         getConfig().addDefault("secret-rooms.excluded-worlds", List.of("Spawn"));
@@ -107,6 +116,8 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
     @Override
     public void onDisable() {
+        if (horrorNightManager != null) horrorNightManager.shutdown();
+        if (org.example.SpookySeason.get() != null) org.example.SpookySeason.get().disable();
         savePlayerData();
         if (secretRoomManager != null) {
             secretRoomManager.saveRooms();
@@ -162,6 +173,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
                     sender.sendMessage(ChatColor.YELLOW + "Použití: /halloween rooms status");
                 }
             }
+            case "horror" -> handleHorrorCommand(sender, args);
             case "reload" -> {
                 if (!sender.hasPermission("halloweencore.admin")) {
                     sender.sendMessage(ChatColor.RED + "Na tento příkaz nemáš oprávnění.");
@@ -169,11 +181,48 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
                 }
                 reloadConfig();
                 installDefaults();
+                if (org.example.SpookySeason.get() != null) org.example.SpookySeason.get().reload();
+                if (horrorNightManager != null) horrorNightManager.reload();
                 sender.sendMessage(ChatColor.GREEN + "Konfigurace načtena. Již vytvořené místnosti se nemění.");
             }
             default -> sendHelp(sender);
         }
         return true;
+    }
+
+    private void handleHorrorCommand(CommandSender sender, String[] args) {
+        if (!sender.hasPermission("halloweencore.admin")) {
+            sender.sendMessage(ChatColor.RED + "Na správu hororových nocí nemáš oprávnění.");
+            return;
+        }
+        if (horrorNightManager == null) {
+            sender.sendMessage(ChatColor.RED + "Správce hororových nocí není inicializován.");
+            return;
+        }
+        String action = args.length > 1 ? args[1].toLowerCase(Locale.ROOT) : "status";
+        if (action.equals("status")) {
+            List<String> active = horrorNightManager.getActiveWorldNames();
+            sender.sendMessage(ChatColor.GOLD + "Hororové noci: "
+                    + (active.isEmpty() ? ChatColor.GRAY + "žádný aktivní svět" : ChatColor.RED + String.join(", ", active)));
+            return;
+        }
+        if (!action.equals("start") && !action.equals("stop")) {
+            sender.sendMessage(ChatColor.YELLOW + "Použití: /halloween horror <start|stop|status> [svět]");
+            return;
+        }
+        org.bukkit.World world = args.length >= 3 ? Bukkit.getWorld(args[2])
+                : (sender instanceof Player player ? player.getWorld() : null);
+        if (world == null) {
+            sender.sendMessage(ChatColor.RED + "Zadej existující svět, například /halloween horror start world.");
+            return;
+        }
+        if (action.equals("start")) {
+            if (horrorNightManager.startManually(world)) sender.sendMessage(ChatColor.GREEN + "Hororová noc spuštěna ve světě " + world.getName() + ".");
+            else sender.sendMessage(ChatColor.YELLOW + "Hororová noc v tomto světě už běží nebo je svět vyloučen.");
+        } else {
+            if (horrorNightManager.stopWorld(world)) sender.sendMessage(ChatColor.GREEN + "Hororová noc zastavena ve světě " + world.getName() + ".");
+            else sender.sendMessage(ChatColor.YELLOW + "V tomto světě žádná hororová noc neběží.");
+        }
     }
 
     private void handleQuestCommand(CommandSender sender, String[] args) {
@@ -324,6 +373,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         sender.sendMessage(ChatColor.YELLOW + "/halloween quest status [id] " + ChatColor.GRAY + "— stav úkolů");
         sender.sendMessage(ChatColor.YELLOW + "/halloween fragments " + ChatColor.GRAY + "— počet fragmentů");
         sender.sendMessage(ChatColor.YELLOW + "/halloween rooms status " + ChatColor.GRAY + "— stav místností");
+        sender.sendMessage(ChatColor.YELLOW + "/halloween horror <start|stop|status> [svět] " + ChatColor.GRAY + "— správa hororových nocí");
         sender.sendMessage(ChatColor.YELLOW + "/halloween key give [common|rare|legendary] [hráč] [počet] " + ChatColor.GRAY + "— administrátorské vydání klíče");
         if (sender.hasPermission("halloweencore.admin")) {
             sender.sendMessage(ChatColor.YELLOW + "/halloween reload " + ChatColor.GRAY + "— načíst konfiguraci");
@@ -332,11 +382,13 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
-        if (args.length == 1) return partial(args[0], List.of("help", "quest", "fragments", "key", "rooms", "reload"));
+        if (args.length == 1) return partial(args[0], List.of("help", "quest", "fragments", "key", "rooms", "horror", "reload"));
         if (args.length == 2 && args[0].equalsIgnoreCase("quest"))
             return partial(args[1], List.of("start", "progress", "complete", "status", "list"));
         if (args.length == 2 && args[0].equalsIgnoreCase("key")) return partial(args[1], List.of("give"));
         if (args.length == 2 && args[0].equalsIgnoreCase("rooms")) return partial(args[1], List.of("status"));
+        if (args.length == 2 && args[0].equalsIgnoreCase("horror")) return partial(args[1], List.of("start", "stop", "status"));
+        if (args.length == 3 && args[0].equalsIgnoreCase("horror")) return partial(args[2], Bukkit.getWorlds().stream().map(org.bukkit.World::getName).toList());
         if (args.length == 3 && args[0].equalsIgnoreCase("key") && args[1].equalsIgnoreCase("give")) {
             List<String> names = new ArrayList<>();
             for (Player player : Bukkit.getOnlinePlayers()) names.add(player.getName());
