@@ -1,26 +1,57 @@
 name: HalloweenCore
-version: 0.2.0
+version: 0.3.0
 main: cz.halloween.core.HalloweenCore
 api-version: '1.21'
 author: Admiral456
-description: Dialogové questy a tajné podzemní místnosti se speciálním klíčem.
-softdepend: [ItemsAdder, PlaceholderAPI, BetonQuest, Citizens]
+description: Halloween questy, tajné místnosti a sezónní atmosférické funkce.
+softdepend: [ItemsAdder, PlaceholderAPI, WorldGuard, GriefPrevention, CustomJukebox]
 commands:
   halloween:
-    description: Questové příkazy, fragmenty a tajné místnosti.
-    usage: /halloween [quest|fragments|key|rooms|reload]
+    description: Questy, fragmenty, klíče, tajné místnosti a strašidelné noci.
+    usage: /halloween [quest|fragments|key|rooms|horror|reload]
     aliases: [hallow]
     permission: halloweencore.use
+  pumpkinrain:
+    description: Spustí nebo zastaví déšť dýní.
+    usage: /pumpkinrain <start|stop>
+    permission: spooky.pumpkinrain
+  bloodrain:
+    description: Spustí nebo zastaví krvavý déšť.
+    usage: /bloodrain <start|stop>
+    permission: spooky.bloodrain
+  spooky:
+    description: Správa sezónních funkcí, stavu, odměn a osobních preferencí.
+    usage: /spooky <on|off|status|reload|rewards|spawn|optout|top|menu>
+  spookyvolume:
+    description: Nastavení osobní hlasitosti strašidelných zvuků.
+    usage: /spookyvolume <ambient|ghost|rain|reset> [0.0-1.0]
+  spookyboss:
+    description: Správa sezónního bosse.
+    usage: /spookyboss <spawn|remove|info|set|armor|ability|loot>
+    permission: spooky.admin
+  spookyraid:
+    description: Správa vlnového nájezdu nemrtvých.
+    usage: /spookyraid <start|stop|status|stats|target|zone>
+    permission: spooky.admin
 permissions:
   halloweencore.use:
-    description: Používání HalloweenCore questových příkazů.
+    description: Používání příkazů HalloweenCore.
     default: true
   halloweencore.admin:
-    description: Správa konfigurace HalloweenCore.
+    description: Správa HalloweenCore.
     default: op
   halloweencore.key.give:
-    description: Administrátorské vydávání speciálních klíčů.
+    description: Administrátorské vydávání klíčů.
     default: op
   halloweencore.quest.dialogue:
-    description: Oprávnění pro řízení questů z dialogů BetonQuest.
+    description: Řízení questů z dialogové integrace.
+    default: op
+  spooky.pumpkinrain:
+    description: Ovládání dýňového deště.
+    default: op
+  spooky.bloodrain:
+    description: Ovládání krvavého deště.
+    default: op
+  spooky.admin:
+    description: Administrace sezónních funkcí.
     default: op

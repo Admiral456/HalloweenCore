@@ -78,6 +78,7 @@ public final class SecretRoomManager implements Listener {
             int y = surfaceY - minDepth - random.nextInt(maxDepth - minDepth + 1);
             if (y < world.getMinHeight() + 8 || y + 3 >= surfaceY - 8) continue;
             if (!isNaturalRockVolume(world, x, y, z)) continue;
+            if (plugin.regions() != null && !plugin.regions().canSpawnAt(new org.bukkit.Location(world, x, y, z))) continue;
             buildRoom(world, x, y, z);
             return;
         }

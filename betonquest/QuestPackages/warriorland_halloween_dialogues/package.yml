@@ -1,8 +1,0 @@
-# Nastav ID skutečného Citizens NPC až po jeho vytvoření na serveru.
-# Příklad:
-# npcs:
-#   Farmar: "citizens 21"
-# npc_conversations:
-#   Farmar: "farmar"
-npcs: {}
-npc_conversations: {}

@@ -1,18 +1,10 @@
-# HalloweenCore — questy, fragmenty a tajné místnosti
+# HalloweenCore — questy, tajné místnosti a sezónní Halloween
 
-Tato verze je omezená na dialogové questy, evidenci jejich stavu, fragmenty, tajné podzemní místnosti se zamčenou truhlou a speciální klíč. Zachovává také třináct sladkostí a jejich původní textury ze Stev's Halloween pod licencí MIT.
+HalloweenCore zachovává dialogové questy, fragmenty, tajné podzemní místnosti se zamčenou truhlou, rarity klíčů a třináct existujících sladkostí. Navíc integruje sezónní funkce zdrojového projektu SpookySeason 1.7.0 pod licencí MIT. Funkce inspirované HorrorNights jsou napsané nezávisle; jeho kód, bytecode ani assety se nekopírují.
 
-## Dialogy přes BetonQuest
+## Questy a dialogová integrace
 
-Dialogy a kontrolu cílů zajišťuje BetonQuest 3.2+. Připravený příklad najdeš v balíčku betonquest/QuestPackages/warriorland_halloween_dialogues; GitHub Actions z něj vytváří ZIP artefakt WarriorLand-Halloween-BetonQuest.
-
-- Dialogy se upravují v YAML souborech, nikoli přes webový editor.
-- Pro přiřazení dialogu potřebuješ Citizens NPC. Přirozeně spawnutý villager nemá Citizens ID; vytvoř NPC typu villager a jeho skutečné ID vlož do package.yml.
-- Ukázkový dialog je pouze test: farmář požádá o 10 pšenic. BetonQuest ověří inventář a odebere předměty; HalloweenCore potom jednorázově připíše 5 fragmentů.
-- V ukázkovém questu jsou bonusové klíče vypnuté. Odměnu můžeš změnit v plugins/HalloweenCore/config.yml.
-- Podrobný návod: docs/DIALOGUE_LIBRARY_CZ.md.
-
-BetonQuest a Citizens je potřeba nainstalovat samostatně. UplineDialogues už není vyžadován.
+HalloweenCore ukládá stav úkolů, fragmenty a jednorázové odměny. Dialogy a jejich cíle nejsou natvrdo definované v tomto repozitáři; zvolený dialogový plugin může používat příkazy `/halloween quest start|progress|complete|status` a PlaceholderAPI hodnoty `%halloween_fragments%`, `%halloween_quest_progress_<id>%`, `%halloween_quest_started_<id>%` a `%halloween_quest_completed_<id>%`. Ukázkový farmářský dialog a jeho testovací BetonQuest balíček jsou odstraněny.
 
 ## Odstraněno
 
@@ -24,11 +16,11 @@ BetonQuest a Citizens je potřeba nainstalovat samostatně. UplineDialogues už 
 - Starý obchod, prokletí, relikvie, stará výbava, denní výzvy, sezónní přepínače, hudba, shader a dekorace světa.
 - Konfigurace, příkazy a skripty sloužící výhradně odstraněným systémům.
 
-Žádný ze starých mobů, bossů ani původních eventů se v této verzi znovu nezapíná.
+Původní systémy HalloweenCore byly odstraněny. Sezónní moduly SpookySeason jsou samostatně integrovaná sada s vlastní konfigurací a příkazy, nikoli obnovení starého kódu HalloweenCore.
 
 ## Odměny za questy
 
-HalloweenCore odmění quest pouze při prvním úspěšném volání /halloween quest complete <id>. Pro konkrétní ID lze nastavit pevný počet fragmentů nebo obtížnost a rozsah v quest-rewards.quests.<id>. Šance na klíče se konfigurují samostatně. Ukázkové ID farmer_wheat je nastaveno na pět fragmentů bez bonusového klíče.
+HalloweenCore odmění quest pouze při prvním úspěšném volání /halloween quest complete <id>. Pro konkrétní ID lze nastavit pevný počet fragmentů nebo obtížnost a rozsah v quest-rewards.quests.<id>. Šance na klíče se konfigurují samostatně. Žádné konkrétní ID úkolu není předdefinováno; odměny nastavuj až pro skutečně vytvořené questy.
 
 Klíče mají tři serverem ověřované rarity: common, rare a legendary. Všechny používají tutéž existující ItemsAdder texturu warriorland_halloween:secret_key; rarita je uložená v PersistentDataContainer, neodvozuje se od názvu předmětu.
 
@@ -61,11 +53,26 @@ Zůstalo třináct licencovaných sladkostí s nezměněnými texturami a vlastn
 
 ## Sestavení a nasazení
 
-GitHub Actions sestaví plugin JAR a vytvoří dva obsahové ZIP balíčky: ItemsAdder a BetonQuest. Z úspěšného běhu stáhni artefakty:
+GitHub Actions sestaví plugin JAR a vytvoří obsahový ZIP balíček pro ItemsAdder. Z úspěšného běhu stáhni artefakty:
 - HalloweenCore-JAR
 - WarriorLand-Halloween-ItemsAdder
-- WarriorLand-Halloween-BetonQuest
 
-JAR vlož do plugins/ a server restartuj. ItemsAdder obsah zkopíruj do plugins/ItemsAdder/contents/warriorland_halloween/, spusť /iazip a ověř doručení resource packu. BetonQuest ZIP rozbal do plugins/BetonQuest/ a postupuj podle návodu pro přiřazení Citizens NPC ID.
+JAR vlož do plugins/ a server restartuj. ItemsAdder obsah zkopíruj do plugins/ItemsAdder/contents/warriorland_halloween/, spusť /iazip a ověř doručení resource packu. Questy napoj na dialogový plugin podle jeho dokumentace.
 
-CI ověřuje konfigurace, loot tabulky, ukázkový BetonQuest balíček, Maven sestavení i zabalení artefaktů. Po sestavení je stále nutný živý test na serveru — zejména ověření NPC ID, konverzace a reward flow.
+CI ověřuje konfigurace, loot tabulky, Maven sestavení i zabalení artefaktů. Po sestavení je stále nutný živý test na serveru — zejména ověření NPC ID, konverzace a reward flow.
+
+
+## Nově integrované sezónní funkce
+
+Ze SpookySeason jsou adaptované sezónní noci a zvuky, trick-or-treat při interakci s dveřmi a vesničany, krevní a dýňový déšť, hejna netopýrů, jumpscare efekty, sezónní boss, vlnové nájezdy, hráčské preference, menu, statistiky a odměny. Podporované doplňkové integrace zahrnují PlaceholderAPI, WorldGuard, GriefPrevention a volitelně CustomJukebox. Sezónní aktivita se řídí hodnotami `active` a `activeWindow` v config.yml; výchozí kalendářní okno je 27.–31. října.
+
+## Strašidelné noci
+
+Samostatný modul nabízí náhodnou šanci na strašidelnou noc, upravené moby, příležitostně neviditelné nepřátele se stopou částic, zvukové a temné efekty, filtr světů a ruční administrátorské řízení přes `/halloween horror start|stop|status [svět]`. Pravděpodobnost, typy mobů, síla a efekty se nastavují v sekci `horrorNights`. Tento modul je nově napsaný nezávisle podle veřejného popisu funkcí HorrorNights; licence původního HorrorNights je All Rights Reserved.
+
+## Licenční poznámky
+
+- Adaptovaný kód SpookySeason: MIT, původní autor BoondockSulfur; úplné znění v `licenses/spookyseason-MIT.txt`.
+- HorrorNights: All Rights Reserved; jeho zdrojový kód, bytecode ani assety nebyly převzaty.
+- Stávající licence a hash manifest 13 textur sladkostí ze Stev's Halloween zůstávají zachovány.
+- Podrobnosti auditu: `docs/THIRD_PARTY_PLUGIN_AUDIT_CZ.md`.
