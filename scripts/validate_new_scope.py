@@ -36,6 +36,15 @@ if "secret_key" in items or (base/"resourcepack/assets/warriorland_halloween/tex
 java=root/"src/main/java/cz/halloween/core"
 if (java/"KeyItemFactory.java").exists() or (java/"SecretRoomManager.java").exists():
     raise SystemExit("Room/key class remains")
+legacy=root/"src/main/java/cz/halloween/core/spooky"
+if legacy.exists() and any(legacy.rglob("*.java")):
+    raise SystemExit("Legacy mob/event source remains")
+if (java/"horrornights"/"HorrorNightsManager.java").exists():
+    raise SystemExit("Legacy HorrorNights source remains")
+if (root/"src/main/resources/lang").exists() and any((root/"src/main/resources/lang").glob("*.yml")):
+    raise SystemExit("Legacy event language files remain")
+if (root/"src/main/resources/META-INF/licenses/spookyseason-MIT.txt").exists():
+    raise SystemExit("Removed event license remains bundled")
 
 cfg=yaml.safe_load((root/"src/main/resources/config.yml").read_text())
 if set(cfg.keys())!={"season","activeWindow","quest-rewards","daily-quest","shop"}:
