@@ -1,6 +1,6 @@
 # HalloweenCore
 
-Denní Halloween questy, fragmenty a obchod pro Paper/Purpur. Staré Halloween moby a eventy jsou vypnuté a nejsou součástí výsledného JARu. Tajné místnosti a klíče jsou odstraněné.
+Denní Halloween questy, fragmenty a obchod pro Paper/Purpur. Staré Halloween moby a eventy i jejich zdrojové soubory jsou odstraněné. Tajné místnosti a klíče jsou odstraněné.
 
 ## Denní úkol
 
@@ -14,7 +14,7 @@ Zbraně mají oranžovo-zlatý název a enchant glow. **Vanilla ikonu nelze bez 
 
 ## Sezóna a obsah
 
-Výchozí sezóna je **23. října až 2. listopadu včetně**, podle časového pásma `Europe/Prague`. Staré nastavení období 27.–31. října se při startu migruje. Při startu se také odstraní staré konfigurační sekce mobů a eventů.
+Výchozí sezóna je **23. října až 2. listopadu včetně**, podle časového pásma `Europe/Prague`. Staré nastavení období 27.–31. října se při startu migruje. Při startu se také odstraní staré konfigurační sekce mobů a eventů z již existující instalace.
 
 Zůstává 13 licencovaných sladkostí Stev's Halloween a jejich MIT licence/hash manifest. Textura klíče i její ItemsAdder definice jsou odstraněny. V repozitáři není generátor hrobu ani shader oblohy; změny oblohy z externího pluginu/resource packu mimo tento repozitář musí být odstraněny tam.
 
