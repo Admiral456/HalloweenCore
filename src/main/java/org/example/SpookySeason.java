@@ -164,53 +164,53 @@ public final class SpookySeason {
         // surface at enable time, not later during a spawn.
         Attributes.init();
         this.entityMarker = new NamespacedKey(this.host, "spooky_entity");
-        this.ghostMarker = new NamespacedKey((Plugin)this, "spooky_ghost");
-        this.raidMarker = new NamespacedKey((Plugin)this, "spooky_raid");
+        this.ghostMarker = new NamespacedKey(this.host, "spooky_ghost");
+        this.raidMarker = new NamespacedKey(this.host, "spooky_raid");
         this.saveDefaultConfig();
         this.mergeConfig();
-        Lang.load((Plugin)this);
-        this.regionIntegration = new RegionIntegration((Plugin)this);
-        this.customJukeboxHook = new CustomJukeboxHook((Plugin)this);
-        this.prefs = new PlayerPrefs((Plugin)this);
-        this.stats = new PlayerStats((Plugin)this);
-        this.pumpkinRainManager = new PumpkinRainManager((Plugin)this);
-        this.bloodRainManager = new BloodRainManager((Plugin)this);
-        this.hauntedNightManager = new HauntedNightManager((Plugin)this);
-        this.bossManager = new HalloweenBossManager((Plugin)this);
-        this.batSwarmManager = new BatSwarmManager((Plugin)this);
-        this.rewardManager = new SeasonRewardManager((Plugin)this);
+        Lang.load(this.host);
+        this.regionIntegration = new RegionIntegration(this.host);
+        this.customJukeboxHook = new CustomJukeboxHook(this.host);
+        this.prefs = new PlayerPrefs(this.host);
+        this.stats = new PlayerStats(this.host);
+        this.pumpkinRainManager = new PumpkinRainManager(this.host);
+        this.bloodRainManager = new BloodRainManager(this.host);
+        this.hauntedNightManager = new HauntedNightManager(this.host);
+        this.bossManager = new HalloweenBossManager(this.host);
+        this.batSwarmManager = new BatSwarmManager(this.host);
+        this.rewardManager = new SeasonRewardManager(this.host);
         this.menuGUI = new SpookyMenuGUI();
-        this.raidManager = new RaidManager((Plugin)this);
+        this.raidManager = new RaidManager(this.host);
         this.registerCommand("pumpkinrain", new PumpkinRainCommand(this.pumpkinRainManager));
         this.registerCommand("bloodrain", new BloodRainCommand(this.bloodRainManager));
         this.registerCommand("spooky", new SpookyToggleCommand());
         this.registerCommand("spookyvolume", new SpookyVolumeCommand());
         this.registerCommand("spookyboss", new SpookyBossCommand());
         this.registerCommand("spookyraid", new SpookyRaidCommand());
-        Bukkit.getPluginManager().registerEvents((Listener)new TrickOrTreatListener(this), (Plugin)this);
-        Bukkit.getPluginManager().registerEvents((Listener)new GhostListener(), (Plugin)this);
-        Bukkit.getPluginManager().registerEvents((Listener)new JumpScareListener(this), (Plugin)this);
-        Bukkit.getPluginManager().registerEvents((Listener)new HalloweenMobListener(this), (Plugin)this);
-        Bukkit.getPluginManager().registerEvents((Listener)this.bossManager, (Plugin)this);
-        Bukkit.getPluginManager().registerEvents((Listener)this.rewardManager, (Plugin)this);
-        Bukkit.getPluginManager().registerEvents((Listener)this.menuGUI, (Plugin)this);
-        Bukkit.getPluginManager().registerEvents((Listener)this.raidManager, (Plugin)this);
-        Bukkit.getPluginManager().registerEvents((Listener)new EntityCleanupListener(this), (Plugin)this);
+        Bukkit.getPluginManager().registerEvents((Listener)new TrickOrTreatListener(this), this.host);
+        Bukkit.getPluginManager().registerEvents((Listener)new GhostListener(), this.host);
+        Bukkit.getPluginManager().registerEvents((Listener)new JumpScareListener(this), this.host);
+        Bukkit.getPluginManager().registerEvents((Listener)new HalloweenMobListener(this), this.host);
+        Bukkit.getPluginManager().registerEvents((Listener)this.bossManager, this.host);
+        Bukkit.getPluginManager().registerEvents((Listener)this.rewardManager, this.host);
+        Bukkit.getPluginManager().registerEvents((Listener)this.menuGUI, this.host);
+        Bukkit.getPluginManager().registerEvents((Listener)this.raidManager, this.host);
+        Bukkit.getPluginManager().registerEvents((Listener)new EntityCleanupListener(this), this.host);
         this.hauntedNightManager.start();
         this.bossManager.start();
         this.batSwarmManager.start();
         this.rewardManager.start();
         this.raidManager.start();
         this.bloodRainManager.startTicker();
-        Metrics metrics = new Metrics((Plugin)this, 30933);
+        Metrics metrics = new Metrics(this.host, 30933);
         metrics.addCustomChart(new SimplePie("language", () -> this.getConfig().getString("language", "en")));
         metrics.addCustomChart(new SimplePie("season_active", () -> this.isSeasonActive() ? "active" : "inactive"));
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             this.hookPlaceholderAPI();
         }
         if (this.getConfig().getBoolean("updateChecker", true)) {
-            UpdateChecker updateChecker = new UpdateChecker((Plugin)this);
-            Bukkit.getPluginManager().registerEvents((Listener)updateChecker, (Plugin)this);
+            UpdateChecker updateChecker = new UpdateChecker(this.host);
+            Bukkit.getPluginManager().registerEvents((Listener)updateChecker, this.host);
             updateChecker.checkAsync();
         }
         this.getLogger().info(Lang.get("plugin.enabled", new String[0]));
@@ -309,7 +309,7 @@ public final class SpookySeason {
 
     public void reload() {
         this.mergeConfig();
-        Lang.load((Plugin)this);
+        Lang.load(this.host);
         this.hauntedNightManager.start();
         this.bossManager.start();
         this.batSwarmManager.start();
@@ -322,8 +322,8 @@ public final class SpookySeason {
 
     private void mergeConfig() {
         File file = new File(this.getDataFolder(), "config.yml");
-        ConfigMerger.merge((Plugin)this, "config.yml", file, FREE_FORM_CONFIG_PATHS);
-        ConfigMerger.removeObsolete((Plugin)this, file, OBSOLETE_CONFIG_PATHS);
+        ConfigMerger.merge(this.host, "config.yml", file, FREE_FORM_CONFIG_PATHS);
+        ConfigMerger.removeObsolete(this.host, file, OBSOLETE_CONFIG_PATHS);
         this.reloadConfig();
     }
 
