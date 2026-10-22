@@ -54,8 +54,39 @@ if (window.get("startMonth"),window.get("startDay"),window.get("endMonth"),windo
     raise SystemExit("Wrong season dates")
 if cfg["season"].get("enabled") is not True:
     raise SystemExit("Season should be enabled")
-if not (java/"DailyQuestManager.java").is_file() or not (java/"HalloweenShopManager.java").is_file():
-    raise SystemExit("Quest/shop missing")
+expected_java = {
+    "DailyQuestManager.java",
+    "DialogQuestManager.java",
+    "HalloweenCore.java",
+    "HalloweenShopManager.java",
+}
+actual_java = {p.name for p in java.rglob("*.java")}
+if actual_java != expected_java:
+    raise SystemExit(f"Unexpected Java source set: {actual_java}")
+
+daily = (java/"DailyQuestManager.java").read_text()
+if "onJoin(PlayerJoinEvent event)" not in daily or "ensureAssigned" not in daily:
+    raise SystemExit("Daily quest must auto-assign on join and reset by date")
+if '"players."' not in daily and '"players."' not in (java/"DialogQuestManager.java").read_text():
+    raise SystemExit("Quest/fragment player data path is not present")
+
+shop_source = (java/"HalloweenShopManager.java").read_text()
+for item_id in [
+    "stev_apple_core", "stev_candy_apple", "stev_candy_bag", "stev_caramel",
+    "stev_caramel_apple", "stev_chocolate_bar", "stev_frosted_sugar_cookie",
+    "stev_gumdrop", "stev_hard_candy", "stev_lollipop",
+    "stev_peanut_butter_cup", "stev_sugar_cookie", "stev_toasted_pumpkin_seeds",
+]:
+    if f'"{item_id}"' not in shop_source:
+        raise SystemExit(f"Candy missing from shop catalogue: {item_id}")
+if "canFit(PlayerInventory inventory" not in shop_source:
+    raise SystemExit("Shop must handle purchases that stack into occupied slots")
+
+core_source = (java/"HalloweenCore.java").read_text()
+for fragment in ["new DailyQuestManager(this)", "dailyQuest.setExecutor(dailyQuestManager)",
+                 'case "shop" -> shopManager.open(sender);']:
+    if fragment not in core_source:
+        raise SystemExit(f"Required command/manager wiring missing: {fragment}")
 
 plugin=yaml.safe_load((root/"src/main/resources/plugin.yml").read_text())
 if set(plugin.get("commands",{}))!={"halloween","quest"}:
