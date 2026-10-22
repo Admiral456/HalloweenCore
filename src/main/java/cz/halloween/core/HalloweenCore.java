@@ -641,11 +641,15 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
             return true;
         }
         ZonedDateTime now = ZonedDateTime.now();
-        if (now.getMonth() != Month.OCTOBER) {
-            return false;
-        }
+        int month = now.getMonthValue();
         int day = now.getDayOfMonth();
-        return day >= start && day <= end;
+        // Same-month windows (for example 27–31 October).
+        if (start <= end) {
+            return month == Month.OCTOBER.getValue() && day >= start && day <= end;
+        }
+        // Cross-month Halloween windows (for example 23 October–2 November).
+        return (month == Month.OCTOBER.getValue() && day >= start)
+                || (month == Month.NOVEMBER.getValue() && day <= end);
     }
 
     public boolean isWorldEnabled(World world) {
