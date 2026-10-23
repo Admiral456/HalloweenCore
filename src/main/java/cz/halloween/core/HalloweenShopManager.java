@@ -104,7 +104,24 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("EMERALD", 4, "emerald", 30, "Smaragdy (4)", "Užitečné při obchodování.", false));
         offers.add(vanilla("DIAMOND", 1, "diamond", 45, "Diamant", "Jednotlivý diamant.", false));
         offers.add(vanilla("NETHERITE_SCRAP", 1, "netherite-scrap", 100, "Netheritový šrot", "Vzácný materiál z Netheru.", false));
-        offers.add(vanilla("NETHERITE_INGOT", 1, "netherite-ingot", 250, "Netheritový ingot", "Prémiový materiál.", false));
+        offers.add(vanilla("NETHERITE_INGOT", 1, "netherite-ingot", 350, "Netheritový ingot", "Prémiový materiál.", false));
+        offers.add(vanilla("AMETHYST_SHARD", 16, "amethyst-shard", 30, "Ametystové úlomky (16)", "Dekorace a kalibrované senzory.", false));
+        offers.add(vanilla("PRISMARINE_SHARD", 16, "prismarine-shard", 25, "Prismarinové úlomky (16)", "Kořist z oceánských památek.", false));
+        offers.add(vanilla("PRISMARINE_CRYSTALS", 16, "prismarine-crystals", 40, "Prismarinové krystaly (16)", "Vzácnější podmořský materiál.", false));
+        offers.add(vanilla("SLIME_BALL", 16, "slime-ball", 30, "Slizové kuličky (16)", "Pro lepivé redstone mechanismy.", false));
+        offers.add(vanilla("MAGMA_CREAM", 8, "magma-cream", 50, "Magma krém (8)", "Surovina pro lektvary.", false));
+        offers.add(vanilla("PHANTOM_MEMBRANE", 4, "phantom-membrane", 110, "Fantómové membrány (4)", "Na opravu Elytry.", false));
+        offers.add(vanilla("GHAST_TEAR", 2, "ghast-tear", 130, "Ghastovy slzy (2)", "Vzácná alchymistická surovina.", false));
+        offers.add(vanilla("SHULKER_SHELL", 1, "shulker-shell", 125, "Shulkerova schránka", "Základ pro shulker box.", false));
+        offers.add(vanilla("TURTLE_SCUTE", 2, "turtle-scute", 150, "Želví štítky (2)", "Materiál na želví helmu.", false));
+        offers.add(vanilla("NAUTILUS_SHELL", 1, "nautilus-shell", 90, "Nautilova mušle", "Materiál pro srdce moře.", false));
+        offers.add(vanilla("HEART_OF_THE_SEA", 1, "heart-of-the-sea", 250, "Srdce moře", "Vzácný poklad z oceánu.", false));
+        offers.add(vanilla("CRYING_OBSIDIAN", 8, "crying-obsidian", 45, "Plačící obsidián (8)", "Temný dekorační blok.", false));
+        offers.add(vanilla("BLAZE_POWDER", 16, "blaze-powder", 45, "Blaze prášek (16)", "Na lektvary a enderová oka.", false));
+        offers.add(vanilla("ENDER_EYE", 8, "ender-eye", 120, "Enderova oka (8)", "Pomůcka na hledání pevnosti.", false));
+        offers.add(vanilla("DRAGON_BREATH", 2, "dragon-breath", 100, "Dračí dech (2)", "Vzácná alchymistická ingredience.", false));
+        offers.add(vanilla("NETHERITE_UPGRADE_SMITHING_TEMPLATE", 1, "netherite-template", 1100,
+                "Netheritová vylepšovací šablona", "Prémiový předmět pro postup na netherit.", true));
 
         // Building and redstone supplies.
         offers.add(vanilla("COBBLESTONE", 64, "cobblestone", 10, "Kámen (64)", "Základní stavební balík.", false));
@@ -117,6 +134,14 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("GLOWSTONE", 16, "glowstone", 25, "Glowstone (16)", "Svítící bloky.", false));
         offers.add(vanilla("SLIME_BLOCK", 8, "slime-block", 40, "Slime bloky (8)", "Pro redstone mechanismy.", false));
         offers.add(vanilla("TNT", 4, "tnt", 45, "TNT (4)", "Výbušniny — používej opatrně.", false));
+        offers.add(vanilla("DARK_OAK_LOG", 32, "dark-oak-logs", 20, "Tmavé dubové kmeny (32)", "Stavební dřevo.", false));
+        offers.add(vanilla("PRISMARINE_BRICKS", 32, "prismarine-bricks", 45, "Prismarinové cihly (32)", "Podmořský stavební materiál.", false));
+        offers.add(vanilla("SEA_LANTERN", 16, "sea-lantern", 60, "Mořské lucerny (16)", "Silný zdroj světla.", false));
+        offers.add(vanilla("TERRACOTTA", 32, "terracotta", 25, "Terakota (32)", "Dekorace a stavby.", false));
+        offers.add(vanilla("ORANGE_CONCRETE", 32, "orange-concrete", 30, "Oranžový beton (32)", "Halloweenová stavební paleta.", false));
+        offers.add(vanilla("LANTERN", 8, "lantern", 25, "Lucerny (8)", "Teplé osvětlení.", false));
+        offers.add(vanilla("CAMPFIRE", 8, "campfire", 20, "Tábornické ohně (8)", "Atmosférická dekorace.", false));
+        offers.add(vanilla("CHAIN", 16, "chain", 35, "Řetězy (16)", "Na lampy a dekorace.", false));
 
         // Food and healing.
         offers.add(vanilla("BREAD", 16, "bread", 10, "Chléb (16)", "Základní jídlo na cesty.", false));
@@ -142,6 +167,16 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("SADDLE", 1, "saddle", 65, "Sedlo", "Pro jízdu na zvířatech.", false));
         offers.add(vanilla("WATER_BUCKET", 1, "water-bucket", 20, "Kbelík vody", "Pomůcka na cestování a stavbu.", false));
         offers.add(vanilla("LEAD", 4, "lead", 15, "Vodítka (4)", "Na přesun zvířat.", false));
+        offers.add(vanilla("COMPASS", 1, "compass", 45, "Kompas", "Pomůcka na orientaci.", false));
+        offers.add(vanilla("CLOCK", 1, "clock", 45, "Hodiny", "Sleduj den a noc.", false));
+        offers.add(vanilla("RECOVERY_COMPASS", 1, "recovery-compass", 180, "Kompas obnovy", "Pomůže najít místo poslední smrti.", false));
+        offers.add(vanilla("SPYGLASS", 1, "spyglass", 60, "Dalekohled", "Na průzkum dálky.", false));
+        offers.add(vanilla("FISHING_ROD", 1, "fishing-rod", 50, "Rybářský prut", "Na lov ryb a pokladů.", true));
+        offers.add(vanilla("SHEARS", 1, "shears", 35, "Nůžky", "Na vlnu a listí.", true));
+        offers.add(vanilla("FLINT_AND_STEEL", 1, "flint-and-steel", 40, "Křesadlo", "Na oheň a portály.", true));
+        offers.add(vanilla("DRAGON_HEAD", 1, "dragon-head", 450, "Dračí hlava", "Vzácná trofej z Endu.", true));
+        offers.add(vanilla("END_CRYSTAL", 4, "end-crystal", 225, "Endové krystaly (4)", "Drahá a nebezpečná položka.", false));
+        offers.add(vanilla("CONDUIT", 1, "conduit", 650, "Conduit", "Prémiový podmořský užitek.", true));
         offers.add(vanilla("TOTEM_OF_UNDYING", 1, "totem", 380, "Totem nesmrtelnosti", "Velmi drahá druhá šance.", true));
         offers.add(vanilla("BEACON", 1, "beacon", 1000, "Maják", "Endgame předmět za dlouhodobé šetření.", true));
         offers.add(vanilla("NETHER_STAR", 1, "nether-star", 750, "Nether star", "Vzácná trofej z Withera.", true));
@@ -151,6 +186,8 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("DIAMOND_SWORD", 1, "diamond-sword", 120, "Diamantový meč", "Silná zbraň.", true));
         offers.add(vanilla("DIAMOND_PICKAXE", 1, "diamond-pickaxe", 150, "Diamantový krumpáč", "Na cennou těžbu.", true));
         offers.add(vanilla("DIAMOND_AXE", 1, "diamond-axe", 120, "Diamantová sekera", "Nástroj i zbraň.", true));
+        offers.add(vanilla("DIAMOND_SHOVEL", 1, "diamond-shovel", 85, "Diamantová lopata", "Rychlá práce se zeminou.", true));
+        offers.add(vanilla("DIAMOND_HOE", 1, "diamond-hoe", 95, "Diamantová motyka", "Odolný zemědělský nástroj.", true));
         offers.add(vanilla("NETHERITE_SWORD", 1, "netherite-sword", 400, "Netheritový meč", "Prémiová zbraň.", true,
                 "warriorland_halloween:orange_netherite_sword"));
         offers.add(vanilla("NETHERITE_AXE", 1, "netherite-axe", 360, "Netheritová sekera", "Prémiový nástroj i zbraň.", true,
@@ -188,7 +225,9 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("NETHERITE_CHESTPLATE", 1, "netherite-chestplate", 600, "Netheritový hrudník", "Velmi drahá prémiová ochrana.", true));
         offers.add(vanilla("NETHERITE_LEGGINGS", 1, "netherite-leggings", 480, "Netheritové kalhoty", "Prémiová ochrana.", true));
         offers.add(vanilla("NETHERITE_BOOTS", 1, "netherite-boots", 300, "Netheritové boty", "Prémiová ochrana.", true));
-        offers.add(vanilla("ELYTRA", 1, "elytra", 1200, "Halloweenová Elytra", "Jedna z nejdražších položek celého obchodu.", true));
+        offers.add(vanilla("ELYTRA", 1, "elytra", 2000, "Halloweenová Elytra", "Jedna z nejdražších položek celého obchodu.", true));
+        offers.add(vanilla("GOLDEN_HORSE_ARMOR", 1, "golden-horse-armor", 100, "Zlatá koňská zbroj", "Výbava pro věrného oře.", true));
+        offers.add(vanilla("DIAMOND_HORSE_ARMOR", 1, "diamond-horse-armor", 180, "Diamantová koňská zbroj", "Prémiová ochrana koně.", true));
 
         return List.copyOf(offers);
     }
