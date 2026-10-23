@@ -583,12 +583,13 @@ season:
 quest-rewards:
   default-difficulty: light
   # Extra reward for finishing all four daily contracts.
-  daily-completion-bonus: 8
+  daily-completion-bonus: 15
   difficulties:
     light: {min-fragments: 3, max-fragments: 5}
-    medium: {min-fragments: 6, max-fragments: 9}
-    hard: {min-fragments: 10, max-fragments: 15}
-    very-hard: {min-fragments: 16, max-fragments: 25}
+    medium: {min-fragments: 8, max-fragments: 12}
+    hard: {min-fragments: 18, max-fragments: 28}
+    very-hard: {min-fragments: 32, max-fragments: 48}
+    extreme: {min-fragments: 55, max-fragments: 80}
   quests: {}
 
 daily-quest:
@@ -611,15 +612,39 @@ shop:
     redstone: 15
     lapis: 15
     quartz: 18
+    amethyst-shard: 30
+    prismarine-shard: 25
+    prismarine-crystals: 40
+    slime-ball: 30
+    magma-cream: 50
+    phantom-membrane: 110
+    ghast-tear: 130
+    shulker-shell: 125
+    turtle-scute: 150
+    nautilus-shell: 90
+    heart-of-the-sea: 250
+    crying-obsidian: 45
+    blaze-powder: 45
+    ender-eye: 120
+    dragon-breath: 100
+    netherite-template: 1100
     emerald: 30
     diamond: 45
-    netherite-scrap: 100
-    netherite-ingot: 250
+    netherite-scrap: 125
+    netherite-ingot: 350
     # Building and redstone
     cobblestone: 10
     stone: 12
     deepslate: 16
     oak-logs: 15
+    dark-oak-logs: 20
+    prismarine-bricks: 45
+    sea-lantern: 60
+    terracotta: 25
+    orange-concrete: 30
+    lantern: 25
+    campfire: 20
+    chain: 35
     glass: 15
     obsidian: 35
     quartz-block: 30
@@ -633,8 +658,8 @@ shop:
     golden-carrot: 25
     pumpkin-pie: 15
     honey-bottle: 18
-    golden-apple: 45
-    enchanted-golden-apple: 250
+    golden-apple: 65
+    enchanted-golden-apple: 750
     # Utility and exploration
     ender-pearl: 25
     blaze-rod: 35
@@ -648,25 +673,37 @@ shop:
     saddle: 65
     water-bucket: 20
     lead: 15
-    totem: 380
-    beacon: 1000
-    nether-star: 750
+    compass: 45
+    clock: 45
+    recovery-compass: 180
+    spyglass: 60
+    fishing-rod: 50
+    shears: 35
+    flint-and-steel: 40
+    dragon-head: 450
+    end-crystal: 225
+    conduit: 650
+    totem: 750
+    beacon: 1600
+    nether-star: 900
     # Tools and weapons
     iron-pickaxe: 35
     diamond-sword: 120
     diamond-pickaxe: 150
     diamond-axe: 120
-    netherite-sword: 400
-    netherite-axe: 360
-    netherite-pickaxe: 480
-    netherite-shovel: 280
-    netherite-hoe: 300
+    diamond-shovel: 85
+    diamond-hoe: 95
+    netherite-sword: 600
+    netherite-axe: 550
+    netherite-pickaxe: 700
+    netherite-shovel: 350
+    netherite-hoe: 400
     bow: 80
     crossbow: 100
     shield: 70
-    trident: 650
-    mace: 1000
-    netherite-spear: 1200
+    trident: 850
+    mace: 1400
+    netherite-spear: 1600
     # Armor
     iron-helmet: 35
     iron-chestplate: 60
@@ -676,8 +713,10 @@ shop:
     diamond-chestplate: 250
     diamond-leggings: 200
     diamond-boots: 120
-    netherite-helmet: 300
-    netherite-chestplate: 600
-    netherite-leggings: 480
-    netherite-boots: 300
-    elytra: 1200
+    golden-horse-armor: 100
+    diamond-horse-armor: 180
+    netherite-helmet: 450
+    netherite-chestplate: 850
+    netherite-leggings: 700
+    netherite-boots: 450
+    elytra: 2000
