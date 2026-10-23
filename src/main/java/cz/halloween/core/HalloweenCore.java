@@ -174,6 +174,10 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         // Upgrade only untouched shipped defaults; customized server prices are preserved.
         migrateDefaultPrice(cfg, "shop.prices.enchanted-golden-apple", 750, 80, 250);
         migrateDefaultPrice(cfg, "shop.prices.golden-apple", 65, 18, 45);
+        migrateDefaultPrice(cfg, "shop.prices.iron", 18, 8);
+        migrateDefaultPrice(cfg, "shop.prices.gold", 20, 15);
+        migrateDefaultPrice(cfg, "shop.prices.emerald", 30, 25);
+        migrateDefaultPrice(cfg, "shop.prices.diamond", 45, 35);
         migrateDefaultPrice(cfg, "shop.prices.netherite-ingot", 350, 150, 250);
         migrateDefaultPrice(cfg, "shop.prices.netherite-scrap", 125, 70, 100);
         migrateDefaultPrice(cfg, "shop.prices.totem", 750, 350, 380);
