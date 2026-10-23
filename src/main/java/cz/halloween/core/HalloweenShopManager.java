@@ -229,6 +229,52 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("GOLDEN_HORSE_ARMOR", 1, "golden-horse-armor", 100, "Zlatá koňská zbroj", "Výbava pro věrného oře.", true));
         offers.add(vanilla("DIAMOND_HORSE_ARMOR", 1, "diamond-horse-armor", 180, "Diamantová koňská zbroj", "Prémiová ochrana koně.", true));
 
+        // Additional vanilla survival materials, Nether/End drops and building blocks.
+        // All are ordinary Minecraft materials; if a material is unavailable on an older API,
+        // it is displayed as unavailable rather than breaking plugin startup.
+        offers.add(vanilla("AMETHYST_SHARD", 8, "amethyst-shard", 30, "Ametystové úlomky (8)", "Na dalekohledy a dekorace.", false));
+        offers.add(vanilla("PRISMARINE_SHARD", 8, "prismarine-shard", 25, "Prismarinové úlomky (8)", "Kořist z oceánských monumentů.", false));
+        offers.add(vanilla("PRISMARINE_CRYSTALS", 8, "prismarine-crystals", 40, "Prismarinové krystaly (8)", "Na výrobu mořských lamp.", false));
+        offers.add(vanilla("SLIME_BALL", 8, "slime-ball", 30, "Slimeball (8)", "Užitečné na redstone mechanismy.", false));
+        offers.add(vanilla("MAGMA_CREAM", 4, "magma-cream", 50, "Magma krém (4)", "Surovina z Netheru.", false));
+        offers.add(vanilla("PHANTOM_MEMBRANE", 2, "phantom-membrane", 110, "Fantómová membrána (2)", "Vzácná noční kořist.", false));
+        offers.add(vanilla("GHAST_TEAR", 1, "ghast-tear", 130, "Ghastí slza", "Vzácná alchymistická surovina.", false));
+        offers.add(vanilla("SHULKER_SHELL", 1, "shulker-shell", 125, "Shulkerova schránka", "Základ přenosného úložiště.", false));
+        offers.add(vanilla("TURTLE_SCUTE", 2, "turtle-scute", 150, "Želví štítky (2)", "Vzácná surovina z želv.", false));
+        offers.add(vanilla("NAUTILUS_SHELL", 1, "nautilus-shell", 90, "Nautilova ulita", "Mořská relikvie.", false));
+        offers.add(vanilla("HEART_OF_THE_SEA", 1, "heart-of-the-sea", 250, "Srdce moře", "Vzácný poklad z map.", true));
+        offers.add(vanilla("CRYING_OBSIDIAN", 8, "crying-obsidian", 45, "Plačící obsidián (8)", "Vzácný blok z bastionů a portálů.", false));
+        offers.add(vanilla("BLAZE_POWDER", 8, "blaze-powder", 45, "Blaze prášek (8)", "Na lektvary a End.", false));
+        offers.add(vanilla("ENDER_EYE", 4, "ender-eye", 120, "Oči Enderu (4)", "Pomohou najít pevnost.", false));
+        offers.add(vanilla("DRAGON_BREATH", 1, "dragon-breath", 100, "Dračí dech", "Vzácná surovina z Endu.", false));
+        offers.add(vanilla("NETHERITE_UPGRADE_SMITHING_TEMPLATE", 1, "netherite-template", 1100,
+                "Netheritová kovací šablona", "Velmi vzácná prémiová šablona.", true));
+
+        offers.add(vanilla("DARK_OAK_LOG", 32, "dark-oak-logs", 20, "Tmavé dubové kmeny (32)", "Tmavší stavební dřevo.", false));
+        offers.add(vanilla("PRISMARINE_BRICKS", 32, "prismarine-bricks", 45, "Prismarinové cihly (32)", "Oceánské stavební bloky.", false));
+        offers.add(vanilla("SEA_LANTERN", 8, "sea-lantern", 60, "Mořské lampy (8)", "Výrazné světelné bloky.", false));
+        offers.add(vanilla("TERRACOTTA", 32, "terracotta", 25, "Terakota (32)", "Dekorační stavební materiál.", false));
+        offers.add(vanilla("ORANGE_CONCRETE", 32, "orange-concrete", 30, "Oranžový beton (32)", "Halloweenská stavební paleta.", false));
+        offers.add(vanilla("LANTERN", 8, "lantern", 25, "Lucerny (8)", "Dekorativní osvětlení.", false));
+        offers.add(vanilla("CAMPFIRE", 4, "campfire", 20, "Tábornické ohně (4)", "Světlo a dekorace.", false));
+        offers.add(vanilla("CHAIN", 16, "chain", 35, "Řetězy (16)", "Dekorace a industriální stavby.", false));
+
+        offers.add(vanilla("COMPASS", 1, "compass", 45, "Kompas", "Ukazuje směr ke spawnu.", false));
+        offers.add(vanilla("CLOCK", 1, "clock", 45, "Hodiny", "Pomohou odhadnout denní dobu.", false));
+        offers.add(vanilla("RECOVERY_COMPASS", 1, "recovery-compass", 180, "Kompas návratu", "Vzácný navigační předmět.", true));
+        offers.add(vanilla("SPYGLASS", 1, "spyglass", 60, "Dalekohled", "Prozkoumej okolí.", false));
+        offers.add(vanilla("FISHING_ROD", 1, "fishing-rod", 50, "Rybářský prut", "Na rybaření.", false));
+        offers.add(vanilla("SHEARS", 1, "shears", 35, "Nůžky", "Na vlnu, listí a další bloky.", false));
+        offers.add(vanilla("FLINT_AND_STEEL", 1, "flint-and-steel", 40, "Křesadlo", "Zapálení ohně a portálů.", false));
+        offers.add(vanilla("DRAGON_HEAD", 1, "dragon-head", 450, "Dračí hlava", "Vzácná dekorativní trofej.", true));
+        offers.add(vanilla("END_CRYSTAL", 1, "end-crystal", 225, "Endový krystal", "Vzácný a nebezpečný předmět.", false));
+        offers.add(vanilla("CONDUIT", 1, "conduit", 650, "Mořské srdce — conduit", "Prémiová pomůcka pro stavby pod vodou.", true));
+
+        offers.add(vanilla("DIAMOND_SHOVEL", 1, "diamond-shovel", 85, "Diamantová lopata", "Rychlý nástroj.", true));
+        offers.add(vanilla("DIAMOND_HOE", 1, "diamond-hoe", 95, "Diamantová motyka", "Prémiový zemědělský nástroj.", true));
+        offers.add(vanilla("GOLDEN_HORSE_ARMOR", 1, "golden-horse-armor", 100, "Zlatá koňská zbroj", "Ochrana pro koně.", true));
+        offers.add(vanilla("DIAMOND_HORSE_ARMOR", 1, "diamond-horse-armor", 180, "Diamantová koňská zbroj", "Prémiová ochrana pro koně.", true));
+
         return List.copyOf(offers);
     }
 
