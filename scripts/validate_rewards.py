@@ -34,13 +34,15 @@ if not isinstance(legacy_reward, int) or legacy_reward < 0:
 # The daily system now offers four simultaneous contracts. Check that the implementation
 # contains a healthy pool across all four difficulty tiers and still supports configurable rewards.
 quest_source = (root / "src/main/java/cz/halloween/core/DailyQuestManager.java").read_text(encoding="utf-8")
-if quest_source.count("new Task(") < 60:
-    raise SystemExit("Expected at least 60 daily contract definitions")
+if quest_source.count("new Task(") < 80:
+    raise SystemExit("Expected at least 80 daily contract definitions")
 for difficulty in ['"light"', '"medium"', '"hard"', '"extreme"']:
     if difficulty not in quest_source:
         raise SystemExit(f"Missing quest difficulty: {difficulty}")
 if quest_source.count("new ContractSlot(") < 4:
     raise SystemExit("Expected four daily contract tiers")
+if 'new ContractSlot("daily-quests.extreme", "extreme", "EXTRÉMNÍ")' not in quest_source:
+    raise SystemExit("Extreme contracts must use the actual extreme fragment tier")
 prices = cfg["shop"].get("prices", {})
 required_prices = [
     "candy", "iron", "gold", "diamond", "emerald", "netherite-ingot", "netherite-scrap",
@@ -76,10 +78,14 @@ for item in prices:
         raise SystemExit(f"Shop has a configured price without an offer: {item}")
 if prices["elytra"] <= prices["diamond"] or prices["mace"] <= prices["iron"] or prices["netherite-spear"] <= prices["diamond"]:
     raise SystemExit("Endgame prices are not meaningfully higher than basic resources")
-if prices["enchanted-golden-apple"] <= prices["golden-apple"]:
-    raise SystemExit("Enchanted golden apples must cost substantially more than normal golden apples")
+if prices["enchanted-golden-apple"] < 700 or prices["enchanted-golden-apple"] <= prices["golden-apple"]:
+    raise SystemExit("Enchanted golden apples must cost at least 700 fragments and far more than normal golden apples")
 if prices["beacon"] <= prices["netherite-ingot"] or prices["nether-star"] <= prices["diamond"]:
     raise SystemExit("Rare endgame items must have premium prices")
+if prices["elytra"] < 1800 or prices["beacon"] < 1400 or prices["mace"] < 1200:
+    raise SystemExit("Elytra, beacon and mace must remain long-term endgame goals")
+if shop_source.count("offers.add(") < 100:
+    raise SystemExit("Expected at least 100 shop catalogue offers")
 
 window = cfg["activeWindow"]
 if (window.get("startMonth"), window.get("startDay"), window.get("endMonth"), window.get("endDay")) != (10, 23, 11, 2):
