@@ -1,4 +1,4 @@
-# HalloweenCore includes selected SpookySeason 1.7.0 features under MIT plus a clean-room HorrorNights-style implementation.
+# HalloweenCore includes the integrated SpookySeason 1.7.0 source under MIT plus an independent HorrorNights implementation.
 # See docs/THIRD_PARTY_NOTICES.md and THIRD_PARTY_LICENSES/SpookySeason-MIT.txt.
 
 # ═══════════════════════════════════════════════════════════
@@ -15,8 +15,8 @@ active: true
 # Update checker (queries Modrinth API on startup)
 updateChecker: true
 
-# Optional active window in October (inclusive). 0 = always active.
-# The season counts as active only when 'active' is true AND this window matches.
+# Inclusive Halloween season window (Europe/Prague). 0 = always active.
+# The season runs October 23 through November 2, and is active only when 'active' is true.
 activeWindow:
   startMonth: 10
   startDay: 23
