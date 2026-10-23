@@ -77,6 +77,8 @@ for wired in ["trySpawnCustomMob", "horrorNights.spawn-custom-mobs",
               "horrorNights.custom-mob-ids", "horrorNights.invisible-particle-count"]:
     if wired not in horror:
         raise SystemExit(f"HorrorNights setting is not wired: {wired}")
+if "if (plugin instanceof HalloweenCore core && !core.isSeasonActive()) return;" not in horror:
+    raise SystemExit("Random HorrorNights must respect the 23 October–2 November season window")
 blood = (java / "org/example/feature/BloodRainManager.java").read_text(encoding="utf-8")
 if any(token in blood for token in ["setPlayerWeather(", "resetPlayerWeather(", "WeatherType.DOWNFALL"]):
     raise SystemExit("Blood rain must remain particle-only and must not override player weather")
@@ -126,6 +128,11 @@ required_commands = {"halloween", "quest", "horrornights", "pumpkinrain", "blood
 if not required_commands.issubset(set(plugin.get("commands", {}))):
     raise SystemExit(f"Missing full event commands: {sorted(required_commands-set(plugin.get('commands', {})))}")
 core = (java / "cz/halloween/core/HalloweenCore.java").read_text(encoding="utf-8")
+for date_migration in ['startDay == 27 && endMonth == 10 && endDay == 31',
+                       'cfg.set("activeWindow.startDay", 23)',
+                       'cfg.set("activeWindow.endDay", 2)']:
+    if date_migration not in core:
+        raise SystemExit(f"Legacy Halloween date migration is missing: {date_migration}")
 for wiring in ["org.example.SpookySeason.enable(this)", "new HorrorNightManager(this)",
                "new DailyQuestManager(this)", "new HalloweenPlaceholders(this)",
                "placeholders.register()", "placeholders.unregister()",
