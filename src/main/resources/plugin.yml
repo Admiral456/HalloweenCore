@@ -40,7 +40,7 @@ commands:
     usage: /spookyraid <start|stop|status|stats|target|zone>
     permission: spooky.admin
   quest:
-    description: Získá nebo zobrazí denní úkol za fragment.
+    description: Zobrazí 15 denních kontraktů a 3 týdenní výzvy za fragmenty.
     usage: /quest [daily|weekly]
     aliases: [dailyquest]
     permission: halloweencore.use
