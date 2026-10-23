@@ -1,20 +1,405 @@
 package cz.halloween.core;
-import java.lang.reflect.Method;import java.util.ArrayList;import java.util.HashMap;import java.util.List;import java.util.Map;import org.bukkit.Bukkit;import org.bukkit.ChatColor;import org.bukkit.Material;import org.bukkit.command.CommandSender;import org.bukkit.enchantments.Enchantment;import org.bukkit.entity.Player;import org.bukkit.event.EventHandler;import org.bukkit.event.Listener;import org.bukkit.event.inventory.InventoryClickEvent;import org.bukkit.event.inventory.InventoryDragEvent;import org.bukkit.inventory.Inventory;import org.bukkit.inventory.InventoryHolder;import org.bukkit.inventory.ItemFlag;import org.bukkit.inventory.ItemStack;import org.bukkit.inventory.PlayerInventory;import org.bukkit.inventory.meta.ItemMeta;
-public final class HalloweenShopManager implements Listener{
- private static final String TITLE=ChatColor.DARK_PURPLE+"☾ "+ChatColor.GOLD+"Halloweenský obchod";private static final int[] SLOTS={10,11,12,13,14,15,16,19,20,21,22,23,24,25,28,29,30,31,32,33,34,37,38,39,40,41,42,43};private final HalloweenCore plugin;private List<Offer> catalogue;
- private record Offer(Material material,int amount,int price,String name,String description,String iaId,boolean gear,boolean available){}
- private static final class Holder implements InventoryHolder{private Inventory inventory;private final Map<Integer,Offer> offers=new HashMap<>();private int page;public Inventory getInventory(){return inventory;}}
- public HalloweenShopManager(HalloweenCore p){plugin=p;catalogue=buildCatalogue();Bukkit.getPluginManager().registerEvents(this,p);}public void refresh(){catalogue=buildCatalogue();}
- public void open(CommandSender s){if(!(s instanceof Player p)){s.sendMessage(ChatColor.RED+"Obchod může otevřít jen hráč.");return;}if(!plugin.isSeasonActive()){p.sendMessage(ChatColor.RED+"Halloween sezóna právě není aktivní.");return;}if(!plugin.getConfig().getBoolean("shop.enabled",true)){p.sendMessage(ChatColor.RED+"Obchod je vypnutý.");return;}Holder h=new Holder();h.inventory=Bukkit.createInventory(h,54,TITLE);render(h,p);p.openInventory(h.inventory);}
- private List<Offer> buildCatalogue(){List<Offer>a=new ArrayList<>();a.add(candy("stev_apple_core","Jablečná jadérka",3));a.add(candy("stev_candy_apple","Karamelové jablko",5));a.add(candy("stev_candy_bag","Pytlík sladkostí",6));a.add(candy("stev_caramel","Karamel",3));a.add(candy("stev_caramel_apple","Jablko v karamelu",5));a.add(candy("stev_chocolate_bar","Čokoládová tyčinka",4));a.add(candy("stev_frosted_sugar_cookie","Zdobená sušenka",4));a.add(candy("stev_gumdrop","Želé bonbon",3));a.add(candy("stev_hard_candy","Tvrdý bonbon",3));a.add(candy("stev_lollipop","Lízátko",4));a.add(candy("stev_peanut_butter_cup","Arašídový košíček",4));a.add(candy("stev_sugar_cookie","Cukrová sušenka",3));a.add(candy("stev_toasted_pumpkin_seeds","Pražená dýňová semínka",3));a.add(offer(Material.IRON_INGOT,16,"iron","Železné ingoty","Balení 16 kusů.",false));a.add(offer(Material.GOLD_INGOT,8,"gold","Zlaté ingoty","Balení 8 kusů.",false));a.add(offer(Material.DIAMOND,1,"diamond","Diamant","Jeden diamant.",false));a.add(offer(Material.EMERALD,4,"emerald","Smaragdy","Balení 4 kusů.",false));a.add(offer(Material.NETHERITE_INGOT,1,"netherite-ingot","Netheritový ingot","Vzácný kov.",false));a.add(offer(Material.NETHERITE_SCRAP,2,"netherite-scrap","Netheritový šrot","Dva kusy.",false));a.add(offer(Material.GOLDEN_APPLE,1,"golden-apple","Zlaté jablko","Nouzová zásoba.",false));a.add(offer(material("ENCHANTED_GOLDEN_APPLE",Material.GOLDEN_APPLE),1,"enchanted-golden-apple","Zakleté zlaté jablko","Vzácné.",false));a.add(offer(Material.TOTEM_OF_UNDYING,1,"totem","Totem nesmrtelnosti","Velmi vzácná ochrana.",false));a.add(offer(Material.TRIDENT,1,"trident","Halloweenový trojzubec","Oranžový název a magická záře.",true));Material mace=Material.matchMaterial("MACE");a.add(new Offer(mace==null?Material.IRON_AXE:mace,1,price("mace",800),"Halloweenová Mace",mace==null?"Mace nepodporuje API serveru.":"Oranžově zbarvená halloweenská zbraň.","warriorland_halloween:orange_mace",true,mace!=null));a.add(offer(Material.NETHERITE_SWORD,1,"netherite-sword","Halloweenový netheritový meč","Vzácný meč.",true));a.add(offer(Material.NETHERITE_AXE,1,"netherite-axe","Halloweenová netheritová sekera","Vzácná sekera.",true));a.add(offer(Material.NETHERITE_HELMET,1,"netherite-helmet","Halloweenová netheritová helma","Prémiová výbava.",true));a.add(offer(Material.NETHERITE_CHESTPLATE,1,"netherite-chestplate","Halloweenový netheritový hrudník","Prémiová výbava.",true));a.add(offer(Material.NETHERITE_LEGGINGS,1,"netherite-leggings","Halloweenové netheritové kalhoty","Prémiová výbava.",true));a.add(offer(Material.NETHERITE_BOOTS,1,"netherite-boots","Halloweenové netheritové boty","Prémiová výbava.",true));a.add(offer(Material.ELYTRA,1,"elytra","Halloweenová Elytra","Jedna z nejdražších položek.",true));Material spear=Material.matchMaterial("NETHERITE_SPEAR");if(spear==null)spear=Material.matchMaterial("SPEAR");a.add(new Offer(spear==null?Material.BARRIER:spear,1,price("netherite-spear",900),"Halloweenové netheritové kopí",spear==null?"API serveru kopí nepodporuje.":"Oranžově zbarvená halloweenská zbraň.","warriorland_halloween:orange_netherite_spear",true,spear!=null));return List.copyOf(a);}
- private Offer candy(String id,String name,int fb){return new Offer(Material.COOKIE,1,price("candy",fb),name,"Sladkost z kolekce 13 textur.","warriorland_halloween:"+id,false,true);}
- private Offer offer(Material m,int n,String k,String name,String desc,boolean gear){int fb=switch(k){case "iron"->8;case "gold"->15;case "diamond"->35;case "emerald"->25;case "netherite-ingot"->150;case "netherite-scrap"->70;case "golden-apple"->18;case "enchanted-golden-apple"->80;case "totem"->350;case "trident"->550;case "mace"->800;case "netherite-sword"->400;case "netherite-axe"->350;case "netherite-helmet"->250;case "netherite-chestplate"->500;case "netherite-leggings"->400;case "netherite-boots"->200;case "elytra"->1200;case "netherite-spear"->900;default->1;};String iaId=switch(k){case "trident"->"warriorland_halloween:orange_trident";case "netherite-sword"->"warriorland_halloween:orange_netherite_sword";case "netherite-axe"->"warriorland_halloween:orange_netherite_axe";default->null;};return new Offer(m,n,price(k,fb),name,desc,iaId,gear,true);}
- private int price(String k,int f){return Math.max(0,plugin.getConfig().getInt("shop.prices."+k,f));}private Material material(String id,Material fb){Material m=Material.matchMaterial(id);return m==null?fb:m;}
- private void render(Holder h,Player p){h.inventory.clear();h.offers.clear();for(int i=0;i<54;i++)h.inventory.setItem(i,pane(Material.BLACK_STAINED_GLASS_PANE," "));for(int i=0;i<9;i++)h.inventory.setItem(i,pane(Material.ORANGE_STAINED_GLASS_PANE," "));for(int i=45;i<54;i++)h.inventory.setItem(i,pane(Material.ORANGE_STAINED_GLASS_PANE," "));h.inventory.setItem(4,named(Material.JACK_O_LANTERN,ChatColor.GOLD+"☾ Halloweenský obchod",List.of(ChatColor.GRAY+"Platíš Halloween fragmenty.",ChatColor.DARK_GRAY+"Klikni na předmět pro nákup."),false));h.inventory.setItem(46,named(Material.AMETHYST_SHARD,ChatColor.LIGHT_PURPLE+"Fragmenty: "+plugin.getQuestManager().getFragments(p.getUniqueId()),List.of(ChatColor.GRAY+"Úkol získáš přes /quest."),false));h.inventory.setItem(49,named(Material.BARRIER,ChatColor.RED+"Zavřít obchod",List.of(),false));if(h.page>0)h.inventory.setItem(45,named(Material.ARROW,ChatColor.YELLOW+"Předchozí stránka",List.of(),false));if((h.page+1)*SLOTS.length<catalogue.size())h.inventory.setItem(53,named(Material.ARROW,ChatColor.YELLOW+"Další stránka",List.of(),false));h.inventory.setItem(51,named(Material.SOUL_LANTERN,ChatColor.DARK_PURPLE+"Výbava lovce",List.of(ChatColor.GRAY+"Mace, trojzubec a Elytra.",ChatColor.GRAY+"Stojí nejvíc fragmentů."),false));for(int i=0;i<SLOTS.length;i++){int ix=h.page*SLOTS.length+i;if(ix>=catalogue.size())break;int slot=SLOTS[i];Offer o=catalogue.get(ix);List<String> lore=new ArrayList<>();lore.add(ChatColor.GRAY+o.description());if(o.available()){lore.add(ChatColor.DARK_GRAY+"Cena: "+ChatColor.GOLD+o.price()+" fragmentů");lore.add(ChatColor.YELLOW+"Klikni pro nákup");}else lore.add(ChatColor.RED+"Není dostupné v této verzi serveru");ItemStack display=o.available()?buildItem(o):named(o.material(),(o.gear()?ChatColor.GOLD.toString()+ChatColor.BOLD:ChatColor.GOLD)+o.name(),lore,o.gear());ItemMeta displayMeta=display.getItemMeta();if(displayMeta!=null){displayMeta.setDisplayName((o.gear()?ChatColor.GOLD.toString()+ChatColor.BOLD:ChatColor.GOLD)+o.name());displayMeta.setLore(lore);if(o.gear())displayMeta.addItemFlags(ItemFlag.HIDE_ENCHANTS);display.setItemMeta(displayMeta);}if(o.gear()&&!display.containsEnchantment(Enchantment.UNBREAKING))display.addUnsafeEnchantment(Enchantment.UNBREAKING,1);h.inventory.setItem(slot,display);if(o.available())h.offers.put(slot,o);}h.inventory.setItem(48,named(Material.PUMPKIN,ChatColor.GOLD+"Sladkosti & poklady",List.of(ChatColor.GRAY+"Suroviny a vzácná výbava."),false));}
- @EventHandler public void onClick(InventoryClickEvent e){if(!(e.getView().getTopInventory().getHolder() instanceof Holder h))return;e.setCancelled(true);if(!(e.getWhoClicked() instanceof Player p))return;int s=e.getRawSlot();if(s<0||s>=e.getView().getTopInventory().getSize())return;if(s==49){p.closeInventory();return;}if(s==45&&h.page>0){h.page--;render(h,p);return;}if(s==53&&(h.page+1)*SLOTS.length<catalogue.size()){h.page++;render(h,p);return;}Offer o=h.offers.get(s);if(o!=null)purchase(p,o,h);}
- @EventHandler public void onDrag(InventoryDragEvent e){if(e.getView().getTopInventory().getHolder() instanceof Holder)e.setCancelled(true);}
- private ItemStack buildItem(Offer o){if(o.iaId()!=null&&Bukkit.getPluginManager().isPluginEnabled("ItemsAdder"))try{Class<?> c=Class.forName("dev.lone.itemsadder.api.CustomStack");Object custom=c.getMethod("getInstance",String.class).invoke(null,o.iaId());if(custom!=null){Object raw=c.getMethod("getItemStack").invoke(custom);if(raw instanceof ItemStack stack)return stack;}}catch(ReflectiveOperationException ex){plugin.getLogger().fine("ItemsAdder item není dostupný: "+o.iaId());}ItemStack item=new ItemStack(o.material(),o.amount());ItemMeta meta=item.getItemMeta();if(meta!=null){meta.setDisplayName(ChatColor.GOLD+o.name());meta.setLore(List.of(ChatColor.GRAY+o.description(),ChatColor.DARK_GRAY+"Halloweenský obchod"));item.setItemMeta(meta);}return item;}
- private void purchase(Player p,Offer o,Holder h){long bal=plugin.getQuestManager().getFragments(p.getUniqueId());if(bal<o.price()){p.sendMessage(ChatColor.RED+"Nemáš dost fragmentů. Cena "+o.price()+", máš "+bal+".");return;}ItemStack item=buildItem(o);ItemMeta meta=item.getItemMeta();if(meta!=null&&o.gear()){meta.setDisplayName(ChatColor.GOLD.toString()+ChatColor.BOLD+o.name());meta.setLore(List.of(ChatColor.GRAY+o.description(),ChatColor.DARK_GRAY+"Halloweenský obchod"));item.setItemMeta(meta);item.addUnsafeEnchantment(Enchantment.UNBREAKING,1);}if(!canFit(p.getInventory(),item)){p.sendMessage(ChatColor.RED+"Udělej si místo v inventáři.");return;}Map<Integer,ItemStack> extra=p.getInventory().addItem(item);for(ItemStack it:extra.values())p.getWorld().dropItemNaturally(p.getLocation(),it);plugin.getPlayerData().set("players."+p.getUniqueId()+".fragments",bal-o.price());plugin.savePlayerData();p.sendMessage(ChatColor.GREEN+"Koupeno: "+ChatColor.GOLD+o.name()+ChatColor.GRAY+" za "+ChatColor.YELLOW+o.price()+" fragmentů.");render(h,p);}
- private boolean canFit(PlayerInventory inventory,ItemStack item){int remaining=item.getAmount(),maxStack=item.getMaxStackSize();for(ItemStack existing:inventory.getStorageContents()){if(existing==null||existing.getType().isAir())remaining-=maxStack;else if(existing.isSimilar(item))remaining-=Math.max(0,Math.min(maxStack,existing.getMaxStackSize())-existing.getAmount());if(remaining<=0)return true;}return false;}
- private ItemStack pane(Material m,String n){return named(m,n,List.of(),false);}private ItemStack named(Material m,String n,List<String> lore,boolean glow){ItemStack i=new ItemStack(m);ItemMeta meta=i.getItemMeta();if(meta!=null){meta.setDisplayName(n);meta.setLore(lore);if(glow)meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);i.setItemMeta(meta);}if(glow)i.addUnsafeEnchantment(Enchantment.UNBREAKING,1);return i;}
+
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Material;
+import org.bukkit.command.CommandSender;
+import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryHolder;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.ItemMeta;
+
+public final class HalloweenShopManager implements Listener {
+    private static final String TITLE = ChatColor.DARK_PURPLE + "☾ " + ChatColor.GOLD + "Halloweenský obchod";
+    private static final int[] SLOTS = {
+            10, 11, 12, 13, 14, 15, 16,
+            19, 20, 21, 22, 23, 24, 25,
+            28, 29, 30, 31, 32, 33, 34,
+            37, 38, 39, 40, 41, 42, 43
+    };
+
+    private final HalloweenCore plugin;
+    private List<Offer> catalogue;
+
+    private record Offer(Material material, int amount, int price, String priceKey,
+                        String name, String description, String iaId, boolean gear, boolean available) {}
+
+    private static final class Holder implements InventoryHolder {
+        private Inventory inventory;
+        private final Map<Integer, Offer> offers = new HashMap<>();
+        private int page;
+        @Override public Inventory getInventory() { return inventory; }
+    }
+
+    public HalloweenShopManager(HalloweenCore plugin) {
+        this.plugin = plugin;
+        this.catalogue = buildCatalogue();
+        Bukkit.getPluginManager().registerEvents(this, plugin);
+    }
+
+    public void refresh() {
+        catalogue = buildCatalogue();
+    }
+
+    public void open(CommandSender sender) {
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage(ChatColor.RED + "Obchod může otevřít jen hráč.");
+            return;
+        }
+        if (!plugin.isSeasonActive()) {
+            player.sendMessage(ChatColor.RED + "Halloween sezóna právě není aktivní.");
+            return;
+        }
+        if (!plugin.getConfig().getBoolean("shop.enabled", true)) {
+            player.sendMessage(ChatColor.RED + "Obchod je vypnutý.");
+            return;
+        }
+        Holder holder = new Holder();
+        holder.inventory = Bukkit.createInventory(holder, 54, TITLE);
+        render(holder, player);
+        player.openInventory(holder.inventory);
+    }
+
+    private List<Offer> buildCatalogue() {
+        List<Offer> offers = new ArrayList<>();
+
+        // 13 existing Halloween candies — their textures stay owned by the existing ItemsAdder pack.
+        offers.add(candy("stev_apple_core", "Jablečná jadérka", 3));
+        offers.add(candy("stev_candy_apple", "Karamelové jablko", 5));
+        offers.add(candy("stev_candy_bag", "Pytlík sladkostí", 6));
+        offers.add(candy("stev_caramel", "Karamel", 3));
+        offers.add(candy("stev_caramel_apple", "Jablko v karamelu", 5));
+        offers.add(candy("stev_chocolate_bar", "Čokoládová tyčinka", 4));
+        offers.add(candy("stev_frosted_sugar_cookie", "Zdobená sušenka", 4));
+        offers.add(candy("stev_gumdrop", "Želé bonbon", 3));
+        offers.add(candy("stev_hard_candy", "Tvrdý bonbon", 3));
+        offers.add(candy("stev_lollipop", "Lízátko", 4));
+        offers.add(candy("stev_peanut_butter_cup", "Arašídový košíček", 4));
+        offers.add(candy("stev_sugar_cookie", "Cukrová sušenka", 3));
+        offers.add(candy("stev_toasted_pumpkin_seeds", "Pražená dýňová semínka", 3));
+
+        // Everyday survival resources.
+        offers.add(vanilla("COAL", 32, "coal", 10, "Uhlí (32)", "Palivo do pecí.", false));
+        offers.add(vanilla("COPPER_INGOT", 16, "copper", 12, "Měděné ingoty (16)", "Základní surovina.", false));
+        offers.add(vanilla("RAW_IRON", 16, "raw-iron", 15, "Surové železo (16)", "K vytavení.", false));
+        offers.add(vanilla("IRON_INGOT", 16, "iron", 18, "Železné ingoty (16)", "Balení základního kovu.", false));
+        offers.add(vanilla("RAW_GOLD", 8, "raw-gold", 14, "Surové zlato (8)", "K vytavení.", false));
+        offers.add(vanilla("GOLD_INGOT", 8, "gold", 20, "Zlaté ingoty (8)", "Balení vzácnějšího kovu.", false));
+        offers.add(vanilla("REDSTONE", 32, "redstone", 15, "Redstone (32)", "Na obvody a mechanismy.", false));
+        offers.add(vanilla("LAPIS_LAZULI", 32, "lapis", 15, "Lapis lazuli (32)", "Na očarování.", false));
+        offers.add(vanilla("QUARTZ", 16, "quartz", 18, "Netherový křemen (16)", "Z Netheru.", false));
+        offers.add(vanilla("EMERALD", 4, "emerald", 30, "Smaragdy (4)", "Užitečné při obchodování.", false));
+        offers.add(vanilla("DIAMOND", 1, "diamond", 45, "Diamant", "Jednotlivý diamant.", false));
+        offers.add(vanilla("NETHERITE_SCRAP", 1, "netherite-scrap", 100, "Netheritový šrot", "Vzácný materiál z Netheru.", false));
+        offers.add(vanilla("NETHERITE_INGOT", 1, "netherite-ingot", 250, "Netheritový ingot", "Prémiový materiál.", false));
+
+        // Building and redstone supplies.
+        offers.add(vanilla("COBBLESTONE", 64, "cobblestone", 10, "Kámen (64)", "Základní stavební balík.", false));
+        offers.add(vanilla("STONE", 64, "stone", 12, "Opracovaný kámen (64)", "Stavební balík.", false));
+        offers.add(vanilla("DEEPSLATE", 64, "deepslate", 16, "Břidlice (64)", "Temná stavební varianta.", false));
+        offers.add(vanilla("OAK_LOG", 32, "oak-logs", 15, "Dubové kmeny (32)", "Stavební dřevo.", false));
+        offers.add(vanilla("GLASS", 32, "glass", 15, "Sklo (32)", "Na okna a dekorace.", false));
+        offers.add(vanilla("OBSIDIAN", 8, "obsidian", 35, "Obsidián (8)", "Odolný blok.", false));
+        offers.add(vanilla("QUARTZ_BLOCK", 16, "quartz-block", 30, "Křemenné bloky (16)", "Prémiový stavební materiál.", false));
+        offers.add(vanilla("GLOWSTONE", 16, "glowstone", 25, "Glowstone (16)", "Svítící bloky.", false));
+        offers.add(vanilla("SLIME_BLOCK", 8, "slime-block", 40, "Slime bloky (8)", "Pro redstone mechanismy.", false));
+        offers.add(vanilla("TNT", 4, "tnt", 45, "TNT (4)", "Výbušniny — používej opatrně.", false));
+
+        // Food and healing.
+        offers.add(vanilla("BREAD", 16, "bread", 10, "Chléb (16)", "Základní jídlo na cesty.", false));
+        offers.add(vanilla("COOKED_BEEF", 16, "cooked-beef", 18, "Steaky (16)", "Výživná zásoba.", false));
+        offers.add(vanilla("BAKED_POTATO", 16, "baked-potato", 12, "Pečené brambory (16)", "Jednoduchá zásoba jídla.", false));
+        offers.add(vanilla("GOLDEN_CARROT", 8, "golden-carrot", 25, "Zlaté mrkve (8)", "Kvalitní jídlo.", false));
+        offers.add(vanilla("PUMPKIN_PIE", 8, "pumpkin-pie", 15, "Dýňové koláče (8)", "Halloweenová svačina.", false));
+        offers.add(vanilla("HONEY_BOTTLE", 4, "honey-bottle", 18, "Medové lahve (4)", "Sladká zásoba.", false));
+        offers.add(vanilla("GOLDEN_APPLE", 1, "golden-apple", 45, "Zlaté jablko", "Vzácná nouzová léčba.", false));
+        offers.add(vanilla("ENCHANTED_GOLDEN_APPLE", 1, "enchanted-golden-apple", 250,
+                "Zakleté zlaté jablko", "Extrémně vzácná endgame odměna.", true));
+
+        // Utility and exploration supplies.
+        offers.add(vanilla("ENDER_PEARL", 4, "ender-pearl", 25, "Enderovy perly (4)", "Rychlý přesun.", false));
+        offers.add(vanilla("BLAZE_ROD", 4, "blaze-rod", 35, "Blaze tyče (4)", "Důležitá surovina z Netheru.", false));
+        offers.add(vanilla("ARROW", 32, "arrow", 12, "Šípy (32)", "Munice pro luky.", false));
+        offers.add(vanilla("FIREWORK_ROCKET", 32, "firework-rocket", 25, "Ohňostrojné rakety (32)", "Pro létání s Elytrou.", false));
+        offers.add(vanilla("EXPERIENCE_BOTTLE", 16, "experience-bottle", 40, "Lahvičky zkušeností (16)", "Zkušenosti na očarování.", false));
+        offers.add(vanilla("ENDER_CHEST", 1, "ender-chest", 60, "Enderova truhla", "Osobní úložiště.", false));
+        offers.add(vanilla("SHULKER_BOX", 1, "shulker-box", 200, "Shulker box", "Přenosné úložiště.", false));
+        offers.add(vanilla("ANVIL", 1, "anvil", 45, "Kovadlina", "Na opravy a přejmenování.", false));
+        offers.add(vanilla("NAME_TAG", 1, "name-tag", 90, "Jmenovka", "Pojmenuj svého moba.", false));
+        offers.add(vanilla("SADDLE", 1, "saddle", 65, "Sedlo", "Pro jízdu na zvířatech.", false));
+        offers.add(vanilla("WATER_BUCKET", 1, "water-bucket", 20, "Kbelík vody", "Pomůcka na cestování a stavbu.", false));
+        offers.add(vanilla("LEAD", 4, "lead", 15, "Vodítka (4)", "Na přesun zvířat.", false));
+        offers.add(vanilla("TOTEM_OF_UNDYING", 1, "totem", 380, "Totem nesmrtelnosti", "Velmi drahá druhá šance.", true));
+        offers.add(vanilla("BEACON", 1, "beacon", 1000, "Maják", "Endgame předmět za dlouhodobé šetření.", true));
+        offers.add(vanilla("NETHER_STAR", 1, "nether-star", 750, "Nether star", "Vzácná trofej z Withera.", true));
+
+        // Tools and combat gear.
+        offers.add(vanilla("IRON_PICKAXE", 1, "iron-pickaxe", 35, "Železný krumpáč", "Spolehlivý začátek.", true));
+        offers.add(vanilla("DIAMOND_SWORD", 1, "diamond-sword", 120, "Diamantový meč", "Silná zbraň.", true));
+        offers.add(vanilla("DIAMOND_PICKAXE", 1, "diamond-pickaxe", 150, "Diamantový krumpáč", "Na cennou těžbu.", true));
+        offers.add(vanilla("DIAMOND_AXE", 1, "diamond-axe", 120, "Diamantová sekera", "Nástroj i zbraň.", true));
+        offers.add(vanilla("NETHERITE_SWORD", 1, "netherite-sword", 400, "Netheritový meč", "Prémiová zbraň.", true,
+                "warriorland_halloween:orange_netherite_sword"));
+        offers.add(vanilla("NETHERITE_AXE", 1, "netherite-axe", 360, "Netheritová sekera", "Prémiový nástroj i zbraň.", true,
+                "warriorland_halloween:orange_netherite_axe"));
+        offers.add(vanilla("NETHERITE_PICKAXE", 1, "netherite-pickaxe", 480, "Netheritový krumpáč", "Prémiový nástroj.", true));
+        offers.add(vanilla("NETHERITE_SHOVEL", 1, "netherite-shovel", 280, "Netheritová lopata", "Prémiový nástroj.", true));
+        offers.add(vanilla("NETHERITE_HOE", 1, "netherite-hoe", 300, "Netheritová motyka", "Prémiový nástroj.", true));
+        offers.add(vanilla("BOW", 1, "bow", 80, "Luk", "Základní zbraň na dálku.", true));
+        offers.add(vanilla("CROSSBOW", 1, "crossbow", 100, "Kuše", "Silná zbraň na dálku.", true));
+        offers.add(vanilla("SHIELD", 1, "shield", 70, "Štít", "Obrana proti zásahům.", true));
+
+        offers.add(orange("TRIDENT", "trident", 650, "Halloweenový trojzubec",
+                "Oranžová zbraň z HalloweenCore.", "warriorland_halloween:orange_trident"));
+        Material mace = Material.matchMaterial("MACE");
+        offers.add(new Offer(mace == null ? Material.BARRIER : mace, 1, price("mace", 1000), "mace",
+                "Halloweenový palcát", "Vzácná oranžová endgame zbraň.",
+                "warriorland_halloween:orange_mace", true, mace != null));
+        Material spear = Material.matchMaterial("NETHERITE_SPEAR");
+        if (spear == null) spear = Material.matchMaterial("SPEAR");
+        offers.add(new Offer(spear == null ? Material.BARRIER : spear, 1, price("netherite-spear", 1200),
+                "netherite-spear", "Halloweenové netheritové kopí",
+                spear == null ? "Tato verze API kopí zatím nepodporuje." : "Vzácná oranžová zbraň.",
+                "warriorland_halloween:orange_netherite_spear", true, spear != null));
+
+        // Armor from iron through netherite.
+        offers.add(vanilla("IRON_HELMET", 1, "iron-helmet", 35, "Železná helma", "Základní ochrana.", true));
+        offers.add(vanilla("IRON_CHESTPLATE", 1, "iron-chestplate", 60, "Železný hrudník", "Základní ochrana.", true));
+        offers.add(vanilla("IRON_LEGGINGS", 1, "iron-leggings", 50, "Železné kalhoty", "Základní ochrana.", true));
+        offers.add(vanilla("IRON_BOOTS", 1, "iron-boots", 30, "Železné boty", "Základní ochrana.", true));
+        offers.add(vanilla("DIAMOND_HELMET", 1, "diamond-helmet", 150, "Diamantová helma", "Silná ochrana.", true));
+        offers.add(vanilla("DIAMOND_CHESTPLATE", 1, "diamond-chestplate", 250, "Diamantový hrudník", "Silná ochrana.", true));
+        offers.add(vanilla("DIAMOND_LEGGINGS", 1, "diamond-leggings", 200, "Diamantové kalhoty", "Silná ochrana.", true));
+        offers.add(vanilla("DIAMOND_BOOTS", 1, "diamond-boots", 120, "Diamantové boty", "Silná ochrana.", true));
+        offers.add(vanilla("NETHERITE_HELMET", 1, "netherite-helmet", 300, "Netheritová helma", "Prémiová ochrana.", true));
+        offers.add(vanilla("NETHERITE_CHESTPLATE", 1, "netherite-chestplate", 600, "Netheritový hrudník", "Velmi drahá prémiová ochrana.", true));
+        offers.add(vanilla("NETHERITE_LEGGINGS", 1, "netherite-leggings", 480, "Netheritové kalhoty", "Prémiová ochrana.", true));
+        offers.add(vanilla("NETHERITE_BOOTS", 1, "netherite-boots", 300, "Netheritové boty", "Prémiová ochrana.", true));
+        offers.add(vanilla("ELYTRA", 1, "elytra", 1200, "Halloweenová Elytra", "Jedna z nejdražších položek celého obchodu.", true));
+
+        return List.copyOf(offers);
+    }
+
+    private Offer candy(String id, String name, int fallbackPrice) {
+        return new Offer(Material.COOKIE, 1, price("candy", fallbackPrice), "candy", name,
+                "Sladkost z existující kolekce 13 textur.", "warriorland_halloween:" + id, false, true);
+    }
+
+    private Offer orange(String materialName, String priceKey, int fallbackPrice, String name,
+                         String description, String iaId) {
+        Material material = Material.matchMaterial(materialName);
+        return new Offer(material == null ? Material.BARRIER : material, 1, price(priceKey, fallbackPrice),
+                priceKey, name, description, iaId, true, material != null);
+    }
+
+    private Offer vanilla(String materialName, int amount, String priceKey, int fallbackPrice,
+                          String name, String description, boolean gear) {
+        return vanilla(materialName, amount, priceKey, fallbackPrice, name, description, gear, null);
+    }
+
+    private Offer vanilla(String materialName, int amount, String priceKey, int fallbackPrice,
+                          String name, String description, boolean gear, String iaId) {
+        Material material = Material.matchMaterial(materialName);
+        return new Offer(material == null ? Material.BARRIER : material, amount, price(priceKey, fallbackPrice),
+                priceKey, name, description, iaId, gear, material != null);
+    }
+
+    private int price(String key, int fallback) {
+        return Math.max(0, plugin.getConfig().getInt("shop.prices." + key, fallback));
+    }
+
+    private void render(Holder holder, Player player) {
+        holder.inventory.clear();
+        holder.offers.clear();
+        for (int i = 0; i < 54; i++) holder.inventory.setItem(i, pane(Material.BLACK_STAINED_GLASS_PANE, " "));
+        for (int i = 0; i < 9; i++) holder.inventory.setItem(i, pane(Material.ORANGE_STAINED_GLASS_PANE, " "));
+        for (int i = 45; i < 54; i++) holder.inventory.setItem(i, pane(Material.ORANGE_STAINED_GLASS_PANE, " "));
+
+        int pages = Math.max(1, (catalogue.size() + SLOTS.length - 1) / SLOTS.length);
+        holder.inventory.setItem(4, named(Material.JACK_O_LANTERN, ChatColor.GOLD + "☾ Halloweenský obchod",
+                List.of(ChatColor.GRAY + "Platíš Halloween fragmenty.",
+                        ChatColor.DARK_GRAY + "Nákup surovin, výbavy i vzácných trofejí."), false));
+        holder.inventory.setItem(46, named(Material.AMETHYST_SHARD,
+                ChatColor.LIGHT_PURPLE + "Fragmenty: " + plugin.getQuestManager().getFragments(player.getUniqueId()),
+                List.of(ChatColor.GRAY + "Získáš je za denní kontrakty přes /quest."), false));
+        holder.inventory.setItem(47, named(Material.PAPER, ChatColor.YELLOW + "Stránka " + (holder.page + 1) + "/" + pages,
+                List.of(ChatColor.GRAY + "V obchodě je " + catalogue.size() + " položek."), false));
+        holder.inventory.setItem(49, named(Material.BARRIER, ChatColor.RED + "Zavřít obchod", List.of(), false));
+        holder.inventory.setItem(48, named(Material.PUMPKIN, ChatColor.GOLD + "Suroviny a poklady",
+                List.of(ChatColor.GRAY + "Každá stránka nabízí další vybavení."), false));
+        holder.inventory.setItem(51, named(Material.SOUL_LANTERN, ChatColor.DARK_PURPLE + "Výbava lovce",
+                List.of(ChatColor.GRAY + "Oranžové zbraně vyžadují ItemsAdder.",
+                        ChatColor.GRAY + "Vanilkové vybavení funguje i bez něj."), false));
+
+        if (holder.page > 0) {
+            holder.inventory.setItem(45, named(Material.ARROW, ChatColor.YELLOW + "Předchozí stránka", List.of(), false));
+        }
+        if ((holder.page + 1) * SLOTS.length < catalogue.size()) {
+            holder.inventory.setItem(53, named(Material.ARROW, ChatColor.YELLOW + "Další stránka", List.of(), false));
+        }
+
+        for (int i = 0; i < SLOTS.length; i++) {
+            int index = holder.page * SLOTS.length + i;
+            if (index >= catalogue.size()) break;
+            int slot = SLOTS[i];
+            Offer offer = catalogue.get(index);
+            List<String> lore = new ArrayList<>();
+            lore.add(ChatColor.GRAY + offer.description());
+            if (offer.available()) {
+                lore.add(ChatColor.DARK_GRAY + "Cena: " + ChatColor.GOLD + offer.price() + " fragmentů");
+                lore.add(ChatColor.YELLOW + "Klikni pro nákup");
+                if (offer.iaId() != null) lore.add(ChatColor.DARK_GRAY + "Vzhled: ItemsAdder");
+            } else {
+                lore.add(ChatColor.RED + "Není dostupné v této verzi serveru");
+            }
+            ItemStack display = offer.available() ? buildItem(offer)
+                    : named(Material.BARRIER, ChatColor.RED + offer.name(), lore, false);
+            ItemMeta meta = display.getItemMeta();
+            if (meta != null) {
+                meta.setDisplayName((offer.gear() ? ChatColor.GOLD.toString() + ChatColor.BOLD : ChatColor.GOLD)
+                        + offer.name());
+                meta.setLore(lore);
+                if (offer.gear()) meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+                display.setItemMeta(meta);
+            }
+            if (offer.gear() && !display.containsEnchantment(Enchantment.UNBREAKING)) {
+                display.addUnsafeEnchantment(Enchantment.UNBREAKING, 1);
+            }
+            holder.inventory.setItem(slot, display);
+            if (offer.available()) holder.offers.put(slot, offer);
+        }
+    }
+
+    @EventHandler
+    public void onClick(InventoryClickEvent event) {
+        if (!(event.getView().getTopInventory().getHolder() instanceof Holder holder)) return;
+        event.setCancelled(true);
+        if (!(event.getWhoClicked() instanceof Player player)) return;
+        int slot = event.getRawSlot();
+        if (slot < 0 || slot >= event.getView().getTopInventory().getSize()) return;
+        if (slot == 49) {
+            player.closeInventory();
+            return;
+        }
+        if (slot == 45 && holder.page > 0) {
+            holder.page--;
+            render(holder, player);
+            return;
+        }
+        if (slot == 53 && (holder.page + 1) * SLOTS.length < catalogue.size()) {
+            holder.page++;
+            render(holder, player);
+            return;
+        }
+        Offer offer = holder.offers.get(slot);
+        if (offer != null) purchase(player, offer, holder);
+    }
+
+    @EventHandler
+    public void onDrag(InventoryDragEvent event) {
+        if (event.getView().getTopInventory().getHolder() instanceof Holder) event.setCancelled(true);
+    }
+
+    private ItemStack buildItem(Offer offer) {
+        if (offer.iaId() != null && Bukkit.getPluginManager().isPluginEnabled("ItemsAdder")) {
+            try {
+                Class<?> customStack = Class.forName("dev.lone.itemsadder.api.CustomStack");
+                Method getInstance = customStack.getMethod("getInstance", String.class);
+                Object custom = getInstance.invoke(null, offer.iaId());
+                if (custom != null) {
+                    Object raw = customStack.getMethod("getItemStack").invoke(custom);
+                    if (raw instanceof ItemStack stack) return stack.clone();
+                }
+            } catch (ReflectiveOperationException exception) {
+                plugin.getLogger().fine("ItemsAdder item není dostupný: " + offer.iaId());
+            }
+        }
+        ItemStack item = new ItemStack(offer.material(), offer.amount());
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.GOLD + offer.name());
+            meta.setLore(List.of(ChatColor.GRAY + offer.description(), ChatColor.DARK_GRAY + "Halloweenský obchod"));
+            item.setItemMeta(meta);
+        }
+        return item;
+    }
+
+    private void purchase(Player player, Offer offer, Holder holder) {
+        long balance = plugin.getQuestManager().getFragments(player.getUniqueId());
+        if (balance < offer.price()) {
+            player.sendMessage(ChatColor.RED + "Nemáš dost fragmentů. Cena " + offer.price()
+                    + ", máš " + balance + ".");
+            return;
+        }
+
+        ItemStack item = buildItem(offer);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName((offer.gear() ? ChatColor.GOLD.toString() + ChatColor.BOLD : ChatColor.GOLD)
+                    + offer.name());
+            meta.setLore(List.of(ChatColor.GRAY + offer.description(),
+                    ChatColor.DARK_GRAY + "Halloweenský obchod"));
+            if (offer.gear()) meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            item.setItemMeta(meta);
+        }
+        if (offer.gear() && !item.containsEnchantment(Enchantment.UNBREAKING)) {
+            item.addUnsafeEnchantment(Enchantment.UNBREAKING, 1);
+        }
+        if (!canFit(player.getInventory(), item)) {
+            player.sendMessage(ChatColor.RED + "Udělej si místo v inventáři.");
+            return;
+        }
+
+        Map<Integer, ItemStack> extra = player.getInventory().addItem(item);
+        for (ItemStack leftover : extra.values()) player.getWorld().dropItemNaturally(player.getLocation(), leftover);
+        plugin.getPlayerData().set("players." + player.getUniqueId() + ".fragments", balance - offer.price());
+        plugin.savePlayerData();
+        player.sendMessage(ChatColor.GREEN + "Koupeno: " + ChatColor.GOLD + offer.name()
+                + ChatColor.GRAY + " za " + ChatColor.YELLOW + offer.price() + " fragmentů.");
+        render(holder, player);
+    }
+
+    private boolean canFit(PlayerInventory inventory, ItemStack item) {
+        int remaining = item.getAmount();
+        int maxStack = item.getMaxStackSize();
+        for (ItemStack existing : inventory.getStorageContents()) {
+            if (existing == null || existing.getType().isAir()) {
+                remaining -= maxStack;
+            } else if (existing.isSimilar(item)) {
+                remaining -= Math.max(0, Math.min(maxStack, existing.getMaxStackSize()) - existing.getAmount());
+            }
+            if (remaining <= 0) return true;
+        }
+        return false;
+    }
+
+    private ItemStack pane(Material material, String name) {
+        return named(material, name, List.of(), false);
+    }
+
+    private ItemStack named(Material material, String name, List<String> lore, boolean glow) {
+        ItemStack item = new ItemStack(material);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(name);
+            meta.setLore(lore);
+            if (glow) meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
+            item.setItemMeta(meta);
+        }
+        if (glow) item.addUnsafeEnchantment(Enchantment.UNBREAKING, 1);
+        return item;
+    }
 }
