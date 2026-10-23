@@ -55,15 +55,19 @@ public final class HorrorNightManager implements Listener {
         final UUID worldId;
         final long startedAt;
         final long maxEndAt;
+        final boolean endAtDaybreak;
         long nextSpawnAt;
         long nextSoundAt;
+        long nextEffectsAt;
 
-        Session(World world, long startedAt, long maxDuration) {
+        Session(World world, long startedAt, long maxDuration, boolean endAtDaybreak) {
             worldId = world.getUID();
             this.startedAt = startedAt;
             maxEndAt = startedAt + maxDuration;
+            this.endAtDaybreak = endAtDaybreak;
             nextSpawnAt = startedAt;
             nextSoundAt = startedAt;
+            nextEffectsAt = startedAt;
         }
     }
 
@@ -108,8 +112,9 @@ public final class HorrorNightManager implements Listener {
         if (world == null || !plugin.getConfig().getBoolean("horrorNights.enabled", true)
                 || sessions.containsKey(world.getUID()) || !isAllowedWorld(world)) return false;
         long timeOfDay = world.getTime();
-        if (timeOfDay < 13000L || timeOfDay > 23000L) return false;
-        startSession(world);
+        // Admin-triggered starts are a force-start and may be used for daytime testing too.
+        // A session only follows the dawn cutoff if it actually began during the night.
+        startSession(world, timeOfDay >= 13000L && timeOfDay <= 23000L);
         return sessions.containsKey(world.getUID());
     }
 
@@ -135,7 +140,8 @@ public final class HorrorNightManager implements Listener {
                 continue;
             }
             long timeOfDay = world.getTime();
-            if (ticks >= session.maxEndAt || timeOfDay > 23000L || timeOfDay < 12500L) {
+            if (ticks >= session.maxEndAt
+                    || (session.endAtDaybreak && (timeOfDay > 23000L || timeOfDay < 12500L))) {
                 endSession(session.worldId, true);
                 continue;
             }
@@ -149,7 +155,11 @@ public final class HorrorNightManager implements Listener {
                 session.nextSoundAt = ticks + Math.max(20L,
                         plugin.getConfig().getLong("horrorNights.ambient-sound-interval-ticks", 200L));
             }
-            applyRandomEffects(world);
+            if (ticks >= session.nextEffectsAt) {
+                applyRandomEffects(world);
+                session.nextEffectsAt = ticks + Math.max(20L,
+                        plugin.getConfig().getLong("horrorNights.effect-interval-ticks", 200L));
+            }
             sendMobParticles(world);
         }
     }
@@ -164,7 +174,7 @@ public final class HorrorNightManager implements Listener {
             Long alreadyRolled = lastRolledNight.get(world.getUID());
             if (alreadyRolled != null && alreadyRolled.longValue() == day) continue;
             lastRolledNight.put(world.getUID(), day);
-            if (random.nextDouble() * 100.0 < chance) startSession(world);
+            if (random.nextDouble() * 100.0 < chance) startSession(world, true);
         }
     }
 
@@ -177,11 +187,13 @@ public final class HorrorNightManager implements Listener {
         return false;
     }
 
-    private void startSession(World world) {
+    private void startSession(World world, boolean endAtDaybreak) {
         if (sessions.containsKey(world.getUID()) || !isAllowedWorld(world)) return;
         long duration = Math.max(1200L,
                 plugin.getConfig().getLong("horrorNights.manual-max-duration-ticks", 12000L));
-        Session session = new Session(world, ticks, duration);
+        Session session = new Session(world, ticks, duration, endAtDaybreak);
+        session.nextEffectsAt = ticks + Math.max(20L,
+                plugin.getConfig().getLong("horrorNights.effect-interval-ticks", 200L));
         sessions.put(world.getUID(), session);
         String message = plugin.getConfig().getString("horrorNights.messages.horror-night-start",
                 "&4&lVarování: začala hororová noc!");
@@ -217,7 +229,7 @@ public final class HorrorNightManager implements Listener {
         if (configuredTypes.isEmpty()) {
             configuredTypes = List.of("ZOMBIE", "SKELETON", "SPIDER", "CREEPER", "WITCH");
         }
-        int perPlayer = Math.max(1, Math.min(5, plugin.getConfig().getInt("horrorNights.spawn-count", 1)));
+        int perPlayer = Math.max(1, Math.min(10, plugin.getConfig().getInt("horrorNights.spawn-count", 1)));
         int minRadius = Math.max(8, plugin.getConfig().getInt("horrorNights.spawn-min-radius", 20));
         int maxRadius = Math.max(minRadius, plugin.getConfig().getInt("horrorNights.spawn-max-radius", 40));
         for (Player player : new ArrayList<>(world.getPlayers())) {
