@@ -18,7 +18,6 @@ WEAPONS = [
     ("orange_mace", "Halloweenový palcát", "MACE", "mace"),
     ("orange_netherite_sword", "Halloweenový netheritový meč", "NETHERITE_SWORD", "netherite_sword"),
     ("orange_netherite_axe", "Halloweenová netheritová sekera", "NETHERITE_AXE", "netherite_axe"),
-    ("orange_netherite_spear", "Halloweenové netheritové kopí", "NETHERITE_SPEAR", "netherite_spear"),
 ]
 
 
