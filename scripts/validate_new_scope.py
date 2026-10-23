@@ -108,7 +108,7 @@ if "MythicMobs" not in plugin.get("softdepend", []):
 if "Jobs" not in plugin.get("softdepend", []):
     raise SystemExit("Jobs Reborn must be an optional soft dependency")
 pom = (root / "pom.xml").read_text(encoding="utf-8")
-if "com.github.Zrips</groupId><artifactId>Jobs</artifactId><version>v5.2.6.7</version>" not in pom:
+if "com.github.Zrips</groupId><artifactId>Jobs</artifactId><version>v5.2.6.3</version>" not in pom:
     raise SystemExit("Jobs Reborn API dependency is missing")
 jobs = (java / "cz/halloween/core/JobsFragmentBridge.java").read_text(encoding="utf-8")
 for token in ["JobsExpGainEvent", "jobs-fragments.max-per-day", "jobs-fragments.experience-per-fragment",
