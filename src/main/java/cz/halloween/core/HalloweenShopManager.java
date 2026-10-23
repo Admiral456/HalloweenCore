@@ -3,6 +3,7 @@ package cz.halloween.core;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.bukkit.Bukkit;
@@ -275,7 +276,28 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("GOLDEN_HORSE_ARMOR", 1, "golden-horse-armor", 100, "Zlatá koňská zbroj", "Ochrana pro koně.", true));
         offers.add(vanilla("DIAMOND_HORSE_ARMOR", 1, "diamond-horse-armor", 180, "Diamantová koňská zbroj", "Prémiová ochrana pro koně.", true));
 
-        return List.copyOf(offers);
+        return deduplicateCatalogue(offers);
+    }
+
+    /**
+     * Collapse repeated vanilla offers created while extending the catalogue.
+     * Custom ItemsAdder entries remain distinct by namespaced ID (all candy and
+     * orange weapon IDs are unique). For a repeated vanilla material at the same
+     * configured price, keep the largest bundle so duplicate entries cannot offer
+     * a smaller bundle for the exact same price.
+     */
+    private List<Offer> deduplicateCatalogue(List<Offer> offers) {
+        Map<String, Offer> unique = new LinkedHashMap<>();
+        for (Offer offer : offers) {
+            String identity = offer.iaId() != null && !offer.iaId().isBlank()
+                    ? "itemsadder:" + offer.iaId()
+                    : "vanilla:" + offer.material().name();
+            Offer previous = unique.get(identity);
+            if (previous == null || offer.amount() > previous.amount()) {
+                unique.put(identity, offer);
+            }
+        }
+        return List.copyOf(unique.values());
     }
 
     private Offer candy(String id, String name, int fallbackPrice) {
