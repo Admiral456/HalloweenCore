@@ -44,26 +44,26 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
     private record ContractSlot(String suffix, String difficulty, String label, boolean weekly) {}
     private record ActivityCount(Activity activity, String target, int amount) {}
 
-    // Fifteen simultaneous contracts, balanced for progression: 6 light, 4 medium,
-    // 3 hard and 2 extreme. The task catalogue below contains many possible tasks per tier.
+    // Fifteen daily contracts across five tiers: 4 light, 4 medium, 3 hard,
+    // 2 very-hard and 2 extreme. The pool offers 130 different task definitions.
     private static final List<ContractSlot> SLOTS = List.of(
             new ContractSlot("daily-quest", "light", "LEHKÝ", false),
             new ContractSlot("daily-quests.medium", "medium", "STŘEDNÍ", false),
             new ContractSlot("daily-quests.hard", "hard", "TĚŽKÝ", false),
+            new ContractSlot("daily-quests.very-hard", "very-hard", "VELMI TĚŽKÝ", false),
             new ContractSlot("daily-quests.extreme", "extreme", "EXTRÉMNÍ", false),
             new ContractSlot("daily-quests.light-02", "light", "LEHKÝ", false),
             new ContractSlot("daily-quests.light-03", "light", "LEHKÝ", false),
             new ContractSlot("daily-quests.light-04", "light", "LEHKÝ", false),
-            new ContractSlot("daily-quests.light-05", "light", "LEHKÝ", false),
-            new ContractSlot("daily-quests.light-06", "light", "LEHKÝ", false),
             new ContractSlot("daily-quests.medium-02", "medium", "STŘEDNÍ", false),
             new ContractSlot("daily-quests.medium-03", "medium", "STŘEDNÍ", false),
             new ContractSlot("daily-quests.medium-04", "medium", "STŘEDNÍ", false),
             new ContractSlot("daily-quests.hard-02", "hard", "TĚŽKÝ", false),
             new ContractSlot("daily-quests.hard-03", "hard", "TĚŽKÝ", false),
+            new ContractSlot("daily-quests.very-hard-02", "very-hard", "VELMI TĚŽKÝ", false),
             new ContractSlot("daily-quests.extreme-02", "extreme", "EXTRÉMNÍ", false),
             new ContractSlot("weekly-quests.contract-1", "hard", "TÝDENNÍ · TĚŽKÝ", true),
-            new ContractSlot("weekly-quests.contract-2", "extreme", "TÝDENNÍ · EXTRÉMNÍ", true),
+            new ContractSlot("weekly-quests.contract-2", "very-hard", "TÝDENNÍ · VELMI TĚŽKÝ", true),
             new ContractSlot("weekly-quests.contract-3", "extreme", "TÝDENNÍ · EXTRÉMNÍ", true)
     );
 
@@ -89,6 +89,16 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("glass-craft", "Skleněné lahvičky", "Vyrob 16 skleněných bloků.", 16, "light", Activity.CRAFT, "GLASS"),
             new Task("salmon-fishing", "Lososí úlovek", "Ulov 5 lososů.", 5, "light", Activity.FISH, "SALMON"),
 
+            // Další lehké úkoly pro pestřejší denní rotaci
+            new Task("strays-light-extra", "Stíny zasněžených plání", "Poraz 4 stray.", 4, "light", Activity.KILL, "STRAY"),
+            new Task("cod-fishing-light-extra", "Tresčí večeře", "Ulov 5 tresek.", 5, "light", Activity.FISH, "COD"),
+            new Task("breed-sheep-light-extra", "Ovčí stádo", "Rozmnož 4 ovce.", 4, "light", Activity.BREED, "SHEEP"),
+            new Task("torch-craft-light-extra", "Pochodně proti tmě", "Vyrob 24 pochodní.", 24, "light", Activity.CRAFT, "TORCH"),
+            new Task("potatoes-light-extra", "Bramborová úroda", "Sklid 12 bloků brambor.", 12, "light", Activity.BLOCK, "POTATOES"),
+            new Task("rotten-flesh-light-extra", "Zásoby alchymisty", "Sebírej 16 kusů shnilého masa.", 16, "light", Activity.PICKUP, "ROTTEN_FLESH"),
+            new Task("rabbit-food-light-extra", "Zajíc na cestu", "Sněz 4 kusy králičího masa.", 4, "light", Activity.CONSUME, "RABBIT"),
+            new Task("sugar-cane-light-extra", "Cukrová třtina", "Nasbírej 20 bloků cukrové třtiny.", 20, "light", Activity.BLOCK, "SUGAR_CANE"),
+
             // Střední kontrakt — cílenější boj a suroviny
             new Task("creepers", "Výbuch pod kontrolou", "Zabij 6 creeperů.", 6, "medium", Activity.KILL, "CREEPER"),
             new Task("endermen", "Pohled do prázdna", "Zabij 4 endermany.", 4, "medium", Activity.KILL, "ENDERMAN"),
@@ -111,6 +121,16 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("slime-balls", "Slizká alchymie", "Sebírej 16 slimeballů.", 16, "medium", Activity.PICKUP, "SLIME_BALL"),
             new Task("end-eye-craft", "Oko do Endu", "Vyrob 4 enderová oka.", 4, "medium", Activity.CRAFT, "ENDER_EYE"),
             new Task("cooked-cod", "Jídlo z oceánu", "Sněz 12 pečených tresek.", 12, "medium", Activity.CONSUME, "COOKED_COD"),
+
+            // Další středně obtížné kontrakty
+            new Task("slimes-medium-extra", "Sliz z bažin", "Poraz 10 slizů.", 10, "medium", Activity.KILL, "SLIME"),
+            new Task("gold-ingots-medium-extra", "Zlaté zásoby", "Získej 12 zlatých ingotů jako předměty.", 12, "medium", Activity.PICKUP, "GOLD_INGOT"),
+            new Task("shield-craft-medium-extra", "Štít proti stínům", "Vyrob štít.", 1, "medium", Activity.CRAFT, "SHIELD"),
+            new Task("nether-wart-medium-extra", "Sklizeň z Netheru", "Nasbírej 20 bloků netherové bradavice.", 20, "medium", Activity.BLOCK, "NETHER_WART"),
+            new Task("pufferfish-medium-extra", "Jedovatý úlovek", "Ulov 3 čtverzubce.", 3, "medium", Activity.FISH, "PUFFERFISH"),
+            new Task("breed-goats-medium-extra", "Kozy pod měsícem", "Rozmnož 4 kozy.", 4, "medium", Activity.BREED, "GOAT"),
+            new Task("arrows-medium-extra", "Zbrojířova zásoba", "Vyrob 32 šípů.", 32, "medium", Activity.CRAFT, "ARROW"),
+            new Task("iron-ingots-medium-extra", "Těžký náklad", "Získej 32 železných ingotů jako předměty.", 32, "medium", Activity.PICKUP, "IRON_INGOT"),
 
             // Těžký kontrakt — Nether, End a nebezpeční nepřátelé
             new Task("ancient-debris", "Starověká relikvie", "Vytěž 2 bloky ancient debris.", 2, "hard", Activity.BLOCK, "ANCIENT_DEBRIS"),
@@ -135,6 +155,34 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("ender-eyes-pickup", "Kompas do Endu", "Sebírej 12 enderových očí.", 12, "hard", Activity.PICKUP, "ENDER_EYE"),
             new Task("goats-hard", "Horské stádo", "Rozmnož 8 koz.", 8, "hard", Activity.BREED, "GOAT"),
 
+            // Další těžké úkoly s rizikem Netheru a nájezdů
+            new Task("hoglins-hard-extra", "Lov na hogliny", "Poraz 20 hoglinů.", 20, "hard", Activity.KILL, "HOGLIN"),
+            new Task("zombified-piglins-hard-extra", "Zlato a nemrtví", "Poraz 25 zombifikovaných piglinů.", 25, "hard", Activity.KILL, "ZOMBIFIED_PIGLIN"),
+            new Task("netherite-ingot-hard-extra", "Netheritový zisk", "Získej netheritový ingot jako předmět.", 1, "hard", Activity.PICKUP, "NETHERITE_INGOT"),
+            new Task("golden-apples-hard-extra", "Zlatá léčba", "Sněz 2 zlatá jablka.", 2, "hard", Activity.CONSUME, "GOLDEN_APPLE"),
+            new Task("end-crystals-hard-extra", "Nebezpečný experiment", "Vyrob 4 endové krystaly.", 4, "hard", Activity.CRAFT, "END_CRYSTAL"),
+            new Task("ancient-debris-hard-extra", "Hluboká netheritová žíla", "Vytěž 6 ancient debris.", 6, "hard", Activity.BLOCK, "ANCIENT_DEBRIS"),
+            new Task("ravagers-hard-extra", "Zastav ničitele", "Poraz 3 ravagery.", 3, "hard", Activity.KILL, "RAVAGER"),
+            new Task("totems-hard-extra", "Dvě další šance", "Získej 2 totemy nesmrtelnosti.", 2, "hard", Activity.PICKUP, "TOTEM_OF_UNDYING"),
+
+            // Velmi těžké kontrakty — drahé suroviny, velké počty a nebezpeční nepřátelé
+            new Task("wither-skeletons-very-hard", "Černá legie", "Poraz 24 wither skeletonů.", 24, "very-hard", Activity.KILL, "WITHER_SKELETON"),
+            new Task("ancient-debris-very-hard", "Pod lávovým mořem", "Vytěž 8 ancient debris.", 8, "very-hard", Activity.BLOCK, "ANCIENT_DEBRIS"),
+            new Task("guardian-army-very-hard", "Očista oceánského chrámu", "Poraz 30 guardianů.", 30, "very-hard", Activity.KILL, "GUARDIAN"),
+            new Task("ravagers-very-hard", "Zastav velký nájezd", "Poraz 5 ravagerů.", 5, "very-hard", Activity.KILL, "RAVAGER"),
+            new Task("netherite-scrap-very-hard", "Šest kusů temného kovu", "Získej 6 netheritových šrotů.", 6, "very-hard", Activity.PICKUP, "NETHERITE_SCRAP"),
+            new Task("shulkers-very-hard", "Lovci prázdnoty", "Poraz 16 shulkerů.", 16, "very-hard", Activity.KILL, "SHULKER"),
+            new Task("ender-eyes-very-hard", "Cesta do pevnosti", "Získej 20 enderových očí.", 20, "very-hard", Activity.PICKUP, "ENDER_EYE"),
+            new Task("obsidian-very-hard", "Černá hradba", "Vytěž 48 obsidiánu.", 48, "very-hard", Activity.BLOCK, "OBSIDIAN"),
+            new Task("ender-pearls-very-hard", "Pytel prázdnoty", "Získej 48 enderových perel.", 48, "very-hard", Activity.PICKUP, "ENDER_PEARL"),
+            new Task("ghasts-very-hard", "Křik v Netheru", "Poraz 12 ghastů.", 12, "very-hard", Activity.KILL, "GHAST"),
+            new Task("end-crystals-very-hard", "Osudové krystaly", "Vyrob 8 endových krystalů.", 8, "very-hard", Activity.CRAFT, "END_CRYSTAL"),
+            new Task("golden-apples-very-hard", "Zásoby na obléhání", "Sněz 6 zlatých jablek.", 6, "very-hard", Activity.CONSUME, "GOLDEN_APPLE"),
+            new Task("magma-cubes-very-hard", "Vlna magmatu", "Poraz 30 magma cubů.", 30, "very-hard", Activity.KILL, "MAGMA_CUBE"),
+            new Task("phantoms-very-hard", "Křídla bez spánku", "Poraz 20 fantomů.", 20, "very-hard", Activity.KILL, "PHANTOM"),
+            new Task("breed-animals-very-hard", "Rozsáhlá farma", "Rozmnož 50 zvířat.", 50, "very-hard", Activity.BREED, "ANY"),
+            new Task("netherite-ingots-very-hard", "Netheritová výprava", "Získej 3 netheritové ingoty.", 3, "very-hard", Activity.PICKUP, "NETHERITE_INGOT"),
+
             // Extrémní kontrakt — endgame cíle s nejlepšími odměnami
             new Task("warden", "Ztiš hlubokou tmu", "Poraz Wardena.", 1, "extreme", Activity.KILL, "WARDEN"),
             new Task("wither", "Konec Withera", "Poraz Withera.", 1, "extreme", Activity.KILL, "WITHER"),
@@ -156,7 +204,14 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("ender-dragons-extreme", "Lovec draků", "Poraz 2 Ender Dragony.", 2, "extreme", Activity.KILL, "ENDER_DRAGON"),
             new Task("nether-stars-extreme", "Tři hvězdy podsvětí", "Sebírej 3 Nether Star.", 3, "extreme", Activity.PICKUP, "NETHER_STAR"),
             new Task("shulkers-army", "Prázdnota plná schránek", "Poraz 32 shulkerů.", 32, "extreme", Activity.KILL, "SHULKER"),
-            new Task("wardens-extreme", "Králové hlubiny", "Poraz 3 Wardeny.", 3, "extreme", Activity.KILL, "WARDEN")
+            new Task("wardens-extreme", "Králové hlubiny", "Poraz 3 Wardeny.", 3, "extreme", Activity.KILL, "WARDEN"),            ,new Task("withers-extreme-extra", "Tři pády Withera", "Poraz 3 Withery.", 3, "extreme", Activity.KILL, "WITHER"),
+            new Task("dragons-extreme-extra", "Trojitý lov draků", "Poraz 3 Ender Dragony.", 3, "extreme", Activity.KILL, "ENDER_DRAGON"),
+            new Task("wardens-extreme-extra", "Pět králů hlubiny", "Poraz 5 Wardenů.", 5, "extreme", Activity.KILL, "WARDEN"),
+            new Task("elder-guardians-extreme-extra", "Zkáza oceánského chrámu", "Poraz 6 elder guardianů.", 6, "extreme", Activity.KILL, "ELDER_GUARDIAN"),
+            new Task("ancient-debris-extreme-extra", "Netheritový poklad", "Vytěž 64 ancient debris.", 64, "extreme", Activity.BLOCK, "ANCIENT_DEBRIS"),
+            new Task("shulkers-extreme-extra", "Padesát schránek", "Poraz 50 shulkerů.", 50, "extreme", Activity.KILL, "SHULKER"),
+            new Task("nether-stars-extreme-extra", "Pět hvězd podsvětí", "Získej 5 nether star.", 5, "extreme", Activity.PICKUP, "NETHER_STAR"),
+            new Task("beacons-extreme-extra", "Majáky na konci světa", "Vyrob 3 majáky.", 3, "extreme", Activity.CRAFT, "BEACON")
     );
 
     private static final Set<String> HOSTILE_MOBS = Set.of(
@@ -301,18 +356,18 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
         String tier = "quest-rewards.difficulties." + task.difficulty();
         int fallbackMin = switch (task.difficulty()) {
             case "light" -> 1;
-            case "medium" -> 2;
-            case "hard" -> 5;
-            case "very-hard" -> 8;
-            case "extreme" -> 10;
+            case "medium" -> 3;
+            case "hard" -> 6;
+            case "very-hard" -> 10;
+            case "extreme" -> 16;
             default -> 1;
         };
         int fallbackMax = switch (task.difficulty()) {
             case "light" -> 2;
-            case "medium" -> 4;
-            case "hard" -> 8;
-            case "very-hard" -> 12;
-            case "extreme" -> 16;
+            case "medium" -> 5;
+            case "hard" -> 9;
+            case "very-hard" -> 15;
+            case "extreme" -> 24;
             default -> fallbackMin + 1;
         };
         int min = plugin.getConfig().getInt(override + ".min-fragments",
@@ -362,6 +417,7 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             case "light" -> ChatColor.GREEN;
             case "medium" -> ChatColor.YELLOW;
             case "hard" -> ChatColor.GOLD;
+            case "very-hard" -> ChatColor.RED;
             default -> ChatColor.DARK_RED;
         };
         player.sendMessage(color + "[" + slot.label() + "] " + ChatColor.YELLOW + title
