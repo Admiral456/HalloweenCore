@@ -2,10 +2,12 @@ package cz.halloween.core;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -46,6 +48,8 @@ public final class HorrorNightManager implements Listener {
     private BukkitTask task;
     private long ticks;
     private long lastScheduledCheck;
+    private boolean warnedMythicMobsMissing;
+    private final Set<String> warnedMissingMythicIds = new HashSet<>();
 
     private static final class Session {
         final UUID worldId;
@@ -191,6 +195,7 @@ public final class HorrorNightManager implements Listener {
         if (session == null) return false;
         World world = Bukkit.getWorld(worldId);
         if (world != null) {
+            removeTaggedMobs(world);
             if (announce) {
                 String message = plugin.getConfig().getString("horrorNights.messages.horror-night-end",
                         "&aHororová noc skončila… prozatím.");
@@ -218,10 +223,12 @@ public final class HorrorNightManager implements Listener {
         for (Player player : new ArrayList<>(world.getPlayers())) {
             for (int index = 0; index < perPlayer; index++) {
                 if (countTaggedMobs(world) >= maxMobs) return;
-                EntityType type = validMobType(configuredTypes);
-                if (type == null) break;
                 Location location = findSpawnLocation(player, minRadius, maxRadius);
                 if (location == null) continue;
+                if (trySpawnCustomMob(location)) continue;
+
+                EntityType type = validMobType(configuredTypes);
+                if (type == null) break;
                 try {
                     Entity entity = world.spawnEntity(location, type);
                     if (!(entity instanceof LivingEntity living)) {
@@ -234,6 +241,90 @@ public final class HorrorNightManager implements Listener {
                     plugin.getLogger().fine("Nelze vytvořit hororovou entitu " + type + ": " + exception.getMessage());
                 }
             }
+        }
+    }
+
+
+    /**
+     * Optionally spawn a configured MythicMobs mob. Vanilla mobs remain the fallback,
+     * so HorrorNights still works when MythicMobs is absent or no custom IDs are configured.
+     */
+    private boolean trySpawnCustomMob(Location location) {
+        if (!plugin.getConfig().getBoolean("horrorNights.spawn-custom-mobs", true)) return false;
+        List<String> ids = plugin.getConfig().getStringList("horrorNights.custom-mob-ids");
+        if (ids.isEmpty()) return false;
+        double chance = clamp(plugin.getConfig().getDouble("horrorNights.custom-mob-chance", 0.25), 0.0, 1.0);
+        if (random.nextDouble() >= chance) return false;
+
+        if (!Bukkit.getPluginManager().isPluginEnabled("MythicMobs")) {
+            if (!warnedMythicMobsMissing) {
+                warnedMythicMobsMissing = true;
+                plugin.getLogger().warning("HorrorNights custom-mob-ids jsou nastavené, ale MythicMobs není zapnutý; použiji běžné moby.");
+            }
+            return false;
+        }
+
+        String id = ids.get(random.nextInt(ids.size())).trim();
+        if (id.isEmpty()) return false;
+        try {
+            Class<?> providerClass = Class.forName("io.lumine.mythic.api.MythicProvider");
+            Object provider = providerClass.getMethod("get").invoke(null);
+            Object manager = provider.getClass().getMethod("getMobManager").invoke(provider);
+            Object lookup = manager.getClass().getMethod("getMythicMob", String.class).invoke(manager, id);
+            Object mythicMob = lookup instanceof Optional<?> optional ? optional.orElse(null) : lookup;
+            if (mythicMob == null) {
+                if (warnedMissingMythicIds.add(id)) {
+                    plugin.getLogger().warning("HorrorNights: MythicMobs ID '" + id + "' nebylo nalezeno; ověř horrorNights.custom-mob-ids.");
+                }
+                return false;
+            }
+
+            Class<?> adapterClass = Class.forName("io.lumine.mythic.bukkit.BukkitAdapter");
+            Object adaptedLocation = null;
+            for (Method method : adapterClass.getMethods()) {
+                if (method.getName().equals("adapt") && method.getParameterCount() == 1
+                        && method.getParameterTypes()[0].isAssignableFrom(location.getClass())) {
+                    adaptedLocation = method.invoke(null, location);
+                    break;
+                }
+            }
+            if (adaptedLocation == null) {
+                plugin.getLogger().warning("HorrorNights: MythicMobs BukkitAdapter nedokázal převést lokaci.");
+                return false;
+            }
+
+            Object activeMob = null;
+            for (Method method : mythicMob.getClass().getMethods()) {
+                if (!method.getName().equals("spawn") || method.getParameterCount() != 2
+                        || !method.getParameterTypes()[0].isInstance(adaptedLocation)) continue;
+                Class<?> levelType = method.getParameterTypes()[1];
+                Object level;
+                if (levelType == float.class || levelType == Float.class) level = 1.0F;
+                else if (levelType == double.class || levelType == Double.class) level = 1.0D;
+                else continue;
+                activeMob = method.invoke(mythicMob, adaptedLocation, level);
+                break;
+            }
+            if (activeMob == null) {
+                plugin.getLogger().warning("HorrorNights: pro MythicMobs ID '" + id + "' nebyla nalezena podporovaná spawn metoda.");
+                return false;
+            }
+
+            Object mythicEntity = activeMob.getClass().getMethod("getEntity").invoke(activeMob);
+            Object bukkitEntity = mythicEntity.getClass().getMethod("getBukkitEntity").invoke(mythicEntity);
+            if (bukkitEntity instanceof Entity entity) {
+                entity.getPersistentDataContainer().set(mobMarker, PersistentDataType.BYTE, (byte) 1);
+                return true;
+            }
+            plugin.getLogger().warning("HorrorNights: MythicMobs ID '" + id + "' se spustilo, ale entitu se nepodařilo označit pro úklid.");
+            return true;
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            if (!warnedMythicMobsMissing) {
+                warnedMythicMobsMissing = true;
+                plugin.getLogger().warning("HorrorNights nedokázal načíst API MythicMobs; přechází na běžné moby. Detail: "
+                        + exception.getClass().getSimpleName());
+            }
+            return false;
         }
     }
 
@@ -347,11 +438,14 @@ public final class HorrorNightManager implements Listener {
         } catch (IllegalArgumentException exception) {
             particle = Particle.SOUL_FIRE_FLAME;
         }
+        int particleCount = Math.max(0, Math.min(30,
+                plugin.getConfig().getInt("horrorNights.invisible-particle-count", 3)));
+        if (particleCount == 0) return;
         for (Entity entity : world.getEntities()) {
             if (!(entity instanceof LivingEntity living)) continue;
             if (!living.getPersistentDataContainer().has(mobMarker, PersistentDataType.BYTE)) continue;
             if (!living.hasPotionEffect(PotionEffectType.INVISIBILITY)) continue;
-            world.spawnParticle(particle, living.getLocation().add(0, 0.8, 0), 3, 0.25, 0.35, 0.25, 0.01);
+            world.spawnParticle(particle, living.getLocation().add(0, 0.8, 0), particleCount, 0.25, 0.35, 0.25, 0.01);
         }
     }
 
@@ -366,10 +460,12 @@ public final class HorrorNightManager implements Listener {
     }
 
     private void removeTaggedMobs() {
-        for (World world : Bukkit.getWorlds()) {
-            for (Entity entity : world.getEntities()) {
-                if (entity.getPersistentDataContainer().has(mobMarker, PersistentDataType.BYTE)) entity.remove();
-            }
+        for (World world : Bukkit.getWorlds()) removeTaggedMobs(world);
+    }
+
+    private void removeTaggedMobs(World world) {
+        for (Entity entity : world.getEntities()) {
+            if (entity.getPersistentDataContainer().has(mobMarker, PersistentDataType.BYTE)) entity.remove();
         }
     }
 
