@@ -113,7 +113,7 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("ghasts", "Lov na ghasty", "Poraz 15 ghastů.", 15, "very-hard", Activity.KILL, "GHAST"),
             new Task("shulkers-extreme", "Invaze do Endu", "Poraz 20 shulkerů.", 20, "very-hard", Activity.KILL, "SHULKER"),
             new Task("hostiles-extreme", "Jedna noc, šedesát nestvůr", "Poraz 60 nepřátelských mobů.", 60, "very-hard", Activity.HOSTILE_KILL, "HOSTILE_ANY"),
-            new Task("beacon", "Maják naděje", "Vyrob maják.", 1, "very-hard", Activity.CRAFT, "BEACON"),
+            new Task("beacon", "Maják naděje", "Získej maják do inventáře.", 1, "very-hard", Activity.PICKUP, "BEACON"),
             new Task("nether-star", "Hvězda podsvětí", "Získej nether star jako předmět.", 1, "very-hard", Activity.PICKUP, "NETHER_STAR"),
             new Task("obsidian-extreme", "Těžba pro pevnost", "Vytěž 64 bloků obsidiánu.", 64, "very-hard", Activity.BLOCK, "OBSIDIAN"),
             new Task("blazes-extreme", "Pekelná sklizeň", "Poraz 32 blaze.", 32, "very-hard", Activity.KILL, "BLAZE"),
@@ -374,7 +374,27 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
                 }
             }
         }
+        if (changed && allContractsComplete(player)) {
+            String bonusPath = "players." + player.getUniqueId() + ".daily-quests.bonus-date";
+            String today = today();
+            if (!today.equals(plugin.getPlayerData().getString(bonusPath, ""))) {
+                long bonus = Math.max(0L, plugin.getConfig().getLong("quest-rewards.daily-completion-bonus", 8L));
+                addFragments(player, bonus);
+                plugin.getPlayerData().set(bonusPath, today);
+                player.sendMessage(ChatColor.LIGHT_PURPLE + "Denní sada dokončena! Bonus: +" + bonus + " fragmentů.");
+            }
+        }
         if (changed) plugin.savePlayerData();
+    }
+
+    private boolean allContractsComplete(Player player) {
+        String today = today();
+        for (ContractSlot slot : SLOTS) {
+            String path = path(player.getUniqueId(), slot.suffix());
+            if (!today.equals(plugin.getPlayerData().getString(path + ".date", ""))
+                    || !plugin.getPlayerData().getBoolean(path + ".completed", false)) return false;
+        }
+        return true;
     }
 
     private boolean matches(Task task, List<ActivityCount> actions) {
@@ -389,7 +409,7 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
         if ("ANY".equals(expected)) return true;
         if ("HOSTILE_ANY".equals(expected)) return action.activity() == Activity.HOSTILE_KILL;
         if (expected.equals(actual)) return true;
-        if (expected.endsWith("_GROUP")) {
+        if (expected.endsWith("_GROUP") || expected.equals("LOGS")) {
             return switch (expected) {
                 case "IRON_ORE_GROUP" -> actual.equals("IRON_ORE") || actual.equals("DEEPSLATE_IRON_ORE");
                 case "COAL_ORE_GROUP" -> actual.equals("COAL_ORE") || actual.equals("DEEPSLATE_COAL_ORE");
