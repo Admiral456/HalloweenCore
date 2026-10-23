@@ -61,7 +61,7 @@ java = root / "src/main/java"
 required_java = [
     "cz/halloween/core/HalloweenCore.java",
     "cz/halloween/core/DailyQuestManager.java",
-    "cz/halloween/core/DialogQuestManager.java",
+    "cz/halloween/core/FragmentManager.java",
     "cz/halloween/core/HalloweenShopManager.java",
     "cz/halloween/core/HalloweenPlaceholders.java",
     "cz/halloween/core/HorrorNightManager.java",
@@ -77,9 +77,18 @@ required_java = [
 for relative in required_java:
     if not (java / relative).is_file():
         raise SystemExit(f"Full event source missing: {relative}")
-for retired in ["cz/halloween/core/KeyItemFactory.java", "cz/halloween/core/SecretRoomManager.java"]:
+for retired in ["cz/halloween/core/KeyItemFactory.java", "cz/halloween/core/SecretRoomManager.java", "cz/halloween/core/DialogQuestManager.java"]:
     if (java / retired).exists():
         raise SystemExit(f"Retired room/key source remains: {retired}")
+
+for retired_path in [
+    root / "betonquest",
+    root / "docs/DIALOGUE_LIBRARY_CZ.md",
+    root / "docs/UPLINE_DIALOGUES_INTEGRATION.md",
+    root / "scripts/validate_betonquest.py",
+]:
+    if retired_path.exists():
+        raise SystemExit(f"Retired dialogue/NPC integration remains: {retired_path.relative_to(root)}")
 
 horror = (java / "cz/halloween/core/HorrorNightManager.java").read_text(encoding="utf-8")
 if any(token in horror for token in ["setStorm(true)", "setThundering(true)", "setWeatherDuration(", "setThunderDuration("]):
@@ -96,6 +105,8 @@ if any(token in blood for token in ["setPlayerWeather(", "resetPlayerWeather(", 
 
 cfg = yaml.safe_load((root / "src/main/resources/config.yml").read_text(encoding="utf-8"))
 plugin = yaml.safe_load((root / "src/main/resources/plugin.yml").read_text(encoding="utf-8"))
+if set(plugin.get("softdepend", [])) & {"BetonQuest", "Citizens"}:
+    raise SystemExit("Dialog/NPC integration dependencies must stay removed")
 for section in ["activeWindow", "trickOrTreat", "hauntedNight", "pumpkinRain", "bloodRain",
                 "halloweenBoss", "raid", "horrorNights", "season", "daily-quest",
                 "quest-rewards", "shop"]:
@@ -139,6 +150,10 @@ required_commands = {"halloween", "quest", "horrornights", "pumpkinrain", "blood
 if not required_commands.issubset(set(plugin.get("commands", {}))):
     raise SystemExit(f"Missing full event commands: {sorted(required_commands-set(plugin.get('commands', {})))}")
 core = (java / "cz/halloween/core/HalloweenCore.java").read_text(encoding="utf-8")
+plugin_yml_text = (root / "src/main/resources/plugin.yml").read_text(encoding="utf-8")
+for retired_token in ["DialogQuestManager", "handleQuestCommand", "halloweencore.quest.dialogue", "/halloween quest"]:
+    if retired_token in core or retired_token in plugin_yml_text:
+        raise SystemExit(f"Retired dialogue command wiring remains: {retired_token}")
 for date_migration in ['startDay == 27 && endMonth == 10 && endDay == 31',
                        'cfg.set("activeWindow.startDay", 23)',
                        'cfg.set("activeWindow.endDay", 2)']:

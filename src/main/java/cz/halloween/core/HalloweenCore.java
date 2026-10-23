@@ -23,7 +23,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public final class HalloweenCore extends JavaPlugin implements CommandExecutor, TabCompleter {
     private File playerDataFile;
     private YamlConfiguration playerData;
-    private DialogQuestManager questManager;
+    private FragmentManager fragmentManager;
     private DailyQuestManager dailyQuestManager;
     private HalloweenShopManager shopManager;
     private HorrorNightManager horrorNightManager;
@@ -45,7 +45,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
         playerDataFile = new File(getDataFolder(), "players.yml");
         playerData = YamlConfiguration.loadConfiguration(playerDataFile);
-        questManager = new DialogQuestManager(this);
+        fragmentManager = new FragmentManager(this);
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
             placeholders = new HalloweenPlaceholders(this);
             if (placeholders.register()) {
@@ -320,8 +320,8 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         return playerData;
     }
 
-    public DialogQuestManager getQuestManager() {
-        return questManager;
+    public FragmentManager getFragmentManager() {
+        return fragmentManager;
     }
 
     public void savePlayerData() {
@@ -343,13 +343,12 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
             return true;
         }
         switch (args[0].toLowerCase(Locale.ROOT)) {
-            case "quest" -> handleQuestCommand(sender, args);
             case "fragments" -> {
                 if (!(sender instanceof Player player)) {
                     sender.sendMessage(ChatColor.RED + "Tento příkaz může použít jen hráč.");
                 } else {
                     sender.sendMessage(ChatColor.GOLD + "Máš " + ChatColor.YELLOW
-                            + questManager.getFragments(player.getUniqueId())
+                            + fragmentManager.getFragments(player.getUniqueId())
                             + ChatColor.GOLD + " fragmentů.");
                 }
             }
@@ -427,64 +426,10 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         return true;
     }
 
-    private void handleQuestCommand(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player player)) {
-            sender.sendMessage(ChatColor.RED
-                    + "Questové příkazy spusť jako hráč, kterému chceš změnit stav úkolu.");
-            return;
-        }
-        if (args.length < 2) {
-            sender.sendMessage(ChatColor.YELLOW
-                    + "Použití: /halloween quest <start|progress|complete|status> <id> [množství]");
-            return;
-        }
-        String action = args[1].toLowerCase(Locale.ROOT);
-        if (List.of("start", "progress", "step", "complete", "finish").contains(action)
-                && !player.hasPermission("halloweencore.quest.dialogue")) {
-            player.sendMessage(ChatColor.RED
-                    + "Tuto akci smí spustit pouze oprávněná questová nebo dialogová integrace.");
-            return;
-        }
-        if (action.equals("list") || (action.equals("status") && args.length < 3)) {
-            questManager.sendQuestList(player);
-            return;
-        }
-        if (args.length < 3) {
-            sender.sendMessage(ChatColor.YELLOW + "Chybí ID úkolu.");
-            return;
-        }
-        String id = args[2];
-        if (!DialogQuestManager.isValidQuestId(id)) {
-            sender.sendMessage(ChatColor.RED + "ID smí obsahovat malá písmena, čísla, pomlčku a podtržítko.");
-            return;
-        }
-        switch (action) {
-            case "start" -> questManager.startQuest(player, id);
-            case "progress", "step" -> {
-                int amount = 1;
-                if (args.length >= 4) {
-                    try {
-                        amount = Integer.parseInt(args[3]);
-                    } catch (NumberFormatException exception) {
-                        sender.sendMessage(ChatColor.RED + "Množství musí být celé číslo.");
-                        return;
-                    }
-                }
-                questManager.progressQuest(player, id, amount);
-            }
-            case "complete", "finish" -> questManager.completeQuest(player, id);
-            case "status" -> questManager.sendQuestStatus(player, id);
-            default -> sender.sendMessage(ChatColor.YELLOW
-                    + "Použití: /halloween quest <start|progress|complete|status> <id> [množství]");
-        }
-    }
-
     private void sendHelp(CommandSender sender) {
         sender.sendMessage(ChatColor.GOLD + "HalloweenCore — příkazy");
-        sender.sendMessage(ChatColor.YELLOW + "/quest " + ChatColor.GRAY + "— denní úkol za fragment");
+        sender.sendMessage(ChatColor.YELLOW + "/quest " + ChatColor.GRAY + "— denní a týdenní kontrakty");
         sender.sendMessage(ChatColor.YELLOW + "/halloween shop " + ChatColor.GRAY + "— halloweenský obchod");
-        sender.sendMessage(ChatColor.YELLOW + "/halloween quest start|progress|complete|status <id> "
-                + ChatColor.GRAY + "— dialogové questy");
         sender.sendMessage(ChatColor.YELLOW + "/halloween fragments " + ChatColor.GRAY + "— stav fragmentů");
         sender.sendMessage(ChatColor.YELLOW + "/halloween reload " + ChatColor.GRAY + "— načtení konfigurace "
                 + "(admin)");
@@ -498,16 +443,13 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
             return List.of();
         }
         if (args.length == 1) {
-            return partial(args[0], List.of("help", "quest", "fragments", "shop", "horror", "reload"));
+            return partial(args[0], List.of("help", "fragments", "shop", "horror", "reload"));
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("horror")) {
             return partial(args[1], List.of("start", "stop", "status", "reload"));
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("horror")) {
             return partial(args[2], Bukkit.getWorlds().stream().map(World::getName).toList());
-        }
-        if (args.length == 2 && args[0].equalsIgnoreCase("quest")) {
-            return partial(args[1], List.of("start", "progress", "complete", "status", "list"));
         }
         return List.of();
     }

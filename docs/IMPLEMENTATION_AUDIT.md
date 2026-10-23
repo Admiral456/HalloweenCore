@@ -13,3 +13,5 @@
 - Fragmentová ekonomika používá jediný virtuální zůstatek pro questy, Jobs Reborn a obchod; obchod zobrazuje vlastní 64×64 pixel-art ikonu fragmentu přes ItemsAdder.
 
 - Aktuální produkční cíl sestavení je Paper/Purpur 26.1.2 (Paper API 26.1.2.build.74-stable, Java 25); CI tuto verzi kompiluje a validuje.
+
+- Dialogový quest manažer, BetonQuest NPC balíček, dialogové návody a Citizens soft-dependency jsou odstraněné. Standardní 130členný pool denních/týdenních úkolů a fragmentový zůstatek zůstávají zachované.

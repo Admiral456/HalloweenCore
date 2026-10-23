@@ -426,7 +426,7 @@ public final class HalloweenShopManager implements Listener {
         ItemMeta meta = item.getItemMeta();
         if (meta != null) {
             meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Fragmenty: "
-                    + plugin.getQuestManager().getFragments(player.getUniqueId()));
+                    + plugin.getFragmentManager().getFragments(player.getUniqueId()));
             meta.setLore(List.of(
                     ChatColor.GRAY + "Získáváš je z questů, Jobs a eventů.",
                     ChatColor.DARK_GRAY + "Zůstatek je virtuální a uložený v players.yml."
@@ -461,7 +461,7 @@ public final class HalloweenShopManager implements Listener {
     }
 
     private void purchase(Player player, Offer offer, Holder holder) {
-        long balance = plugin.getQuestManager().getFragments(player.getUniqueId());
+        long balance = plugin.getFragmentManager().getFragments(player.getUniqueId());
         if (balance < offer.price()) {
             player.sendMessage(ChatColor.RED + "Nemáš dost fragmentů. Cena " + offer.price()
                     + ", máš " + balance + ".");

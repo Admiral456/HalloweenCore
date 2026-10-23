@@ -8,7 +8,7 @@ Tato vydávaná sestava je cílená na **Paper/Purpur 26.1.2** a sestavuje se pr
 
 - **Povinné:** Paper nebo Purpur 26.1.2, Java 25+.
 - **Doporučeno:** ItemsAdder 4.0.13+ pro vlastní ikonu fragmentu, 13 sladkostí a oranžové zbraně; hráči musí obdržet a přijmout resource pack.
-- **Volitelné integrace:** Jobs Reborn 5.2.6.7+ (odměny z Jobs), PlaceholderAPI (placeholdery), BetonQuest/Citizens (dialogové NPC), MythicMobs (vlastní moby), WorldGuard/GriefPrevention (kontrola chráněných oblastí) a CustomJukebox (vlastní ambientní hudba).
+- **Volitelné integrace:** Jobs Reborn (odměny z Jobs), PlaceholderAPI (fragmentový placeholder), MythicMobs (vlastní HorrorNights moby), WorldGuard/GriefPrevention (kontrola chráněných oblastí) a CustomJukebox (vlastní ambientní hudba).
 - **Po instalaci:** plně restartuj server, zkontroluj konzoli, potom spusť `/iazip`. Obsah ItemsAdder ZIP rozbal do `plugins/ItemsAdder/contents/`, aby výsledná cesta byla `plugins/ItemsAdder/contents/warriorland_halloween/`. Nepoužívej PlugMan/PlugManX k hot-reloadu tohoto pluginu.
 
 Podrobnější postup, příkazy a oprávnění jsou v [instalační příručce](docs/INSTALACE_CZ.md). Oranžované zbraně používají moderní barevný systém ItemsAdder, který vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi; samotný Netherite Spear existuje až od Minecraft Java 1.21.11, takže plná sada všech pěti variant vyžaduje tuto verzi nebo novější. 
@@ -64,13 +64,12 @@ Ceny jsou nastavitelné v `shop.prices` v `config.yml`. Enchanted Golden Apple z
 
 ## Záměrně odstraněný obsah
 
-Tajné místnosti, klíče a jejich textura zůstávají odstraněné. Nefunkční generátor hrobů/tajné podzemní struktury se neobnovuje. Žádný event násilně nemění počasí nebo oblohu. Zachovaných 13 licencovaných sladkostí Stev's Halloween má dál svou MIT licenci a SHA-256 manifest.
+Dialogové questy, BetonQuest NPC balíček a Citizens integrace jsou odstraněné; běžné herní questy zůstávají dostupné přes `/quest`. Tajné místnosti, klíče a jejich textura zůstávají odstraněné. Nefunkční generátor hrobů/tajné podzemní struktury se neobnovuje. Žádný event násilně nemění počasí nebo oblohu. Zachovaných 13 licencovaných sladkostí Stev's Halloween má dál svou MIT licenci a SHA-256 manifest.
 
 ## Příkazy
 
-- `/quest` — denní úkol
+- `/quest` — denní a týdenní kontrakty
 - `/halloween shop`, `/halloween fragments`, `/halloween reload`
-- `/halloween quest start|progress|complete|status <id>` — integrační questy
 - `/spooky on|off|status|reload|rewards|optout|top|menu`
 - `/spookyboss`, `/spookyraid`, `/spookyvolume`
 - `/pumpkinrain start|stop`, `/bloodrain start|stop`

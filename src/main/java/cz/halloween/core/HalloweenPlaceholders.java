@@ -21,21 +21,9 @@ public final class HalloweenPlaceholders extends PlaceholderExpansion {
     public String onRequest(OfflinePlayer player, String params) {
         if (player == null || player.getUniqueId() == null) return "";
         String key = params.toLowerCase(Locale.ROOT);
-        DialogQuestManager quests = plugin.getQuestManager();
+        FragmentManager fragments = plugin.getFragmentManager();
         UUID uuid = player.getUniqueId();
-        if (key.equals("fragments")) return Long.toString(quests.getFragments(uuid));
-        if (key.startsWith("quest_progress_")) {
-            String id = key.substring("quest_progress_".length());
-            return DialogQuestManager.isValidQuestId(id) ? Integer.toString(quests.getQuestProgress(uuid, id)) : "";
-        }
-        if (key.startsWith("quest_started_")) {
-            String id = key.substring("quest_started_".length());
-            return DialogQuestManager.isValidQuestId(id) ? Boolean.toString(quests.isStarted(uuid, id)) : "";
-        }
-        if (key.startsWith("quest_completed_")) {
-            String id = key.substring("quest_completed_".length());
-            return DialogQuestManager.isValidQuestId(id) ? Boolean.toString(quests.isCompleted(uuid, id)) : "";
-        }
+        if (key.equals("fragments")) return Long.toString(fragments.getFragments(uuid));
         return "";
     }
 }

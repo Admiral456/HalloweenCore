@@ -1,67 +1,81 @@
-# HalloweenCore — instalační příručka (CZ)
+# HalloweenCore — instalační návod (CZ)
 
-## 1. Požadavky
+## 1. Co potřebuješ
 
-- Server **Paper nebo Purpur 26.1.2** (tento artefakt je cílen na tuto verzi API).
-- **Java 25 nebo novější**; řada Minecraft 26.1.x ji vyžaduje.
-- Samotný HalloweenCore je jediný nutný plugin pro questy, fragmenty, shop a eventy.
-- **ItemsAdder 4.0.13+** je potřeba pro vlastní fragmentovou texturu, sladkosti a oranžové zbraně. Obarvení používá moderní systém ItemsAdder pro Minecraft 1.21.4+; Netherite Spear existuje v Java Edition od 1.21.11+, proto je celý katalog pěti oranžových zbraní dostupný na cílovém 26.1.2.
-- **Jobs Reborn 5.2.6.7+** je volitelný: bez něj questy, eventy i shop fungují, jen nepřibývají fragmenty za Jobs XP.
-- Další volitelné integrace: PlaceholderAPI, BetonQuest, Citizens, MythicMobs, WorldGuard, GriefPrevention a CustomJukebox. Instaluj pouze ty, jejichž funkce chceš využít.
+- **Minecraft / server:** Paper nebo Purpur **26.1.2**.
+- **Java:** 25 nebo novější.
+- **Nutné:** samotný soubor `HalloweenCore.jar`.
+- **Doporučené pro vlastní vzhled:** ItemsAdder **4.0.13+**. Bez něj poběží questy, fragmenty, obchod i herní eventy, ale 13 vlastních sladkostí, ikonka fragmentů a oranžové zbraně se nemusí zobrazit jako vlastní předměty.
+- **Volitelné integrace:** Jobs Reborn (fragmenty za Jobs XP), PlaceholderAPI, MythicMobs, WorldGuard, GriefPrevention a CustomJukebox. Dialogové NPC/BetonQuest modul v této verzi není součástí.
 
-## 2. Instalace
+Tento build není určen pro starší Paper/Purpur 1.21.x. Pro produkční server nejdřív ověř přesnou verzi serveru.
 
-1. Udělej zálohu světa a složek `plugins/HalloweenCore/` a `plugins/ItemsAdder/`.
-2. Zastav server; nepoužívej PlugMan/PlugManX k hot-reloadu.
-3. Nahraď starý `plugins/HalloweenCore.jar` novým souborem `HalloweenCore.jar`.
-4. Rozbal `WarriorLand-Halloween-ItemsAdder-Content.zip` do `plugins/ItemsAdder/contents/`. Výsledná cesta musí být:
-   `plugins/ItemsAdder/contents/warriorland_halloween/configs/items.yml`
-   a vedle ní `configs/orange_weapons.yml` a složka `resourcepack/`.
-5. Spusť server a zkontroluj konzoli. Při prvním startu se vytvoří/načte `plugins/HalloweenCore/config.yml` a data hráčů se uchovávají v `plugins/HalloweenCore/players.yml`.
-6. Pokud používáš ItemsAdder, spusť `/iazip`, ověř distribuci resource packu a přijetí u hráčů.
-7. Udělej kontrolní test: `/quest`, `/halloween fragments`, `/halloween shop`, `/spooky status` a `/horrornights status`. Před otevřením serveru hráčům zkontroluj logy, náhodnou hororovou noc, příkazy admina a vizuál resource packu.
+## 2. Co stáhnout z GitHubu
 
-Sezóna je nastavena na **23. října až 2. listopadu včetně** v pásmu `Europe/Prague`. Questy a zůstatky jsou per-player uloženy v `players.yml`; před upgradem tuto složku nemaž.
+V repozitáři otevři **Actions**, vyber poslední úspěšný běh workflow **Build HalloweenCore** a stáhni tyto dva artefakty:
 
-## 3. Příkazy
+1. **`HalloweenCore-JAR`** — uvnitř je `HalloweenCore.jar`.
+2. **`WarriorLand-Halloween-ItemsAdder`** — ZIP s obsahem ItemsAdder. Ten je potřeba pro sladkosti, vlastní ikonu fragmentů a oranžové zbraně.
 
-### Hráči
+Používej artefakty ze stejného úspěšného běhu, ne starší JAR a ZIP z různých běhů.
 
-- `/quest` — přehled denních a týdenních kontraktů.
-- `/quest daily` — denní kontrakty; `/quest weekly` — týdenní výzvy.
-- `/halloween shop` — halloweenský obchod.
-- `/halloween fragments` — zůstatek fragmentů.
-- `/spooky status` — stav SpookySeason.
-- `/spooky optout` — zapnutí/vypnutí účasti na osobních funkcích; `/spooky menu` — menu.
-- `/spooky top` — žebříček sladkostí.
-- `/spookyvolume <ambient|ghost|rain|reset> [0.0–1.0]` — osobní hlasitost strašidelných zvuků.
+## 3. Kam soubory dát
 
-### Admin / eventy
+Před změnami udělej zálohu světa a těchto složek: `plugins/HalloweenCore/`, `plugins/ItemsAdder/`.
 
-- `/halloween reload` — znovunačtení konfigurace HalloweenCore.
-- `/horrornights <start|stop|status|reload|help> [svět]` — HorrorNights; aliasy `/hn` a `/horror`.
-- `/pumpkinrain <start|stop>` — dýňový déšť.
-- `/bloodrain <start|stop>` — krvavý déšť tvořený částicemi, bez změny počasí světa.
-- `/spooky <on|off|status|reload|rewards|spawn|optout|top|menu>` — řízení a přehled sezónního modulu.
-- `/spookyboss <spawn|remove|info|set|armor|ability|loot>` — Headless Horseman.
-- `/spookyraid <start|stop|status|stats|target|zone>` — nájezd nemrtvých.
-- `/halloween quest list` — seznam dialogových questů; `/halloween quest status <id>` — stav questu.
-- `/halloween quest start <id>`, `progress <id> [množství]`, `complete <id>` — integrační akce pro dialogové/questové pluginy.
+1. **Vypni server** čistě přes konzoli/panel. Nenasazuj změny za běhu.
+2. Nahraj `HalloweenCore.jar` do složky `plugins/`. Výsledná cesta má být:
+   `plugins/HalloweenCore.jar`
+   Pokud tam už starý `HalloweenCore.jar` je, nahraď jej novým.
+3. Rozbal ZIP `WarriorLand-Halloween-ItemsAdder`. Složku `warriorland_halloween` z archivu zkopíruj do:
+   `plugins/ItemsAdder/contents/warriorland_halloween/`
+   Výsledné cesty musí mimo jiné obsahovat:
+   - `plugins/ItemsAdder/contents/warriorland_halloween/configs/items.yml`
+   - `plugins/ItemsAdder/contents/warriorland_halloween/configs/orange_weapons.yml`
+   - `plugins/ItemsAdder/contents/warriorland_halloween/resourcepack/`
+   Nekopíruj obsah do další vnořené složky `warriorland_halloween/warriorland_halloween/`.
+4. **Zapni server** a zkontroluj konzoli. Při prvním startu vznikne `plugins/HalloweenCore/config.yml`; postup questů a virtuální fragmenty se ukládají do `plugins/HalloweenCore/players.yml`.
+5. Pokud používáš ItemsAdder, spusť `/iazip` a ověř, že resource pack jde hráčům stáhnout a že jej přijali. Případně zkontroluj nastavení distribuce resource packu ve svém hostingu.
+6. Udělej úplný restart serveru po změnách pluginu. Nepoužívej `/reload`, PlugMan ani PlugManX pro opětovné načtení JARu.
 
-Akce `start/progress/complete` pro dialogové questy vyžadují `halloweencore.quest.dialogue`. Admin příkazy mají výchozí oprávnění OP: `halloweencore.admin`, `horrornights.admin`, `spooky.admin`, `spooky.pumpkinrain` a `spooky.bloodrain`.
+**Důležité při aktualizaci:** nesmaž `plugins/HalloweenCore/players.yml` — jsou v něm uložené fragmenty a postup hráčů. Pokud chceš zachovat vlastní nastavení, zazálohuj a pečlivě slouč starý `config.yml` namísto smazání celé datové složky.
 
-## 4. Questy, Jobs a shop
+## 4. Kontrola po instalaci
 
-Každý den se losuje 15 kontraktů z poolu 130 úkolů a obnovují se 3 týdenní výzvy. Odměny rostou s obtížností: 1–2, 3–5, 6–9, 10–15 a 16–24 fragmentů. Denní kompletní bonus je 15 fragmentů, týdenní odměna má koeficient 3× a bonus za všechny tři týdenní výzvy je 50 fragmentů.
+Jako hráč vyzkoušej:
 
-Jobs Reborn přidává 1 fragment za každých 25 Jobs XP, nejvýše 8 fragmentů denně. Questy, Jobs a shop používají jeden společný virtuální zůstatek. Enchanted Golden Apple stojí 750 fragmentů; ceny upravíš v `shop.prices` v `config.yml`.
+- `/quest`, `/quest daily`, `/quest weekly` — denní kontrakty a týdenní výzvy.
+- `/halloween fragments` — zůstatek virtuálních fragmentů.
+- `/halloween shop` — obchod.
+- `/spooky status`, `/spooky menu` — SpookySeason.
 
-## 5. Co je součástí
+Jako administrátor / operátor vyzkoušej:
 
-- plný SpookySeason: Trick-or-Treat, duchové a strašidelné noci, roje netopýrů, dýňový déšť, krvavý déšť jako částice, Headless Horseman, sezónní mobové, nájezdy, odměny, žebříček, menu a nastavení zvuků/opt-out;
-- nezávislý HorrorNights: náhodné hororové noci, výraznější mobové, ambientní zvuky, částice a náhodné efekty;
-- 130 definic questů, 15 denních kontraktů, 3 týdenní výzvy, persistentní zůstatek a Jobs Reborn bridge;
-- shop s více než 100 běžnými i prémiovými předměty, včetně Enchanted Golden Apple, Totemu, Beaconu, Nether Star, Elytry a drahých halloweenských zbraní;
-- 13 existujících licencovaných sladkostí, vlastní 64×64 pixel-art ikona fragmentu a generátor pěti oranžových zbraní.
+- `/horrornights status` — stav hororových nocí; `/horrornights start` a `stop` pro ruční test.
+- `/pumpkinrain start` a `/pumpkinrain stop` — dýňový déšť.
+- `/bloodrain start` a `/bloodrain stop` — krvavý déšť částicemi.
+- `/spookyboss info` nebo `/spookyboss spawn` — kontrola / vyvolání Headless Horseman.
+- `/spookyraid status` — stav nájezdu.
+- `/halloween reload` — načte konfiguraci HalloweenCore, SpookySeason a HorrorNights.
 
-Tajné místnosti, klíče a nefunkční generátor hrobů/podzemních struktur jsou záměrně vynechané. Eventy nenasazují bouřku ani nepřepisují oblohu. Automatický build a validace CI úspěšně ověřují kompilaci a balíčky, ale nenahrazují finální živý test na konkrétním serveru.
+Sezóna je nastavena na **23. října až 2. listopadu včetně** v časovém pásmu `Europe/Prague`. Automatické Halloween/HorrorNights události respektují sezónní nastavení a konfiguraci povolených světů.
+
+## 5. Questy, fragmenty a shop
+
+Každý den se vybere 15 kontraktů z poolu 130 úkolů: 4 lehké, 4 střední, 3 těžké, 2 velmi těžké a 2 extrémní. Každé pondělí se obnoví 3 týdenní výzvy. Odměny rostou s obtížností: 1–2, 3–5, 6–9, 10–15 a 16–24 fragmentů. Za dokončení všech denních kontraktů dostane hráč 15 fragmentů navíc; za všechny týdenní výzvy dalších 50. Jobs Reborn může přidat 1 fragment za každých 25 Jobs XP, nejvýše 8 za den.
+
+Obchod obsahuje přes 100 běžných i prémiových položek. **Enchanted Golden Apple stojí 750 fragmentů**; drahé předměty zahrnují Totem of Undying, Nether Star, Netherite Upgrade Template, Mace, Beacon, Elytra a oranžové halloweenské zbraně. Ceny a odměny upravíš v `plugins/HalloweenCore/config.yml`.
+
+## 6. Oranžové zbraně a resource pack
+
+Definice pro oranžový trojzubec, palcát, netheritový meč, sekeru a kopí jsou v `configs/orange_weapons.yml`. Generátor je `scripts/generate_orange_weapon_items.py`. Nové PNG nejsou potřeba; barvu nastavuje moderní systém ItemsAdder `graphics.color`. Pro správné zobrazení musí mít server ItemsAdder 4.0.13+ a hráči musí mít kompatibilní Minecraft verzi a přijmout resource pack. Pokud zbraně vypadají jako běžné vanilla předměty, nejdřív zkontroluj ItemsAdder, cestu obsahu a stav resource packu.
+
+## 7. Co plugin obsahuje
+
+- Plný integrovaný SpookySeason: Trick-or-Treat u dveří a vesničanů, sladkosti a negativní setkání, strašidelné noci, duchy, jumpscare efekty, roje netopýrů, dýňový a částicový krvavý déšť, sezónní moby, Headless Horseman, nájezdy nemrtvých, odměny, žebříček sladkostí, menu, nastavení hlasitosti a opt-out.
+- Nezávislý HorrorNights: náhodné hororové noci, silnější/označené moby, ambientní zvuky, částice a efekty. Eventy nepřepisují počasí ani oblohu.
+- 130 různých questů, 15 denních kontraktů a 3 týdenní výzvy.
+- Sdílená virtuální měna fragmentů pro questy, volitelně Jobs Reborn a nákupy.
+- Shop s více než 100 položkami, 13 licencovanými sladkostmi, vlastní ikonou fragmentu a pěti oranžovými variantami zbraní přes ItemsAdder.
+
+Z této sestavy jsou záměrně odstraněné dialogové questy/NPC balíček, tajné místnosti, klíče a nefunkční generátor hrobů či podzemních struktur. Headless Horseman je naopak součástí zdrojového SpookySeason, proto zůstává zachován.

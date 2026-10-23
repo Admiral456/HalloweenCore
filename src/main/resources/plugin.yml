@@ -5,11 +5,11 @@ api-version: '26.1.2'
 author: Admiral456; SpookySeason by BoondockSulfur
 description: Daily quests, fragments, Halloween shop, SpookySeason events and HorrorNights.
 folia-supported: false
-softdepend: [ItemsAdder, PlaceholderAPI, BetonQuest, Citizens, WorldGuard, GriefPrevention, CustomJukebox, MythicMobs, Jobs]
+softdepend: [ItemsAdder, PlaceholderAPI, WorldGuard, GriefPrevention, CustomJukebox, MythicMobs, Jobs]
 commands:
   halloween:
     description: Questy, fragmenty, obchod a hororové eventy.
-    usage: /halloween [quest|fragments|shop|horror|reload]
+    usage: /halloween [fragments|shop|horror|reload]
     aliases: [hallow]
     permission: halloweencore.use
   horrornights:
@@ -50,9 +50,6 @@ permissions:
     default: true
   halloweencore.admin:
     description: Administer HalloweenCore and horror nights.
-    default: op
-  halloweencore.quest.dialogue:
-    description: Permission for dialogue quest actions.
     default: op
   spooky.pumpkinrain:
     description: Permission to control pumpkin rain.
