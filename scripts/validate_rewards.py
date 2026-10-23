@@ -16,7 +16,7 @@ if "key-chances" in (root / "src/main/resources/config.yml").read_text(encoding=
     raise SystemExit("Obsolete key reward configuration remains")
 
 rewards = cfg["quest-rewards"]
-bounds = {"light": (3, 5), "medium": (6, 9), "hard": (10, 15), "very-hard": (16, 25)}
+bounds = {"light": (3, 5), "medium": (8, 12), "hard": (18, 28), "very-hard": (32, 48), "extreme": (55, 80)}
 if rewards.get("default-difficulty") not in bounds:
     raise SystemExit("Invalid default quest difficulty")
 for name, expected in bounds.items():
@@ -36,7 +36,7 @@ if not isinstance(legacy_reward, int) or legacy_reward < 0:
 quest_source = (root / "src/main/java/cz/halloween/core/DailyQuestManager.java").read_text(encoding="utf-8")
 if quest_source.count("new Task(") < 60:
     raise SystemExit("Expected at least 60 daily contract definitions")
-for difficulty in ['"light"', '"medium"', '"hard"', '"very-hard"']:
+for difficulty in ['"light"', '"medium"', '"hard"', '"extreme"']:
     if difficulty not in quest_source:
         raise SystemExit(f"Missing quest difficulty: {difficulty}")
 if quest_source.count("new ContractSlot(") < 4:
@@ -56,11 +56,25 @@ required_prices = [
     "netherite-hoe", "bow", "crossbow", "shield", "iron-helmet", "iron-chestplate",
     "iron-leggings", "iron-boots", "diamond-helmet", "diamond-chestplate", "diamond-leggings",
     "diamond-boots", "netherite-pickaxe", "netherite-shovel", "netherite-hoe",
+    "amethyst-shard", "prismarine-shard", "prismarine-crystals", "slime-ball", "magma-cream",
+    "phantom-membrane", "ghast-tear", "shulker-shell", "turtle-scute", "nautilus-shell",
+    "heart-of-the-sea", "crying-obsidian", "blaze-powder", "ender-eye", "dragon-breath",
+    "netherite-template", "dark-oak-logs", "prismarine-bricks", "sea-lantern", "terracotta",
+    "orange-concrete", "lantern", "campfire", "chain", "compass", "clock", "recovery-compass",
+    "spyglass", "fishing-rod", "shears", "flint-and-steel", "dragon-head", "end-crystal",
+    "conduit", "diamond-shovel", "diamond-hoe", "golden-horse-armor", "diamond-horse-armor",
 ]
 for item in required_prices:
     if not isinstance(prices.get(item), int) or prices[item] < 0:
         raise SystemExit(f"Invalid shop price: {item}")
-if prices["elytra"] <= prices["diamond"] or prices["mace"] <= prices["iron"]:
+for item, price in prices.items():
+    if not isinstance(price, int) or price < 0:
+        raise SystemExit(f"Invalid configured shop price: {item}")
+shop_source = (root / "src/main/java/cz/halloween/core/HalloweenShopManager.java").read_text(encoding="utf-8")
+for item in prices:
+    if f'"{item}"' not in shop_source:
+        raise SystemExit(f"Shop has a configured price without an offer: {item}")
+if prices["elytra"] <= prices["diamond"] or prices["mace"] <= prices["iron"] or prices["netherite-spear"] <= prices["diamond"]:
     raise SystemExit("Endgame prices are not meaningfully higher than basic resources")
 if prices["enchanted-golden-apple"] <= prices["golden-apple"]:
     raise SystemExit("Enchanted golden apples must cost substantially more than normal golden apples")
