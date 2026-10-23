@@ -586,28 +586,91 @@ quest-rewards:
 
 daily-quest:
   enabled: true
+  # Legacy reward used only when migrating an unfinished quest from older builds.
+  # New four-tier contracts use the randomized quest-rewards.difficulties ranges.
   reward-fragments: 1
 
 shop:
   enabled: true
   prices:
+    # Candy and basic materials
     candy: 3
-    iron: 8
-    gold: 15
-    diamond: 35
-    emerald: 25
-    netherite-ingot: 150
-    netherite-scrap: 70
-    golden-apple: 18
-    enchanted-golden-apple: 80
-    totem: 350
-    trident: 550
-    mace: 800
+    coal: 10
+    copper: 12
+    raw-iron: 15
+    iron: 18
+    raw-gold: 14
+    gold: 20
+    redstone: 15
+    lapis: 15
+    quartz: 18
+    emerald: 30
+    diamond: 45
+    netherite-scrap: 100
+    netherite-ingot: 250
+    # Building and redstone
+    cobblestone: 10
+    stone: 12
+    deepslate: 16
+    oak-logs: 15
+    glass: 15
+    obsidian: 35
+    quartz-block: 30
+    glowstone: 25
+    slime-block: 40
+    tnt: 45
+    # Food and healing
+    bread: 10
+    cooked-beef: 18
+    baked-potato: 12
+    golden-carrot: 25
+    pumpkin-pie: 15
+    honey-bottle: 18
+    golden-apple: 45
+    enchanted-golden-apple: 250
+    # Utility and exploration
+    ender-pearl: 25
+    blaze-rod: 35
+    arrow: 12
+    firework-rocket: 25
+    experience-bottle: 40
+    ender-chest: 60
+    shulker-box: 200
+    anvil: 45
+    name-tag: 90
+    saddle: 65
+    water-bucket: 20
+    lead: 15
+    totem: 380
+    beacon: 1000
+    nether-star: 750
+    # Tools and weapons
+    iron-pickaxe: 35
+    diamond-sword: 120
+    diamond-pickaxe: 150
+    diamond-axe: 120
     netherite-sword: 400
-    netherite-axe: 350
-    netherite-helmet: 250
-    netherite-chestplate: 500
-    netherite-leggings: 400
-    netherite-boots: 200
+    netherite-axe: 360
+    netherite-pickaxe: 480
+    netherite-shovel: 280
+    netherite-hoe: 300
+    bow: 80
+    crossbow: 100
+    shield: 70
+    trident: 650
+    mace: 1000
+    netherite-spear: 1200
+    # Armor
+    iron-helmet: 35
+    iron-chestplate: 60
+    iron-leggings: 50
+    iron-boots: 30
+    diamond-helmet: 150
+    diamond-chestplate: 250
+    diamond-leggings: 200
+    diamond-boots: 120
+    netherite-helmet: 300
+    netherite-chestplate: 600
+    netherite-leggings: 480
+    netherite-boots: 300
     elytra: 1200
-    netherite-spear: 900
