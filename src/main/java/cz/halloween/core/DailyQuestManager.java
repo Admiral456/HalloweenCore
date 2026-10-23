@@ -1,7 +1,9 @@
 package cz.halloween.core;
 
+import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -39,14 +41,31 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
 
     private record Task(String id, String title, String description, int target,
                         String difficulty, Activity activity, String targetKey) {}
-    private record ContractSlot(String suffix, String difficulty, String label) {}
+    private record ContractSlot(String suffix, String difficulty, String label, boolean weekly) {}
     private record ActivityCount(Activity activity, String target, int amount) {}
 
+    // Fifteen simultaneous contracts, balanced for progression: 6 light, 4 medium,
+    // 3 hard and 2 extreme. The task catalogue below contains many possible tasks per tier.
     private static final List<ContractSlot> SLOTS = List.of(
-            new ContractSlot("daily-quest", "light", "LEHKÝ"),
-            new ContractSlot("daily-quests.medium", "medium", "STŘEDNÍ"),
-            new ContractSlot("daily-quests.hard", "hard", "TĚŽKÝ"),
-            new ContractSlot("daily-quests.extreme", "extreme", "EXTRÉMNÍ"));
+            new ContractSlot("daily-quest", "light", "LEHKÝ", false),
+            new ContractSlot("daily-quests.medium", "medium", "STŘEDNÍ", false),
+            new ContractSlot("daily-quests.hard", "hard", "TĚŽKÝ", false),
+            new ContractSlot("daily-quests.extreme", "extreme", "EXTRÉMNÍ", false),
+            new ContractSlot("daily-quests.light-02", "light", "LEHKÝ", false),
+            new ContractSlot("daily-quests.light-03", "light", "LEHKÝ", false),
+            new ContractSlot("daily-quests.light-04", "light", "LEHKÝ", false),
+            new ContractSlot("daily-quests.light-05", "light", "LEHKÝ", false),
+            new ContractSlot("daily-quests.light-06", "light", "LEHKÝ", false),
+            new ContractSlot("daily-quests.medium-02", "medium", "STŘEDNÍ", false),
+            new ContractSlot("daily-quests.medium-03", "medium", "STŘEDNÍ", false),
+            new ContractSlot("daily-quests.medium-04", "medium", "STŘEDNÍ", false),
+            new ContractSlot("daily-quests.hard-02", "hard", "TĚŽKÝ", false),
+            new ContractSlot("daily-quests.hard-03", "hard", "TĚŽKÝ", false),
+            new ContractSlot("daily-quests.extreme-02", "extreme", "EXTRÉMNÍ", false),
+            new ContractSlot("weekly-quests.contract-1", "hard", "TÝDENNÍ · TĚŽKÝ", true),
+            new ContractSlot("weekly-quests.contract-2", "extreme", "TÝDENNÍ · EXTRÉMNÍ", true),
+            new ContractSlot("weekly-quests.contract-3", "extreme", "TÝDENNÍ · EXTRÉMNÍ", true)
+    );
 
     private static final List<Task> TASKS = List.of(
             // Lehký kontrakt — pro běžný denní postup
@@ -189,7 +208,10 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             return true;
         }
         ensureAssignments(player, true);
-        show(player);
+        String view = args.length == 0 ? "all" : args[0].toLowerCase(Locale.ROOT);
+        if (view.equals("daily")) show(player, true, false);
+        else if (view.equals("weekly")) show(player, false, true);
+        else show(player);
         return true;
     }
 
@@ -202,11 +224,26 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
 
     private boolean ensureAssignments(Player player, boolean notify) {
         String today = today();
+        String week = weekKey();
         boolean changed = false;
+        Set<String> usedTasks = new HashSet<>();
+
+        // Preserve every assignment for the current day/week before choosing missing ones;
+        // this prevents a reload or a player's first login from giving duplicate contracts.
         for (ContractSlot slot : SLOTS) {
+            String key = slot.weekly() ? week : today;
             String path = path(player.getUniqueId(), slot.suffix());
-            if (today.equals(plugin.getPlayerData().getString(path + ".date", ""))) {
-                // Keep progress from the previous single-daily-quest implementation.
+            if (key.equals(plugin.getPlayerData().getString(path + ".date", ""))) {
+                String id = plugin.getPlayerData().getString(path + ".id", "");
+                if (!id.isBlank()) usedTasks.add(id);
+            }
+        }
+
+        for (ContractSlot slot : SLOTS) {
+            String key = slot.weekly() ? week : today;
+            String path = path(player.getUniqueId(), slot.suffix());
+            if (key.equals(plugin.getPlayerData().getString(path + ".date", ""))) {
+                // Migrate a contract saved by an older release without resetting its progress.
                 if (!plugin.getPlayerData().contains(path + ".difficulty")) {
                     plugin.getPlayerData().set(path + ".difficulty", slot.difficulty());
                     int legacyReward = Math.max(0, plugin.getConfig().getInt("daily-quest.reward-fragments", 1));
@@ -215,31 +252,40 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
                 }
                 continue;
             }
-            assign(player, path, today, slot);
+            assign(player, path, key, slot, usedTasks);
             changed = true;
         }
         if (changed) {
             plugin.savePlayerData();
             if (notify) {
                 player.sendMessage(ChatColor.DARK_PURPLE + "☾ " + ChatColor.GOLD
-                        + "Připravil jsem ti dnešní čtyři Halloween kontrakty.");
+                        + "Připraveno 15 denních kontraktů a 3 týdenní výzvy.");
             }
         }
         return changed;
     }
 
-    private void assign(Player player, String path, String today, ContractSlot slot) {
+    private void assign(Player player, String path, String periodKey, ContractSlot slot, Set<String> usedTasks) {
         String previousId = plugin.getPlayerData().getString(path + ".id", "");
         List<Task> choices = TASKS.stream()
                 .filter(task -> task.difficulty().equals(slot.difficulty()))
                 .filter(task -> !task.id().equals(previousId))
+                .filter(task -> !usedTasks.contains(task.id()))
                 .toList();
         if (choices.isEmpty()) {
-            choices = TASKS.stream().filter(task -> task.difficulty().equals(slot.difficulty())).toList();
+            choices = TASKS.stream()
+                    .filter(task -> task.difficulty().equals(slot.difficulty()))
+                    .filter(task -> !usedTasks.contains(task.id()))
+                    .toList();
         }
+        if (choices.isEmpty()) {
+            choices = TASKS.stream().filter(task -> !usedTasks.contains(task.id())).toList();
+        }
+        if (choices.isEmpty()) choices = TASKS;
         Task task = choices.get(random.nextInt(choices.size()));
-        int reward = rollReward(task);
-        plugin.getPlayerData().set(path + ".date", today);
+        usedTasks.add(task.id());
+        int reward = rollReward(task, slot.weekly());
+        plugin.getPlayerData().set(path + ".date", periodKey);
         plugin.getPlayerData().set(path + ".id", task.id());
         plugin.getPlayerData().set(path + ".title", task.title());
         plugin.getPlayerData().set(path + ".description", task.description());
@@ -250,24 +296,24 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
         plugin.getPlayerData().set(path + ".reward", reward);
     }
 
-    private int rollReward(Task task) {
+    private int rollReward(Task task, boolean weekly) {
         String override = "quest-rewards.quests." + task.id();
         String tier = "quest-rewards.difficulties." + task.difficulty();
         int fallbackMin = switch (task.difficulty()) {
-            case "light" -> 3;
-            case "medium" -> 8;
-            case "hard" -> 18;
-            case "very-hard" -> 32;
-            case "extreme" -> 55;
-            default -> 3;
+            case "light" -> 1;
+            case "medium" -> 2;
+            case "hard" -> 5;
+            case "very-hard" -> 8;
+            case "extreme" -> 10;
+            default -> 1;
         };
         int fallbackMax = switch (task.difficulty()) {
-            case "light" -> 5;
-            case "medium" -> 12;
-            case "hard" -> 28;
-            case "very-hard" -> 48;
-            case "extreme" -> 80;
-            default -> fallbackMin + 2;
+            case "light" -> 2;
+            case "medium" -> 4;
+            case "hard" -> 8;
+            case "very-hard" -> 12;
+            case "extreme" -> 16;
+            default -> fallbackMin + 1;
         };
         int min = plugin.getConfig().getInt(override + ".min-fragments",
                 plugin.getConfig().getInt(tier + ".min-fragments", fallbackMin));
@@ -275,35 +321,56 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
                 plugin.getConfig().getInt(tier + ".max-fragments", fallbackMax));
         min = Math.max(0, min);
         max = Math.max(min, max);
-        return min + random.nextInt(max - min + 1);
+        int reward = min + random.nextInt(max - min + 1);
+        if (weekly) {
+            double multiplier = Math.max(1.0, plugin.getConfig().getDouble("quest-rewards.weekly-multiplier", 3.0));
+            reward = Math.max(1, (int) Math.round(reward * multiplier));
+        }
+        return reward;
     }
 
     private void show(Player player) {
+        show(player, true, true);
+    }
+
+    private void show(Player player, boolean includeDaily, boolean includeWeekly) {
         player.sendMessage(ChatColor.DARK_PURPLE + "╔════════ H A L L O W E E N ════════╗");
-        player.sendMessage(ChatColor.GOLD + "☾ DNEŠNÍ KONTRAKTY " + ChatColor.DARK_GRAY + "(/quest)");
-        for (ContractSlot slot : SLOTS) {
-            String path = path(player.getUniqueId(), slot.suffix());
-            String title = plugin.getPlayerData().getString(path + ".title", "Halloween úkol");
-            int progress = Math.max(0, plugin.getPlayerData().getInt(path + ".progress", 0));
-            int target = Math.max(1, plugin.getPlayerData().getInt(path + ".target", 1));
-            int reward = Math.max(0, plugin.getPlayerData().getInt(path + ".reward",
-                    plugin.getConfig().getInt("daily-quest.reward-fragments", 1)));
-            boolean completed = plugin.getPlayerData().getBoolean(path + ".completed", false);
-            ChatColor color = switch (slot.difficulty()) {
-                case "light" -> ChatColor.GREEN;
-                case "medium" -> ChatColor.YELLOW;
-                case "hard" -> ChatColor.GOLD;
-                default -> ChatColor.DARK_RED;
-            };
-            player.sendMessage(color + "[" + slot.label() + "] " + ChatColor.YELLOW + title
-                    + (completed ? ChatColor.GREEN + " ✓" : ""));
-            player.sendMessage(ChatColor.GRAY + plugin.getPlayerData().getString(path + ".description", ""));
-            player.sendMessage(ChatColor.DARK_GRAY + "  Postup: " + ChatColor.GOLD
-                    + Math.min(progress, target) + ChatColor.GRAY + "/" + ChatColor.GOLD + target
-                    + ChatColor.DARK_GRAY + " | Odměna: " + ChatColor.LIGHT_PURPLE
-                    + reward + " fragmentů");
+        if (includeDaily) {
+            player.sendMessage(ChatColor.GOLD + "☾ DENNÍ KONTRAKTY (15) " + ChatColor.DARK_GRAY + "(/quest daily)");
+            for (ContractSlot slot : SLOTS) {
+                if (!slot.weekly()) showContract(player, slot);
+            }
+        }
+        if (includeWeekly) {
+            player.sendMessage(ChatColor.LIGHT_PURPLE + "✦ TÝDENNÍ VÝZVY (3) " + ChatColor.DARK_GRAY + "(/quest weekly)");
+            for (ContractSlot slot : SLOTS) {
+                if (slot.weekly()) showContract(player, slot);
+            }
         }
         player.sendMessage(ChatColor.DARK_PURPLE + "╚══════════════════════════════════╝");
+    }
+
+    private void showContract(Player player, ContractSlot slot) {
+        String path = path(player.getUniqueId(), slot.suffix());
+        String title = plugin.getPlayerData().getString(path + ".title", "Halloween úkol");
+        int progress = Math.max(0, plugin.getPlayerData().getInt(path + ".progress", 0));
+        int target = Math.max(1, plugin.getPlayerData().getInt(path + ".target", 1));
+        int reward = Math.max(0, plugin.getPlayerData().getInt(path + ".reward",
+                plugin.getConfig().getInt("daily-quest.reward-fragments", 1)));
+        boolean completed = plugin.getPlayerData().getBoolean(path + ".completed", false);
+        ChatColor color = switch (slot.difficulty()) {
+            case "light" -> ChatColor.GREEN;
+            case "medium" -> ChatColor.YELLOW;
+            case "hard" -> ChatColor.GOLD;
+            default -> ChatColor.DARK_RED;
+        };
+        player.sendMessage(color + "[" + slot.label() + "] " + ChatColor.YELLOW + title
+                + (completed ? ChatColor.GREEN + " ✓" : ""));
+        player.sendMessage(ChatColor.GRAY + plugin.getPlayerData().getString(path + ".description", ""));
+        player.sendMessage(ChatColor.DARK_GRAY + "  Postup: " + ChatColor.GOLD
+                + Math.min(progress, target) + ChatColor.GRAY + "/" + ChatColor.GOLD + target
+                + ChatColor.DARK_GRAY + " | Odměna: " + ChatColor.LIGHT_PURPLE
+                + reward + " fragmentů");
     }
 
     @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
@@ -404,24 +471,46 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
                 }
             }
         }
-        if (changed && allContractsComplete(player)) {
+        if (changed && allDailyContractsComplete(player)) {
             String bonusPath = "players." + player.getUniqueId() + ".daily-quests.bonus-date";
             String today = today();
             if (!today.equals(plugin.getPlayerData().getString(bonusPath, ""))) {
-                long bonus = Math.max(0L, plugin.getConfig().getLong("quest-rewards.daily-completion-bonus", 8L));
+                long bonus = Math.max(0L, plugin.getConfig().getLong("quest-rewards.daily-completion-bonus", 15L));
                 addFragments(player, bonus);
                 plugin.getPlayerData().set(bonusPath, today);
-                player.sendMessage(ChatColor.LIGHT_PURPLE + "Denní sada dokončena! Bonus: +" + bonus + " fragmentů.");
+                player.sendMessage(ChatColor.LIGHT_PURPLE + "Všech 15 denních kontraktů splněno! Bonus: +" + bonus + " fragmentů.");
+            }
+        }
+        if (changed && allWeeklyContractsComplete(player)) {
+            String bonusPath = "players." + player.getUniqueId() + ".weekly-quests.bonus-week";
+            String week = weekKey();
+            if (!week.equals(plugin.getPlayerData().getString(bonusPath, ""))) {
+                long bonus = Math.max(0L, plugin.getConfig().getLong("quest-rewards.weekly-completion-bonus", 50L));
+                addFragments(player, bonus);
+                plugin.getPlayerData().set(bonusPath, week);
+                player.sendMessage(ChatColor.LIGHT_PURPLE + "Všechny 3 týdenní výzvy splněny! Bonus: +" + bonus + " fragmentů.");
             }
         }
         if (changed) plugin.savePlayerData();
     }
 
-    private boolean allContractsComplete(Player player) {
+    private boolean allDailyContractsComplete(Player player) {
         String today = today();
         for (ContractSlot slot : SLOTS) {
+            if (slot.weekly()) continue;
             String path = path(player.getUniqueId(), slot.suffix());
             if (!today.equals(plugin.getPlayerData().getString(path + ".date", ""))
+                    || !plugin.getPlayerData().getBoolean(path + ".completed", false)) return false;
+        }
+        return true;
+    }
+
+    private boolean allWeeklyContractsComplete(Player player) {
+        String week = weekKey();
+        for (ContractSlot slot : SLOTS) {
+            if (!slot.weekly()) continue;
+            String path = path(player.getUniqueId(), slot.suffix());
+            if (!week.equals(plugin.getPlayerData().getString(path + ".date", ""))
                     || !plugin.getPlayerData().getBoolean(path + ".completed", false)) return false;
         }
         return true;
@@ -480,6 +569,11 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
 
     private String today() {
         return LocalDate.now(ZoneId.of("Europe/Prague")).toString();
+    }
+
+    private String weekKey() {
+        LocalDate now = LocalDate.now(ZoneId.of("Europe/Prague"));
+        return now.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toString();
     }
 
     @Override
