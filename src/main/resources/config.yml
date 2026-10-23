@@ -577,6 +577,8 @@ season:
 
 quest-rewards:
   default-difficulty: light
+  # Extra reward for finishing all four daily contracts.
+  daily-completion-bonus: 8
   difficulties:
     light: {min-fragments: 3, max-fragments: 5}
     medium: {min-fragments: 6, max-fragments: 9}
