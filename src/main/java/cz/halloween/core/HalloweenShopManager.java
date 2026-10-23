@@ -339,9 +339,7 @@ public final class HalloweenShopManager implements Listener {
         holder.inventory.setItem(4, named(Material.JACK_O_LANTERN, ChatColor.GOLD + "☾ Halloweenský obchod",
                 List.of(ChatColor.GRAY + "Platíš Halloween fragmenty.",
                         ChatColor.DARK_GRAY + "Nákup surovin, výbavy i vzácných trofejí."), false));
-        holder.inventory.setItem(46, named(Material.AMETHYST_SHARD,
-                ChatColor.LIGHT_PURPLE + "Fragmenty: " + plugin.getQuestManager().getFragments(player.getUniqueId()),
-                List.of(ChatColor.GRAY + "Získáš je za denní kontrakty přes /quest."), false));
+        holder.inventory.setItem(46, fragmentBalanceItem(player));
         holder.inventory.setItem(47, named(Material.PAPER, ChatColor.YELLOW + "Stránka " + (holder.page + 1) + "/" + pages,
                 List.of(ChatColor.GRAY + "V obchodě je " + catalogue.size() + " položek."), false));
         holder.inventory.setItem(49, named(Material.BARRIER, ChatColor.RED + "Zavřít obchod", List.of(), false));
@@ -418,6 +416,24 @@ public final class HalloweenShopManager implements Listener {
     @EventHandler
     public void onDrag(InventoryDragEvent event) {
         if (event.getView().getTopInventory().getHolder() instanceof Holder) event.setCancelled(true);
+    }
+
+    private ItemStack fragmentBalanceItem(Player player) {
+        Offer icon = new Offer(Material.AMETHYST_SHARD, 1, 0, "fragment",
+                "Halloween Fragment", "Vlastní symbol měny HalloweenCore.",
+                "warriorland_halloween:halloween_fragment", false, true);
+        ItemStack item = buildItem(icon);
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.setDisplayName(ChatColor.LIGHT_PURPLE + "Fragmenty: "
+                    + plugin.getQuestManager().getFragments(player.getUniqueId()));
+            meta.setLore(List.of(
+                    ChatColor.GRAY + "Získáváš je z questů, Jobs a eventů.",
+                    ChatColor.DARK_GRAY + "Zůstatek je virtuální a uložený v players.yml."
+            ));
+            item.setItemMeta(meta);
+        }
+        return item;
     }
 
     private ItemStack buildItem(Offer offer) {

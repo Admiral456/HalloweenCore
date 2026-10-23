@@ -11,3 +11,7 @@ python3 scripts/generate_orange_weapon_items.py
 Vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi. Obsah zkopíruj do `plugins/ItemsAdder/contents/warriorland_halloween/`, restartuj server a spusť `/iazip`. Hráči musí přijmout resource pack.
 
 Tajné místnosti, klíče a jejich textura nejsou součástí obsahu.
+
+## Vlastní ikona fragmentu
+
+Soubor `resourcepack/assets/warriorland_halloween/textures/item/halloween_fragment.png` obsahuje vlastní 64×64 pixel-art ikonu měny. Definice `halloween_fragment` je v `configs/items.yml`. Slouží jako ikona zůstatku v GUI obchodu; ekonomika je virtuální, uložená v `plugins/HalloweenCore/players.yml`.

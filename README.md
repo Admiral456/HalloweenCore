@@ -22,6 +22,10 @@ Denní odměny jsou odstupňované podle pěti obtížností: lehké **1–2**, 
 
 Je-li nainstalovaný plugin Jobs Reborn, propojení automaticky převádí každých **25 získaných Jobs XP na 1 Halloween fragment**. Limit je **8 fragmentů denně z Jobs** na hráče; Jobs tedy přidává menší průběžný bonus, ale nenahrazuje hlavní postup přes questy. Bez Jobs Reborn zbytek HalloweenCore normálně funguje. Integrace používá veřejnou událost `JobsExpGainEvent` z [Jobs Reborn API](https://github.com/Zrips/Jobs/wiki/API).
 
+## Vlastní textura fragmentu
+
+Fragmenty mají vlastní 64×64 pixel-art ikonu `halloween_fragment.png`, která se zobrazuje u zůstatku v GUI obchodu, pokud je aktivní ItemsAdder a klient přijal resource pack. Položka `warriorland_halloween:halloween_fragment` slouží jako grafická ikona — skutečná měna je bezpečně vedena jako číselný zůstatek `players.<UUID>.fragments` v `plugins/HalloweenCore/players.yml`. Fragmentový předmět proto není směnitelný token a nelze jej rozmnožovat jako náhradu zůstatku.
+
 ## Obchod a ceny
 
 Všechny ceny jsou v halloweenských fragmentech. U surovin je uvedené množství za jednu koupi; vybavení a vzácné předměty se prodávají po jednom. Obchod má široký katalog běžných surovin, stavebních bloků, jídla, utility předmětů, zbroje a endgame výbavy.

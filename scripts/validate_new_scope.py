@@ -43,6 +43,17 @@ candy_ids = [
 for item_id in candy_ids:
     if f"  {item_id}:" not in items:
         raise SystemExit(f"Missing ItemsAdder candy definition: {item_id}")
+
+# The Halloween fragment has its own original pixel-art texture; unlike candy, it is not third-party.
+fragment_texture = base / "resourcepack/assets/warriorland_halloween/textures/item/halloween_fragment.png"
+if not fragment_texture.is_file():
+    raise SystemExit("Missing custom Halloween fragment texture")
+with fragment_texture.open("rb") as stream:
+    fragment_header = stream.read(24)
+if fragment_header[:8] != bytes([137, 80, 78, 71, 13, 10, 26, 10]) or struct.unpack(">II", fragment_header[16:24]) != (64, 64):
+    raise SystemExit("Expected valid 64x64 pixel-art Halloween fragment PNG")
+if "  halloween_fragment:" not in items or "texture: item/halloween_fragment" not in items:
+    raise SystemExit("Custom Halloween fragment item definition is missing")
 if "secret_key" in items or (base / "resourcepack/assets/warriorland_halloween/textures/item/secret_key.png").exists():
     raise SystemExit("Retired secret key item/texture must not be present")
 
@@ -141,6 +152,8 @@ for wiring in ["org.example.SpookySeason.enable(this)", "new HorrorNightManager(
     if wiring not in core:
         raise SystemExit(f"Missing plugin wiring: {wiring}")
 shop = (java / "cz/halloween/core/HalloweenShopManager.java").read_text(encoding="utf-8")
+if "warriorland_halloween:halloween_fragment" not in shop or "fragmentBalanceItem(player)" not in shop:
+    raise SystemExit("Shop balance display is not wired to the custom fragment item")
 for item_id in candy_ids:
     if f'"{item_id}"' not in shop:
         raise SystemExit(f"Candy not connected to shop: {item_id}")

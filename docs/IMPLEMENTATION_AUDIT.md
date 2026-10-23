@@ -9,3 +9,5 @@
 - Tajné místnosti, klíče a jejich textura jsou stále odstraněné. Nefunkční generátor podzemních hrobů/struktur se nevrací.
 - 13 licencovaných candy textur zachovává svoje zdroje, licenci a hash manifest.
 - CI ověřuje zapojení eventů, konfiguraci, textury, obchod a oranžové itemy a sestavuje plugin. CI build není živý test na Hostify/Paper serveru; po nasazení je potřeba ověřit konzoli, příkazy, eventy a doručení resource packu.
+
+- Fragmentová ekonomika používá jediný virtuální zůstatek pro questy, Jobs Reborn a obchod; obchod zobrazuje vlastní 64×64 pixel-art ikonu fragmentu přes ItemsAdder.
