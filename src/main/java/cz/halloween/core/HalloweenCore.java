@@ -112,6 +112,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         getConfig().addDefault("quest-rewards.difficulties.very-hard.max-fragments", 48);
         getConfig().addDefault("quest-rewards.difficulties.extreme.min-fragments", 55);
         getConfig().addDefault("quest-rewards.difficulties.extreme.max-fragments", 80);
+        getConfig().addDefault("horrorNights.effect-interval-ticks", 200);
 
         getConfig().addDefault("daily-quest.enabled", true);
         getConfig().addDefault("daily-quest.reward-fragments", 1);
