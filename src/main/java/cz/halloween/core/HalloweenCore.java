@@ -101,46 +101,58 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         getConfig().addDefault("activeWindow.endDay", 2);
 
         getConfig().addDefault("quest-rewards.default-difficulty", "light");
+        getConfig().addDefault("quest-rewards.daily-completion-bonus", 15);
         getConfig().addDefault("quest-rewards.difficulties.light.min-fragments", 3);
         getConfig().addDefault("quest-rewards.difficulties.light.max-fragments", 5);
-        getConfig().addDefault("quest-rewards.difficulties.medium.min-fragments", 6);
-        getConfig().addDefault("quest-rewards.difficulties.medium.max-fragments", 9);
-        getConfig().addDefault("quest-rewards.difficulties.hard.min-fragments", 10);
-        getConfig().addDefault("quest-rewards.difficulties.hard.max-fragments", 15);
-        getConfig().addDefault("quest-rewards.difficulties.very-hard.min-fragments", 16);
-        getConfig().addDefault("quest-rewards.difficulties.very-hard.max-fragments", 25);
+        getConfig().addDefault("quest-rewards.difficulties.medium.min-fragments", 8);
+        getConfig().addDefault("quest-rewards.difficulties.medium.max-fragments", 12);
+        getConfig().addDefault("quest-rewards.difficulties.hard.min-fragments", 18);
+        getConfig().addDefault("quest-rewards.difficulties.hard.max-fragments", 28);
+        getConfig().addDefault("quest-rewards.difficulties.very-hard.min-fragments", 32);
+        getConfig().addDefault("quest-rewards.difficulties.very-hard.max-fragments", 48);
+        getConfig().addDefault("quest-rewards.difficulties.extreme.min-fragments", 55);
+        getConfig().addDefault("quest-rewards.difficulties.extreme.max-fragments", 80);
 
         getConfig().addDefault("daily-quest.enabled", true);
         getConfig().addDefault("daily-quest.reward-fragments", 1);
         getConfig().addDefault("shop.enabled", true);
-        getConfig().addDefault("shop.prices.candy", 3);
-        getConfig().addDefault("shop.prices.iron", 8);
-        getConfig().addDefault("shop.prices.gold", 15);
-        getConfig().addDefault("shop.prices.diamond", 35);
-        getConfig().addDefault("shop.prices.emerald", 25);
-        getConfig().addDefault("shop.prices.netherite-ingot", 150);
-        getConfig().addDefault("shop.prices.netherite-scrap", 70);
-        getConfig().addDefault("shop.prices.golden-apple", 18);
-        getConfig().addDefault("shop.prices.enchanted-golden-apple", 80);
-        getConfig().addDefault("shop.prices.totem", 350);
-        getConfig().addDefault("shop.prices.trident", 550);
-        getConfig().addDefault("shop.prices.mace", 800);
-        getConfig().addDefault("shop.prices.netherite-sword", 400);
-        getConfig().addDefault("shop.prices.netherite-axe", 350);
-        getConfig().addDefault("shop.prices.netherite-helmet", 250);
-        getConfig().addDefault("shop.prices.netherite-chestplate", 500);
-        getConfig().addDefault("shop.prices.netherite-leggings", 400);
-        getConfig().addDefault("shop.prices.netherite-boots", 200);
-        getConfig().addDefault("shop.prices.elytra", 1200);
-        getConfig().addDefault("shop.prices.netherite-spear", 900);
+
+        String[][] prices = {
+            {"candy","3"},{"coal","10"},{"copper","12"},{"raw-iron","15"},{"iron","18"},
+            {"raw-gold","14"},{"gold","20"},{"redstone","15"},{"lapis","15"},{"quartz","18"},
+            {"emerald","30"},{"diamond","45"},{"netherite-scrap","125"},{"netherite-ingot","350"},
+            {"cobblestone","10"},{"stone","12"},{"deepslate","16"},{"oak-logs","15"},{"dark-oak-logs","20"},
+            {"glass","15"},{"obsidian","35"},{"quartz-block","30"},{"glowstone","25"},{"slime-block","40"},
+            {"tnt","45"},{"bread","10"},{"cooked-beef","18"},{"baked-potato","12"},{"golden-carrot","25"},
+            {"pumpkin-pie","15"},{"honey-bottle","18"},{"golden-apple","65"},{"enchanted-golden-apple","750"},
+            {"ender-pearl","25"},{"blaze-rod","35"},{"arrow","12"},{"firework-rocket","25"},
+            {"experience-bottle","40"},{"ender-chest","60"},{"shulker-box","200"},{"anvil","45"},
+            {"name-tag","90"},{"saddle","65"},{"water-bucket","20"},{"lead","15"},{"compass","45"},
+            {"clock","45"},{"recovery-compass","180"},{"spyglass","60"},{"fishing-rod","50"},{"shears","35"},
+            {"flint-and-steel","40"},{"dragon-head","450"},{"end-crystal","225"},{"conduit","650"},
+            {"totem","750"},{"beacon","1600"},{"nether-star","900"},{"iron-pickaxe","35"},
+            {"diamond-sword","120"},{"diamond-pickaxe","150"},{"diamond-axe","120"},{"diamond-shovel","85"},
+            {"diamond-hoe","95"},{"netherite-sword","600"},{"netherite-axe","550"},{"netherite-pickaxe","700"},
+            {"netherite-shovel","350"},{"netherite-hoe","400"},{"bow","80"},{"crossbow","100"},{"shield","70"},
+            {"trident","850"},{"mace","1400"},{"netherite-spear","1600"},{"iron-helmet","35"},
+            {"iron-chestplate","60"},{"iron-leggings","50"},{"iron-boots","30"},{"diamond-helmet","150"},
+            {"diamond-chestplate","250"},{"diamond-leggings","200"},{"diamond-boots","120"},
+            {"golden-horse-armor","100"},{"diamond-horse-armor","180"},{"netherite-helmet","450"},
+            {"netherite-chestplate","850"},{"netherite-leggings","700"},{"netherite-boots","450"},{"elytra","2000"},
+            {"amethyst-shard","30"},{"prismarine-shard","25"},{"prismarine-crystals","40"},{"slime-ball","30"},
+            {"magma-cream","50"},{"phantom-membrane","110"},{"ghast-tear","130"},{"shulker-shell","125"},
+            {"turtle-scute","150"},{"nautilus-shell","90"},{"heart-of-the-sea","250"},{"crying-obsidian","45"},
+            {"blaze-powder","45"},{"ender-eye","120"},{"dragon-breath","100"},{"netherite-template","1100"},
+            {"prismarine-bricks","45"},{"sea-lantern","60"},{"terracotta","25"},{"orange-concrete","30"},
+            {"lantern","25"},{"campfire","20"},{"chain","35"}
+        };
+        for (String[] price : prices) {
+            getConfig().addDefault("shop.prices." + price[0], Integer.parseInt(price[1]));
+        }
         getConfig().options().copyDefaults(true);
         saveConfig();
     }
 
-    /**
-     * Remove settings for the old mob/event bundle from an existing server config,
-     * while preserving quest progress settings and shop prices.
-     */
     private void migrateLegacyConfig() {
         File file = new File(getDataFolder(), "config.yml");
         YamlConfiguration cfg = YamlConfiguration.loadConfiguration(file);
@@ -159,13 +171,39 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         if (!cfg.contains("activeWindow.endMonth")) cfg.set("activeWindow.endMonth", 11);
         if (!cfg.contains("activeWindow.endDay")) cfg.set("activeWindow.endDay", 2);
 
+        // Upgrade only untouched shipped defaults; customized server prices are preserved.
+        migrateDefaultPrice(cfg, "shop.prices.enchanted-golden-apple", 750, 80, 250);
+        migrateDefaultPrice(cfg, "shop.prices.golden-apple", 65, 18, 45);
+        migrateDefaultPrice(cfg, "shop.prices.netherite-ingot", 350, 150, 250);
+        migrateDefaultPrice(cfg, "shop.prices.netherite-scrap", 125, 70, 100);
+        migrateDefaultPrice(cfg, "shop.prices.totem", 750, 350, 380);
+        migrateDefaultPrice(cfg, "shop.prices.beacon", 1600, 1000);
+        migrateDefaultPrice(cfg, "shop.prices.nether-star", 900, 750);
+        migrateDefaultPrice(cfg, "shop.prices.trident", 850, 550, 650);
+        migrateDefaultPrice(cfg, "shop.prices.mace", 1400, 800, 1000);
+        migrateDefaultPrice(cfg, "shop.prices.netherite-spear", 1600, 900, 1200);
+        migrateDefaultPrice(cfg, "shop.prices.elytra", 2000, 1200);
+        migrateDefaultPrice(cfg, "shop.prices.netherite-sword", 600, 400);
+        migrateDefaultPrice(cfg, "shop.prices.netherite-axe", 550, 350, 360);
+        migrateDefaultPrice(cfg, "shop.prices.netherite-helmet", 450, 250, 300);
+        migrateDefaultPrice(cfg, "shop.prices.netherite-chestplate", 850, 500, 600);
+        migrateDefaultPrice(cfg, "shop.prices.netherite-leggings", 700, 400, 480);
+        migrateDefaultPrice(cfg, "shop.prices.netherite-boots", 450, 200, 300);
+        migrateDefaultInteger(cfg, "quest-rewards.daily-completion-bonus", 15, 8);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.medium.min-fragments", 8, 6);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.medium.max-fragments", 12, 9);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.hard.min-fragments", 18, 10);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.hard.max-fragments", 28, 15);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.very-hard.min-fragments", 32, 16);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.very-hard.max-fragments", 48, 25);
+
         // Preserve the complete SpookySeason/HorrorNights configuration.
         // Only retired features are removed: secret rooms/keys and failed generators.
         for (String key : List.of("secret-rooms", "random-events", "grave-encounters",
                 "automatic-world-generation")) {
             cfg.set(key, null);
         }
-        for (String tier : List.of("light", "medium", "hard", "very-hard")) {
+        for (String tier : List.of("light", "medium", "hard", "very-hard", "extreme")) {
             cfg.set("quest-rewards.difficulties." + tier + ".key-chances", null);
         }
         ConfigurationSection overrides = cfg.getConfigurationSection("quest-rewards.quests");
@@ -178,6 +216,21 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
             cfg.save(file);
         } catch (IOException exception) {
             getLogger().warning("Nepodařilo se vyčistit starou konfiguraci: " + exception.getMessage());
+        }
+    }
+
+    private void migrateDefaultPrice(YamlConfiguration cfg, String key, int target, int... legacyValues) {
+        migrateDefaultInteger(cfg, key, target, legacyValues);
+    }
+
+    private void migrateDefaultInteger(YamlConfiguration cfg, String key, int target, int... legacyValues) {
+        if (!cfg.contains(key)) return;
+        int current = cfg.getInt(key);
+        for (int legacy : legacyValues) {
+            if (current == legacy) {
+                cfg.set(key, target);
+                return;
+            }
         }
     }
 
