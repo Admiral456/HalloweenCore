@@ -1,7 +1,7 @@
 name: HalloweenCore
-version: 0.3.0
+version: 0.3.1
 main: cz.halloween.core.HalloweenCore
-api-version: '26.1.2'
+api-version: '1.21.10'
 author: Admiral456; SpookySeason by BoondockSulfur
 description: Daily quests, fragments, Halloween shop, SpookySeason events and HorrorNights.
 folia-supported: false
