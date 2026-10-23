@@ -151,7 +151,7 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("PUMPKIN_PIE", 8, "pumpkin-pie", 15, "Dýňové koláče (8)", "Halloweenová svačina.", false));
         offers.add(vanilla("HONEY_BOTTLE", 4, "honey-bottle", 18, "Medové lahve (4)", "Sladká zásoba.", false));
         offers.add(vanilla("GOLDEN_APPLE", 1, "golden-apple", 45, "Zlaté jablko", "Vzácná nouzová léčba.", false));
-        offers.add(vanilla("ENCHANTED_GOLDEN_APPLE", 1, "enchanted-golden-apple", 250,
+        offers.add(vanilla("ENCHANTED_GOLDEN_APPLE", 1, "enchanted-golden-apple", 750,
                 "Zakleté zlaté jablko", "Extrémně vzácná endgame odměna.", true));
 
         // Utility and exploration supplies.
@@ -177,9 +177,9 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("DRAGON_HEAD", 1, "dragon-head", 450, "Dračí hlava", "Vzácná trofej z Endu.", true));
         offers.add(vanilla("END_CRYSTAL", 4, "end-crystal", 225, "Endové krystaly (4)", "Drahá a nebezpečná položka.", false));
         offers.add(vanilla("CONDUIT", 1, "conduit", 650, "Conduit", "Prémiový podmořský užitek.", true));
-        offers.add(vanilla("TOTEM_OF_UNDYING", 1, "totem", 380, "Totem nesmrtelnosti", "Velmi drahá druhá šance.", true));
-        offers.add(vanilla("BEACON", 1, "beacon", 1000, "Maják", "Endgame předmět za dlouhodobé šetření.", true));
-        offers.add(vanilla("NETHER_STAR", 1, "nether-star", 750, "Nether star", "Vzácná trofej z Withera.", true));
+        offers.add(vanilla("TOTEM_OF_UNDYING", 1, "totem", 750, "Totem nesmrtelnosti", "Velmi drahá druhá šance.", true));
+        offers.add(vanilla("BEACON", 1, "beacon", 1600, "Maják", "Endgame předmět za dlouhodobé šetření.", true));
+        offers.add(vanilla("NETHER_STAR", 1, "nether-star", 900, "Nether star", "Vzácná trofej z Withera.", true));
 
         // Tools and combat gear.
         offers.add(vanilla("IRON_PICKAXE", 1, "iron-pickaxe", 35, "Železný krumpáč", "Spolehlivý začátek.", true));
@@ -199,10 +199,10 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("CROSSBOW", 1, "crossbow", 100, "Kuše", "Silná zbraň na dálku.", true));
         offers.add(vanilla("SHIELD", 1, "shield", 70, "Štít", "Obrana proti zásahům.", true));
 
-        offers.add(orange("TRIDENT", "trident", 650, "Halloweenový trojzubec",
+        offers.add(orange("TRIDENT", "trident", 850, "Halloweenový trojzubec",
                 "Oranžová zbraň z HalloweenCore.", "warriorland_halloween:orange_trident"));
         Material mace = Material.matchMaterial("MACE");
-        offers.add(new Offer(mace == null ? Material.BARRIER : mace, 1, price("mace", 1000), "mace",
+        offers.add(new Offer(mace == null ? Material.BARRIER : mace, 1, price("mace", 1400), "mace",
                 "Halloweenový palcát", "Vzácná oranžová endgame zbraň.",
                 "warriorland_halloween:orange_mace", true, mace != null));
         Material spear = Material.matchMaterial("NETHERITE_SPEAR");
