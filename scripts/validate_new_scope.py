@@ -71,6 +71,10 @@ for retired in ["cz/halloween/core/KeyItemFactory.java", "cz/halloween/core/Secr
 horror = (java / "cz/halloween/core/HorrorNightManager.java").read_text(encoding="utf-8")
 if any(token in horror for token in ["setStorm(true)", "setThundering(true)", "setWeatherDuration(", "setThunderDuration("]):
     raise SystemExit("HorrorNights must not force world weather or sky")
+for wired in ["trySpawnCustomMob", "horrorNights.spawn-custom-mobs",
+              "horrorNights.custom-mob-ids", "horrorNights.invisible-particle-count"]:
+    if wired not in horror:
+        raise SystemExit(f"HorrorNights setting is not wired: {wired}")
 blood = (java / "org/example/feature/BloodRainManager.java").read_text(encoding="utf-8")
 if any(token in blood for token in ["setPlayerWeather(", "resetPlayerWeather(", "WeatherType.DOWNFALL"]):
     raise SystemExit("Blood rain must remain particle-only and must not override player weather")
@@ -81,6 +85,10 @@ for section in ["activeWindow", "trickOrTreat", "hauntedNight", "pumpkinRain", "
                 "quest-rewards", "shop"]:
     if section not in cfg:
         raise SystemExit(f"Required restored config section missing: {section}")
+if "custom-mob-ids" not in cfg["horrorNights"] or "custom-mob-chance" not in cfg["horrorNights"]:
+    raise SystemExit("Optional MythicMobs configuration is incomplete")
+if "MythicMobs" not in plugin.get("softdepend", []):
+    raise SystemExit("MythicMobs optional integration must be declared")
 if any(section in cfg for section in ["secret-rooms", "random-events", "grave-encounters", "automatic-world-generation"]):
     raise SystemExit("A retired room/key or failed world-generation section remains")
 if "key-chances" in (root / "src/main/resources/config.yml").read_text(encoding="utf-8"):
