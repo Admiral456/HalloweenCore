@@ -16,7 +16,7 @@ if "key-chances" in (root / "src/main/resources/config.yml").read_text(encoding=
     raise SystemExit("Obsolete key reward configuration remains")
 
 rewards = cfg["quest-rewards"]
-bounds = {"light": (3, 5), "medium": (8, 12), "hard": (18, 28), "very-hard": (32, 48), "extreme": (55, 80)}
+bounds = {"light": (1, 2), "medium": (2, 4), "hard": (5, 8), "very-hard": (8, 12), "extreme": (10, 16)}
 if rewards.get("default-difficulty") not in bounds:
     raise SystemExit("Invalid default quest difficulty")
 for name, expected in bounds.items():
@@ -31,18 +31,33 @@ legacy_reward = cfg["daily-quest"].get("reward-fragments")
 if not isinstance(legacy_reward, int) or legacy_reward < 0:
     raise SystemExit("Invalid legacy daily-quest migration reward")
 
-# The daily system now offers four simultaneous contracts. Check that the implementation
-# contains a healthy pool across all four difficulty tiers and still supports configurable rewards.
+# The pool contains 82 possible tasks, with 15 daily assignments and three weekly assignments.
 quest_source = (root / "src/main/java/cz/halloween/core/DailyQuestManager.java").read_text(encoding="utf-8")
 if quest_source.count("new Task(") < 80:
-    raise SystemExit("Expected at least 80 daily contract definitions")
+    raise SystemExit("Expected at least 80 daily/weekly contract definitions")
 for difficulty in ['"light"', '"medium"', '"hard"', '"extreme"']:
     if difficulty not in quest_source:
         raise SystemExit(f"Missing quest difficulty: {difficulty}")
-if quest_source.count("new ContractSlot(") < 4:
-    raise SystemExit("Expected four daily contract tiers")
-if 'new ContractSlot("daily-quests.extreme", "extreme", "EXTRÉMNÍ")' not in quest_source:
-    raise SystemExit("Extreme contracts must use the actual extreme fragment tier")
+slot_rows = re.findall(r'new ContractSlot\("([^"]+)",\s*"[^"]+",\s*"[^"]+",\s*(true|false)\)', quest_source)
+if sum(weekly == "false" for _, weekly in slot_rows) != 15:
+    raise SystemExit("Expected exactly 15 daily contracts")
+if sum(weekly == "true" for _, weekly in slot_rows) != 3:
+    raise SystemExit("Expected exactly three weekly contracts")
+if "weekKey()" not in quest_source or "weekly-multiplier" not in quest_source:
+    raise SystemExit("Weekly reset/multiplier logic is missing")
+if 'new ContractSlot("daily-quests.extreme", "extreme", "EXTRÉMNÍ", false)' not in quest_source:
+    raise SystemExit("Daily extreme contracts must use the actual extreme fragment tier")
+jobs_cfg = cfg.get("jobs-fragments", {})
+if jobs_cfg.get("enabled") is not True or jobs_cfg.get("experience-per-fragment") != 25.0 or jobs_cfg.get("max-per-day") != 8:
+    raise SystemExit("Jobs fragment rate/cap differs from the agreed defaults")
+jobs_source = (root / "src/main/java/cz/halloween/core/JobsFragmentBridge.java").read_text(encoding="utf-8")
+for wired in ["JobsExpGainEvent", "experience-per-fragment", "max-per-day", "persistState"]:
+    if wired not in jobs_source:
+        raise SystemExit(f"Jobs fragment bridge is missing {wired}")
+if 'weekly-completion-bonus' not in rewards or rewards['weekly-completion-bonus'] != 50:
+    raise SystemExit("Weekly completion bonus should be 50 fragments")
+if rewards.get("weekly-multiplier") != 3.0:
+    raise SystemExit("Weekly quest reward multiplier should be 3.0")
 prices = cfg["shop"].get("prices", {})
 required_prices = [
     "candy", "iron", "gold", "diamond", "emerald", "netherite-ingot", "netherite-scrap",
@@ -92,4 +107,4 @@ if (window.get("startMonth"), window.get("startDay"), window.get("endMonth"), wi
     raise SystemExit("Wrong season window")
 if cfg["season"].get("enabled") is not True:
     raise SystemExit("Season is disabled")
-print("Quest tier rewards, four-tier quest pool, expanded shop prices and seasonal dates validated.")
+print("Quest rewards, 15 daily/3 weekly contracts, Jobs cap, expanded shop and seasonal dates validated.")
