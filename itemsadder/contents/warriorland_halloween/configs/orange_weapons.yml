@@ -43,13 +43,3 @@ items:
     graphics:
       texture: minecraft:item/netherite_axe
       color: "#ff7900"
-
-  orange_netherite_spear:
-    name: "&6&lHalloweenové netheritové kopí"
-    lore:
-      - "&7Oranžová halloweenská zbraň."
-      - "&8HalloweenCore"
-    material: NETHERITE_SPEAR
-    graphics:
-      texture: minecraft:item/netherite_spear
-      color: "#ff7900"
