@@ -4,14 +4,14 @@ HalloweenCore spojuje plnou implementaci sezónních funkcí SpookySeason, nezá
 
 ## Požadavky a instalace
 
-Tato vydávaná sestava je cílená na **Paper/Purpur 26.1.2** a sestavuje se proti **Paper API 26.1.2.build.74-stable** s Java 25. Minecraft/Paper 26.1.2 vyžaduje Java 25 nebo novější. (Pro starší řadu 1.21.x by bylo potřeba vytvořit samostatný build; nepoužívej tento JAR na 1.21.x.)
+Tato vydávaná sestava je cílená na **Paper/Purpur 1.21.10** a sestavuje se proti **Paper API 1.21.10-R0.1-SNAPSHOT** s Java 21. Tento JAR je určen pro server Minecraft/Paper/Purpur 1.21.10; na jiné verzi jej používej až po samostatném ověření.
 
-- **Povinné:** Paper nebo Purpur 26.1.2, Java 25+.
+- **Povinné:** Paper nebo Purpur **1.21.10**, Java **21+**.
 - **Doporučeno:** ItemsAdder 4.0.13+ pro vlastní ikonu fragmentu, 13 sladkostí a oranžové zbraně; hráči musí obdržet a přijmout resource pack.
 - **Volitelné integrace:** Jobs Reborn (odměny z Jobs), PlaceholderAPI (fragmentový placeholder), MythicMobs (vlastní HorrorNights moby), WorldGuard/GriefPrevention (kontrola chráněných oblastí) a CustomJukebox (vlastní ambientní hudba).
 - **Po instalaci:** plně restartuj server, zkontroluj konzoli, potom spusť `/iazip`. Obsah ItemsAdder ZIP rozbal do `plugins/ItemsAdder/contents/`, aby výsledná cesta byla `plugins/ItemsAdder/contents/warriorland_halloween/`. Nepoužívej PlugMan/PlugManX k hot-reloadu tohoto pluginu.
 
-Podrobnější postup, příkazy a oprávnění jsou v [instalační příručce](docs/INSTALACE_CZ.md). Oranžované zbraně používají moderní barevný systém ItemsAdder, který vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi; samotný Netherite Spear existuje až od Minecraft Java 1.21.11, takže plná sada všech pěti variant vyžaduje tuto verzi nebo novější. 
+Podrobnější postup, příkazy a oprávnění jsou v [instalační příručce](docs/INSTALACE_CZ.md). Oranžované zbraně používají moderní barevný systém ItemsAdder, který vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi; kopí (Spear) není ve vanilla Minecraftu 1.21.10 dostupné a z této verze je proto vynechané; ostatní oranžové zbraně fungují na 1.21.10. 
 
 ## SpookySeason
 
@@ -60,7 +60,7 @@ Ceny jsou nastavitelné v `shop.prices` v `config.yml`. Enchanted Golden Apple z
 
 ## Oranžové zbraně
 
-`scripts/generate_orange_weapon_items.py` generuje definice ItemsAdder pro oranžové varianty trojzubce, palcátu, netheritového meče, sekery a kopí. Používá se obarvení vestavěné do moderního systému `graphics.color`, takže nejsou potřeba nové PNG textury. Je potřeba ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi; viz [dokumentace ItemsAdder – Colored Items](https://wiki.itemsadder.com/adding-content/colored-items/). Nákupy těchto zbraní použijí vlastní ItemsAdder item, pokud je ItemsAdder aktivní; jinak zůstává vanilla náhrada. Po změně obsahu vytvoř resource pack příkazem `/iazip` a ověř, že klient resource pack přijal.
+`scripts/generate_orange_weapon_items.py` generuje definice ItemsAdder pro oranžové varianty trojzubce, palcátu, netheritového meče a sekery. Používá se obarvení vestavěné do moderního systému `graphics.color`, takže nejsou potřeba nové PNG textury. Je potřeba ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi; na Minecraftu 1.21.10 není zahrnuto kopí, které přibylo až v 1.21.11. Viz [dokumentace ItemsAdder – Colored Items](https://wiki.itemsadder.com/adding-content/colored-items/). Nákupy těchto zbraní použijí vlastní ItemsAdder item, pokud je ItemsAdder aktivní; jinak zůstává vanilla náhrada. Po změně obsahu vytvoř resource pack příkazem `/iazip` a ověř, že klient resource pack přijal.
 
 ## Záměrně odstraněný obsah
 
