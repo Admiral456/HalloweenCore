@@ -145,7 +145,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
             {"diamond-sword","120"},{"diamond-pickaxe","150"},{"diamond-axe","120"},{"diamond-shovel","85"},
             {"diamond-hoe","95"},{"netherite-sword","600"},{"netherite-axe","550"},{"netherite-pickaxe","700"},
             {"netherite-shovel","350"},{"netherite-hoe","400"},{"bow","80"},{"crossbow","100"},{"shield","70"},
-            {"trident","850"},{"mace","1400"},{"netherite-spear","1600"},{"iron-helmet","35"},
+            {"trident","850"},{"mace","1400"},{"iron-helmet","35"},
             {"iron-chestplate","60"},{"iron-leggings","50"},{"iron-boots","30"},{"diamond-helmet","150"},
             {"diamond-chestplate","250"},{"diamond-leggings","200"},{"diamond-boots","120"},
             {"golden-horse-armor","100"},{"diamond-horse-armor","180"},{"netherite-helmet","450"},
@@ -196,7 +196,6 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         migrateDefaultPrice(cfg, "shop.prices.nether-star", 900, 750);
         migrateDefaultPrice(cfg, "shop.prices.trident", 850, 550, 650);
         migrateDefaultPrice(cfg, "shop.prices.mace", 1400, 800, 1000);
-        migrateDefaultPrice(cfg, "shop.prices.netherite-spear", 1600, 900, 1200);
         migrateDefaultPrice(cfg, "shop.prices.elytra", 2000, 1200);
         migrateDefaultPrice(cfg, "shop.prices.netherite-sword", 600, 400);
         migrateDefaultPrice(cfg, "shop.prices.netherite-axe", 550, 350, 360);
