@@ -171,7 +171,7 @@ public final class DialogQuestManager {
         String normalized = value.toLowerCase(java.util.Locale.ROOT).replace('_', '-');
         if (normalized.equals("veryhard")) normalized = "very-hard";
         return switch (normalized) {
-            case "medium", "hard", "very-hard" -> normalized;
+            case "medium", "hard", "very-hard", "extreme" -> normalized;
             default -> "light";
         };
     }
@@ -181,6 +181,7 @@ public final class DialogQuestManager {
             case "medium" -> "střední";
             case "hard" -> "těžká";
             case "very-hard" -> "velmi těžká";
+            case "extreme" -> "extrémní";
             default -> "lehká";
         };
     }
