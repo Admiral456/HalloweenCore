@@ -557,6 +557,11 @@ horrorNights:
   name-prefix: "&4&lHORROR "
   mob-types: [ZOMBIE, SKELETON, SPIDER, CREEPER, ENDERMAN, WITCH, PHANTOM]
   spawn-custom-mobs: true
+  # Optional MythicMobs IDs. Leave empty to use the configured vanilla mob pool only.
+  # IDs must already exist in MythicMobs; the plugin does not invent them.
+  custom-mob-ids: []
+  # Probability of selecting a custom mob for a spawn (0.0–1.0).
+  custom-mob-chance: 0.25
   # HorrorNights deliberately uses particles and sounds without changing weather or sky.
   thunderstorm: false
   player-effects: true
