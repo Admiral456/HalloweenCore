@@ -165,6 +165,9 @@ public final class HorrorNightManager implements Listener {
     }
 
     private void checkForRandomStarts() {
+        // The random seasonal event respects the same October 23–November 2 inclusive
+        // window as SpookySeason. Manual admin starts remain available for testing.
+        if (plugin instanceof HalloweenCore core && !core.isSeasonActive()) return;
         double chance = clamp(plugin.getConfig().getDouble("horrorNights.horror-night-chance", 10.0), 0.0, 100.0);
         for (World world : Bukkit.getWorlds()) {
             if (!isAllowedWorld(world) || sessions.containsKey(world.getUID())) continue;
