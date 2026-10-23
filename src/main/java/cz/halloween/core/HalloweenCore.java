@@ -205,8 +205,8 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         migrateDefaultPrice(cfg, "shop.prices.netherite-leggings", 700, 400, 480);
         migrateDefaultPrice(cfg, "shop.prices.netherite-boots", 450, 200, 300);
         migrateDefaultInteger(cfg, "quest-rewards.daily-completion-bonus", 15, 8);
-        migrateDefaultInteger(cfg, "quest-rewards.weekly-completion-bonus", 50);
-        migrateDefaultDouble(cfg, "quest-rewards.weekly-multiplier", 3.0);
+        migrateDefaultInteger(cfg, "quest-rewards.weekly-completion-bonus", 50, 8);
+        migrateDefaultDouble(cfg, "quest-rewards.weekly-multiplier", 3.0, 1.0, 2.0);
         migrateDefaultInteger(cfg, "quest-rewards.difficulties.light.min-fragments", 1, 3);
         migrateDefaultInteger(cfg, "quest-rewards.difficulties.light.max-fragments", 2, 5);
         migrateDefaultInteger(cfg, "quest-rewards.difficulties.medium.min-fragments", 2, 8, 6);
