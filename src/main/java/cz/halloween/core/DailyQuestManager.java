@@ -255,14 +255,24 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
         String tier = "quest-rewards.difficulties." + task.difficulty();
         int fallbackMin = switch (task.difficulty()) {
             case "light" -> 3;
-            case "medium" -> 6;
-            case "hard" -> 10;
-            default -> 16;
+            case "medium" -> 8;
+            case "hard" -> 18;
+            case "very-hard" -> 32;
+            case "extreme" -> 55;
+            default -> 3;
+        };
+        int fallbackMax = switch (task.difficulty()) {
+            case "light" -> 5;
+            case "medium" -> 12;
+            case "hard" -> 28;
+            case "very-hard" -> 48;
+            case "extreme" -> 80;
+            default -> fallbackMin + 2;
         };
         int min = plugin.getConfig().getInt(override + ".min-fragments",
                 plugin.getConfig().getInt(tier + ".min-fragments", fallbackMin));
         int max = plugin.getConfig().getInt(override + ".max-fragments",
-                plugin.getConfig().getInt(tier + ".max-fragments", fallbackMin + 2));
+                plugin.getConfig().getInt(tier + ".max-fragments", fallbackMax));
         min = Math.max(0, min);
         max = Math.max(min, max);
         return min + random.nextInt(max - min + 1);
