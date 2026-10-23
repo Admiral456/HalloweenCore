@@ -12,17 +12,15 @@ Nezávislý modul má náhodné spouštění hororových nocí, nebezpečnějš�
 
 Výchozí sezóna je **23. října až 2. listopadu včetně** v časovém pásmu `Europe/Prague`.
 
-## Denní questy a fragmenty
+## Denní a týdenní questy a fragmenty
 
-Příkaz `/quest` každý den nabídne **4 současné kontrakty**: lehký, střední, těžký a extrémní. Zadání se náhodně vybírá z poolu **82 skutečně sledovaných úkolů** zaměřených na souboje, těžbu, farmaření, crafting, rybaření, sbírání kořisti a chov zvířat. Postup a dokončení se ukládají do `plugins/HalloweenCore/players.yml`; rozpracované úkoly se nepřidělují znovu při každém přihlášení.
+Příkaz `/quest` zobrazí obě skupiny; `/quest daily` zobrazí denní kontrakty a `/quest weekly` týdenní výzvy. Každý den je aktivních **15 různých kontraktů najednou**: 6 lehkých, 4 střední, 3 těžké a 2 extrémní. Každé pondělí se obmění také **3 týdenní výzvy**: jedna těžká a dvě extrémní. Zadání se vybírají z poolu **82 skutečně sledovaných úkolů** zaměřených na souboje, těžbu, farmaření, crafting, rybaření, sbírání kořisti a chov zvířat. Postup se ukládá do `plugins/HalloweenCore/players.yml`; běžné přihlášení ani reload postup nemažou.
 
-Fragmentové odměny jsou odstupňované podle obtížnosti: lehké **3–5**, střední **8–12**, těžké **18–28** a extrémní **55–80 fragmentů**. Za dokončení všech čtyř kontraktů v jednom dni je ještě **15 fragmentů navíc**. Úkoly z dialogů mají vlastní konfigurovatelné odměny; systém podporuje i stupeň „velmi těžký“. Ceny i odměny lze upravit v `config.yml`.
+Denní odměny jsou odstupňované podle obtížnosti: lehké **1–2**, střední **2–4**, těžké **5–8** a extrémní **10–16 fragmentů**. Dokončení všech 15 denních kontraktů přidá **15 fragmentů navíc**. Týdenní výzvy násobí odměnu příslušné obtížnosti koeficientem **3×** a dokončení všech tří přidá **50 fragmentů**. Jednotlivé odměny i bonusy lze upravit v `config.yml`.
 
-## Halloweenský obchod
+### Jobs Reborn
 
-Příkaz `/halloween shop` otevírá stránkovaný černo-oranžový inventářový obchod s více než **100 nabídkami**. Kromě všech 13 zachovaných sladkostí zahrnuje suroviny a rudy, stavební bloky, jídlo, redstone materiály, užitečné předměty, nástroje, zbraně, brnění a vzácné trofeje. Platí se fragmenty.
-
-Mezi prémiové nákupy patří zakleté zlaté jablko za **750 fragmentů**, netheritový ingot za **350**, totem nesmrtelnosti za **750**, palcát za **1 400**, maják za **1 600** a Elytra za **2 000 fragmentů**. Dražší položky tak vyžadují dlouhodobé šetření místo rychlého nakoupení po jednom jednoduchém questu.
+Je-li nainstalovaný plugin Jobs Reborn, propojení automaticky převádí každých **25 získaných Jobs XP na 1 Halloween fragment**. Limit je **8 fragmentů denně z Jobs** na hráče; Jobs tedy přidává menší průběžný bonus, ale nenahrazuje hlavní postup přes questy. Bez Jobs Reborn zbytek HalloweenCore normálně funguje. Integrace používá veřejnou událost `JobsExpGainEvent` z [Jobs Reborn API](https://github.com/Zrips/Jobs/wiki/API).
 
 ## Oranžové zbraně
 
