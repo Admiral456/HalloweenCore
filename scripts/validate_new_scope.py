@@ -80,6 +80,7 @@ if any(token in blood for token in ["setPlayerWeather(", "resetPlayerWeather(", 
     raise SystemExit("Blood rain must remain particle-only and must not override player weather")
 
 cfg = yaml.safe_load((root / "src/main/resources/config.yml").read_text(encoding="utf-8"))
+plugin = yaml.safe_load((root / "src/main/resources/plugin.yml").read_text(encoding="utf-8"))
 for section in ["activeWindow", "trickOrTreat", "hauntedNight", "pumpkinRain", "bloodRain",
                 "halloweenBoss", "raid", "horrorNights", "season", "daily-quest",
                 "quest-rewards", "shop"]:
@@ -99,7 +100,6 @@ if (window.get("startMonth"), window.get("startDay"), window.get("endMonth"), wi
 if cfg["season"].get("enabled") is not True:
     raise SystemExit("Season must be enabled")
 
-plugin = yaml.safe_load((root / "src/main/resources/plugin.yml").read_text(encoding="utf-8"))
 required_commands = {"halloween", "quest", "horrornights", "pumpkinrain", "bloodrain",
                      "spooky", "spookyvolume", "spookyboss", "spookyraid"}
 if not required_commands.issubset(set(plugin.get("commands", {}))):
