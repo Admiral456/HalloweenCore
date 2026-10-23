@@ -2,6 +2,17 @@
 
 HalloweenCore spojuje plnou implementaci sezónních funkcí SpookySeason, nezávislou implementaci HorrorNights a vlastní systém denních questů, fragmentů a obchodu pro Paper/Purpur.
 
+## Požadavky a instalace
+
+Tato vydávaná sestava je cílená na **Paper/Purpur 26.1.2** a sestavuje se proti **Paper API 26.1.2.build.74-stable** s Java 25. Minecraft/Paper 26.1.2 vyžaduje Java 25 nebo novější. (Pro starší řadu 1.21.x by bylo potřeba vytvořit samostatný build; nepoužívej tento JAR na 1.21.x.)
+
+- **Povinné:** Paper nebo Purpur 26.1.2, Java 25+.
+- **Doporučeno:** ItemsAdder 4.0.13+ pro vlastní ikonu fragmentu, 13 sladkostí a oranžové zbraně; hráči musí obdržet a přijmout resource pack.
+- **Volitelné integrace:** Jobs Reborn 5.2.6.7+ (odměny z Jobs), PlaceholderAPI (placeholdery), BetonQuest/Citizens (dialogové NPC), MythicMobs (vlastní moby), WorldGuard/GriefPrevention (kontrola chráněných oblastí) a CustomJukebox (vlastní ambientní hudba).
+- **Po instalaci:** plně restartuj server, zkontroluj konzoli, potom spusť `/iazip`. Obsah ItemsAdder ZIP rozbal do `plugins/ItemsAdder/contents/`, aby výsledná cesta byla `plugins/ItemsAdder/contents/warriorland_halloween/`. Nepoužívej PlugMan/PlugManX k hot-reloadu tohoto pluginu.
+
+Podrobnější postup, příkazy a oprávnění jsou v [instalační příručce](docs/INSTALACE_CZ.md). Oranžované zbraně používají moderní barevný systém ItemsAdder, který vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi; samotný Netherite Spear existuje až od Minecraft Java 1.21.11, takže plná sada všech pěti variant vyžaduje tuto verzi nebo novější. 
+
 ## SpookySeason
 
 Integrovaný modul obsahuje Trick-or-Treat u dveří i vesničanů, halloweenské sladkosti a negativní setkání, strašidelné noci, duchy, jumpscare efekty, roje netopýrů, dýňový déšť, krvavý déšť vykreslený částicemi, Headless Horseman bosse, halloweenské chování mobů, nájezdy nemrtvých s cíli a vlnami, sezonní odměny, žebříček nasbíraných sladkostí, menu a individuální nastavení zvuků/opt-outu. Zachované jsou také integrace pro PlaceholderAPI a volitelné WorldGuard, GriefPrevention a CustomJukebox.

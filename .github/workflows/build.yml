@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: '25'
           cache: maven
       - name: Install validator dependency
         run: python3 -m pip install --disable-pip-version-check PyYAML==6.0.2

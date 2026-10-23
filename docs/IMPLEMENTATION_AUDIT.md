@@ -11,3 +11,5 @@
 - CI ověřuje zapojení eventů, konfiguraci, textury, obchod a oranžové itemy a sestavuje plugin. CI build není živý test na Hostify/Paper serveru; po nasazení je potřeba ověřit konzoli, příkazy, eventy a doručení resource packu.
 
 - Fragmentová ekonomika používá jediný virtuální zůstatek pro questy, Jobs Reborn a obchod; obchod zobrazuje vlastní 64×64 pixel-art ikonu fragmentu přes ItemsAdder.
+
+- Aktuální produkční cíl sestavení je Paper/Purpur 26.1.2 (Paper API 26.1.2.build.74-stable, Java 25); CI tuto verzi kompiluje a validuje.

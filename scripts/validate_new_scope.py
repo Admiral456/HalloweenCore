@@ -108,7 +108,7 @@ if "MythicMobs" not in plugin.get("softdepend", []):
 if "Jobs" not in plugin.get("softdepend", []):
     raise SystemExit("Jobs Reborn must be an optional soft dependency")
 pom = (root / "pom.xml").read_text(encoding="utf-8")
-if "com.github.Zrips</groupId><artifactId>Jobs</artifactId><version>v5.2.6.3</version>" not in pom:
+if "com.github.Zrips</groupId><artifactId>Jobs</artifactId><version>v5.2.6.7</version>" not in pom:
     raise SystemExit("Jobs Reborn API dependency is missing")
 jobs = (java / "cz/halloween/core/JobsFragmentBridge.java").read_text(encoding="utf-8")
 for token in ["JobsExpGainEvent", "jobs-fragments.max-per-day", "jobs-fragments.experience-per-fragment",
@@ -170,4 +170,13 @@ for orange_id in ["orange_trident", "orange_mace", "orange_netherite_sword",
                   "orange_netherite_axe", "orange_netherite_spear"]:
     if f"warriorland_halloween:{orange_id}" not in shop:
         raise SystemExit(f"Orange weapon is not connected to the shop: {orange_id}")
-print("Full event wiring, no-weather rule, season dates, 15 daily/3 weekly quests, Jobs bridge, shop, candy textures and orange weapons validated.")
+# Keep the artifact aligned with the actual 26.1.2 Paper/Purpur deployment target.
+if "26.1.2.build.74-stable" not in pom or "<release>25</release>" not in pom:
+    raise SystemExit("Plugin must compile against Paper API 26.1.2 and Java 25")
+if plugin.get("api-version") != "26.1.2":
+    raise SystemExit("plugin.yml must declare api-version 26.1.2")
+workflow = (root / ".github/workflows/build.yml").read_text(encoding="utf-8")
+if "java-version: '25'" not in workflow:
+    raise SystemExit("CI must build with Java 25 for Paper/Purpur 26.1.2")
+
+print("Full event wiring, no-weather rule, season dates, 15 daily/3 weekly quests, Jobs bridge, shop, candy textures and orange weapons validated for Paper/Purpur 26.1.2.")

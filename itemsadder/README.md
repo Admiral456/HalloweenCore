@@ -8,7 +8,7 @@ Oranžové zbraně (trojzubec, palcát, netheritový meč, netheritová sekera a
 python3 scripts/generate_orange_weapon_items.py
 ```
 
-Vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi. Obsah zkopíruj do `plugins/ItemsAdder/contents/warriorland_halloween/`, restartuj server a spusť `/iazip`. Hráči musí přijmout resource pack.
+Obarvení vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi. Netherite Spear je dostupný až od Java Edition 1.21.11+, proto kompletní sada všech pěti variant vyžaduje 1.21.11+. Obsah zkopíruj do `plugins/ItemsAdder/contents/warriorland_halloween/`, restartuj server a spusť `/iazip`. Hráči musí přijmout resource pack.
 
 Tajné místnosti, klíče a jejich textura nejsou součástí obsahu.
 
