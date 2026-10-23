@@ -27,24 +27,49 @@ for quest_id, entry in rewards.get("quests", {}).items():
     if not re.fullmatch(r"[a-z0-9_-]{1,48}", str(quest_id)) or not isinstance(entry, dict):
         raise SystemExit(f"Invalid quest reward override: {quest_id}")
 
-if cfg["daily-quest"].get("reward-fragments") != 1:
-    raise SystemExit("Daily quest must award one fragment by default")
+legacy_reward = cfg["daily-quest"].get("reward-fragments")
+if not isinstance(legacy_reward, int) or legacy_reward < 0:
+    raise SystemExit("Invalid legacy daily-quest migration reward")
+
+# The daily system now offers four simultaneous contracts. Check that the implementation
+# contains a healthy pool across all four difficulty tiers and still supports configurable rewards.
+quest_source = (root / "src/main/java/cz/halloween/core/DailyQuestManager.java").read_text(encoding="utf-8")
+if quest_source.count("new Task(") < 60:
+    raise SystemExit("Expected at least 60 daily contract definitions")
+for difficulty in ['"light"', '"medium"', '"hard"', '"very-hard"']:
+    if difficulty not in quest_source:
+        raise SystemExit(f"Missing quest difficulty: {difficulty}")
+if quest_source.count("new ContractSlot(") < 4:
+    raise SystemExit("Expected four daily contract tiers")
 prices = cfg["shop"].get("prices", {})
 required_prices = [
     "candy", "iron", "gold", "diamond", "emerald", "netherite-ingot", "netherite-scrap",
     "golden-apple", "enchanted-golden-apple", "totem", "trident", "mace", "netherite-sword",
     "netherite-axe", "netherite-helmet", "netherite-chestplate", "netherite-leggings",
-    "netherite-boots", "elytra", "netherite-spear",
+    "netherite-boots", "elytra", "netherite-spear", "coal", "copper", "raw-iron", "raw-gold",
+    "redstone", "lapis", "quartz", "cobblestone", "stone", "deepslate", "oak-logs", "glass",
+    "obsidian", "quartz-block", "glowstone", "slime-block", "tnt", "bread", "cooked-beef",
+    "baked-potato", "golden-carrot", "pumpkin-pie", "honey-bottle", "ender-pearl", "blaze-rod",
+    "arrow", "firework-rocket", "experience-bottle", "ender-chest", "shulker-box", "anvil",
+    "name-tag", "saddle", "water-bucket", "lead", "beacon", "nether-star", "iron-pickaxe",
+    "diamond-sword", "diamond-pickaxe", "diamond-axe", "netherite-pickaxe", "netherite-shovel",
+    "netherite-hoe", "bow", "crossbow", "shield", "iron-helmet", "iron-chestplate",
+    "iron-leggings", "iron-boots", "diamond-helmet", "diamond-chestplate", "diamond-leggings",
+    "diamond-boots", "netherite-pickaxe", "netherite-shovel", "netherite-hoe",
 ]
 for item in required_prices:
     if not isinstance(prices.get(item), int) or prices[item] < 0:
         raise SystemExit(f"Invalid shop price: {item}")
 if prices["elytra"] <= prices["diamond"] or prices["mace"] <= prices["iron"]:
     raise SystemExit("Endgame prices are not meaningfully higher than basic resources")
+if prices["enchanted-golden-apple"] <= prices["golden-apple"]:
+    raise SystemExit("Enchanted golden apples must cost substantially more than normal golden apples")
+if prices["beacon"] <= prices["netherite-ingot"] or prices["nether-star"] <= prices["diamond"]:
+    raise SystemExit("Rare endgame items must have premium prices")
 
 window = cfg["activeWindow"]
 if (window.get("startMonth"), window.get("startDay"), window.get("endMonth"), window.get("endDay")) != (10, 23, 11, 2):
     raise SystemExit("Wrong season window")
 if cfg["season"].get("enabled") is not True:
     raise SystemExit("Season is disabled")
-print("Quest reward tiers, daily fragment award, shop prices and seasonal dates validated.")
+print("Quest tier rewards, four-tier quest pool, expanded shop prices and seasonal dates validated.")
