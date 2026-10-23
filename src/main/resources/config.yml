@@ -567,6 +567,7 @@ horrorNights:
   player-effects: true
   effect-chance: 0.35
   effect-duration-ticks: 100
+  effect-interval-ticks: 200 # Minimum delay between screen-effect rolls (10 seconds)
   effect-types: [DARKNESS, BLINDNESS, CONFUSION]
   ambient-sounds: true
   ambient-sound-interval-ticks: 200
