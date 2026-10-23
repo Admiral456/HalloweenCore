@@ -28,6 +28,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
     private HalloweenShopManager shopManager;
     private HorrorNightManager horrorNightManager;
     private HalloweenPlaceholders placeholders;
+    private org.bukkit.event.Listener jobsFragmentBridge;
 
     @Override
     public void onEnable() {
@@ -72,6 +73,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         org.example.SpookySeason.enable(this);
         horrorNightManager = new HorrorNightManager(this);
         horrorNightManager.start();
+        registerJobsFragmentBridge();
 
         PluginCommand horrorNights = getCommand("horrornights");
         if (horrorNights != null) {
@@ -90,6 +92,7 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         }
         if (horrorNightManager != null) horrorNightManager.shutdown();
         if (org.example.SpookySeason.get() != null) org.example.SpookySeason.get().disable();
+        flushJobsFragmentBridge();
         savePlayerData();
     }
 
@@ -102,16 +105,23 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
 
         getConfig().addDefault("quest-rewards.default-difficulty", "light");
         getConfig().addDefault("quest-rewards.daily-completion-bonus", 15);
-        getConfig().addDefault("quest-rewards.difficulties.light.min-fragments", 3);
-        getConfig().addDefault("quest-rewards.difficulties.light.max-fragments", 5);
-        getConfig().addDefault("quest-rewards.difficulties.medium.min-fragments", 8);
-        getConfig().addDefault("quest-rewards.difficulties.medium.max-fragments", 12);
-        getConfig().addDefault("quest-rewards.difficulties.hard.min-fragments", 18);
-        getConfig().addDefault("quest-rewards.difficulties.hard.max-fragments", 28);
-        getConfig().addDefault("quest-rewards.difficulties.very-hard.min-fragments", 32);
-        getConfig().addDefault("quest-rewards.difficulties.very-hard.max-fragments", 48);
-        getConfig().addDefault("quest-rewards.difficulties.extreme.min-fragments", 55);
-        getConfig().addDefault("quest-rewards.difficulties.extreme.max-fragments", 80);
+        getConfig().addDefault("quest-rewards.weekly-completion-bonus", 50);
+        getConfig().addDefault("quest-rewards.weekly-multiplier", 3.0);
+        getConfig().addDefault("quest-rewards.difficulties.light.min-fragments", 1);
+        getConfig().addDefault("quest-rewards.difficulties.light.max-fragments", 2);
+        getConfig().addDefault("quest-rewards.difficulties.medium.min-fragments", 2);
+        getConfig().addDefault("quest-rewards.difficulties.medium.max-fragments", 4);
+        getConfig().addDefault("quest-rewards.difficulties.hard.min-fragments", 5);
+        getConfig().addDefault("quest-rewards.difficulties.hard.max-fragments", 8);
+        getConfig().addDefault("quest-rewards.difficulties.very-hard.min-fragments", 8);
+        getConfig().addDefault("quest-rewards.difficulties.very-hard.max-fragments", 12);
+        getConfig().addDefault("quest-rewards.difficulties.extreme.min-fragments", 10);
+        getConfig().addDefault("quest-rewards.difficulties.extreme.max-fragments", 16);
+
+        getConfig().addDefault("jobs-fragments.enabled", true);
+        getConfig().addDefault("jobs-fragments.experience-per-fragment", 25.0);
+        getConfig().addDefault("jobs-fragments.max-per-day", 8);
+
         getConfig().addDefault("horrorNights.effect-interval-ticks", 200);
 
         getConfig().addDefault("daily-quest.enabled", true);
@@ -195,12 +205,20 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         migrateDefaultPrice(cfg, "shop.prices.netherite-leggings", 700, 400, 480);
         migrateDefaultPrice(cfg, "shop.prices.netherite-boots", 450, 200, 300);
         migrateDefaultInteger(cfg, "quest-rewards.daily-completion-bonus", 15, 8);
-        migrateDefaultInteger(cfg, "quest-rewards.difficulties.medium.min-fragments", 8, 6);
-        migrateDefaultInteger(cfg, "quest-rewards.difficulties.medium.max-fragments", 12, 9);
-        migrateDefaultInteger(cfg, "quest-rewards.difficulties.hard.min-fragments", 18, 10);
-        migrateDefaultInteger(cfg, "quest-rewards.difficulties.hard.max-fragments", 28, 15);
-        migrateDefaultInteger(cfg, "quest-rewards.difficulties.very-hard.min-fragments", 32, 16);
-        migrateDefaultInteger(cfg, "quest-rewards.difficulties.very-hard.max-fragments", 48, 25);
+        migrateDefaultInteger(cfg, "quest-rewards.weekly-completion-bonus", 50);
+        migrateDefaultDouble(cfg, "quest-rewards.weekly-multiplier", 3.0);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.light.min-fragments", 1, 3);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.light.max-fragments", 2, 5);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.medium.min-fragments", 2, 8, 6);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.medium.max-fragments", 4, 12, 9);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.hard.min-fragments", 5, 18, 10);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.hard.max-fragments", 8, 28, 15);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.very-hard.min-fragments", 8, 32, 16);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.very-hard.max-fragments", 12, 48, 25);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.extreme.min-fragments", 10, 55);
+        migrateDefaultInteger(cfg, "quest-rewards.difficulties.extreme.max-fragments", 16, 80);
+        migrateDefaultInteger(cfg, "jobs-fragments.max-per-day", 8);
+        migrateDefaultDouble(cfg, "jobs-fragments.experience-per-fragment", 25.0);
 
         // Preserve the complete SpookySeason/HorrorNights configuration.
         // Only retired features are removed: secret rooms/keys and failed generators.
@@ -224,6 +242,36 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         }
     }
 
+    private void registerJobsFragmentBridge() {
+        if (Bukkit.getPluginManager().getPlugin("Jobs") == null) {
+            getLogger().info("Jobs Reborn není nainstalován; fragmenty z jobů zůstávají neaktivní.");
+            return;
+        }
+        try {
+            Class<?> bridgeType = Class.forName("cz.halloween.core.JobsFragmentBridge");
+            Object instance = bridgeType.getConstructor(HalloweenCore.class).newInstance(this);
+            if (!(instance instanceof org.bukkit.event.Listener listener)) {
+                throw new IllegalStateException("Jobs bridge does not implement Listener");
+            }
+            getServer().getPluginManager().registerEvents(listener, this);
+            jobsFragmentBridge = listener;
+            getLogger().info("Jobs Reborn propojen: fragmenty za XP (limit dle config.yml).");
+        } catch (ReflectiveOperationException | LinkageError | IllegalStateException exception) {
+            getLogger().warning("Jobs Reborn fragment bridge se nepodařilo zapnout: " + exception.getMessage());
+        }
+    }
+
+    private void flushJobsFragmentBridge() {
+        if (jobsFragmentBridge == null) return;
+        try {
+            jobsFragmentBridge.getClass().getMethod("flush").invoke(jobsFragmentBridge);
+        } catch (ReflectiveOperationException | LinkageError exception) {
+            getLogger().warning("Nepodařilo se uložit postup Jobs fragmentů: " + exception.getMessage());
+        } finally {
+            jobsFragmentBridge = null;
+        }
+    }
+
     private void migrateDefaultPrice(YamlConfiguration cfg, String key, int target, int... legacyValues) {
         migrateDefaultInteger(cfg, key, target, legacyValues);
     }
@@ -233,6 +281,17 @@ public final class HalloweenCore extends JavaPlugin implements CommandExecutor, 
         int current = cfg.getInt(key);
         for (int legacy : legacyValues) {
             if (current == legacy) {
+                cfg.set(key, target);
+                return;
+            }
+        }
+    }
+
+    private void migrateDefaultDouble(YamlConfiguration cfg, String key, double target, double... legacyValues) {
+        if (!cfg.contains(key)) return;
+        double current = cfg.getDouble(key);
+        for (double legacy : legacyValues) {
+            if (Double.compare(current, legacy) == 0) {
                 cfg.set(key, target);
                 return;
             }
