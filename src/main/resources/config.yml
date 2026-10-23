@@ -583,21 +583,32 @@ season:
 
 quest-rewards:
   default-difficulty: light
-  # Extra reward for finishing all four daily contracts.
+  # Bonus for completing all 15 daily contracts.
   daily-completion-bonus: 15
+  # Bonus for completing all three weekly challenges.
+  weekly-completion-bonus: 50
+  # Weekly challenges multiply their tier reward by this factor.
+  weekly-multiplier: 3.0
+  # Calibrated for 15 daily contracts and 3 weekly challenges, with Jobs capped separately.
   difficulties:
-    light: {min-fragments: 3, max-fragments: 5}
-    medium: {min-fragments: 8, max-fragments: 12}
-    hard: {min-fragments: 18, max-fragments: 28}
-    very-hard: {min-fragments: 32, max-fragments: 48}
-    extreme: {min-fragments: 55, max-fragments: 80}
+    light: {min-fragments: 1, max-fragments: 2}
+    medium: {min-fragments: 2, max-fragments: 4}
+    hard: {min-fragments: 5, max-fragments: 8}
+    very-hard: {min-fragments: 8, max-fragments: 12}
+    extreme: {min-fragments: 10, max-fragments: 16}
   quests: {}
 
 daily-quest:
   enabled: true
   # Legacy reward used only when migrating an unfinished quest from older builds.
-  # New four-tier contracts use the randomized quest-rewards.difficulties ranges.
   reward-fragments: 1
+
+# Optional Jobs Reborn bridge. Jobs XP gives a small bonus, not the main fragment source.
+# Default cap prevents the job system becoming an unlimited fragment farm.
+jobs-fragments:
+  enabled: true
+  experience-per-fragment: 25.0
+  max-per-day: 8
 
 shop:
   enabled: true
