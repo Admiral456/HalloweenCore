@@ -2,13 +2,13 @@
 
 ## 1. Co potřebuješ
 
-- **Minecraft / server:** Paper nebo Purpur **26.1.2**.
-- **Java:** 25 nebo novější.
+- **Minecraft / server:** Paper nebo Purpur **1.21.10**.
+- **Java:** 21 nebo novější.
 - **Nutné:** samotný soubor `HalloweenCore.jar`.
 - **Doporučené pro vlastní vzhled:** ItemsAdder **4.0.13+**. Bez něj poběží questy, fragmenty, obchod i herní eventy, ale 13 vlastních sladkostí, ikonka fragmentů a oranžové zbraně se nemusí zobrazit jako vlastní předměty.
 - **Volitelné integrace:** Jobs Reborn (fragmenty za Jobs XP), PlaceholderAPI, MythicMobs, WorldGuard, GriefPrevention a CustomJukebox. Dialogové NPC/BetonQuest modul v této verzi není součástí.
 
-Tento build není určen pro starší Paper/Purpur 1.21.x. Pro produkční server nejdřív ověř přesnou verzi serveru.
+Tento build je sestavený konkrétně pro Paper/Purpur 1.21.10. Nepoužívej ho na jiných řadách serveru bez samostatného ověření.
 
 ## 2. Co stáhnout z GitHubu
 
