@@ -5,7 +5,7 @@ api-version: '1.21'
 author: Admiral456; SpookySeason by BoondockSulfur
 description: Daily quests, fragments, Halloween shop, SpookySeason events and HorrorNights.
 folia-supported: false
-softdepend: [ItemsAdder, PlaceholderAPI, BetonQuest, Citizens, WorldGuard, GriefPrevention, CustomJukebox, MythicMobs]
+softdepend: [ItemsAdder, PlaceholderAPI, BetonQuest, Citizens, WorldGuard, GriefPrevention, CustomJukebox, MythicMobs, Jobs]
 commands:
   halloween:
     description: Questy, fragmenty, obchod a hororové eventy.
@@ -41,7 +41,7 @@ commands:
     permission: spooky.admin
   quest:
     description: Získá nebo zobrazí denní úkol za fragment.
-    usage: /quest
+    usage: /quest [daily|weekly]
     aliases: [dailyquest]
     permission: halloweencore.use
 permissions:
