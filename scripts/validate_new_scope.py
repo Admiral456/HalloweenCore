@@ -53,6 +53,7 @@ required_java = [
     "cz/halloween/core/HalloweenShopManager.java",
     "cz/halloween/core/HalloweenPlaceholders.java",
     "cz/halloween/core/HorrorNightManager.java",
+    "cz/halloween/core/JobsFragmentBridge.java",
     "org/example/SpookySeason.java",
     "org/example/feature/BloodRainManager.java",
     "org/example/feature/HauntedNightManager.java",
@@ -90,6 +91,25 @@ if "custom-mob-ids" not in cfg["horrorNights"] or "custom-mob-chance" not in cfg
     raise SystemExit("Optional MythicMobs configuration is incomplete")
 if "MythicMobs" not in plugin.get("softdepend", []):
     raise SystemExit("MythicMobs optional integration must be declared")
+if "Jobs" not in plugin.get("softdepend", []):
+    raise SystemExit("Jobs Reborn must be an optional soft dependency")
+pom = (root / "pom.xml").read_text(encoding="utf-8")
+if "com.github.Zrips</groupId><artifactId>Jobs</artifactId><version>v5.2.6.3</version>" not in pom:
+    raise SystemExit("Jobs Reborn API dependency is missing")
+jobs = (java / "cz/halloween/core/JobsFragmentBridge.java").read_text(encoding="utf-8")
+for token in ["JobsExpGainEvent", "jobs-fragments.max-per-day", "jobs-fragments.experience-per-fragment",
+              "Europe/Prague", "PlayerQuitEvent", "public void flush()"]:
+    if token not in jobs:
+        raise SystemExit(f"Jobs fragment bridge is missing: {token}")
+config_jobs = cfg.get("jobs-fragments", {})
+if config_jobs.get("enabled") is not True or config_jobs.get("max-per-day") != 8:
+    raise SystemExit("Jobs fragment bridge must be enabled with a daily cap of eight")
+daily_source = (java / "cz/halloween/core/DailyQuestManager.java").read_text(encoding="utf-8")
+slot_rows = re.findall(r'new ContractSlot\("([^"]+)",\s*"[^"]+",\s*"[^"]+",\s*(true|false)\)', daily_source)
+if sum(weekly == "false" for _, weekly in slot_rows) != 15 or sum(weekly == "true" for _, weekly in slot_rows) != 3:
+    raise SystemExit("Daily quest manager must assign exactly 15 daily and three weekly contracts")
+if "weekKey()" not in daily_source or "weekly-completion-bonus" not in daily_source:
+    raise SystemExit("Weekly challenges are missing a reset key or completion bonus")
 if any(section in cfg for section in ["secret-rooms", "random-events", "grave-encounters", "automatic-world-generation"]):
     raise SystemExit("A retired room/key or failed world-generation section remains")
 if "key-chances" in (root / "src/main/resources/config.yml").read_text(encoding="utf-8"):
@@ -108,6 +128,7 @@ core = (java / "cz/halloween/core/HalloweenCore.java").read_text(encoding="utf-8
 for wiring in ["org.example.SpookySeason.enable(this)", "new HorrorNightManager(this)",
                "new DailyQuestManager(this)", "new HalloweenPlaceholders(this)",
                "placeholders.register()", "placeholders.unregister()",
+               "registerJobsFragmentBridge()", "flushJobsFragmentBridge()",
                'case "shop" -> shopManager.open(sender);']:
     if wiring not in core:
         raise SystemExit(f"Missing plugin wiring: {wiring}")
@@ -128,4 +149,4 @@ for orange_id in ["orange_trident", "orange_mace", "orange_netherite_sword",
                   "orange_netherite_axe", "orange_netherite_spear"]:
     if f"warriorland_halloween:{orange_id}" not in shop:
         raise SystemExit(f"Orange weapon is not connected to the shop: {orange_id}")
-print("Full event wiring, no-weather rule, season dates, daily/shop systems, candy textures and orange weapons validated.")
+print("Full event wiring, no-weather rule, season dates, 15 daily/3 weekly quests, Jobs bridge, shop, candy textures and orange weapons validated.")
