@@ -1,209 +1,733 @@
-# HalloweenCore — dialogové questy a tajné podzemní místnosti.
-# Odměny používají pouze vanilla materiály; všechny rarity klíče sdílejí stejnou existující secret_key texturu.
+# HalloweenCore includes the integrated SpookySeason 1.7.0 source under MIT plus an independent HorrorNights implementation.
+# See docs/THIRD_PARTY_NOTICES.md and THIRD_PARTY_LICENSES/SpookySeason-MIT.txt.
 
-secret-rooms:
+# ═══════════════════════════════════════════════════════════
+# SpookySeason Configuration
+# ═══════════════════════════════════════════════════════════
+
+# Language: en, de (add your own in plugins/SpookySeason/lang/)
+language: en
+
+# Global toggle. Turning this off stops all features, but it is NOT a season end:
+# no rewards are handed out and the treat stats are kept (see seasonEndRewards).
+active: true
+
+# Update checker (queries Modrinth API on startup)
+updateChecker: true
+
+# Inclusive Halloween season window (Europe/Prague). 0 = always active.
+# The season runs October 23 through November 2, and is active only when 'active' is true.
+activeWindow:
+  startMonth: 10
+  startDay: 23
+  endMonth: 11
+  endDay: 2
+
+
+# ── World Filter ───────────────────────────────────────────
+# Leave empty to enable in ALL worlds. Add world names to restrict.
+# Example: ["world", "world_the_end"]
+enabledWorlds: []
+
+# ── Region Integration ─────────────────────────────────────
+regionIntegration:
   enabled: true
-  # Doplň přesný název běžného herního světa. Prázdný seznam bezpečně vypíná generování.
-  worlds: []
+  worldGuard:
+    allowInProtected: false
+  griefPrevention:
+    allowInClaims: false
+    allowInAdminClaims: false
+
+# ── CustomJukebox Integration ──────────────────────────────
+# Set ambientDiscId to a CustomJukebox disc ID to use it
+# instead of vanilla ambient cave sounds during haunted nights.
+customJukebox:
+  ambientDiscId: ""
+  ambientLoop: true
+
+# ── Trick-or-Treat ─────────────────────────────────────────
+trickOrTreat:
+  enabled: true
+  cooldownSeconds: 90
+  # Global per-player cooldown between any two knocks (seconds, 0 = off).
+  # Prevents farming the leaderboard with many doors/villagers.
+  globalCooldownSeconds: 30
+  chanceTreat: 0.7
+  treatItems:
+    - CANDY_APPLE:2
+    - COOKIES:6
+    - PUMPKIN_PIE:1
+  meanMobs:
+    - WITCH
+    - ZOMBIE
+  meanMobBuffSeconds: 20
+
+# Also allow Trick-or-Treat on right-clicking villagers.
+# Note: a knock consumes the click, so the trading screen does not open that one time.
+# With sneakToTrade, a sneaking right-click always opens the trade instead.
+trickOrTreatVillagers:
+  enabled: true
+  sneakToTrade: true
+
+# ── Haunted Night ──────────────────────────────────────────
+hauntedNight:
+  enabled: true
+  ghostSpawnEverySeconds: 25
+  ghostPerPlayer: 1
+  ambientVolume: 0.7
+  ghostVolume: 0.5
+
+# ── Pumpkin Rain ───────────────────────────────────────────
+pumpkinRain:
+  enabled: true
+  spawnRadius: 10
+  intensity: 5
+  tickPeriod: 10
+  maxDurationSeconds: 60
+  volume: 0.6
+
+# ── Blood Rain ─────────────────────────────────────────────
+# Red drops falling around every player (particles - vanilla rain cannot be coloured without a
+# resource pack). /bloodrain start runs it in every enabled world; on its own it comes with
+# bloodMoonChance once per blood moon night, only where it is night, and ends with the night.
+bloodRain:
+  enabled: true
+  # Chance per blood moon night. 0 = only by command.
+  bloodMoonChance: 0.25
+  # How the drops look:
+  #   dripstone = real drop shapes (falling dripstone drips, reddish orange) (default)
+  #   drops     = fragments of "block" falling with gravity
+  #   streaks   = thin dark red vertical threads
+  # Several can be combined, comma-separated, e.g. "dripstone,streaks".
+  style: dripstone
+  # Block whose fragments form the "drops" style and the splashes on the ground.
+  block: NETHER_WART_BLOCK
+  spawnRadius: 12
+  # Drops per player and pulse.
+  intensity: 14
+  tickPeriod: 4
+  maxDurationSeconds: 90
+  # Heartbeat and, without playerWeather, the rain sound. Players' /spookyvolume rain applies.
+  volume: 0.5
+  # Compatibility setting only; this event uses particles and never overrides world/player weather.
+  playerWeather: false
+  # The undead around players grow stronger while it lasts. Raid attackers and the Headless
+  # Horseman are left out - their strength is balanced separately.
+  undead:
+    enabled: true
+    # 0 = Strength I, 1 = Strength II, ...
+    strengthAmplifier: 0
+    radius: 24
+
+# ── Jump Scares ────────────────────────────────────────────
+# Triggers when breaking blocks in dark areas.
+jumpScare:
+  enabled: true
+  chance: 0.02
+  cooldownSeconds: 120
+  darkLightLevel: 4
+
+# ── Halloween Mob Heads ────────────────────────────────────
+# Zombies/Skeletons spawn with pumpkin heads, Creepers drop pumpkins.
+halloweenMobs:
+  enabled: true
+  pumpkinHeadChance: 0.3
+  creeperPumpkinDropChance: 0.1
+
+# ── Halloween Boss (Headless Horseman) ─────────────────────
+# Horse and rider share one HP pool. Damage to horse transfers to rider.
+halloweenBoss:
+  enabled: true
+  # Health is tracked by the plugin, so this is NOT capped at 1024 like the vanilla max_health
+  # attribute. The entity holds one chunk of it and is topped back up as the pool drains; the
+  # boss bar always shows the pool, not the entity. Starting range for a wave leader facing a
+  # server full of defenders: 900-3000.
+  spawnChance: 0.005
+  # Minimum delay before the boss can spawn again after being defeated.
+  respawnCooldownSeconds: 300
+  health: 100
+  damage: 8
+  speed: 0.35
+  armor:
+    helmet: CARVED_PUMPKIN
+    chestplate: NETHERITE_CHESTPLATE
+    leggings: NETHERITE_LEGGINGS
+    boots: NETHERITE_BOOTS
+    weapon: NETHERITE_SWORD
+  abilities:
+    witherOnHit: true
+    witherDurationTicks: 100
+    fireResistance: true
+    charge: true
+    chargeIntervalSeconds: 15
+  lootTable:
+    - DIAMOND:2
+    - GOLDEN_APPLE:3
+    - NETHERITE_SCRAP:1
+
+# ── Bat Swarms ─────────────────────────────────────────────
+batSwarm:
+  enabled: true
+  spawnChance: 0.03
+  batsPerSwarm: 8
+  lifetimeSeconds: 5
+
+# ── Fog Effect ─────────────────────────────────────────────
+# Brief Darkness pulse during haunted nights.
+fog:
+  enabled: true
+  intervalSeconds: 60
+  durationTicks: 100
+
+# ── Treat Leaderboard ──────────────────────────────────────
+treatLeaderboard:
+  enabled: true
+
+# ── Season-End Rewards ─────────────────────────────────────
+# Items and experience for the top treat collectors when the season ends, per rank.
+# Items as MATERIAL:amount; whatever does not fit into the inventory is dropped at the
+# player's feet. Offline winners receive their reward on their next join.
+# Auto-distributes when the activeWindow closes, or manually via /spooky rewards.
+# Note: with startDay/endDay set to 0 (always active) that transition never happens,
+# so rewards are only ever handed out manually. A manual /spooky off does NOT count
+# as a season end either. If the server was offline during the transition, it is
+# caught up on the next start (state is kept in reward-state.yml).
+seasonEndRewards:
+  enabled: true
+  ranks:
+    1:
+      items:
+        - DIAMOND:5
+        - NETHERITE_INGOT:1
+      xp: 0
+    2:
+      items:
+        - DIAMOND:3
+        - GOLDEN_APPLE:2
+      xp: 0
+    3:
+      items:
+        - DIAMOND:1
+        - GOLDEN_APPLE:1
+      xp: 0
+
+# ── Undead Raid ────────────────────────────────────────────
+# Waves of undead march on a defended target. Defenders hold the line; if the
+# target falls, the raid is lost. Independent of the season window above:
+# it only ever starts from /spookyraid start or from raid.schedule below.
+raid:
+  enabled: true
+
+  # Per-attacker diagnostics in the server log (position, distance to target, what it is
+  # actually targeting, whether it has a path). Verbose; intended for diagnosing attackers
+  # that do not arrive.
+  debug: false
+
+  # Optional automatic start. Independent of activeWindow.
+  # startDay/endDay = 0 means "never automatically".
+  # The raid starts on the first tick inside windowMinutes after startTime
+  # (server-local time) and at most once per day. Without players online the
+  # day stays open, so it still fires once someone joins inside the window.
+  schedule:
+    enabled: false
+    month: 10
+    startDay: 0
+    endDay: 0
+    startTime: "20:00"
+    windowMinutes: 15
+
+  # What is being defended.
+  #   objective = a marked entity with its own health pool at a fixed spot.
+  #               It has no AI and only takes damage from the raid's attackers.
+  #   zone      = a box defined right here, no other plugin needed. Same rules as
+  #               region: every attacker that gets inside counts as a breach.
+  #               Set one up in game with /spookyraid zone pos1 / pos2 / save.
+  #   region    = a named WorldGuard region, for servers that already keep their
+  #               areas there. Same rules as zone. Needs WorldGuard.
+  target:
+    mode: objective
+    objective:
+      # Single target. Only used while "points" below is empty.
+      world: world
+      x: 0.5
+      y: 64.0
+      z: 0.5
+      # Several targets at once. One line per target:
+      #   "world,x,y,z"  or  "world,x,y,z,health"  or  "world,x,y,z,health,name"
+      # An empty health field ("world,x,y,z,,name") uses the health below. The name shows up
+      # in /spookyraid stats and in the raid results; it may contain spaces but no commas.
+      # Without a name a target is called "Target 1", "Target 2" and so on.
+      # Easiest via /spookyraid target add [name] (adds your own position).
+      # All targets must be in the same world.
+      points: []
+      # When is the raid lost?
+      #   all        = only when every target has fallen (default)
+      #   any        = as soon as the first one falls
+      #   <a number> = when that many targets have fallen
+      lose: all
+      # Health per target. The plugin tracks this itself, so the value is free -
+      # it is NOT capped at 1024 like the vanilla max_health attribute.
+      health: 1024
+      # display = a block object without any hitbox (recommended). It never swallows a
+      #           sword swing, so small attackers standing in front of it stay hittable.
+      # entity  = a mob as the target. Looks more alive, but its hitbox catches player
+      #           hits aimed at attackers next to it.
+      style: display
+      block: SOUL_LANTERN
+      entity: IRON_GOLEM
+      glowing: true
+      silent: true
+      # Floating health readout above each target.
+      showLabel: true
+      labelHeight: 1.6
+      # From this distance an attacker hits the target (once per second).
+      reach: 4.0
+    zone:
+      # Which of the zones below is defended.
+      name: ''
+      # How many attackers may get inside before the raid is lost.
+      breachLimit: 20
+    # Your own zones: name -> world,x1,y1,z1,x2,y2,z2 (the two opposite corners).
+    # /spookyraid zone save <name> writes them here for you.
+    zones: {}
+    region:
+      world: world
+      name: ''
+      breachLimit: 20
+
+  # Rough starting points, adjust to your player count:
+  #   handful of defenders  -> count 5, baseMobs 8,  mobsPerWave 4,  maxAlive 40,  damage 3
+  #   large event (20+)     -> count 8, baseMobs 30, mobsPerWave 15, maxAlive 150, damage 4
+  # With many defenders raise maxAlive first - it is the real limit on how much pressure
+  # arrives at once. Raise the target health to match (it has no cap).
+  waves:
+    count: 5
+    breakSeconds: 20
+    # Attackers per wave: baseMobs + (wave - 1) * mobsPerWave
+    baseMobs: 8
+    mobsPerWave: 4
+    # Hard cap on attackers alive at the same time, and how many are spawned per second.
+    maxAlive: 40
+    spawnPerSecond: 4
+    spawnRadiusMin: 22
+    spawnRadiusMax: 40
+    # Safety net: a wave that cannot finish (stuck attackers) ends after this many
+    # seconds. 0 disables it.
+    timeoutSeconds: 420
+    retargetSeconds: 3
+    # Honour WorldGuard/GriefPrevention protection at every spawn point. Turn this
+    # off if the event area itself is a protected region and nothing can spawn.
+    respectRegionProtection: true
+    # Carved pumpkin helmet so the undead do not burn when a raid runs into daylight. An
+    # archetype that brings its own helmet keeps it - give such a mob a helmet it can wear in
+    # the sun, or it will burn.
+    pumpkinHeads: true
+    # Show the names below above the attackers' heads. Off by default - with a large wave
+    # many name plates clutter the view. Even while hidden the name is
+    # still used in death messages ("... was slain by Rotting One").
+    nameVisible: false
+    # Names per attacker type. "default" covers everything without its own entry.
+    # An empty string means: no custom name at all (vanilla name). Colour codes with the
+    # section sign work, and {wave} is replaced with the wave number.
+    names:
+      default: ""
+      # ZOMBIE: "§2Rotting One"
+      # SKELETON: "§fBonewalker"
+      # HUSK: "§6Dust-Dried"
+      # ZOMBIE_VILLAGER: "§aLost Villager"
+      # WITHER_SKELETON: "§8Black Bone"
+    # Off by default so the raid cannot be used as a mob farm.
+    dropLoot: false
+    # Vanilla spawns roughly 5% of zombies as babies. They are small and fast - and hard to
+    # hit when they crowd a target. Set to false for a more predictable event.
+    babies: true
+    health: 20
+    healthPerWave: 0.15
+    # Damage against PLAYERS. Set as the attack attribute, so armour reduces it as usual.
+    damage: 3.0
+    damagePerWave: 0.1
+    # Damage against a TARGET per blow (once per second while within reach). Raw - no armour,
+    # no resistance. -1 means "same as damage", which is how it behaved before these keys.
+    # Keep them separate: player damage has to stay survivable, target damage does not.
+    targetDamage: -1
+    targetDamagePerWave: -1
+    # What the attackers care about:
+    #   target  = the objective first. A defender is only engaged while within
+    #             playerAggroRange, otherwise the attacker breaks off and walks on. (default)
+    #   players = plain vanilla behaviour - chase whoever they spot, however far.
+    focus: target
+    playerAggroRange: 6.0
+    speed: 0.26
+    # The Headless Horseman leads one wave. 0 = the last one.
+    leaderEnabled: true
+    leaderWave: 0
+    # Damage the leader deals to an objective per blow. -1 = the same as a regular attacker of
+    # that wave. In zone/region mode the leader getting inside counts as one breach.
+    leaderTargetDamage: -1.0
+    # How far from an objective the leader may stand and still strike it. Horse and rider are too
+    # bulky to close to target.reach; the larger of the two applies.
+    leaderReach: 6.5
+    # Horse and rider are bulky and get caught where other attackers pass. After this many
+    # seconds without getting closer, the leader phases leaderPhaseDistance blocks towards the
+    # target as a ghost rider. 0 turns it off.
+    leaderPhaseSeconds: 6
+    leaderPhaseDistance: 8.0
+    # Attackers may never rearrange the world - explosions still hurt players, but no blocks
+    # are broken. This is what lets withers join a raid over a village you want to keep.
+    noGriefing: true
+    # How far a ranged attacker (bow or crossbow) may stand off and still shoot the target. Within
+    # this distance it holds its position. Melee attackers always have to close to target.reach.
+    rangedReach: 16.0
+    # Let attackers hurt each other. Off by default: one stray arrow is enough for a skeleton to
+    # hit a zombie, the zombie to turn on the skeleton, and the wave to thin itself out before it
+    # ever reaches the target. Also stops them standing around swinging at each other.
+    friendlyFire: false
+    # Hide the vanilla boss bar that withers and dragons bring with them. A wave with three
+    # withers otherwise fills the screen with bars and pushes the raid's own two out of view.
+    # The wave leader keeps its bar - that one is drawn by the plugin, not by the entity.
+    hideBossBars: true
+    # Nudge along any attacker whose distance to the target has stopped shrinking. A path alone
+    # does not move everything: a wither flies by its own control and hovers, and ground
+    # mobs get caught on terrain. 0 turns it off, unstickMinDistance is what counts as arrived.
+    unstickSpeed: 0.35
+    unstickMinDistance: 5.0
+
+    # ── The attacker roster ────────────────────────────────────────────────
+    # Each entry is one archetype. Several entries may share an entity type, which is how a
+    # plain zombie and an armoured one become two different attackers.
+    #
+    #   type        entity type (required)
+    #   id          name used for maxPerWave bookkeeping; defaults to the type
+    #   weight      relative frequency among everything eligible for the wave
+    #   fromWave    first wave it can appear in (default 1)
+    #   untilWave   last wave it can appear in (0 = no end)
+    #   maxPerWave  at most this many per wave (0 = no limit)
+    #   minPerWave  at least this many per wave, drawn before the random picks (0 = pure chance).
+    #               Useful for rare archetypes: with a large roster a weight of 1 may not
+    #               appear in a raid at all.
+    #   health / damage / targetDamage / speed   override the wave-wide values; omit to inherit
+    #   scale       size multiplier (needs MC 1.20.5+), 1.0 is normal
+    #   name        overrides waves.names for this archetype
+    #   spawnRadiusMin / spawnRadiusMax   override the wave-wide spawn ring for this archetype.
+    #               Useful for mobs that travel badly: a wither moves by its own flight control
+    #               and is unreliable at crossing open ground; with 0/4 it spawns at the objective.
+    #   equipment   weapon, offhand, helmet, chestplate, leggings, boots.
+    #               Mobs actually use what they carry - give a skeleton a bow and it shoots.
+    #               Drop chances are always zero.
+    #
+    # Which archetype spawns is drawn at random by weight, every single time.
+    mobs:
+      - type: ZOMBIE
+        weight: 5
+      - type: SKELETON
+        weight: 3
+        equipment:
+          weapon: BOW
+      - type: HUSK
+        weight: 2
+      - type: ZOMBIE_VILLAGER
+        weight: 1
+      - id: armoured_zombie
+        type: ZOMBIE
+        weight: 2
+        fromWave: 3
+        scale: 1.3
+        health: 45
+        damage: 6
+        speed: 0.24
+        name: "§2Reinforced Zombie"
+        equipment:
+          weapon: IRON_SWORD
+          helmet: IRON_HELMET
+          chestplate: IRON_CHESTPLATE
+      - id: bone_archer
+        type: SKELETON
+        weight: 2
+        fromWave: 4
+        scale: 1.15
+        health: 30
+        damage: 5
+        name: "§fBone Archer"
+        equipment:
+          weapon: BOW
+          helmet: CHAINMAIL_HELMET
+      - type: WITHER_SKELETON
+        weight: 1
+        fromWave: 5
+        equipment:
+          weapon: STONE_SWORD
+      - id: lesser_wither
+        type: WITHER
+        weight: 1
+        fromWave: 8
+        maxPerWave: 3
+        scale: 0.6
+        health: 120
+        damage: 6
+        targetDamage: 12
+        name: "§8Lesser Wither"
+
+    # Kept for compatibility: only used while "mobs" above is empty.
+    composition:
+      - ZOMBIE:5
+      - SKELETON:3
+      - HUSK:2
+      - ZOMBIE_VILLAGER:1
+      - WITHER_SKELETON:1
+
+  announce:
+    countdownSeconds: 60
+    radius: 128
+
+  # Darkness pulse around the target while the raid runs.
+  fog:
+    enabled: true
+    intervalSeconds: 45
+    durationTicks: 80
+    radius: 96
+
+  # Optional CustomJukebox disc played at the target during the raid.
+  music:
+    discId: ""
+    loop: true
+
+  # Items (MATERIAL:amount) and experience per defender. Defenders are everyone who was
+  # within participationRadius of the target during the raid, plus everyone who killed an
+  # attacker. Items that do not fit into the inventory are dropped at the player's feet.
+  rewards:
+    participationRadius: 96
+    victory:
+      items:
+        - DIAMOND:3
+        - GOLDEN_APPLE:2
+      xp: 0
+    consolation:
+      items:
+        - BREAD:8
+      xp: 0
+
+  # Per-player statistics of each raid: kills, leader kills, damage dealt, kills close to a
+  # target and deaths. The last raid is shown with /spookyraid stats. Each finished raid is
+  # written to raid-results/ as one JSON file, and other plugins receive it through RaidEndEvent.
+  stats:
+    # A kill counts as a defence kill if the attacker died within this many blocks of a
+    # target still standing (zone/region: inside it or this close to its centre).
+    defenseRadius: 12
+    # A mob that dies without a final player blow (lava, fall, burning) is credited to the
+    # last player who hurt it, if that was at most this many seconds before.
+    killCreditSeconds: 5
+    # Post the result in chat to the players around the target when a raid ends.
+    announce:
+      enabled: false
+      # How many defenders to list, best first. 0 lists everyone.
+      top: 5
+
+  # On defeat the raid ends by itself: attackers are cleared, the consolation rewards go out,
+  # and the place is left marked for a short while - particles and darkness, no block changes.
+  # Once that runs out the raid returns to idle on its own and can be started again.
+  # Set enabled to false to finish the instant the last target falls.
+  defeat:
+    effect:
+      enabled: true
+      durationSeconds: 20
+
+
+# ── HorrorNights-style random horror nights (independent implementation) ──
+# Behavior inspired by the public feature description of HorrorNights; no source code/assets copied.
+horrorNights:
+  enabled: true
+  enabled-worlds: [] # Empty means all worlds except excluded-worlds.
   excluded-worlds:
     - "Spawn"
-  # Pokus o místnost na každý nově generovaný chunk. Už prozkoumané chunky se znovu neprohledávají.
-  chance-per-new-chunk: 0.01
-  min-depth-below-surface: 16
-  max-depth-below-surface: 28
+  horror-night-chance: 10.0
+  check-interval-ticks: 6000 # 5 minutes
+  spawn-interval-ticks: 60 # 3 seconds
+  max-mobs-per-world: 30
+  spawn-count: 3
+  spawn-min-radius: 20
+  spawn-max-radius: 40
+  invisible-chance: 30.0
+  invisible-particle-count: 3
+  invisible-particle: SOUL_FIRE_FLAME
+  health-multiplier: 2.0
+  speed-boost: true
+  strength-boost: true
+  glowing: true
+  show-custom-name: true
+  name-prefix: "&4&lHORROR "
+  mob-types: [ZOMBIE, SKELETON, SPIDER, CREEPER, ENDERMAN, WITCH, PHANTOM]
+  spawn-custom-mobs: true
+  # Optional MythicMobs IDs. Leave empty to use the configured vanilla mob pool only.
+  # IDs must already exist in MythicMobs; the plugin does not invent them.
+  custom-mob-ids: []
+  # Probability of selecting a custom mob for a spawn (0.0–1.0).
+  custom-mob-chance: 0.25
+  # HorrorNights deliberately uses particles and sounds without changing weather or sky.
+  thunderstorm: false
+  player-effects: true
+  effect-chance: 0.35
+  effect-duration-ticks: 100
+  effect-interval-ticks: 200 # Minimum delay between screen-effect rolls (10 seconds)
+  effect-types: [DARKNESS, BLINDNESS, CONFUSION]
+  ambient-sounds: true
+  ambient-sound-interval-ticks: 200
+  sound-types: [ENTITY_WOLF_HOWL, ENTITY_WITCH_AMBIENT, ENTITY_GHAST_SCREAM, ENTITY_ENDER_DRAGON_GROWL, ENTITY_WITHER_AMBIENT, ENTITY_ENDERMAN_SCREAM]
+  manual-max-duration-ticks: 12000
+  messages:
+    horror-night-start: "&4&lVarování: začala hororová noc!"
+    horror-night-end: "&aHororová noc skončila… prozatím."
 
-  # Poměry rarit místností. Klíče jsou stejné textury, ale mají serverem kontrolovanou raritu.
-  rarity-weights:
-    common: 70
-    rare: 25
-    legendary: 5
+# HalloweenCore daily quests, fragments and shop.
+season:
+  enabled: true
 
-  # Fragmenty se připíšou hráči, který místnost odemkne; vanilla předměty se vloží do truhly.
-  # Každá místnost dostane raritu a loot pouze jednou.
-  loot:
-    common:
-      min-fragments: 8
-      max-fragments: 16
-      items:
-        - material: COAL
-          min: 4
-          max: 12
-          chance: 0.90
-        - material: IRON_INGOT
-          min: 3
-          max: 8
-          chance: 0.85
-        - material: GOLD_INGOT
-          min: 1
-          max: 4
-          chance: 0.45
-        - material: EMERALD
-          min: 1
-          max: 3
-          chance: 0.30
-        - material: BREAD
-          min: 2
-          max: 5
-          chance: 0.50
-        - material: COOKED_BEEF
-          min: 2
-          max: 5
-          chance: 0.50
-        - material: REDSTONE
-          min: 4
-          max: 12
-          chance: 0.40
-        # Malá šance na lepší bonus.
-        - material: DIAMOND
-          min: 1
-          max: 1
-          chance: 0.03
-
-    rare:
-      min-fragments: 20
-      max-fragments: 35
-      items:
-        - material: DIAMOND
-          min: 1
-          max: 3
-          chance: 0.95
-        - material: GOLD_INGOT
-          min: 4
-          max: 10
-          chance: 0.80
-        - material: IRON_INGOT
-          min: 8
-          max: 16
-          chance: 0.85
-        - material: EMERALD
-          min: 2
-          max: 6
-          chance: 0.60
-        - material: ENCHANTED_BOOK
-          min: 1
-          max: 1
-          chance: 0.40
-          enchantments:
-            - "unbreaking:2"
-            - "efficiency:2"
-            - "protection:2"
-        - material: DIAMOND_PICKAXE
-          min: 1
-          max: 1
-          chance: 0.12
-          enchantments:
-            - "efficiency:2"
-            - "unbreaking:2"
-        - material: DIAMOND_SWORD
-          min: 1
-          max: 1
-          chance: 0.10
-          enchantments:
-            - "sharpness:2"
-            - "unbreaking:2"
-        - material: GOLDEN_APPLE
-          min: 1
-          max: 1
-          chance: 0.10
-
-    legendary:
-      min-fragments: 40
-      max-fragments: 70
-      items:
-        - material: DIAMOND
-          min: 4
-          max: 8
-          chance: 0.95
-        - material: EMERALD
-          min: 4
-          max: 10
-          chance: 0.80
-        - material: GOLD_INGOT
-          min: 8
-          max: 16
-          chance: 0.80
-        - material: ENCHANTED_BOOK
-          min: 1
-          max: 1
-          chance: 0.24
-          enchantments:
-            - "mending:1"
-            - "sharpness:4"
-            - "protection:4"
-        - material: DIAMOND_SWORD
-          min: 1
-          max: 1
-          chance: 0.20
-          enchantments:
-            - "sharpness:3"
-            - "unbreaking:3"
-        - material: DIAMOND_PICKAXE
-          min: 1
-          max: 1
-          chance: 0.20
-          enchantments:
-            - "efficiency:3"
-            - "unbreaking:2"
-        - material: DIAMOND_CHESTPLATE
-          min: 1
-          max: 1
-          chance: 0.10
-          enchantments:
-            - "protection:3"
-            - "unbreaking:2"
-        - material: GOLDEN_APPLE
-          min: 1
-          max: 2
-          chance: 0.25
-        - material: NETHERITE_SCRAP
-          min: 1
-          max: 2
-          chance: 0.06
-        - material: TOTEM_OF_UNDYING
-          min: 1
-          max: 1
-          chance: 0.02
-
-# BetonQuest drží texty, nabídky a podmínky dialogů. HalloweenCore vyplácí odměny.
-# Pro konkrétní ID nastav quest-rewards.quests.<id>; ukázkový farmar_wheat dává 5 fragmentů
-# bez klíče. Ostatní neznámá ID používají výchozí obtížnost.
 quest-rewards:
   default-difficulty: light
+  # Bonus for completing all 15 daily contracts.
+  daily-completion-bonus: 15
+  # Bonus for completing all three weekly challenges.
+  weekly-completion-bonus: 50
+  # Weekly challenges multiply their tier reward by this factor.
+  weekly-multiplier: 3.0
+  # Calibrated for 15 daily contracts and 3 weekly challenges, with Jobs capped separately.
   difficulties:
-    light:
-      min-fragments: 3
-      max-fragments: 5
-      key-chances:
-        common: 0.10
-        rare: 0.01
-        legendary: 0.001
-    medium:
-      min-fragments: 6
-      max-fragments: 9
-      key-chances:
-        common: 0.15
-        rare: 0.035
-        legendary: 0.005
-    hard:
-      min-fragments: 10
-      max-fragments: 15
-      key-chances:
-        common: 0.20
-        rare: 0.06
-        legendary: 0.02
-    very-hard:
-      min-fragments: 16
-      max-fragments: 25
-      key-chances:
-        common: 0.25
-        rare: 0.10
-        legendary: 0.08
-  quests:
-    # Testovací BetonQuest dialog; částku můžeš změnit, nebo položku odstranit.
-    farmer_wheat:
-      difficulty: light
-      fragments: 5
-      key-chances:
-        common: 0.0
-        rare: 0.0
-        legendary: 0.0
+    light: {min-fragments: 1, max-fragments: 2}
+    medium: {min-fragments: 3, max-fragments: 5}
+    hard: {min-fragments: 6, max-fragments: 9}
+    very-hard: {min-fragments: 10, max-fragments: 15}
+    extreme: {min-fragments: 16, max-fragments: 24}
+  quests: {}
+
+daily-quest:
+  enabled: true
+  # Legacy reward used only when migrating an unfinished quest from older builds.
+  reward-fragments: 1
+
+# Optional Jobs Reborn bridge. Jobs XP gives a small bonus, not the main fragment source.
+# Default cap prevents the job system becoming an unlimited fragment farm.
+jobs-fragments:
+  enabled: true
+  experience-per-fragment: 25.0
+  max-per-day: 8
+
+shop:
+  enabled: true
+  prices:
+    # Candy and basic materials
+    candy: 3
+    coal: 10
+    copper: 12
+    raw-iron: 15
+    iron: 18
+    raw-gold: 14
+    gold: 20
+    redstone: 15
+    lapis: 15
+    quartz: 18
+    amethyst-shard: 30
+    prismarine-shard: 25
+    prismarine-crystals: 40
+    slime-ball: 30
+    magma-cream: 50
+    phantom-membrane: 110
+    ghast-tear: 130
+    shulker-shell: 125
+    turtle-scute: 150
+    nautilus-shell: 90
+    heart-of-the-sea: 250
+    crying-obsidian: 45
+    blaze-powder: 45
+    ender-eye: 120
+    dragon-breath: 100
+    netherite-template: 1100
+    emerald: 30
+    diamond: 45
+    netherite-scrap: 125
+    netherite-ingot: 350
+    # Building and redstone
+    cobblestone: 10
+    stone: 12
+    deepslate: 16
+    oak-logs: 15
+    dark-oak-logs: 20
+    prismarine-bricks: 45
+    sea-lantern: 60
+    terracotta: 25
+    orange-concrete: 30
+    lantern: 25
+    campfire: 20
+    chain: 35
+    glass: 15
+    obsidian: 35
+    quartz-block: 30
+    glowstone: 25
+    slime-block: 40
+    tnt: 45
+    # Food and healing
+    bread: 10
+    cooked-beef: 18
+    baked-potato: 12
+    golden-carrot: 25
+    pumpkin-pie: 15
+    honey-bottle: 18
+    golden-apple: 65
+    enchanted-golden-apple: 750
+    # Utility and exploration
+    ender-pearl: 25
+    blaze-rod: 35
+    arrow: 12
+    firework-rocket: 25
+    experience-bottle: 40
+    ender-chest: 60
+    shulker-box: 200
+    anvil: 45
+    name-tag: 90
+    saddle: 65
+    water-bucket: 20
+    lead: 15
+    compass: 45
+    clock: 45
+    recovery-compass: 180
+    spyglass: 60
+    fishing-rod: 50
+    shears: 35
+    flint-and-steel: 40
+    dragon-head: 450
+    end-crystal: 225
+    conduit: 650
+    totem: 750
+    beacon: 1600
+    nether-star: 900
+    # Tools and weapons
+    iron-pickaxe: 35
+    diamond-sword: 120
+    diamond-pickaxe: 150
+    diamond-axe: 120
+    diamond-shovel: 85
+    diamond-hoe: 95
+    netherite-sword: 600
+    netherite-axe: 550
+    netherite-pickaxe: 700
+    netherite-shovel: 350
+    netherite-hoe: 400
+    bow: 80
+    crossbow: 100
+    shield: 70
+    trident: 850
+    mace: 1400
+    # Armor
+    iron-helmet: 35
+    iron-chestplate: 60
+    iron-leggings: 50
+    iron-boots: 30
+    diamond-helmet: 150
+    diamond-chestplate: 250
+    diamond-leggings: 200
+    diamond-boots: 120
+    golden-horse-armor: 100
+    diamond-horse-armor: 180
+    netherite-helmet: 450
+    netherite-chestplate: 850
+    netherite-leggings: 700
+    netherite-boots: 450
+    elytra: 2000

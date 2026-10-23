@@ -1,0 +1,1929 @@
+/*
+ * Integrated from SpookySeason 1.7.0 by BoondockSulfur under the MIT License.
+ * Copyright (c) 2026 BoondockSulfur. See THIRD_PARTY_LICENSES/SpookySeason-MIT.txt.
+ */
+package org.example.feature.raid;
+
+import java.io.File;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.format.NamedTextColor;
+import net.kyori.adventure.text.format.TextColor;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
+import net.kyori.adventure.title.Title;
+import org.bukkit.Bukkit;
+import org.bukkit.Difficulty;
+import org.bukkit.Location;
+import org.bukkit.Tag;
+import org.bukkit.block.Block;
+import org.bukkit.World;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.SoundCategory;
+import org.bukkit.boss.BarColor;
+import org.bukkit.boss.BarFlag;
+import org.bukkit.boss.BarStyle;
+import org.bukkit.boss.BossBar;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Boss;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
+import org.bukkit.entity.Projectile;
+import org.bukkit.entity.Tameable;
+import org.bukkit.entity.Wither;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
+import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityChangeBlockEvent;
+import org.bukkit.event.entity.EntityDamageByEntityEvent;
+import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.entity.EntityExplodeEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityPotionEffectEvent;
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.player.PlayerTeleportEvent;
+import io.papermc.paper.entity.TeleportFlag;
+import com.destroystokyo.paper.entity.ai.Goal;
+import com.destroystokyo.paper.entity.ai.MobGoals;
+import org.bukkit.inventory.EntityEquipment;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.util.Vector;
+import org.example.SpookySeason;
+import org.example.api.RaidEndEvent;
+import org.example.api.RaidStartEvent;
+import org.example.api.RaidResult;
+import org.example.feature.HalloweenBossManager;
+import org.example.feature.SeasonRewardManager;
+import org.example.lang.Lang;
+import org.example.util.Attributes;
+import org.example.util.Reward;
+import org.example.util.Scheduler;
+import org.example.util.YamlSaver;
+
+/**
+ * Wave-based assault on a defended target.
+ *
+ * <p>Shape of it: announcement with a countdown, then wave after wave of attackers walking at the
+ * target, with a breather in between. Holding every wave wins; if the target falls (see
+ * {@link RaidTarget}) the raid is lost.
+ *
+ * <p><b>Folia:</b> the state machine ticks on the global scheduler and never touches blocks or
+ * entities directly. Spawns go through the region scheduler of the target location, any work on an
+ * attacker through that entity's scheduler. Tasks are only ever cancelled through
+ * {@link Scheduler.TaskHandle}.
+ *
+ * <p>Existing features are left alone: the wave leader is the plugin's own Halloween boss, spawned
+ * via {@link org.example.feature.HalloweenBossManager#forceSpawnAt(Location)}.
+ */
+public class RaidManager implements Listener {
+
+    public enum State {
+        IDLE,
+        COUNTDOWN,
+        WAVE,
+        BREAK,
+        AFTERMATH
+    }
+
+    private static final int TARGET_READY_GRACE_SECONDS = 15;
+    private static final int LEADER_GRACE_SECONDS = 15;
+    /** How far below the surface a spawn point may be looked for, in blocks. */
+    private static final int SURFACE_SEARCH_DEPTH = 6;
+    /**
+     * Leader health pool before the boss manager processes a hit; read again at MONITOR to learn
+     * how much the hit actually took. Events for one entity are handled on one thread.
+     */
+    private static final ThreadLocal<Double> LEADER_POOL_BEFORE = new ThreadLocal<Double>();
+    /** Player behind a hit on the leader's horse, which reaches the rider as sourceless damage. */
+    private static final ThreadLocal<Player> HORSE_ATTACKER = new ThreadLocal<Player>();
+
+    private final Plugin plugin;
+    private Scheduler.TaskHandle tickTask;
+
+    // State is written by the global tick and read from events on arbitrary region threads.
+    private volatile State state = State.IDLE;
+    private volatile RaidTarget target;
+    private volatile RaidSettings settings;
+    private volatile int waveIndex;
+
+    private final List<Entity> attackers = new CopyOnWriteArrayList<Entity>();
+    private final Set<UUID> attackerIds = ConcurrentHashMap.newKeySet();
+    private final Set<UUID> participants = ConcurrentHashMap.newKeySet();
+    private final RaidStats stats = new RaidStats();
+    private final RaidResultStore resultStore;
+    private final AtomicReference<RaidResult> lastResult = new AtomicReference<RaidResult>();
+    // Set when a raid starts and cleared once its result has been published, so it goes out once.
+    private volatile UUID raidId;
+    private volatile long startedAt;
+    // The boss acting as this raid's leader, remembered on its first hit: the boss manager
+    // forgets it in its own death handler before ours may run.
+    private volatile UUID leaderId;
+    private final AtomicInteger remainingSpawns = new AtomicInteger();
+    private final AtomicInteger spawnsInFlight = new AtomicInteger();
+    private final AtomicInteger spawnAttempts = new AtomicInteger();
+    // Failed spawns within one wave share a cause; the warning is logged once per wave.
+    private final AtomicBoolean spawnFailureLogged = new AtomicBoolean();
+    // How many of each archetype have spawned this wave — for maxPerWave and minPerWave.
+    private final java.util.Map<String, Integer> spawnedThisWave = new ConcurrentHashMap<String, Integer>();
+    private final NamespacedKey targetDamageKey;
+    private final NamespacedKey rangedKey;
+    private final NamespacedKey lastDistanceKey;
+
+    private final BossBar waveBar;
+    private final BossBar targetBar;
+
+    private int waveQuota;
+    private int secondsLeft;
+    private int waveSeconds;
+    private int retargetTicker;
+    private int fogTicker;
+    private int readyGrace;
+    private int aftermathSeconds;
+    private Location aftermathCenter;
+
+    private volatile boolean leaderRequested;
+    private boolean leaderSeen;
+    private int leaderGrace;
+    // Leader progress for phaseIfStuck; written on the leader's region thread only.
+    private volatile double leaderBestDistance = Double.MAX_VALUE;
+    private volatile int leaderStuckSeconds;
+    // The leader whose wandering goals have been stripped, see calmLeader().
+    private volatile UUID leaderCalmed;
+
+    private volatile boolean musicPlaying;
+    private Location musicLoc;
+
+    private final YamlConfiguration stateCfg;
+    private final YamlSaver stateSaver;
+
+    public RaidManager(Plugin plugin) {
+        this.plugin = plugin;
+        this.targetDamageKey = new NamespacedKey(plugin, "spooky_raid_target_damage");
+        this.rangedKey = new NamespacedKey(plugin, "spooky_raid_ranged");
+        this.lastDistanceKey = new NamespacedKey(plugin, "spooky_raid_last_distance");
+        this.waveBar = Bukkit.createBossBar(Lang.get("raid.bar.wave", "wave", "1", "total", "1", "alive", "0"),
+                BarColor.RED, BarStyle.SEGMENTED_10, new BarFlag[0]);
+        this.waveBar.setVisible(false);
+        this.targetBar = Bukkit.createBossBar(Lang.get("raid.bar.target", new String[0]),
+                BarColor.GREEN, BarStyle.SEGMENTED_20, new BarFlag[0]);
+        this.targetBar.setVisible(false);
+        File stateFile = new File(plugin.getDataFolder(), "raid-state.yml");
+        this.stateCfg = YamlConfiguration.loadConfiguration(stateFile);
+        this.stateSaver = new YamlSaver(plugin, stateFile, this::snapshotState);
+        this.resultStore = new RaidResultStore(plugin);
+        Scheduler.runAsync(plugin, () -> {
+            RaidResult stored = this.resultStore.loadLatest();
+            if (stored != null) {
+                this.lastResult.compareAndSet(null, stored);
+            }
+        });
+    }
+
+    // ── Lifecycle ───────────────────────────────────────────────────────────
+
+    /**
+     * Starts the state machine. A raid already in progress is not aborted: a reload keeps the
+     * running raid on its configuration snapshot.
+     */
+    public void start() {
+        if (this.tickTask != null) {
+            this.tickTask.cancel();
+            this.tickTask = null;
+        }
+        this.tickTask = Scheduler.runTimer(this.plugin, this::tick, 20L, 20L);
+    }
+
+    /** Aborts everything and cleans up silently — for onDisable. */
+    public void stop() {
+        this.stop(false);
+    }
+
+    /** Aborts everything and cleans up; {@code announce} tells the players near the target. */
+    public void stop(boolean announce) {
+        if (this.tickTask != null) {
+            this.tickTask.cancel();
+            this.tickTask = null;
+        }
+        this.abort(announce);
+        this.stateSaver.flushIfPending();
+    }
+
+    public State state() {
+        return this.state;
+    }
+
+    public boolean isRunning() {
+        return this.state != State.IDLE;
+    }
+
+    public int currentWave() {
+        return this.waveIndex;
+    }
+
+    /** The most recent finished raid, also from before a restart; null if none was recorded. */
+    public RaidResult lastResult() {
+        return this.lastResult.get();
+    }
+
+    /** Does this entity belong to a running raid? Shields it from the entity cleanup. */
+    public boolean isTracked(UUID id) {
+        if (id == null) {
+            return false;
+        }
+        if (this.attackerIds.contains(id)) {
+            return true;
+        }
+        RaidTarget current = this.target;
+        return current != null && current.isTracked(id);
+    }
+
+    /** A tracked entity came back with its chunk; the target swaps in the fresh reference. */
+    public void rebind(Entity entity) {
+        RaidTarget current = this.target;
+        if (current != null && current.isTracked(entity.getUniqueId())) {
+            current.rebind(entity);
+        }
+    }
+
+    // ── Start / abort ───────────────────────────────────────────────────────
+
+    /**
+     * Starts a raid.
+     *
+     * @return language key of the failure, or {@code null} on success
+     */
+    public synchronized String begin() {
+        if (this.state != State.IDLE) {
+            return "raid.error.already-running";
+        }
+        FileConfiguration cfg = this.plugin.getConfig();
+        if (!cfg.getBoolean("raid.enabled", true)) {
+            return "raid.error.disabled";
+        }
+        RaidSettings cfgSnapshot = RaidSettings.from(cfg);
+        if (cfgSnapshot.waveCount <= 0) {
+            return "raid.error.no-waves";
+        }
+        if (!cfgSnapshot.hasComposition()) {
+            return "raid.error.no-composition";
+        }
+        RaidTarget newTarget = this.createTarget(cfg);
+        if (newTarget == null) {
+            return "raid.error.no-target";
+        }
+        // enabledWorlds is the plugin's safety net, and the raid honours it like everything else.
+        if (newTarget.world() == null || !SpookySeason.get().isWorldEnabled(newTarget.world())) {
+            return "raid.error.world-disabled";
+        }
+        // On Peaceful the server refuses every monster spawn, so the raid would run completely
+        // empty instead of failing visibly.
+        if (newTarget.world().getDifficulty() == Difficulty.PEACEFUL) {
+            return "raid.error.peaceful";
+        }
+        if (!newTarget.prepare()) {
+            return newTarget.failure() != null ? newTarget.failure() : "raid.error.no-target";
+        }
+        this.settings = cfgSnapshot;
+        this.target = newTarget;
+        this.waveIndex = 0;
+        this.waveQuota = 0;
+        this.secondsLeft = cfgSnapshot.countdownSeconds;
+        this.readyGrace = 0;
+        this.fogTicker = 0;
+        this.aftermathCenter = null;
+        this.participants.clear();
+        this.stats.reset();
+        this.leaderId = null;
+        this.raidId = UUID.randomUUID();
+        this.startedAt = System.currentTimeMillis();
+        this.attackerIds.clear();
+        this.attackers.clear();
+        this.remainingSpawns.set(0);
+        this.spawnsInFlight.set(0);
+        this.spawnAttempts.set(0);
+        if (newTarget instanceof ZoneTarget) {
+            // A spawn ring inside the zone makes every attacker breach the moment it appears, and
+            // the raid is lost within seconds without a single mob ever walking.
+            double needed = ((ZoneTarget)newTarget).halfDiagonal();
+            if (cfgSnapshot.spawnRadiusMin < needed) {
+                this.plugin.getLogger().warning("Raid zone reaches " + Math.round(needed)
+                        + " blocks from its centre, but attackers spawn from "
+                        + Math.round(cfgSnapshot.spawnRadiusMin) + " blocks out - they will appear inside the"
+                        + " zone and count as breaches straight away. Raise raid.waves.spawnRadiusMin.");
+            }
+        }
+        for (int wave = 1; wave <= cfgSnapshot.waveCount; ++wave) {
+            int minimums = cfgSnapshot.minimumsForWave(wave);
+            int quota = cfgSnapshot.quotaForWave(wave);
+            if (minimums <= quota) continue;
+            this.plugin.getLogger().warning("Raid wave " + wave + " guarantees " + minimums
+                    + " attackers through minPerWave but only spawns " + quota
+                    + " - some archetypes will not appear. Raise baseMobs/mobsPerWave or lower minPerWave.");
+        }
+        this.state = State.COUNTDOWN;
+        RaidStartEvent startEvent = new RaidStartEvent(this.raidId, this.startedAt, newTarget.world().getName(),
+                newTarget.mode(), cfgSnapshot.waveCount);
+        Scheduler.runLater(this.plugin, () -> Bukkit.getPluginManager().callEvent(startEvent), 1L);
+        this.broadcast("raid.announce", "seconds", String.valueOf(cfgSnapshot.countdownSeconds));
+        this.showTitle("raid.title.incoming", "raid.subtitle.incoming", Sound.ENTITY_WITHER_SPAWN, 0.7f);
+        return null;
+    }
+
+    /** Aborts a running raid: no victory, no defeat, no rewards. */
+    public synchronized void abort(boolean announce) {
+        if (this.state == State.IDLE) {
+            return;
+        }
+        // Every RaidStartEvent gets its RaidEndEvent, also for an abort during the countdown.
+        // After a defeat the result is already out and this does nothing.
+        this.publishResult(RaidResult.Outcome.ABORTED);
+        if (announce) {
+            this.broadcast("raid.aborted", new String[0]);
+        }
+        this.clearAttackers();
+        this.despawnLeader();
+        this.stopMusic();
+        RaidTarget current = this.target;
+        if (current != null) {
+            current.cleanup();
+        }
+        this.finish();
+    }
+
+    private RaidTarget createTarget(FileConfiguration cfg) {
+        String mode = cfg.getString("raid.target.mode", "objective");
+        if ("region".equalsIgnoreCase(mode)) {
+            return RegionTarget.from(this.plugin, cfg.getConfigurationSection("raid.target.region"));
+        }
+        if ("zone".equalsIgnoreCase(mode)) {
+            return ZoneTarget.from(this.plugin,
+                    cfg.getConfigurationSection("raid.target.zone"),
+                    cfg.getConfigurationSection("raid.target.zones"));
+        }
+        return ObjectiveTarget.from(this.plugin, cfg.getConfigurationSection("raid.target.objective"));
+    }
+
+    // ── State machine ───────────────────────────────────────────────────────
+
+    private void tick() {
+        try {
+            switch (this.state) {
+                case IDLE: {
+                    this.maybeAutoStart();
+                    break;
+                }
+                case COUNTDOWN: {
+                    this.tickCountdown();
+                    break;
+                }
+                case WAVE: {
+                    this.tickWave();
+                    break;
+                }
+                case BREAK: {
+                    this.tickBreak();
+                    break;
+                }
+                case AFTERMATH: {
+                    this.tickAftermath();
+                    break;
+                }
+            }
+        }
+        catch (Exception e) {
+            this.plugin.getLogger().log(Level.WARNING, "Raid tick error", e);
+        }
+    }
+
+    private void tickCountdown() {
+        RaidTarget current = this.target;
+        if (current == null) {
+            this.finish();
+            return;
+        }
+        if (current.failure() != null) {
+            this.failStart(current.failure());
+            return;
+        }
+        current.tick();
+        if (this.secondsLeft > 0) {
+            if (this.secondsLeft <= 5 || this.secondsLeft % 15 == 0) {
+                this.broadcast("raid.countdown", "seconds", String.valueOf(this.secondsLeft));
+            }
+            --this.secondsLeft;
+            return;
+        }
+        if (!current.isReady()) {
+            // The target location may still be loading. After the grace period the start is
+            // abandoned rather than left waiting indefinitely.
+            if (++this.readyGrace > TARGET_READY_GRACE_SECONDS) {
+                this.failStart("raid.error.target-timeout");
+            }
+            return;
+        }
+        this.beginWave(1);
+    }
+
+    private void tickWave() {
+        RaidTarget current = this.target;
+        RaidSettings cfg = this.settings;
+        if (current == null || cfg == null) {
+            this.finish();
+            return;
+        }
+        current.tick();
+        this.pruneAttackers();
+        this.spawnPending(cfg, current);
+        this.retarget(cfg, current);
+        this.fogPulse(cfg, current.center());
+        this.collectParticipants(cfg, current.center());
+        this.updateBars(cfg, current);
+        if (current.isLost()) {
+            this.defeat();
+            return;
+        }
+        ++this.waveSeconds;
+        if (cfg.waveTimeoutSeconds > 0 && this.waveSeconds > cfg.waveTimeoutSeconds) {
+            this.plugin.getLogger().warning("Raid wave " + this.waveIndex + " hit the timeout - forcing it to end.");
+            this.clearAttackers();
+            // The leader is removed with the wave. A forced boss spawn never despawns on its
+            // own, and once the leader flags are cleared neither victory nor defeat removes it.
+            this.despawnLeader();
+            this.finishWave(cfg);
+            return;
+        }
+        if (this.waveComplete()) {
+            this.finishWave(cfg);
+        }
+    }
+
+    private void tickBreak() {
+        RaidTarget current = this.target;
+        RaidSettings cfg = this.settings;
+        if (current == null || cfg == null) {
+            this.finish();
+            return;
+        }
+        current.tick();
+        this.pruneAttackers();
+        this.collectParticipants(cfg, current.center());
+        this.updateBars(cfg, current);
+        if (current.isLost()) {
+            this.defeat();
+            return;
+        }
+        if (this.secondsLeft > 0) {
+            if (this.secondsLeft <= 3 || this.secondsLeft % 10 == 0) {
+                this.broadcast("raid.break", "seconds", String.valueOf(this.secondsLeft), "wave", String.valueOf(this.waveIndex + 1));
+            }
+            --this.secondsLeft;
+            return;
+        }
+        this.beginWave(this.waveIndex + 1);
+    }
+
+    private void tickAftermath() {
+        RaidSettings cfg = this.settings;
+        Location center = this.aftermathCenter;
+        if (cfg == null || center == null || this.aftermathSeconds <= 0) {
+            this.finish();
+            return;
+        }
+        --this.aftermathSeconds;
+        Location effectLoc = center.clone();
+        Scheduler.runAtLocation(this.plugin, effectLoc, () -> effectLoc.getWorld().spawnParticle(
+                Particle.LARGE_SMOKE, effectLoc.clone().add(0.0, 1.5, 0.0), 30, 1.8, 1.2, 1.8, 0.01));
+        if (cfg.fogEnabled) {
+            this.fogPulse(cfg, center);
+        }
+    }
+
+    // Deliberately log-only: a configuration or loading error is an admin matter and has no
+    // business appearing as raw text in front of the players.
+    private void failStart(String langKey) {
+        this.plugin.getLogger().warning("Raid could not start: " + Lang.get(langKey, new String[0]));
+        this.abort(false);
+    }
+
+    // ── Waves ───────────────────────────────────────────────────────────────
+
+    private void beginWave(int wave) {
+        RaidSettings cfg = this.settings;
+        RaidTarget current = this.target;
+        if (cfg == null || current == null) {
+            this.finish();
+            return;
+        }
+        this.waveIndex = wave;
+        this.waveQuota = cfg.quotaForWave(wave);
+        this.waveSeconds = 0;
+        this.retargetTicker = 0;
+        this.leaderRequested = false;
+        this.leaderSeen = false;
+        this.leaderGrace = 0;
+        this.leaderBestDistance = Double.MAX_VALUE;
+        this.leaderStuckSeconds = 0;
+        this.remainingSpawns.set(this.waveQuota);
+        this.spawnsInFlight.set(0);
+        this.spawnAttempts.set(0);
+        this.spawnFailureLogged.set(false);
+        this.spawnedThisWave.clear();
+        this.state = State.WAVE;
+        this.startMusic(cfg, current.center());
+        this.broadcast("raid.wave-start", "wave", String.valueOf(wave), "total", String.valueOf(cfg.waveCount));
+        this.showTitle("raid.title.wave", "raid.subtitle.wave", Sound.ENTITY_ENDER_DRAGON_GROWL, 0.6f,
+                "wave", String.valueOf(wave), "total", String.valueOf(cfg.waveCount));
+        if (cfg.leaderEnabled && wave == cfg.resolvedLeaderWave()) {
+            this.requestLeader(cfg, current);
+        }
+    }
+
+    private void finishWave(RaidSettings cfg) {
+        this.despawnLeaderIfDone();
+        if (this.waveIndex >= cfg.waveCount) {
+            this.victory();
+            return;
+        }
+        this.state = State.BREAK;
+        this.secondsLeft = cfg.breakSeconds;
+        this.broadcast("raid.wave-cleared", "wave", String.valueOf(this.waveIndex), "total", String.valueOf(cfg.waveCount));
+    }
+
+    private boolean waveComplete() {
+        // Observed every second: a leader killed while attackers are still standing would
+        // otherwise never count as seen, and the wave would wait out the spawn grace for it.
+        if (this.leaderRequested && SpookySeason.get().boss() != null && SpookySeason.get().boss().isActive()) {
+            this.leaderSeen = true;
+        }
+        if (this.remainingSpawns.get() > 0 || this.spawnsInFlight.get() > 0) {
+            return false;
+        }
+        if (!this.attackers.isEmpty()) {
+            return false;
+        }
+        return !this.leaderStillOut();
+    }
+
+    private boolean leaderStillOut() {
+        if (!this.leaderRequested) {
+            return false;
+        }
+        boolean active = SpookySeason.get().boss() != null && SpookySeason.get().boss().isActive();
+        if (active) {
+            this.leaderSeen = true;
+            return true;
+        }
+        if (this.leaderSeen) {
+            return false;
+        }
+        // The spawn runs on a region thread and has not completed yet. Bounded wait so the wave
+        // cannot block on a spawn that never happens.
+        if (++this.leaderGrace > LEADER_GRACE_SECONDS) {
+            this.plugin.getLogger().warning("Raid leader never appeared - continuing without it.");
+            this.leaderRequested = false;
+            return false;
+        }
+        return true;
+    }
+
+    private void requestLeader(RaidSettings cfg, RaidTarget current) {
+        if (SpookySeason.get().boss() == null) {
+            return;
+        }
+        Location center = current.center();
+        if (center == null) {
+            return;
+        }
+        this.leaderRequested = true;
+        // Always a leader of its own, placed at the target. A boss already roaming the world
+        // (auto spawn or /spookyboss spawn) may stand anywhere, even in another world, and would
+        // hold up the wave until it dies or the night ends — forceSpawnAt removes it first.
+        SpookySeason.get().boss().forceSpawnAt(this.ringLocation(center, cfg.spawnRadiusMin, cfg.spawnRadiusMax));
+        this.broadcast("raid.leader", new String[0]);
+        this.showTitle("raid.title.leader", "raid.subtitle.leader", Sound.ENTITY_WITHER_SPAWN, 0.8f);
+    }
+
+    private void despawnLeaderIfDone() {
+        this.leaderRequested = false;
+        this.leaderSeen = false;
+    }
+
+    private void despawnLeader() {
+        if (this.leaderRequested && SpookySeason.get().boss() != null) {
+            SpookySeason.get().boss().despawnBoss();
+        }
+        this.leaderRequested = false;
+        this.leaderSeen = false;
+    }
+
+    // ── Attackers ───────────────────────────────────────────────────────────
+
+    private Location ringLocation(Location center, double min, double max) {
+        double angle = ThreadLocalRandom.current().nextDouble(Math.PI * 2.0);
+        double low = Math.max(0.0, Math.min(min, max));
+        double high = Math.max(low + 0.5, max);
+        double radius = ThreadLocalRandom.current().nextDouble(low, high);
+        return center.clone().add(Math.cos(angle) * radius, 0.0, Math.sin(angle) * radius);
+    }
+
+    private void spawnPending(RaidSettings cfg, RaidTarget current) {
+        int remaining = this.remainingSpawns.get();
+        if (remaining <= 0) {
+            return;
+        }
+        // Too many failed attempts means there is no permitted spawn spot around the target;
+        // the wave runs with fewer attackers instead of retrying indefinitely.
+        if (this.spawnAttempts.get() > this.waveQuota * 10 + 20) {
+            this.plugin.getLogger().warning("Raid could not place " + remaining
+                    + " attacker(s) around the target - check raid.waves.spawnRadius* and region protection.");
+            this.remainingSpawns.set(0);
+            return;
+        }
+        int room = cfg.maxAlive - this.attackers.size() - this.spawnsInFlight.get();
+        int batch = Math.min(Math.min(cfg.spawnPerSecond, room), remaining - this.spawnsInFlight.get());
+        for (int i = 0; i < batch; ++i) {
+            // With several targets the anchor rotates, so the waves do not all converge on the
+            // same target from the same direction.
+            Location anchor = current.spawnAnchor();
+            if (anchor == null) {
+                return;
+            }
+            // The archetype is drawn before the location, because it may bring its own spawn
+            // distance. Counted straight away so maxPerWave holds; a failed spawn gives it back.
+            RaidMob archetype = cfg.pick(this.waveIndex, this.spawnedThisWave);
+            if (archetype == null) {
+                this.remainingSpawns.set(0);
+                return;
+            }
+            this.spawnedThisWave.merge(archetype.id(), 1, Integer::sum);
+            this.dispatchSpawn(cfg, archetype, anchor);
+        }
+    }
+
+    private void dispatchSpawn(RaidSettings cfg, RaidMob archetype, Location center) {
+        Location candidate = this.ringLocation(center,
+                archetype.spawnRadiusMinOr(cfg.spawnRadiusMin),
+                archetype.spawnRadiusMaxOr(cfg.spawnRadiusMax));
+        this.spawnsInFlight.incrementAndGet();
+        this.spawnAttempts.incrementAndGet();
+        int wave = this.waveIndex;
+        try {
+            Scheduler.runAtLocation(this.plugin, candidate, () -> {
+                try {
+                    if (!this.spawnAttacker(cfg, archetype, candidate, wave)) {
+                        this.spawnedThisWave.merge(archetype.id(), -1, Integer::sum);
+                    }
+                }
+                catch (Exception e) {
+                    if (this.spawnFailureLogged.compareAndSet(false, true)) {
+                        this.plugin.getLogger().warning("Raid attacker spawn failed: " + e.getMessage()
+                                + " (further failures in this wave are not logged)");
+                    }
+                }
+                finally {
+                    this.spawnsInFlight.decrementAndGet();
+                }
+            });
+        }
+        catch (RuntimeException e) {
+            // Scheduling can be refused (disabled plugin on Folia); the counter must not stay
+            // incremented or the wave would never complete.
+            this.spawnsInFlight.decrementAndGet();
+            throw e;
+        }
+    }
+
+    /** @return true when an attacker actually made it into the world */
+    private boolean spawnAttacker(RaidSettings cfg, RaidMob archetype, Location candidate, int wave) {
+        Location loc = RaidManager.groundAt(candidate);
+        if (loc == null) {
+            // No footing here — treated like any other failed attempt and retried elsewhere.
+            return false;
+        }
+        if (cfg.respectRegionProtection && !SpookySeason.get().regions().canSpawnAt(loc)) {
+            return false;
+        }
+        Entity spawned = loc.getWorld().spawnEntity(loc, archetype.type());
+        if (!(spawned instanceof LivingEntity)) {
+            spawned.remove();
+            return false;
+        }
+        this.configureAttacker(cfg, archetype, (LivingEntity)spawned, wave);
+        this.attackers.add(spawned);
+        this.attackerIds.add(spawned.getUniqueId());
+        this.remainingSpawns.decrementAndGet();
+        loc.getWorld().spawnParticle(Particle.SOUL, loc.clone().add(0.0, 1.0, 0.0), 12, 0.4, 0.6, 0.4, 0.02);
+        return true;
+    }
+
+    /**
+     * Finds somewhere to actually stand at these coordinates, or {@code null} if there is nowhere.
+     *
+     * <p>{@code getHighestBlockYAt} alone is not enough: over a forest it returns the top of the
+     * canopy, and attackers were spawning in the treetops. This walks down from there for the
+     * first genuinely solid block that is not part of a tree, with two blocks of clear air above
+     * it — which also rules out spawning inside water or under an overhang.
+     *
+     * <p>Must run on the region thread of that location: it reads blocks.
+     */
+    private static Location groundAt(Location candidate) {
+        World world = candidate.getWorld();
+        int x = candidate.getBlockX();
+        int z = candidate.getBlockZ();
+        int top = Math.min(world.getHighestBlockYAt(x, z), world.getMaxHeight() - 3);
+        // Only search just below the surface. Searching further down finds caves, and an
+        // attacker spawned in a cave cannot reach the target.
+        int lowest = Math.max(world.getMinHeight() + 1, top - SURFACE_SEARCH_DEPTH);
+        for (int y = top; y >= lowest; --y) {
+            Material standing = world.getBlockAt(x, y, z).getType();
+            if (!standing.isSolid()) continue;
+            if (Tag.LEAVES.isTagged(standing) || Tag.LOGS.isTagged(standing)) continue;
+            if (!RaidManager.isClear(world.getBlockAt(x, y + 1, z))) continue;
+            if (!RaidManager.isClear(world.getBlockAt(x, y + 2, z))) continue;
+            return new Location(world, x + 0.5, y + 1, z + 0.5);
+        }
+        return null;
+    }
+
+    /**
+     * Room to stand in. Passable rather than strictly air, so grass, flowers and snow layers on
+     * top of solid ground are accepted. Liquids are refused.
+     */
+    private static boolean isClear(Block block) {
+        return !block.isLiquid() && block.isPassable();
+    }
+
+    private void configureAttacker(RaidSettings cfg, RaidMob archetype, LivingEntity le, int wave) {
+        le.getPersistentDataContainer().set(SpookySeason.get().entityMarker(), PersistentDataType.BYTE, (byte)1);
+        le.getPersistentDataContainer().set(SpookySeason.get().raidMarker(), PersistentDataType.BYTE, (byte)1);
+        le.setPersistent(true);
+        le.setRemoveWhenFarAway(false);
+        le.setCanPickupItems(false);
+        String name = cfg.resolveName(archetype.nameOr(null), le.getType(), wave);
+        if (name != null) {
+            le.customName(LegacyComponentSerializer.legacySection().deserialize(name));
+            le.setCustomNameVisible(cfg.nameVisible);
+        }
+        double health = archetype.healthOr(cfg.healthForWave(wave));
+        this.setBaseValue(le, Attributes.MAX_HEALTH, health);
+        double effectiveMax = le.getAttribute(Attributes.MAX_HEALTH) == null
+                ? le.getHealth()
+                : le.getAttribute(Attributes.MAX_HEALTH).getValue();
+        le.setHealth(Math.min(health, effectiveMax));
+        this.setBaseValue(le, Attributes.ATTACK_DAMAGE, archetype.damageOr(cfg.damageForWave(wave)));
+        this.setBaseValue(le, Attributes.MOVEMENT_SPEED, archetype.speedOr(cfg.speed));
+        // Without a generous follow range the attackers lose the target halfway there.
+        this.setBaseValue(le, Attributes.FOLLOW_RANGE, cfg.spawnRadiusMax * 2.0 + 16.0);
+        if (archetype.scale() > 0.0 && Attributes.SCALE != null) {
+            this.setBaseValue(le, Attributes.SCALE, archetype.scale());
+        }
+        // Damage against the target depends on the archetype and is read later on the entity's
+        // region thread, so it is stored on the entity rather than in the manager.
+        le.getPersistentDataContainer().set(this.targetDamageKey, PersistentDataType.DOUBLE,
+                archetype.targetDamageOr(cfg.targetDamageForWave(wave)));
+        le.getPersistentDataContainer().set(this.rangedKey, PersistentDataType.BYTE,
+                (byte)(archetype.isRanged() ? 1 : 0));
+        if (!cfg.babies && le instanceof org.bukkit.entity.Zombie) {
+            // Baby zombies are small and fast and hard to hit in a crowd; optional for a more
+            // predictable event.
+            ((org.bukkit.entity.Zombie)le).setBaby(false);
+        }
+        if (cfg.hideBossBars && le instanceof Boss) {
+            // Withers and dragons bring their own vanilla boss bar; several of them push the
+            // raid's own bars out of view. The wave leader's bar is drawn by the plugin and is
+            // unaffected.
+            BossBar entityBar = ((Boss)le).getBossBar();
+            if (entityBar != null) {
+                entityBar.setVisible(false);
+                entityBar.removeAll();
+            }
+        }
+        if (le instanceof Wither) {
+            // Skip the summoning phase and its explosion so the wither attacks immediately.
+            ((Wither)le).setInvulnerabilityTicks(0);
+        }
+        EntityEquipment eq = le.getEquipment();
+        if (eq == null) {
+            return;
+        }
+        if (archetype.hasEquipment()) {
+            archetype.equip(eq);
+        }
+        if (cfg.debug) {
+            this.plugin.getLogger().info("[raid-debug] spawn " + archetype.id()
+                    + " type=" + le.getType()
+                    + " hasEquipment=" + archetype.hasEquipment()
+                    + " mainhand=" + (eq.getItemInMainHand() == null ? "null" : eq.getItemInMainHand().getType())
+                    + " helmet=" + (eq.getHelmet() == null ? "null" : eq.getHelmet().getType())
+                    + " scale=" + archetype.scale()
+                    + " ranged=" + archetype.isRanged()
+                    + " entityBossBar=" + (le instanceof Boss
+                            ? String.valueOf(((Boss)le).getBossBar() == null ? "none" : ((Boss)le).getBossBar().isVisible())
+                            : "n/a"));
+        }
+        if (cfg.pumpkinHeads && (eq.getHelmet() == null || eq.getHelmet().getType() == Material.AIR)) {
+            // Thematic, and it keeps the undead from burning in daylight. An archetype's own
+            // helmet takes precedence.
+            eq.setHelmet(new ItemStack(Material.CARVED_PUMPKIN));
+            eq.setHelmetDropChance(0.0f);
+        }
+    }
+
+    private void setBaseValue(LivingEntity entity, org.bukkit.attribute.Attribute attribute, double value) {
+        org.bukkit.attribute.AttributeInstance attr = entity.getAttribute(attribute);
+        if (attr == null) {
+            return;
+        }
+        attr.setBaseValue(value);
+    }
+
+    private void pruneAttackers() {
+        for (Entity a : this.attackers) {
+            if (a.isValid() && !a.isDead()) continue;
+            this.attackers.remove(a);
+            this.attackerIds.remove(a.getUniqueId());
+            this.stats.forget(a.getUniqueId());
+        }
+    }
+
+    /**
+     * Once per second per attacker: the target check always, re-targeting only on the configured
+     * interval. The check must NOT be throttled along with it — in region mode an attacker could
+     * otherwise cross the region between two ticks without ever counting as a breach.
+     */
+    private void retarget(RaidSettings cfg, RaidTarget current) {
+        boolean retargetNow = ++this.retargetTicker >= cfg.retargetSeconds;
+        if (retargetNow) {
+            this.retargetTicker = 0;
+        }
+        double waveDamage = cfg.targetDamageForWave(this.waveIndex);
+        double aggroSquared = cfg.playerAggroRange * cfg.playerAggroRange;
+        for (Entity a : this.attackers) {
+            // Reading the location, setting a target and kicking off pathfinding all belong on
+            // the attacker's region thread — the global tick must not touch it.
+            Scheduler.runOnEntity(this.plugin, a, () -> {
+                if (!a.isValid() || a.isDead()) {
+                    return;
+                }
+                double attackerDamage = a.getPersistentDataContainer()
+                        .getOrDefault(this.targetDamageKey, PersistentDataType.DOUBLE, waveDamage);
+                boolean attackerRanged = a.getPersistentDataContainer()
+                        .getOrDefault(this.rangedKey, PersistentDataType.BYTE, (byte)0) == (byte)1;
+                current.inspectAttacker(a, attackerDamage, attackerRanged, cfg.rangedReach);
+                if (!(a instanceof Mob) || !a.isValid() || a.isDead()) {
+                    return;
+                }
+                Mob mob = (Mob)a;
+                Location from = a.getLocation();
+                // An attacker already within reach of the target (a ranged attacker inside
+                // rangedReach) holds its position and is neither pathed nor nudged closer.
+                boolean holding = current.holdsPosition(from, attackerRanged, cfg.rangedReach);
+                // Every second, not on the retarget interval: a single impulse every few seconds
+                // is damped away before the next one and does not move a hovering wither.
+                if (!holding) {
+                    this.unstick(cfg, mob, from, current.navTarget(from));
+                }
+                if (!retargetNow) {
+                    return;
+                }
+                LivingEntity currentTarget = mob.getTarget();
+                if (currentTarget != null && (!currentTarget.isValid() || currentTarget.isDead())) {
+                    currentTarget = null;
+                }
+                if (currentTarget != null && !cfg.friendlyFire
+                        && this.attackerIds.contains(currentTarget.getUniqueId())) {
+                    // Targeting an ally. Cancelling the damage alone would leave the mob
+                    // attacking the ally instead of advancing.
+                    mob.setTarget(null);
+                    currentTarget = null;
+                }
+                if (currentTarget != null && !this.keepsTarget(cfg, currentTarget, from, aggroSquared)) {
+                    // Any other target the AI picked up is a distraction (withers attack every
+                    // non-undead mob and would stop advancing).
+                    mob.setTarget(null);
+                    currentTarget = null;
+                }
+                if (currentTarget != null) {
+                    return;
+                }
+                LivingEntity attackTarget = current.attackTarget(from);
+                Location nav = current.navTarget(from);
+                if (attackTarget != null) {
+                    mob.setTarget(attackTarget);
+                }
+                if ((attackTarget == null || mob.getTarget() == null) && !holding) {
+                    // No acceptable target (or the AI discarded it immediately): refresh the
+                    // path. Not for an attacker holding its position; it is pathed again once it
+                    // leaves reach.
+                    if (nav != null) {
+                        mob.getPathfinder().moveTo(nav, 1.1);
+                    }
+                }
+                if (cfg.debug) {
+                    LivingEntity after = mob.getTarget();
+                    this.plugin.getLogger().info("[raid-debug] " + a.getType()
+                            + " at " + from.getBlockX() + "/" + from.getBlockY() + "/" + from.getBlockZ()
+                            + " dist=" + (nav == null ? "?" : String.format("%.1f", from.distance(nav)))
+                            + " wanted=" + (attackTarget == null ? "none" : attackTarget.getType().toString())
+                            + " actualTarget=" + (after == null ? "none" : after.getType().toString())
+                            + " pathing=" + mob.getPathfinder().hasPath()
+                            + " name=" + (a.customName() == null
+                                    ? "none"
+                                    : LegacyComponentSerializer.legacySection().serialize(a.customName()))
+                            + " nameShown=" + a.isCustomNameVisible());
+                }
+            });
+        }
+        this.steerLeader(cfg, current, retargetNow, aggroSquared);
+    }
+
+    /**
+     * Sends the raid leader towards the target like the other attackers. The boss brings its own
+     * AI and would otherwise roam the area. The rider controls the horse, so the path is set on
+     * both and a push goes to whatever carries the rider.
+     */
+    private void steerLeader(RaidSettings cfg, RaidTarget current, boolean retargetNow, double aggroSquared) {
+        HalloweenBossManager boss = SpookySeason.get().boss();
+        if (!this.leaderRequested || boss == null) {
+            return;
+        }
+        if (!(boss.bossEntity() instanceof Mob rider)) {
+            return;
+        }
+        Scheduler.runOnEntity(this.plugin, rider, () -> {
+            if (!rider.isValid() || rider.isDead()) {
+                return;
+            }
+            Location from = rider.getLocation();
+            // The leader strikes the target like any attacker; a zone or region it gets into
+            // counts as breached and the leader leaves the field.
+            double leaderDamage = cfg.leaderTargetDamage >= 0.0 ? cfg.leaderTargetDamage : cfg.targetDamageForWave(this.waveIndex);
+            if (current.inspectLeader(rider, leaderDamage, cfg.leaderReach)) {
+                boss.despawnBoss();
+                return;
+            }
+            // Treated as a stand-off attacker with leaderReach, so it stops where it can strike.
+            if (current.holdsPosition(from, true, cfg.leaderReach)) {
+                this.leaderStuckSeconds = 0;
+                return;
+            }
+            Location nav = current.navTarget(from);
+            Mob carrier = rider.getVehicle() instanceof Mob vehicle ? vehicle : rider;
+            this.calmLeader(rider, carrier, cfg.debug);
+            this.unstick(cfg, carrier, carrier.getLocation(), nav);
+            if (rider.getTarget() instanceof Player) {
+                // Fighting a defender is not being stuck.
+                this.leaderStuckSeconds = 0;
+            } else {
+                this.phaseIfStuck(cfg, carrier, from, nav);
+            }
+            if (!retargetNow || nav == null) {
+                return;
+            }
+            LivingEntity currentTarget = rider.getTarget();
+            if (currentTarget != null && (!currentTarget.isValid() || currentTarget.isDead()
+                    || !this.keepsTarget(cfg, currentTarget, from, aggroSquared))) {
+                rider.setTarget(null);
+                currentTarget = null;
+            }
+            if (currentTarget != null) {
+                return;
+            }
+            LivingEntity attackTarget = current.attackTarget(from);
+            if (attackTarget != null) {
+                rider.setTarget(attackTarget);
+            }
+            if (rider.getTarget() == null) {
+                rider.getPathfinder().moveTo(nav, 1.1);
+                if (carrier != rider) {
+                    carrier.getPathfinder().moveTo(nav, 1.1);
+                }
+            }
+            if (cfg.debug) {
+                this.plugin.getLogger().info("[raid-debug] LEADER at " + from.getBlockX() + "/" + from.getBlockY()
+                        + "/" + from.getBlockZ() + " dist=" + String.format("%.1f", from.distance(nav))
+                        + " target=" + (rider.getTarget() == null ? "none" : rider.getTarget().getType().toString())
+                        + " pathing=" + carrier.getPathfinder().hasPath());
+            }
+        });
+    }
+
+    /**
+     * Strips the vanilla goals that move horse and rider on their own — strolling, panicking, the
+     * untamed horse's bucking, and fleeing (skeletons run from wolves, a defender's dog included). Measured on the test server: within reach of the target, where
+     * the plugin deliberately sends no path, the leader kept walking off and was pulled back each
+     * time. Combat goals stay, so the rider still fights defenders.
+     *
+     * <p>Once per leader; runs on the leader's region thread. The goal keys are matched by name
+     * because the vanilla goal constants differ between versions.
+     */
+    private void calmLeader(Mob rider, Mob carrier, boolean debug) {
+        if (rider.getUniqueId().equals(this.leaderCalmed)) {
+            return;
+        }
+        this.leaderCalmed = rider.getUniqueId();
+        MobGoals goals = Bukkit.getMobGoals();
+        for (Mob mob : carrier == rider ? List.of(rider) : List.of(rider, carrier)) {
+            for (Goal<Mob> goal : new ArrayList<Goal<Mob>>(goals.getAllGoals(mob))) {
+                String key = goal.getKey().getNamespacedKey().getKey();
+                if (key.contains("stroll") || key.contains("panic") || key.contains("crazy")
+                        || key.contains("avoid") || key.contains("flee")) {
+                    goals.removeGoal(mob, goal);
+                    if (debug) {
+                        this.plugin.getLogger().info("[raid-debug] LEADER " + mob.getType() + " goal removed: " + key);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Moves a leader that has been stuck for {@code leaderPhaseSeconds} a stretch towards the
+     * target, as a ghost rider passing through whatever is in the way.
+     *
+     * <p>Horse and rider are far bulkier than the other attackers and get caught on walls and in
+     * gaps the rest walk through or around; the unstick push alone only presses them against the
+     * obstacle. Progress means getting at least one block closer than ever before this wave.
+     * Runs on the leader's region thread.
+     */
+    private void phaseIfStuck(RaidSettings cfg, Mob carrier, Location from, Location nav) {
+        if (cfg.leaderPhaseSeconds <= 0 || nav == null || !nav.getWorld().equals(from.getWorld())) {
+            return;
+        }
+        double distance = from.distance(nav);
+        if (distance < this.leaderBestDistance - 1.0) {
+            this.leaderBestDistance = distance;
+            this.leaderStuckSeconds = 0;
+            return;
+        }
+        if (++this.leaderStuckSeconds < cfg.leaderPhaseSeconds) {
+            return;
+        }
+        this.leaderStuckSeconds = 0;
+        // Never onto the target itself, only up to the edge of its reach.
+        double step = Math.min(cfg.leaderPhaseDistance, distance - 3.0);
+        Vector direction = nav.toVector().subtract(from.toVector()).setY(0.0);
+        if (step < 1.0 || direction.lengthSquared() < 1.0E-4) {
+            return;
+        }
+        Location candidate = from.clone().add(direction.normalize().multiply(step));
+        // The landing spot is read on its own region thread, the teleport runs on the carrier's.
+        Scheduler.runAtLocation(this.plugin, candidate, () -> {
+            Location ground = RaidManager.groundAt(candidate);
+            if (ground == null) {
+                return;
+            }
+            ground.setYaw(from.getYaw());
+            Scheduler.runOnEntity(this.plugin, carrier, () -> {
+                if (!carrier.isValid() || carrier.isDead()) {
+                    return;
+                }
+                Location start = carrier.getLocation();
+                start.getWorld().spawnParticle(Particle.SOUL, start.clone().add(0.0, 1.2, 0.0), 30, 0.6, 1.0, 0.6, 0.03);
+                start.getWorld().playSound(start, Sound.ENTITY_ENDERMAN_TELEPORT, SoundCategory.HOSTILE, 1.0f, 0.6f);
+                carrier.teleportAsync(ground, PlayerTeleportEvent.TeleportCause.PLUGIN,
+                        TeleportFlag.EntityState.RETAIN_PASSENGERS).thenAccept(moved -> {
+                    if (!moved) {
+                        return;
+                    }
+                    Scheduler.runAtLocation(this.plugin, ground, () -> ground.getWorld().spawnParticle(
+                            Particle.SOUL, ground.clone().add(0.0, 1.2, 0.0), 30, 0.6, 1.0, 0.6, 0.03));
+                });
+                if (cfg.debug) {
+                    this.plugin.getLogger().info("[raid-debug] LEADER stuck - phasing " + Math.round(step)
+                            + " blocks to " + ground.getBlockX() + "/" + ground.getBlockY() + "/" + ground.getBlockZ());
+                }
+            });
+        });
+    }
+
+    /**
+     * Whether an attacker may keep the target its own AI picked.
+     *
+     * <p>With {@code focus: players} vanilla decides, as before. With {@code focus: target} only a
+     * defender who is actually in the way counts — every other creature the mob wandered into is
+     * dropped, so it carries on towards the objective.
+     */
+    private boolean keepsTarget(RaidSettings cfg, LivingEntity target, Location from, double aggroSquared) {
+        if (!cfg.focusTarget) {
+            return true;
+        }
+        if (!(target instanceof Player)) {
+            return false;
+        }
+        return target.getWorld().equals(from.getWorld())
+                && target.getLocation().distanceSquared(from) <= aggroSquared;
+    }
+
+    /**
+     * Pushes an attacker that is not making progress towards the target.
+     *
+     * <p>A path alone does not move every mob: a wither moves by its own flight control and
+     * ignores {@code Pathfinder.moveTo}, and ground mobs get caught on terrain. Instead of
+     * special-casing mob types, this checks whether the distance to the target is shrinking and
+     * nudges whatever is not making progress.
+     *
+     * <p>The previous distance is stored on the entity, since this runs on its region thread.
+     */
+    private void unstick(RaidSettings cfg, Mob mob, Location from, Location nav) {
+        if (cfg.unstickSpeed <= 0.0 || nav == null || !nav.getWorld().equals(from.getWorld())) {
+            return;
+        }
+        double distance = from.distance(nav);
+        PersistentDataContainer pdc = mob.getPersistentDataContainer();
+        double previous = pdc.getOrDefault(this.lastDistanceKey, PersistentDataType.DOUBLE, -1.0);
+        pdc.set(this.lastDistanceKey, PersistentDataType.DOUBLE, distance);
+        if (distance <= cfg.unstickMinDistance || previous < 0.0) {
+            return;
+        }
+        if (distance < previous - 0.5) {
+            return;
+        }
+        Vector push = nav.toVector().subtract(from.toVector());
+        if (push.lengthSquared() < 1.0E-4) {
+            return;
+        }
+        mob.setVelocity(push.normalize().multiply(cfg.unstickSpeed));
+    }
+
+    private void clearAttackers() {
+        for (Entity a : this.attackers) {
+            Scheduler.runOnEntity(this.plugin, a, () -> {
+                if (a.isValid() && !a.isDead()) {
+                    a.remove();
+                }
+            });
+        }
+        this.attackers.clear();
+        this.attackerIds.clear();
+        this.remainingSpawns.set(0);
+        this.spawnsInFlight.set(0);
+    }
+
+    // ── Outcome ─────────────────────────────────────────────────────────────
+
+    private void victory() {
+        RaidSettings cfg = this.settings;
+        this.publishResult(RaidResult.Outcome.VICTORY);
+        this.broadcast("raid.victory", "waves", String.valueOf(this.waveIndex));
+        this.showTitle("raid.title.victory", "raid.subtitle.victory", Sound.UI_TOAST_CHALLENGE_COMPLETE, 1.0f);
+        this.clearAttackers();
+        this.despawnLeader();
+        this.stopMusic();
+        if (cfg != null) {
+            this.giveRewards(cfg.victory);
+        }
+        RaidTarget current = this.target;
+        if (current != null) {
+            current.cleanup();
+        }
+        this.finish();
+    }
+
+    private void defeat() {
+        RaidSettings cfg = this.settings;
+        RaidTarget current = this.target;
+        this.publishResult(RaidResult.Outcome.DEFEAT);
+        this.aftermathCenter = current == null ? null : current.center();
+        this.broadcast("raid.defeat", "wave", String.valueOf(this.waveIndex));
+        this.showTitle("raid.title.defeat", "raid.subtitle.defeat", Sound.ENTITY_WITHER_DEATH, 0.8f);
+        this.clearAttackers();
+        this.despawnLeader();
+        this.stopMusic();
+        if (cfg != null) {
+            this.giveRewards(cfg.consolation);
+        }
+        if (current != null) {
+            current.cleanup();
+        }
+        this.target = null;
+        this.hideBars();
+        if (cfg != null && cfg.defeatEffectEnabled && cfg.defeatEffectSeconds > 0 && this.aftermathCenter != null) {
+            // The place stays visibly marked for a while — particles and darkness, no block
+            // changes. After that the raid returns to idle on its own.
+            this.aftermathSeconds = cfg.defeatEffectSeconds;
+            this.fogTicker = 0;
+            this.state = State.AFTERMATH;
+            return;
+        }
+        this.finish();
+    }
+
+    private void finish() {
+        this.state = State.IDLE;
+        this.target = null;
+        this.settings = null;
+        this.waveIndex = 0;
+        this.waveQuota = 0;
+        this.secondsLeft = 0;
+        this.aftermathSeconds = 0;
+        this.aftermathCenter = null;
+        this.leaderRequested = false;
+        this.leaderSeen = false;
+        this.leaderId = null;
+        this.raidId = null;
+        this.participants.clear();
+        this.stats.reset();
+        this.hideBars();
+    }
+
+    /**
+     * Freezes the raid's result and hands it out: kept for {@code /spookyraid stats}, written to
+     * {@code raid-results/} off-thread, announced through {@link RaidEndEvent} on the global thread
+     * and, if enabled, summarised in chat for the players around the target. Runs at most once per raid.
+     */
+    private void publishResult(RaidResult.Outcome outcome) {
+        RaidTarget current = this.target;
+        RaidSettings cfg = this.settings;
+        UUID id = this.raidId;
+        if (current == null || cfg == null || id == null || current.world() == null) {
+            return;
+        }
+        this.raidId = null;
+        RaidResult result = new RaidResult(id, this.startedAt, System.currentTimeMillis(),
+                current.world().getName(), outcome, cfg.waveCount, this.waveIndex, current.mode(),
+                current.results(), this.stats.results(this.participants));
+        this.lastResult.set(result);
+        if (!this.plugin.isEnabled()) {
+            // Shutting down: the schedulers refuse new tasks, so the file is written right here
+            // and no event goes out.
+            this.resultStore.write(result);
+            return;
+        }
+        Scheduler.runAsync(this.plugin, () -> this.resultStore.write(result));
+        List<Player> audience = cfg.statsAnnounce && this.waveIndex > 0 && current.center() != null
+                ? this.nearbyPlayers(current.center(), cfg.announceRadius)
+                : List.of();
+        // One tick later, so the summary follows the victory or defeat message instead of preceding it.
+        Scheduler.runLater(this.plugin, () -> {
+            Bukkit.getPluginManager().callEvent(new RaidEndEvent(result));
+            if (audience.isEmpty()) {
+                return;
+            }
+            List<String> lines = RaidSummary.lines(result, cfg.statsAnnounceTop);
+            for (Player p : audience) {
+                if (!p.isOnline()) continue;
+                for (String line : lines) {
+                    p.sendMessage(line);
+                }
+            }
+        }, 1L);
+    }
+
+    /**
+     * Hands the reward to every defender; items go through the inventory API. Defenders who have
+     * logged out in the meantime receive it on their next join.
+     */
+    private void giveRewards(Reward reward) {
+        if (reward.isEmpty() || this.participants.isEmpty()) {
+            return;
+        }
+        SeasonRewardManager pending = SpookySeason.get().rewards();
+        for (UUID id : Set.copyOf(this.participants)) {
+            Player p = Bukkit.getPlayer(id);
+            if (p == null || !p.isOnline()) {
+                pending.queue(id, reward);
+                continue;
+            }
+            reward.give(this.plugin, p, () -> pending.queue(id, reward));
+        }
+    }
+
+    // ── Atmosphere ──────────────────────────────────────────────────────────
+
+    private void fogPulse(RaidSettings cfg, Location center) {
+        if (!cfg.fogEnabled || center == null) {
+            return;
+        }
+        if (++this.fogTicker < cfg.fogIntervalSeconds) {
+            return;
+        }
+        this.fogTicker = 0;
+        for (Player p : this.nearbyPlayers(center, cfg.effectRadius)) {
+            if (SpookySeason.get().prefs().isOptedOut(p.getUniqueId())) continue;
+            Scheduler.runAtLocation(this.plugin, p.getLocation(), () -> {
+                if (!p.isOnline()) {
+                    return;
+                }
+                p.addPotionEffect(new PotionEffect(PotionEffectType.DARKNESS, cfg.fogDurationTicks, 0, false, false, false));
+            });
+        }
+    }
+
+    private void startMusic(RaidSettings cfg, Location center) {
+        if (this.musicPlaying || center == null || cfg.discId.isEmpty() || !SpookySeason.get().jukebox().isAvailable()) {
+            return;
+        }
+        Location loc = center.clone();
+        this.musicLoc = loc;
+        Scheduler.runAtLocation(this.plugin, loc, () -> {
+            if (SpookySeason.get().jukebox().playDisc(loc, cfg.discId, cfg.discLoop)) {
+                this.musicPlaying = true;
+            }
+        });
+    }
+
+    private void stopMusic() {
+        Location loc = this.musicLoc;
+        if (this.musicPlaying && loc != null) {
+            // On the region thread of the jukebox location, like the start.
+            Scheduler.runAtLocation(this.plugin, loc, () -> SpookySeason.get().jukebox().stopPlayback(loc));
+        }
+        this.musicPlaying = false;
+        this.musicLoc = null;
+    }
+
+    // ── Display ─────────────────────────────────────────────────────────────
+
+    private void updateBars(RaidSettings cfg, RaidTarget current) {
+        Location center = current.center();
+        if (center == null) {
+            this.hideBars();
+            return;
+        }
+        List<Player> viewers = this.nearbyPlayers(center, cfg.announceRadius);
+        if (viewers.isEmpty()) {
+            this.hideBars();
+            return;
+        }
+        int outstanding = this.remainingSpawns.get() + this.spawnsInFlight.get() + this.attackers.size();
+        double waveProgress = this.waveQuota <= 0
+                ? 0.0
+                : Math.max(0.0, Math.min(1.0, 1.0 - (double)outstanding / (double)this.waveQuota));
+        this.waveBar.setTitle(Lang.get("raid.bar.wave",
+                "wave", String.valueOf(this.waveIndex),
+                "total", String.valueOf(cfg.waveCount),
+                "alive", String.valueOf(this.attackers.size())));
+        this.waveBar.setProgress(waveProgress);
+        double integrity = Math.max(0.0, Math.min(1.0, current.integrity()));
+        this.targetBar.setTitle(Lang.get("raid.bar.target", "percent", String.valueOf((int)Math.round(integrity * 100.0))));
+        this.targetBar.setProgress(integrity);
+        this.targetBar.setColor(integrity > 0.5 ? BarColor.GREEN : (integrity > 0.25 ? BarColor.YELLOW : BarColor.RED));
+        this.syncBar(this.waveBar, viewers);
+        this.syncBar(this.targetBar, viewers);
+    }
+
+    // Send only the difference, as the blood moon bar does, to avoid two packets per player per
+    // second.
+    private void syncBar(BossBar bar, List<Player> viewers) {
+        Set<Player> wanted = new HashSet<Player>(viewers);
+        for (Player p : new ArrayList<Player>(bar.getPlayers())) {
+            if (wanted.contains(p)) continue;
+            bar.removePlayer(p);
+        }
+        Set<Player> currentViewers = new HashSet<Player>(bar.getPlayers());
+        for (Player p : wanted) {
+            if (currentViewers.contains(p)) continue;
+            bar.addPlayer(p);
+        }
+        if (!bar.isVisible()) {
+            bar.setVisible(true);
+        }
+    }
+
+    private void hideBars() {
+        if (this.waveBar.isVisible()) {
+            this.waveBar.setVisible(false);
+        }
+        this.waveBar.removeAll();
+        if (this.targetBar.isVisible()) {
+            this.targetBar.setVisible(false);
+        }
+        this.targetBar.removeAll();
+    }
+
+    private void collectParticipants(RaidSettings cfg, Location center) {
+        if (center == null) {
+            return;
+        }
+        for (Player p : this.nearbyPlayers(center, cfg.participationRadius)) {
+            this.participants.add(p.getUniqueId());
+            this.stats.tally(p.getUniqueId(), p.getName());
+        }
+    }
+
+    private List<Player> nearbyPlayers(Location center, double radius) {
+        ArrayList<Player> result = new ArrayList<Player>();
+        if (center == null || center.getWorld() == null) {
+            return result;
+        }
+        double radiusSquared = radius * radius;
+        for (Player p : center.getWorld().getPlayers()) {
+            if (RaidManager.isNpc(p) || p.getLocation().distanceSquared(center) > radiusSquared) continue;
+            result.add(p);
+        }
+        return result;
+    }
+
+    /** NPC plugins such as Citizens spawn player entities; they are no defenders. */
+    private static boolean isNpc(Entity entity) {
+        return entity.hasMetadata("NPC");
+    }
+
+    private Location announceAnchor() {
+        RaidTarget current = this.target;
+        if (current != null && current.center() != null) {
+            return current.center();
+        }
+        return this.aftermathCenter;
+    }
+
+    private void broadcast(String key, String ... replacements) {
+        RaidSettings cfg = this.settings;
+        Location center = this.announceAnchor();
+        if (center == null) {
+            return;
+        }
+        String message = Lang.get(key, replacements);
+        for (Player p : this.nearbyPlayers(center, cfg == null ? 128.0 : cfg.announceRadius)) {
+            p.sendMessage(message);
+        }
+    }
+
+    private void showTitle(String titleKey, String subtitleKey, Sound sound, float pitch, String ... replacements) {
+        RaidSettings cfg = this.settings;
+        Location center = this.announceAnchor();
+        if (center == null) {
+            return;
+        }
+        Component title = LegacyComponentSerializer.legacySection().deserialize(Lang.get(titleKey, replacements));
+        Component subtitle = LegacyComponentSerializer.legacySection().deserialize(Lang.get(subtitleKey, replacements));
+        Title.Times times = Title.Times.times(Duration.ofMillis(300L), Duration.ofMillis(2500L), Duration.ofMillis(700L));
+        for (Player p : this.nearbyPlayers(center, cfg == null ? 128.0 : cfg.announceRadius)) {
+            Scheduler.runAtLocation(this.plugin, p.getLocation(), () -> {
+                if (!p.isOnline()) {
+                    return;
+                }
+                p.showTitle(Title.title(title, subtitle, times));
+                p.playSound(p.getLocation(), sound, SoundCategory.HOSTILE, 1.0f, pitch);
+            });
+        }
+    }
+
+    /** Multi-line overview for {@code /spookyraid status}. */
+    public List<String> statusLines() {
+        ArrayList<String> lines = new ArrayList<String>();
+        lines.add(Lang.get("raid.status.header", new String[0]));
+        lines.add(Lang.get("raid.status.state", "state", this.state.name()));
+        RaidSettings cfg = this.settings;
+        RaidTarget current = this.target;
+        if (this.state == State.IDLE || cfg == null) {
+            lines.add(Lang.get("raid.status.idle", new String[0]));
+            return lines;
+        }
+        lines.add(Lang.get("raid.status.wave",
+                "wave", String.valueOf(this.waveIndex),
+                "total", String.valueOf(cfg.waveCount),
+                "alive", String.valueOf(this.attackers.size()),
+                "pending", String.valueOf(this.remainingSpawns.get())));
+        if (current != null) {
+            lines.addAll(current.describe());
+        }
+        lines.add(Lang.get("raid.status.participants", "count", String.valueOf(this.participants.size())));
+        return lines;
+    }
+
+    // ── Schedule ────────────────────────────────────────────────────────────
+
+    private void maybeAutoStart() {
+        FileConfiguration cfg = this.plugin.getConfig();
+        if (!cfg.getBoolean("raid.enabled", true) || !cfg.getBoolean("raid.schedule.enabled", false)) {
+            return;
+        }
+        int startDay = cfg.getInt("raid.schedule.startDay", 0);
+        int endDay = cfg.getInt("raid.schedule.endDay", 0);
+        if (startDay <= 0 || endDay <= 0) {
+            return;
+        }
+        ZonedDateTime now = ZonedDateTime.now();
+        if (now.getMonthValue() != cfg.getInt("raid.schedule.month", 10)) {
+            return;
+        }
+        int day = now.getDayOfMonth();
+        if (day < startDay || day > endDay) {
+            return;
+        }
+        LocalTime startTime = RaidManager.parseTime(cfg.getString("raid.schedule.startTime", "20:00"));
+        if (startTime == null) {
+            return;
+        }
+        LocalTime nowTime = now.toLocalTime();
+        // Only a limited window after the start time — otherwise a server started at midnight
+        // would still kick off that day's raid after the fact.
+        int windowMinutes = Math.max(1, cfg.getInt("raid.schedule.windowMinutes", 15));
+        if (nowTime.isBefore(startTime) || nowTime.isAfter(startTime.plusMinutes(windowMinutes))) {
+            return;
+        }
+        String today = LocalDate.now().toString();
+        synchronized (this.stateCfg) {
+            if (today.equals(this.stateCfg.getString("lastAutoStart", ""))) {
+                return;
+            }
+        }
+        // No defenders, no assault: the day stays open so the raid can still start once somebody
+        // turns up inside the window.
+        if (Bukkit.getOnlinePlayers().isEmpty()) {
+            return;
+        }
+        synchronized (this.stateCfg) {
+            this.stateCfg.set("lastAutoStart", today);
+        }
+        this.stateSaver.save();
+        String error = this.begin();
+        if (error != null) {
+            this.plugin.getLogger().warning("Scheduled raid could not start: " + Lang.get(error, new String[0]));
+        }
+    }
+
+    private static LocalTime parseTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalTime.parse(value.trim());
+        }
+        catch (DateTimeParseException e) {
+            return null;
+        }
+    }
+
+    private String snapshotState() {
+        synchronized (this.stateCfg) {
+            return this.stateCfg.saveToString();
+        }
+    }
+
+    // ── Events ──────────────────────────────────────────────────────────────
+
+    /**
+     * The target is invulnerable as far as the world is concerned — the plugin tracks its health
+     * itself (see {@link ObjectiveTarget}). That rules out players, fire, explosions and stray
+     * mobs alike; the attackers do their damage through proximity.
+     */
+    @EventHandler(priority=EventPriority.HIGH, ignoreCancelled=true)
+    public void onTargetDamage(EntityDamageEvent e) {
+        RaidTarget current = this.target;
+        if (current == null || !current.isTracked(e.getEntity().getUniqueId())) {
+            return;
+        }
+        e.setCancelled(true);
+    }
+
+    /**
+     * Keeps the raid from changing the world: explosions still hurt players, only the block
+     * damage is dropped.
+     */
+    @EventHandler(ignoreCancelled=true)
+    public void onRaidExplosion(EntityExplodeEvent e) {
+        RaidSettings cfg = this.settings;
+        if (cfg == null || !cfg.noGriefing || !this.isRaidEntity(e.getEntity())) {
+            return;
+        }
+        e.blockList().clear();
+    }
+
+    /** Same idea for the blocks a wither smashes on its way through. */
+    @EventHandler(ignoreCancelled=true)
+    public void onRaidBlockChange(EntityChangeBlockEvent e) {
+        RaidSettings cfg = this.settings;
+        if (cfg == null || !cfg.noGriefing || !this.isRaidEntity(e.getEntity())) {
+            return;
+        }
+        e.setCancelled(true);
+    }
+
+    /** Resolves projectiles back to whoever fired them, so wither skulls count too. */
+    private boolean isRaidEntity(Entity entity) {
+        Entity source = RaidManager.resolveSource(entity);
+        return source != null && this.attackerIds.contains(source.getUniqueId());
+    }
+
+    /** Resolves a projectile back to whoever fired it; anything else is returned unchanged. */
+    private static Entity resolveSource(Entity entity) {
+        if (entity instanceof Projectile) {
+            ProjectileSource shooter = ((Projectile)entity).getShooter();
+            return shooter instanceof Entity ? (Entity)shooter : null;
+        }
+        return entity;
+    }
+
+    /**
+     * With {@code focus: target}, attackers and the leader only pick defenders in their way or
+     * the target itself. Vanilla AI re-acquires villagers, golems and animals within a few ticks,
+     * so dropping such a target on the retarget interval alone leaves the mob torn between both.
+     */
+    @EventHandler(priority=EventPriority.HIGH, ignoreCancelled=true)
+    public void onAttackerTarget(EntityTargetLivingEntityEvent e) {
+        RaidSettings cfg = this.settings;
+        RaidTarget current = this.target;
+        LivingEntity wanted = e.getTarget();
+        if (cfg == null || current == null || !cfg.focusTarget || wanted == null) {
+            return;
+        }
+        UUID id = e.getEntity().getUniqueId();
+        if (!this.attackerIds.contains(id) && !this.isLeader(id)) {
+            return;
+        }
+        if (current.isTracked(wanted.getUniqueId())) {
+            return;
+        }
+        if (wanted instanceof Player && !RaidManager.isNpc(wanted) && this.keepsTarget(cfg, wanted,
+                e.getEntity().getLocation(), cfg.playerAggroRange * cfg.playerAggroRange)) {
+            return;
+        }
+        e.setCancelled(true);
+    }
+
+    private boolean isLeaderPart(UUID id) {
+        HalloweenBossManager boss = SpookySeason.get().boss();
+        return this.leaderRequested && boss != null && (id.equals(boss.bossId()) || id.equals(boss.horseId()));
+    }
+
+    private boolean isLeader(UUID id) {
+        HalloweenBossManager boss = SpookySeason.get().boss();
+        return this.leaderRequested && boss != null && id.equals(boss.bossId());
+    }
+
+    /**
+     * Attackers do not fight each other. A stray arrow would otherwise make a zombie turn on the
+     * skeleton that hit it. The damager is resolved through projectiles so wither skulls count too.
+     */
+    @EventHandler(priority=EventPriority.HIGH, ignoreCancelled=true)
+    public void onAttackerInfighting(EntityDamageByEntityEvent e) {
+        RaidSettings cfg = this.settings;
+        if (cfg == null || cfg.friendlyFire) {
+            return;
+        }
+        UUID victim = e.getEntity().getUniqueId();
+        // The leader and its horse are on the attackers' side too: stray arrows from the raid's
+        // archers otherwise knock the leader about at the target.
+        if (!this.attackerIds.contains(victim) && !this.isLeaderPart(victim)) {
+            return;
+        }
+        Entity damager = RaidManager.resolveSource(e.getDamager());
+        if (damager != null && this.attackerIds.contains(damager.getUniqueId())) {
+            e.setCancelled(true);
+        }
+    }
+
+    /**
+     * The other half of not fighting each other: damage over time. The wither effect from a
+     * wither skull or poison from a witch arrives later as a plain EntityDamageEvent without a
+     * damager, so the handler above never sees it.
+     *
+     * <p>Only damage caused by the raid itself is dropped. A defender's splash potion (healing
+     * against the undead, harming, poison) arrives with the same causes; its damage source names
+     * the thrower and is let through. An effect tick without any entity is treated as the raid's
+     * own.
+     */
+    @EventHandler(priority=EventPriority.HIGH, ignoreCancelled=true)
+    public void onAttackerEffectDamage(EntityDamageEvent e) {
+        RaidSettings cfg = this.settings;
+        if (cfg == null || cfg.friendlyFire) {
+            return;
+        }
+        if (!this.attackerIds.contains(e.getEntity().getUniqueId())) {
+            return;
+        }
+        switch (e.getCause()) {
+            case WITHER:
+            case POISON:
+            case MAGIC: {
+                Entity origin = RaidManager.damageOrigin(e);
+                if (origin == null || this.attackerIds.contains(origin.getUniqueId())) {
+                    e.setCancelled(true);
+                }
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+    }
+
+    /**
+     * The entity ultimately behind this damage, or {@code null} for damage without one (an
+     * effect tick). Resolves through projectiles and thrown potions to the entity that fired them.
+     */
+    private static Entity damageOrigin(EntityDamageEvent e) {
+        Entity causing = e.getDamageSource().getCausingEntity();
+        if (causing != null) {
+            return causing;
+        }
+        Entity direct = e.getDamageSource().getDirectEntity();
+        return direct == null ? null : RaidManager.resolveSource(direct);
+    }
+
+    /** Stops an ally's effect landing at all, so attackers do not walk around visibly withering. */
+    @EventHandler(ignoreCancelled=true)
+    public void onAttackerPotionEffect(EntityPotionEffectEvent e) {
+        RaidSettings cfg = this.settings;
+        if (cfg == null || cfg.friendlyFire) {
+            return;
+        }
+        if (e.getCause() != EntityPotionEffectEvent.Cause.ATTACK) {
+            return;
+        }
+        if (this.attackerIds.contains(e.getEntity().getUniqueId())) {
+            e.setCancelled(true);
+        }
+    }
+
+    @EventHandler
+    public void onDeath(EntityDeathEvent e) {
+        UUID id = e.getEntity().getUniqueId();
+        if (!this.attackerIds.remove(id)) {
+            return;
+        }
+        this.attackers.removeIf(a -> id.equals(a.getUniqueId()));
+        RaidSettings cfg = this.settings;
+        if (cfg != null && !cfg.dropLoot) {
+            // Otherwise the raid can be abused as a mob farm.
+            e.getDrops().clear();
+            e.setDroppedExp(0);
+        }
+        this.creditKill(e, false);
+    }
+
+    /** The leader is the boss, not one of the attackers; its kill is counted separately. */
+    @EventHandler
+    public void onLeaderDeath(EntityDeathEvent e) {
+        UUID id = e.getEntity().getUniqueId();
+        if (!id.equals(this.leaderId)) {
+            return;
+        }
+        this.leaderId = null;
+        this.creditKill(e, true);
+    }
+
+    // ── Statistics ──────────────────────────────────────────────────────────
+
+    /** Statistics only cover the fighting itself, not the countdown or the aftermath. */
+    private boolean recording() {
+        State current = this.state;
+        return current == State.WAVE || current == State.BREAK;
+    }
+
+    /**
+     * Gives the kill to the last player who hurt the mob within {@code killCreditSeconds}, so a
+     * mob that is knocked into lava or shot and then burns to death still counts for them.
+     */
+    private void creditKill(EntityDeathEvent e, boolean leader) {
+        UUID mob = e.getEntity().getUniqueId();
+        RaidSettings cfg = this.settings;
+        if (cfg == null || !this.recording()) {
+            this.stats.forget(mob);
+            return;
+        }
+        RaidStats.Hit hit = this.stats.claimKill(mob, cfg.killCreditMillis);
+        if (hit == null) {
+            return;
+        }
+        RaidTarget current = this.target;
+        boolean defense = current != null && current.defends(e.getEntity().getLocation(), cfg.defenseRadius);
+        this.stats.tally(hit.player(), hit.name()).addKill(leader, defense);
+        this.participants.add(hit.player());
+    }
+
+    /** Before the boss manager touches the leader's pool, and the attacker behind a horse hit. */
+    @EventHandler(priority=EventPriority.LOWEST)
+    public void onLeaderDamagePre(EntityDamageEvent e) {
+        HalloweenBossManager boss = SpookySeason.get().boss();
+        if (boss == null || !this.leaderRequested || !this.recording()) {
+            return;
+        }
+        UUID id = e.getEntity().getUniqueId();
+        if (id.equals(boss.bossId())) {
+            LEADER_POOL_BEFORE.set(boss.healthPool());
+        } else if (id.equals(boss.horseId())) {
+            Player attacker = RaidManager.responsiblePlayer(e);
+            if (attacker != null) {
+                HORSE_ATTACKER.set(attacker);
+            }
+        }
+    }
+
+    /**
+     * Damage dealt by players to raid mobs, counted as the health actually taken rather than the
+     * nominal hit. Not filtered on cancellation because the boss manager cancels hits on the
+     * leader while its pool still has reserves; for the leader the pool difference counts.
+     */
+    @EventHandler(priority=EventPriority.MONITOR)
+    public void onRaidMobDamaged(EntityDamageEvent e) {
+        Entity victim = e.getEntity();
+        UUID id = victim.getUniqueId();
+        Double poolBefore = LEADER_POOL_BEFORE.get();
+        if (poolBefore != null) {
+            LEADER_POOL_BEFORE.remove();
+            this.recordLeaderDamage(e, id, poolBefore);
+            return;
+        }
+        HalloweenBossManager boss = SpookySeason.get().boss();
+        if (boss != null && id.equals(boss.horseId())) {
+            HORSE_ATTACKER.remove();
+            return;
+        }
+        if (e.isCancelled() || !this.recording() || !this.attackerIds.contains(id)
+                || !(victim instanceof LivingEntity)) {
+            return;
+        }
+        Player attacker = RaidManager.responsiblePlayer(e);
+        if (attacker == null) {
+            return;
+        }
+        double taken = Math.min(Math.max(0.0, e.getFinalDamage()), Math.max(0.0, ((LivingEntity)victim).getHealth()));
+        this.recordDamage(id, attacker, taken);
+    }
+
+    private void recordLeaderDamage(EntityDamageEvent e, UUID id, double poolBefore) {
+        HalloweenBossManager boss = SpookySeason.get().boss();
+        if (boss == null || !id.equals(boss.bossId())) {
+            return;
+        }
+        Player attacker = RaidManager.responsiblePlayer(e);
+        if (attacker == null) {
+            attacker = HORSE_ATTACKER.get();
+        }
+        if (attacker == null) {
+            return;
+        }
+        double taken = Math.max(0.0, poolBefore - boss.healthPool());
+        if (taken <= 0.0 && e.isCancelled()) {
+            // Blocked before it reached the pool (protection plugin, invulnerability).
+            return;
+        }
+        this.leaderId = id;
+        this.recordDamage(id, attacker, taken);
+    }
+
+    private void recordDamage(UUID mob, Player attacker, double taken) {
+        UUID player = attacker.getUniqueId();
+        String name = attacker.getName();
+        this.stats.recordHit(mob, player, name);
+        this.stats.tally(player, name).addDamage(taken);
+        this.participants.add(player);
+    }
+
+    /** Deaths of defenders while the fighting lasts. */
+    @EventHandler(priority=EventPriority.MONITOR, ignoreCancelled=true)
+    public void onDefenderDeath(PlayerDeathEvent e) {
+        if (!this.recording()) {
+            return;
+        }
+        Player player = e.getEntity();
+        if (!this.participants.contains(player.getUniqueId())) {
+            return;
+        }
+        this.stats.tally(player.getUniqueId(), player.getName()).addDeath();
+    }
+
+    /**
+     * The player responsible for this damage: the causing entity of the damage source (covers
+     * arrows, tridents and thrown potions), or the owner of a tamed animal that struck.
+     */
+    private static Player responsiblePlayer(EntityDamageEvent e) {
+        Entity causing = e.getDamageSource().getCausingEntity();
+        if (causing == null && e instanceof EntityDamageByEntityEvent) {
+            causing = RaidManager.resolveSource(((EntityDamageByEntityEvent)e).getDamager());
+        }
+        if (causing instanceof Player) {
+            return RaidManager.isNpc(causing) ? null : (Player)causing;
+        }
+        if (causing instanceof Tameable && ((Tameable)causing).getOwner() instanceof Player) {
+            Player owner = (Player)((Tameable)causing).getOwner();
+            return RaidManager.isNpc(owner) ? null : owner;
+        }
+        return null;
+    }
+
+}

@@ -2,6 +2,15 @@ info:
   namespace: warriorland_halloween
 
 items:
+  halloween_fragment:
+    name: "&6&lHalloween Fragment"
+    lore:
+      - "&7Vzácný úlomek halloweenské energie."
+      - "&8Pouze ikona měny; zůstatek je virtuální."
+    material: AMETHYST_SHARD
+    graphics:
+      texture: item/halloween_fragment
+
   stev_apple_core:
     name: "&6Jablečná jadérka"
     lore:
@@ -158,11 +167,3 @@ items:
       nutrition: 1
       saturation: 0.2
 
-  secret_key:
-    name: "&6&lKlíč tajné místnosti"
-    lore:
-      - "&7Odemkne zamčenou truhlu v tajné podzemní místnosti."
-      - "&8Po použití se klíč spotřebuje."
-    material: TRIPWIRE_HOOK
-    graphics:
-      texture: item/secret_key

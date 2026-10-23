@@ -1,26 +1,82 @@
 name: HalloweenCore
-version: 0.2.0
+version: 0.3.1
 main: cz.halloween.core.HalloweenCore
-api-version: '1.21'
-author: Admiral456
-description: Dialogové questy a tajné podzemní místnosti se speciálním klíčem.
-softdepend: [ItemsAdder, PlaceholderAPI, BetonQuest, Citizens]
+api-version: '1.21.10'
+author: Admiral456; SpookySeason by BoondockSulfur
+description: Daily quests, fragments, Halloween shop, SpookySeason events and HorrorNights.
+folia-supported: false
+softdepend: [ItemsAdder, PlaceholderAPI, WorldGuard, GriefPrevention, CustomJukebox, MythicMobs, Jobs]
 commands:
   halloween:
-    description: Questové příkazy, fragmenty a tajné místnosti.
-    usage: /halloween [quest|fragments|key|rooms|reload]
+    description: Questy, fragmenty, obchod a hororové eventy.
+    usage: /halloween [fragments|shop|horror|reload]
     aliases: [hallow]
+    permission: halloweencore.use
+  horrornights:
+    description: Start, stop, reload or inspect random horror nights.
+    usage: /horrornights <start|stop|status|reload|help> [world]
+    aliases: [hn, horror]
+    permission: horrornights.admin
+  pumpkinrain:
+    description: Starts/stops pumpkin rain.
+    usage: /pumpkinrain <start|stop>
+    permission: spooky.pumpkinrain
+  bloodrain:
+    description: Starts/stops blood rain.
+    usage: /bloodrain <start|stop>
+    permission: spooky.bloodrain
+  spooky:
+    description: Season toggle, status, rewards, opt-out and menu.
+    usage: /spooky <on|off|status|reload|rewards|spawn|optout|top|menu>
+  spookyvolume:
+    description: Set personal spooky sound volume.
+    usage: /spookyvolume <ambient|ghost|rain|reset> [0.0-1.0]
+  spookyboss:
+    description: Configure/control the Headless Horseman.
+    usage: /spookyboss <spawn|remove|info|set|armor|ability|loot>
+    permission: spooky.admin
+  spookyraid:
+    description: Start, stop and configure an undead raid.
+    usage: /spookyraid <start|stop|status|stats|target|zone>
+    permission: spooky.admin
+  quest:
+    description: Zobrazí 15 denních kontraktů a 3 týdenní výzvy za fragmenty.
+    usage: /quest [daily|weekly]
+    aliases: [dailyquest]
     permission: halloweencore.use
 permissions:
   halloweencore.use:
-    description: Používání HalloweenCore questových příkazů.
+    description: Using HalloweenCore commands.
     default: true
   halloweencore.admin:
-    description: Správa konfigurace HalloweenCore.
+    description: Administer HalloweenCore and horror nights.
     default: op
-  halloweencore.key.give:
-    description: Administrátorské vydávání speciálních klíčů.
+  spooky.pumpkinrain:
+    description: Permission to control pumpkin rain.
     default: op
-  halloweencore.quest.dialogue:
-    description: Oprávnění pro řízení questů z dialogů BetonQuest.
+  spooky.bloodrain:
+    description: Permission to control blood rain.
+    default: op
+  spooky.admin:
+    description: Manage seasonal boss and undead raid.
+    default: op
+  horrornights.admin:
+    description: Manage horror-night events.
+    default: op
+    children:
+      horrornights.admin.start: true
+      horrornights.admin.stop: true
+      horrornights.admin.status: true
+      horrornights.admin.reload: true
+  horrornights.admin.start:
+    description: Start horror nights manually.
+    default: op
+  horrornights.admin.stop:
+    description: Stop horror nights manually.
+    default: op
+  horrornights.admin.status:
+    description: View horror-night status.
+    default: op
+  horrornights.admin.reload:
+    description: Reload horror-night configuration.
     default: op

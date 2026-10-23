@@ -1,9 +1,17 @@
-# HalloweenCore — ItemsAdder obsah
+# ItemsAdder obsah pro HalloweenCore
 
-Tento balíček obsahuje pouze dohodnuté převzaté sladkosti a novou texturu klíče do tajných podzemních místností.
+Namespace `warriorland_halloween` obsahuje 13 zachovaných sladkostí a konfiguraci oranžových variant zbraní. Candy textury a jejich MIT licenční poznámky zůstávají zachované.
 
-Zkopíruj složku warriorland_halloween do plugins/ItemsAdder/contents/ a spusť /iazip. Třináct 16×16 PNG textur sladkostí ze Stev's Halloween zůstává beze změny a s licencí MIT. Vlastní secret_key.png je 32×32 pixel-art ikona.
+Oranžové zbraně (trojzubec, palcát, netheritový meč, netheritová sekera a netheritové kopí) používají vestavěný `graphics.color: "#ff7900"` na vanilkových texturách; nové PNG nejsou potřeba. Definice jsou v `configs/orange_weapons.yml` a generují se příkazem:
 
-HalloweenCore používá ID warriorland_halloween:secret_key. Bez ItemsAdder se vytvoří funkční vanilla fallback z tripwire hooku.
+```bash
+python3 scripts/generate_orange_weapon_items.py
+```
 
-Staré zbroje, relikvie, shop, náhrobky, mobové, zvuky, shader, hudba a přepisy vanilla bloků z tohoto balíčku byly odstraněny.
+Obarvení vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi. Netherite Spear je dostupný až od Java Edition 1.21.11+, proto kompletní sada všech pěti variant vyžaduje 1.21.11+. Obsah zkopíruj do `plugins/ItemsAdder/contents/warriorland_halloween/`, restartuj server a spusť `/iazip`. Hráči musí přijmout resource pack.
+
+Tajné místnosti, klíče a jejich textura nejsou součástí obsahu.
+
+## Vlastní ikona fragmentu
+
+Soubor `resourcepack/assets/warriorland_halloween/textures/item/halloween_fragment.png` obsahuje vlastní 64×64 pixel-art ikonu měny. Definice `halloween_fragment` je v `configs/items.yml`. Slouží jako ikona zůstatku v GUI obchodu; ekonomika je virtuální, uložená v `plugins/HalloweenCore/players.yml`.
