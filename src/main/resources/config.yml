@@ -592,10 +592,10 @@ quest-rewards:
   # Calibrated for 15 daily contracts and 3 weekly challenges, with Jobs capped separately.
   difficulties:
     light: {min-fragments: 1, max-fragments: 2}
-    medium: {min-fragments: 2, max-fragments: 4}
-    hard: {min-fragments: 5, max-fragments: 8}
-    very-hard: {min-fragments: 8, max-fragments: 12}
-    extreme: {min-fragments: 10, max-fragments: 16}
+    medium: {min-fragments: 3, max-fragments: 5}
+    hard: {min-fragments: 6, max-fragments: 9}
+    very-hard: {min-fragments: 10, max-fragments: 15}
+    extreme: {min-fragments: 16, max-fragments: 24}
   quests: {}
 
 daily-quest:
