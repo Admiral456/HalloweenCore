@@ -206,12 +206,6 @@ public final class HalloweenShopManager implements Listener {
         offers.add(new Offer(mace == null ? Material.BARRIER : mace, 1, price("mace", 1400), "mace",
                 "Halloweenový palcát", "Vzácná oranžová endgame zbraň.",
                 "warriorland_halloween:orange_mace", true, mace != null));
-        Material spear = Material.matchMaterial("NETHERITE_SPEAR");
-        if (spear == null) spear = Material.matchMaterial("SPEAR");
-        offers.add(new Offer(spear == null ? Material.BARRIER : spear, 1, price("netherite-spear", 1200),
-                "netherite-spear", "Halloweenové netheritové kopí",
-                spear == null ? "Tato verze API kopí zatím nepodporuje." : "Vzácná oranžová zbraň.",
-                "warriorland_halloween:orange_netherite_spear", true, spear != null));
 
         // Armor from iron through netherite.
         offers.add(vanilla("IRON_HELMET", 1, "iron-helmet", 35, "Železná helma", "Základní ochrana.", true));
