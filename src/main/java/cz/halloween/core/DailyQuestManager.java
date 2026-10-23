@@ -46,7 +46,7 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new ContractSlot("daily-quest", "light", "LEHKÝ"),
             new ContractSlot("daily-quests.medium", "medium", "STŘEDNÍ"),
             new ContractSlot("daily-quests.hard", "hard", "TĚŽKÝ"),
-            new ContractSlot("daily-quests.extreme", "very-hard", "EXTRÉMNÍ"));
+            new ContractSlot("daily-quests.extreme", "extreme", "EXTRÉMNÍ"));
 
     private static final List<Task> TASKS = List.of(
             // Lehký kontrakt — pro běžný denní postup
@@ -64,6 +64,11 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("spiders", "Pavoučí kout", "Zabij 5 pavouků.", 5, "light", Activity.KILL, "SPIDER"),
             new Task("hostiles", "Očista okolí", "Zabij 10 nepřátelských mobů.", 10, "light", Activity.HOSTILE_KILL, "HOSTILE_ANY"),
             new Task("stone", "Kamení na obranu", "Vytěž 48 bloků kamene nebo břidlice.", 48, "light", Activity.BLOCK, "STONE_GROUP"),
+            new Task("chickens", "Slepice v noci", "Poraz 5 kuřat.", 5, "light", Activity.KILL, "CHICKEN"),
+            new Task("sheep", "Vlna na zimu", "Poraz 6 ovcí.", 6, "light", Activity.KILL, "SHEEP"),
+            new Task("bone-pickup", "Kosti pro alchymistu", "Sebírej 12 kostí.", 12, "light", Activity.PICKUP, "BONE"),
+            new Task("glass-craft", "Skleněné lahvičky", "Vyrob 16 skleněných bloků.", 16, "light", Activity.CRAFT, "GLASS"),
+            new Task("salmon-fishing", "Lososí úlovek", "Ulov 5 lososů.", 5, "light", Activity.FISH, "SALMON"),
 
             // Střední kontrakt — cílenější boj a suroviny
             new Task("creepers", "Výbuch pod kontrolou", "Zabij 6 creeperů.", 6, "medium", Activity.KILL, "CREEPER"),
@@ -82,6 +87,11 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("breed-cows", "Chovatel za úplňku", "Rozmnož 6 krav.", 6, "medium", Activity.BREED, "COW"),
             new Task("lapis-ore", "Modrý prášek", "Vytěž 8 lapisových rud.", 8, "medium", Activity.BLOCK, "LAPIS_ORE_GROUP"),
             new Task("hostiles-20", "Čistka v okolí", "Zabij 20 nepřátelských mobů.", 20, "medium", Activity.HOSTILE_KILL, "HOSTILE_ANY"),
+            new Task("drowned-medium", "Hlídka pod hladinou", "Zabij 10 utopenců.", 10, "medium", Activity.KILL, "DROWNED"),
+            new Task("phantoms-medium", "Křídla temnoty", "Zabij 6 fantomů.", 6, "medium", Activity.KILL, "PHANTOM"),
+            new Task("slime-balls", "Slizká alchymie", "Sebírej 16 slimeballů.", 16, "medium", Activity.PICKUP, "SLIME_BALL"),
+            new Task("end-eye-craft", "Oko do Endu", "Vyrob 4 enderová oka.", 4, "medium", Activity.CRAFT, "ENDER_EYE"),
+            new Task("cooked-cod", "Jídlo z oceánu", "Sněz 12 pečených tresek.", 12, "medium", Activity.CONSUME, "COOKED_COD"),
 
             // Těžký kontrakt — Nether, End a nebezpeční nepřátelé
             new Task("ancient-debris", "Starověká relikvie", "Vytěž 2 bloky ancient debris.", 2, "hard", Activity.BLOCK, "ANCIENT_DEBRIS"),
@@ -100,24 +110,34 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("breed-animals", "Rozšíření stáda", "Rozmnož 20 zvířat.", 20, "hard", Activity.BREED, "ANY"),
             new Task("netherite-scrap", "Kov hlubokých hlubin", "Získej 3 netheritové šroty jako předměty.", 3, "hard", Activity.PICKUP, "NETHERITE_SCRAP"),
             new Task("cooked-food", "Výprava připravená na vše", "Sněz 20 kusů tepelně upraveného jídla.", 20, "hard", Activity.CONSUME, "COOKED_FOOD"),
+            new Task("guardians-hard", "Strážci mořské pevnosti", "Zabij 15 guardianů.", 15, "hard", Activity.KILL, "GUARDIAN"),
+            new Task("ghasts-hard", "Lov na ghasty", "Zabij 8 ghastů.", 8, "hard", Activity.KILL, "GHAST"),
+            new Task("diamond-pickup", "Diamantová kořist", "Sebírej 8 diamantů.", 8, "hard", Activity.PICKUP, "DIAMOND"),
+            new Task("ender-eyes-pickup", "Kompas do Endu", "Sebírej 12 enderových očí.", 12, "hard", Activity.PICKUP, "ENDER_EYE"),
+            new Task("goats-hard", "Horské stádo", "Rozmnož 8 koz.", 8, "hard", Activity.BREED, "GOAT"),
 
             // Extrémní kontrakt — endgame cíle s nejlepšími odměnami
-            new Task("warden", "Ztiš hlubokou tmu", "Poraz Wardena.", 1, "very-hard", Activity.KILL, "WARDEN"),
-            new Task("wither", "Konec Withera", "Poraz Withera.", 1, "very-hard", Activity.KILL, "WITHER"),
-            new Task("ender-dragon", "Pád draka", "Poraz Ender Dragona.", 1, "very-hard", Activity.KILL, "ENDER_DRAGON"),
-            new Task("elder-guardians-extreme", "Zkáza oceánské pevnosti", "Poraz 3 elder guardiany.", 3, "very-hard", Activity.KILL, "ELDER_GUARDIAN"),
-            new Task("ravagers", "Zastav nájezd", "Poraz 5 ravagerů.", 5, "very-hard", Activity.KILL, "RAVAGER"),
-            new Task("wither-skeletons-extreme", "Armáda černých kostí", "Poraz 25 wither skeletonů.", 25, "very-hard", Activity.KILL, "WITHER_SKELETON"),
-            new Task("ancient-debris-extreme", "Poklad pod lávou", "Vytěž 12 bloků ancient debris.", 12, "very-hard", Activity.BLOCK, "ANCIENT_DEBRIS"),
-            new Task("diamonds-extreme", "Diamantový magnát", "Vytěž 32 diamantových rud.", 32, "very-hard", Activity.BLOCK, "DIAMOND_ORE_GROUP"),
-            new Task("ghasts", "Lov na ghasty", "Poraz 15 ghastů.", 15, "very-hard", Activity.KILL, "GHAST"),
-            new Task("shulkers-extreme", "Invaze do Endu", "Poraz 20 shulkerů.", 20, "very-hard", Activity.KILL, "SHULKER"),
-            new Task("hostiles-extreme", "Jedna noc, šedesát nestvůr", "Poraz 60 nepřátelských mobů.", 60, "very-hard", Activity.HOSTILE_KILL, "HOSTILE_ANY"),
-            new Task("beacon", "Maják naděje", "Získej maják do inventáře.", 1, "very-hard", Activity.PICKUP, "BEACON"),
-            new Task("nether-star", "Hvězda podsvětí", "Získej nether star jako předmět.", 1, "very-hard", Activity.PICKUP, "NETHER_STAR"),
-            new Task("obsidian-extreme", "Těžba pro pevnost", "Vytěž 64 bloků obsidiánu.", 64, "very-hard", Activity.BLOCK, "OBSIDIAN"),
-            new Task("blazes-extreme", "Pekelná sklizeň", "Poraz 32 blaze.", 32, "very-hard", Activity.KILL, "BLAZE"),
-            new Task("piglin-brutes", "Brutální směna", "Poraz 20 piglin brute.", 20, "very-hard", Activity.KILL, "PIGLIN_BRUTE")
+            new Task("warden", "Ztiš hlubokou tmu", "Poraz Wardena.", 1, "extreme", Activity.KILL, "WARDEN"),
+            new Task("wither", "Konec Withera", "Poraz Withera.", 1, "extreme", Activity.KILL, "WITHER"),
+            new Task("ender-dragon", "Pád draka", "Poraz Ender Dragona.", 1, "extreme", Activity.KILL, "ENDER_DRAGON"),
+            new Task("elder-guardians-extreme", "Zkáza oceánské pevnosti", "Poraz 3 elder guardiany.", 3, "extreme", Activity.KILL, "ELDER_GUARDIAN"),
+            new Task("ravagers", "Zastav nájezd", "Poraz 5 ravagerů.", 5, "extreme", Activity.KILL, "RAVAGER"),
+            new Task("wither-skeletons-extreme", "Armáda černých kostí", "Poraz 25 wither skeletonů.", 25, "extreme", Activity.KILL, "WITHER_SKELETON"),
+            new Task("ancient-debris-extreme", "Poklad pod lávou", "Vytěž 12 bloků ancient debris.", 12, "extreme", Activity.BLOCK, "ANCIENT_DEBRIS"),
+            new Task("diamonds-extreme", "Diamantový magnát", "Vytěž 32 diamantových rud.", 32, "extreme", Activity.BLOCK, "DIAMOND_ORE_GROUP"),
+            new Task("ghasts", "Lov na ghasty", "Poraz 15 ghastů.", 15, "extreme", Activity.KILL, "GHAST"),
+            new Task("shulkers-extreme", "Invaze do Endu", "Poraz 20 shulkerů.", 20, "extreme", Activity.KILL, "SHULKER"),
+            new Task("hostiles-extreme", "Jedna noc, šedesát nestvůr", "Poraz 60 nepřátelských mobů.", 60, "extreme", Activity.HOSTILE_KILL, "HOSTILE_ANY"),
+            new Task("beacon", "Maják naděje", "Získej maják do inventáře.", 1, "extreme", Activity.PICKUP, "BEACON"),
+            new Task("nether-star", "Hvězda podsvětí", "Získej nether star jako předmět.", 1, "extreme", Activity.PICKUP, "NETHER_STAR"),
+            new Task("obsidian-extreme", "Těžba pro pevnost", "Vytěž 64 bloků obsidiánu.", 64, "extreme", Activity.BLOCK, "OBSIDIAN"),
+            new Task("blazes-extreme", "Pekelná sklizeň", "Poraz 32 blaze.", 32, "extreme", Activity.KILL, "BLAZE"),
+            new Task("piglin-brutes", "Brutální směna", "Poraz 20 piglin brute.", 20, "extreme", Activity.KILL, "PIGLIN_BRUTE"),
+            new Task("wither-double", "Dvojitá apokalypsa", "Poraz 2 Withery.", 2, "extreme", Activity.KILL, "WITHER"),
+            new Task("ender-dragons-extreme", "Lovec draků", "Poraz 2 Ender Dragony.", 2, "extreme", Activity.KILL, "ENDER_DRAGON"),
+            new Task("nether-stars-extreme", "Tři hvězdy podsvětí", "Sebírej 3 Nether Star.", 3, "extreme", Activity.PICKUP, "NETHER_STAR"),
+            new Task("shulkers-army", "Prázdnota plná schránek", "Poraz 32 shulkerů.", 32, "extreme", Activity.KILL, "SHULKER"),
+            new Task("wardens-extreme", "Králové hlubiny", "Poraz 3 Wardeny.", 3, "extreme", Activity.KILL, "WARDEN")
     );
 
     private static final Set<String> HOSTILE_MOBS = Set.of(
