@@ -176,22 +176,24 @@ orange_script = root / "scripts/generate_orange_weapon_items.py"
 orange_config_path = base / "configs/orange_weapons.yml"
 orange_config = orange_config_path.read_text(encoding="utf-8") if orange_config_path.is_file() else ""
 for orange_id in ["orange_trident", "orange_mace", "orange_netherite_sword",
-                  "orange_netherite_axe", "orange_netherite_spear"]:
+                  "orange_netherite_axe"]:
     if f"  {orange_id}:" not in orange_config:
         raise SystemExit(f"Missing orange ItemsAdder weapon definition: {orange_id}")
 if not orange_script.is_file():
     raise SystemExit("Orange weapon config generator is missing")
 for orange_id in ["orange_trident", "orange_mace", "orange_netherite_sword",
-                  "orange_netherite_axe", "orange_netherite_spear"]:
+                  "orange_netherite_axe"]:
     if f"warriorland_halloween:{orange_id}" not in shop:
         raise SystemExit(f"Orange weapon is not connected to the shop: {orange_id}")
-# Keep the artifact aligned with the actual 26.1.2 Paper/Purpur deployment target.
-if "26.1.2.build.74-stable" not in pom or "<release>25</release>" not in pom:
-    raise SystemExit("Plugin must compile against Paper API 26.1.2 and Java 25")
-if plugin.get("api-version") != "26.1.2":
-    raise SystemExit("plugin.yml must declare api-version 26.1.2")
+# Keep the artifact aligned with the actual 1.21.10 Paper/Purpur deployment target.
+if "1.21.10-R0.1-SNAPSHOT" not in pom or "<release>21</release>" not in pom:
+    raise SystemExit("Plugin must compile against Paper API 1.21.10 and Java 21")
+if plugin.get("api-version") != "1.21.10":
+    raise SystemExit("plugin.yml must declare api-version 1.21.10")
 workflow = (root / ".github/workflows/build.yml").read_text(encoding="utf-8")
-if "java-version: '25'" not in workflow:
-    raise SystemExit("CI must build with Java 25 for Paper/Purpur 26.1.2")
+if "java-version: '21'" not in workflow:
+    raise SystemExit("CI must build with Java 21 for Paper/Purpur 1.21.10")
+if "NETHERITE_SPEAR" in orange_config or "orange_netherite_spear" in shop:
+    raise SystemExit("Minecraft 1.21.10 build must not offer the spear added in 1.21.11")
 
-print("Full event wiring, no-weather rule, season dates, 15 daily/3 weekly quests, Jobs bridge, shop, candy textures and orange weapons validated for Paper/Purpur 26.1.2.")
+print("Full SpookySeason/HorrorNights wiring, no-weather rule, season dates, 15 daily/3 weekly quests, Jobs bridge, shop, candy textures and four orange weapons validated for Paper/Purpur 1.21.10.")
