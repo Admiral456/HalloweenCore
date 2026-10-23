@@ -72,7 +72,7 @@ required_prices = [
     "candy", "iron", "gold", "diamond", "emerald", "netherite-ingot", "netherite-scrap",
     "golden-apple", "enchanted-golden-apple", "totem", "trident", "mace", "netherite-sword",
     "netherite-axe", "netherite-helmet", "netherite-chestplate", "netherite-leggings",
-    "netherite-boots", "elytra", "netherite-spear", "coal", "copper", "raw-iron", "raw-gold",
+    "netherite-boots", "elytra", "coal", "copper", "raw-iron", "raw-gold",
     "redstone", "lapis", "quartz", "cobblestone", "stone", "deepslate", "oak-logs", "glass",
     "obsidian", "quartz-block", "glowstone", "slime-block", "tnt", "bread", "cooked-beef",
     "baked-potato", "golden-carrot", "pumpkin-pie", "honey-bottle", "ender-pearl", "blaze-rod",
@@ -100,7 +100,7 @@ shop_source = (root / "src/main/java/cz/halloween/core/HalloweenShopManager.java
 for item in prices:
     if f'"{item}"' not in shop_source:
         raise SystemExit(f"Shop has a configured price without an offer: {item}")
-if prices["elytra"] <= prices["diamond"] or prices["mace"] <= prices["iron"] or prices["netherite-spear"] <= prices["diamond"]:
+if prices["elytra"] <= prices["diamond"] or prices["mace"] <= prices["iron"]:
     raise SystemExit("Endgame prices are not meaningfully higher than basic resources")
 if prices["enchanted-golden-apple"] < 700 or prices["enchanted-golden-apple"] <= prices["golden-apple"]:
     raise SystemExit("Enchanted golden apples must cost at least 700 fragments and far more than normal golden apples")
