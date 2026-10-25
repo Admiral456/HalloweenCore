@@ -243,7 +243,7 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("crossbows-hard", "Kuše lovce", "Vyrob 4 kuše.", 4, "hard", Activity.CRAFT, "CROSSBOW"),
             new Task("golden-carrots-hard", "Zlaté zásoby", "Vyrob 32 zlatých mrkví.", 32, "hard", Activity.CRAFT, "GOLDEN_CARROT"),
             new Task("turtle-scutes-hard", "Poklad z pobřeží", "Sebírej 8 želvích štítků.", 8, "hard", Activity.PICKUP, "TURTLE_SCUTE"),
-            new Task("end-crystals-hard-extra", "Krystaly na hraně", "Vyrob 6 endových krystalů.", 6, "hard", Activity.CRAFT, "END_CRYSTAL"),
+            new Task("end-crystals-hard-extra-two", "Krystaly na hraně", "Vyrob 6 endových krystalů.", 6, "hard", Activity.CRAFT, "END_CRYSTAL"),
             new Task("piglin-brutes-very-hard", "Elita bastionu", "Poraz 30 piglin brutes.", 30, "very-hard", Activity.KILL, "PIGLIN_BRUTE"),
             new Task("breezes-very-hard", "Bouře v trial chambers", "Poraz 30 breeze.", 30, "very-hard", Activity.KILL, "BREEZE"),
             new Task("bogged-very-hard", "Bažinná legie", "Poraz 30 bogged.", 30, "very-hard", Activity.KILL, "BOGGED"),
