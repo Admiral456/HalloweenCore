@@ -14,4 +14,4 @@
 
 - Aktuální produkční cíl sestavení je Paper/Purpur 1.21.10 (Paper API 1.21.10-R0.1-SNAPSHOT, Java 21); CI tuto verzi kompiluje a validuje.
 
-- Dialogový quest manažer, BetonQuest NPC balíček, dialogové návody a Citizens soft-dependency jsou odstraněné. Standardní 130členný pool denních/týdenních úkolů a fragmentový zůstatek zůstávají zachované.
+- Dialogový quest manažer, BetonQuest NPC balíček, dialogové návody a Citizens soft-dependency jsou odstraněné. Standardní 180členný pool denních/týdenních úkolů a fragmentový zůstatek zůstávají zachované.
