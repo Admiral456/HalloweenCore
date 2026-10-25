@@ -47,7 +47,7 @@ Všechny ceny jsou v halloweenských fragmentech. U surovin je uvedené množstv
 | Železné ingoty (16) | 18 fragmentů |
 | Diamant | 45 fragmentů |
 | Netheritový ingot | 350 fragmentů |
-| Zlaté jablko | 65 fragmentů |
+| Zlaté jablko | 100 fragmentů |
 | **Enchanted Golden Apple** | **1 000 fragmentů** |
 | Totem of Undying | 750 fragmentů |
 | Nether Star | 900 fragmentů |
