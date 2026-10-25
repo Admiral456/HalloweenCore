@@ -1,193 +1,121 @@
 #!/usr/bin/env python3
-"""Validate HalloweenCore's configurable vanilla-only reward tables."""
 from pathlib import Path
 import re
-import sys
+import yaml
 
-try:
-    import yaml
-except ImportError as exc:
-    raise SystemExit("PyYAML is required: python3 -m pip install PyYAML") from exc
+root = Path(__file__).resolve().parents[1]
+cfg = yaml.safe_load((root / "src/main/resources/config.yml").read_text(encoding="utf-8"))
+for required in ["activeWindow", "horrorNights", "raid", "trickOrTreat", "bloodRain",
+                 "hauntedNight", "halloweenBoss", "season", "daily-quest", "quest-rewards", "shop"]:
+    if required not in cfg:
+        raise SystemExit(f"Missing configuration section: {required}")
+for retired in ["secret-rooms", "random-events", "grave-encounters", "automatic-world-generation"]:
+    if retired in cfg:
+        raise SystemExit(f"Retired configuration section remains: {retired}")
+if "key-chances" in (root / "src/main/resources/config.yml").read_text(encoding="utf-8"):
+    raise SystemExit("Obsolete key reward configuration remains")
 
-ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = ROOT / "src/main/resources/config.yml"
+rewards = cfg["quest-rewards"]
+bounds = {"light": (1, 2), "medium": (3, 5), "hard": (6, 9), "very-hard": (10, 15), "extreme": (16, 24)}
+if rewards.get("default-difficulty") not in bounds:
+    raise SystemExit("Invalid default quest difficulty")
+for name, expected in bounds.items():
+    tier = rewards.get("difficulties", {}).get(name, {})
+    if (tier.get("min-fragments"), tier.get("max-fragments")) != expected:
+        raise SystemExit(f"Invalid quest reward range: {name}")
+for quest_id, entry in rewards.get("quests", {}).items():
+    if not re.fullmatch(r"[a-z0-9_-]{1,48}", str(quest_id)) or not isinstance(entry, dict):
+        raise SystemExit(f"Invalid quest reward override: {quest_id}")
 
-VANILLA_MATERIALS = {
-    "COAL", "IRON_INGOT", "GOLD_INGOT", "EMERALD", "BREAD", "COOKED_BEEF",
-    "REDSTONE", "DIAMOND", "ENCHANTED_BOOK", "DIAMOND_PICKAXE", "DIAMOND_SWORD",
-    "GOLDEN_APPLE", "DIAMOND_CHESTPLATE", "NETHERITE_SCRAP", "TOTEM_OF_UNDYING",
-}
-VANILLA_ENCHANTMENTS = {"unbreaking", "efficiency", "protection", "sharpness", "mending"}
-RARITIES = ("common", "rare", "legendary")
-DIFFICULTIES = ("light", "medium", "hard", "very-hard")
+legacy_reward = cfg["daily-quest"].get("reward-fragments")
+if not isinstance(legacy_reward, int) or legacy_reward < 0:
+    raise SystemExit("Invalid legacy daily-quest migration reward")
 
+# The pool contains 180 possible tasks across five tiers, with 15 daily and three weekly assignments.
+quest_source = (root / "src/main/java/cz/halloween/core/DailyQuestManager.java").read_text(encoding="utf-8")
+if quest_source.count("new Task(") < 180:
+    raise SystemExit("Expected at least 80 daily/weekly contract definitions")
+for difficulty in ['"light"', '"medium"', '"hard"', '"very-hard"', '"extreme"']:
+    if difficulty not in quest_source:
+        raise SystemExit(f"Missing quest difficulty: {difficulty}")
+slot_rows = re.findall(r'new ContractSlot\("([^"]+)",\s*"[^"]+",\s*"[^"]+",\s*(true|false)\)', quest_source)
+if sum(weekly == "false" for _, weekly in slot_rows) != 15:
+    raise SystemExit("Expected exactly 15 daily contracts")
+if sum(weekly == "true" for _, weekly in slot_rows) != 3:
+    raise SystemExit("Expected exactly three weekly contracts")
+if "weekKey()" not in quest_source or "weekly-multiplier" not in quest_source:
+    raise SystemExit("Weekly reset/multiplier logic is missing")
+if 'new ContractSlot("daily-quests.very-hard", "very-hard", "VELMI TĚŽKÝ", false)' not in quest_source:
+    raise SystemExit("Daily very-hard contracts must use the actual very-hard fragment tier")
+if 'new ContractSlot("daily-quests.extreme", "extreme", "EXTRÉMNÍ", false)' not in quest_source:
+    raise SystemExit("Daily extreme contracts must use the actual extreme fragment tier")
+task_rows = re.findall(r'new Task\("([a-z0-9_-]+)".*?,\s*"([^"]+)",\s*Activity\.', quest_source)
+task_ids = [task_id for task_id, _ in task_rows]
+if len(task_ids) != len(set(task_ids)):
+    raise SystemExit("Task catalogue contains duplicate task IDs")
+for tier in ["light", "medium", "hard", "very-hard", "extreme"]:
+    if sum(1 for _, difficulty in task_rows if difficulty == tier) < 15:
+        raise SystemExit(f"Expected at least 15 tasks for tier: {tier}")
+jobs_cfg = cfg.get("jobs-fragments", {})
+if jobs_cfg.get("enabled") is not True or jobs_cfg.get("experience-per-fragment") != 25.0 or jobs_cfg.get("max-per-day") != 8:
+    raise SystemExit("Jobs fragment rate/cap differs from the agreed defaults")
+jobs_source = (root / "src/main/java/cz/halloween/core/JobsFragmentBridge.java").read_text(encoding="utf-8")
+for wired in ["JobsExpGainEvent", "experience-per-fragment", "max-per-day", "persistState"]:
+    if wired not in jobs_source:
+        raise SystemExit(f"Jobs fragment bridge is missing {wired}")
+if 'weekly-completion-bonus' not in rewards or rewards['weekly-completion-bonus'] != 50:
+    raise SystemExit("Weekly completion bonus should be 50 fragments")
+if rewards.get("weekly-multiplier") != 3.0:
+    raise SystemExit("Weekly quest reward multiplier should be 3.0")
+prices = cfg["shop"].get("prices", {})
+required_prices = [
+    "candy", "iron", "gold", "diamond", "emerald", "netherite-ingot", "netherite-scrap",
+    "golden-apple", "enchanted-golden-apple", "totem", "trident", "mace", "netherite-sword",
+    "netherite-axe", "netherite-helmet", "netherite-chestplate", "netherite-leggings",
+    "netherite-boots", "elytra", "coal", "copper", "raw-iron", "raw-gold",
+    "redstone", "lapis", "quartz", "cobblestone", "stone", "deepslate", "oak-logs", "glass",
+    "obsidian", "quartz-block", "glowstone", "slime-block", "tnt", "bread", "cooked-beef",
+    "baked-potato", "golden-carrot", "pumpkin-pie", "honey-bottle", "ender-pearl", "blaze-rod",
+    "arrow", "firework-rocket", "experience-bottle", "ender-chest", "shulker-box", "anvil",
+    "name-tag", "saddle", "water-bucket", "lead", "beacon", "nether-star", "iron-pickaxe",
+    "diamond-sword", "diamond-pickaxe", "diamond-axe", "netherite-pickaxe", "netherite-shovel",
+    "netherite-hoe", "bow", "crossbow", "shield", "iron-helmet", "iron-chestplate",
+    "iron-leggings", "iron-boots", "diamond-helmet", "diamond-chestplate", "diamond-leggings",
+    "diamond-boots", "netherite-pickaxe", "netherite-shovel", "netherite-hoe",
+    "amethyst-shard", "prismarine-shard", "prismarine-crystals", "slime-ball", "magma-cream",
+    "phantom-membrane", "ghast-tear", "shulker-shell", "turtle-scute", "nautilus-shell",
+    "heart-of-the-sea", "crying-obsidian", "blaze-powder", "ender-eye", "dragon-breath",
+    "netherite-template", "dark-oak-logs", "prismarine-bricks", "sea-lantern", "terracotta",
+    "orange-concrete", "lantern", "campfire", "chain", "compass", "clock", "recovery-compass",
+    "spyglass", "fishing-rod", "shears", "flint-and-steel", "dragon-head", "end-crystal",
+    "conduit", "diamond-shovel", "diamond-hoe", "golden-horse-armor", "diamond-horse-armor",
+]
+for item in required_prices:
+    if not isinstance(prices.get(item), int) or prices[item] < 0:
+        raise SystemExit(f"Invalid shop price: {item}")
+for item, price in prices.items():
+    if not isinstance(price, int) or price < 0:
+        raise SystemExit(f"Invalid configured shop price: {item}")
+shop_source = (root / "src/main/java/cz/halloween/core/HalloweenShopManager.java").read_text(encoding="utf-8")
+for item in prices:
+    if f'"{item}"' not in shop_source:
+        raise SystemExit(f"Shop has a configured price without an offer: {item}")
+if prices["elytra"] <= prices["diamond"] or prices["mace"] <= prices["iron"]:
+    raise SystemExit("Endgame prices are not meaningfully higher than basic resources")
+if prices["enchanted-golden-apple"] < 1000 or prices["enchanted-golden-apple"] <= prices["golden-apple"]:
+    raise SystemExit("Enchanted golden apples must cost at least 1000 fragments and far more than normal golden apples")
+if prices["beacon"] <= prices["netherite-ingot"] or prices["nether-star"] <= prices["diamond"]:
+    raise SystemExit("Rare endgame items must have premium prices")
+if prices["elytra"] < 1800 or prices["beacon"] < 1400 or prices["mace"] < 1200:
+    raise SystemExit("Elytra, beacon and mace must remain long-term endgame goals")
+if shop_source.count("offers.add(") < 100:
+    raise SystemExit("Expected at least 100 shop catalogue offers")
+if "return deduplicateCatalogue(offers);" not in shop_source:
+    raise SystemExit("Shop catalogue must collapse repeated vanilla offers")
 
-def fail(message: str) -> None:
-    raise SystemExit(f"Reward validation failed: {message}")
-
-
-def number(value, label: str, minimum: float, maximum: float) -> float:
-    if isinstance(value, bool) or not isinstance(value, (int, float)):
-        fail(f"{label} must be numeric")
-    parsed = float(value)
-    if parsed < minimum or parsed > maximum:
-        fail(f"{label} must be in range {minimum}..{maximum}, got {value}")
-    return parsed
-
-
-def validate_range(section: dict, prefix: str, min_key: str, max_key: str) -> None:
-    low = number(section.get(min_key), f"{prefix}.{min_key}", 0, 2_000_000_000)
-    high = number(section.get(max_key), f"{prefix}.{max_key}", 0, 2_000_000_000)
-    if low > high:
-        fail(f"{prefix}: {min_key} ({low}) must not exceed {max_key} ({high})")
-
-
-def main() -> None:
-    if not CONFIG_PATH.is_file():
-        fail(f"missing {CONFIG_PATH}")
-    try:
-        config = yaml.safe_load(CONFIG_PATH.read_text(encoding="utf-8"))
-    except yaml.YAMLError as exc:
-        fail(f"config.yml is not valid YAML: {exc}")
-    if not isinstance(config, dict):
-        fail("config.yml must contain a YAML mapping")
-
-    rooms = config.get("secret-rooms")
-    if not isinstance(rooms, dict):
-        fail("secret-rooms section is missing")
-    chance = number(rooms.get("chance-per-new-chunk"), "secret-rooms.chance-per-new-chunk", 0, 1)
-    if "Spawn" not in rooms.get("excluded-worlds", []):
-        fail("secret-rooms.excluded-worlds must include Spawn")
-
-    weights = rooms.get("rarity-weights")
-    if not isinstance(weights, dict):
-        fail("secret-rooms.rarity-weights is missing")
-    weight_values = []
-    for rarity in RARITIES:
-        weight = number(weights.get(rarity), f"secret-rooms.rarity-weights.{rarity}", 0, 1_000_000)
-        if not float(weight).is_integer():
-            fail(f"secret-rooms.rarity-weights.{rarity} must be an integer")
-        weight_values.append(int(weight))
-    if sum(weight_values) <= 0:
-        fail("at least one room rarity weight must be above zero")
-
-    loot = rooms.get("loot")
-    if not isinstance(loot, dict):
-        fail("secret-rooms.loot section is missing")
-    for rarity in RARITIES:
-        tier = loot.get(rarity)
-        if not isinstance(tier, dict):
-            fail(f"secret-rooms.loot.{rarity} is missing")
-        validate_range(tier, f"secret-rooms.loot.{rarity}", "min-fragments", "max-fragments")
-        entries = tier.get("items")
-        if not isinstance(entries, list) or not entries:
-            fail(f"secret-rooms.loot.{rarity}.items must be a non-empty list")
-        for index, entry in enumerate(entries):
-            prefix = f"secret-rooms.loot.{rarity}.items[{index}]"
-            if not isinstance(entry, dict):
-                fail(f"{prefix} must be a mapping")
-            material = entry.get("material")
-            if not isinstance(material, str) or material not in VANILLA_MATERIALS:
-                fail(f"{prefix}.material must be an approved vanilla material, got {material!r}")
-            low = number(entry.get("min", 1), f"{prefix}.min", 1, 64)
-            high = number(entry.get("max", low), f"{prefix}.max", 1, 64)
-            if low > high:
-                fail(f"{prefix}.min must not exceed max")
-            number(entry.get("chance", 1), f"{prefix}.chance", 0, 1)
-            enchantments = entry.get("enchantments", [])
-            if not isinstance(enchantments, list):
-                fail(f"{prefix}.enchantments must be a list")
-            for enchantment in enchantments:
-                if not isinstance(enchantment, str) or not re.fullmatch(r"[a-z_]+:[1-5]", enchantment):
-                    fail(f"{prefix} has malformed enchantment {enchantment!r}")
-                name = enchantment.rsplit(":", 1)[0]
-                if name not in VANILLA_ENCHANTMENTS:
-                    fail(f"{prefix} uses an unapproved enchantment {name!r}")
-
-    rewards = config.get("quest-rewards")
-    if not isinstance(rewards, dict):
-        fail("quest-rewards section is missing")
-    default_difficulty = rewards.get("default-difficulty")
-    if default_difficulty not in DIFFICULTIES:
-        fail(f"quest-rewards.default-difficulty must be one of {DIFFICULTIES}")
-
-    difficulties = rewards.get("difficulties")
-    if not isinstance(difficulties, dict):
-        fail("quest-rewards.difficulties section is missing")
-    expected_ranges = {
-        "light": (3, 5),
-        "medium": (6, 9),
-        "hard": (10, 15),
-        "very-hard": (16, 25),
-    }
-    for difficulty in DIFFICULTIES:
-        tier = difficulties.get(difficulty)
-        if not isinstance(tier, dict):
-            fail(f"quest-rewards.difficulties.{difficulty} is missing")
-        validate_range(tier, f"quest-rewards.difficulties.{difficulty}", "min-fragments", "max-fragments")
-        actual = (tier["min-fragments"], tier["max-fragments"])
-        if actual != expected_ranges[difficulty]:
-            fail(f"{difficulty} fragment range must remain {expected_ranges[difficulty]}, got {actual}")
-
-        probabilities = tier.get("key-chances")
-        if not isinstance(probabilities, dict):
-            fail(f"quest-rewards.difficulties.{difficulty}.key-chances is missing")
-        total = 0.0
-        for rarity in RARITIES:
-            total += number(probabilities.get(rarity),
-                            f"quest-rewards.difficulties.{difficulty}.key-chances.{rarity}", 0, 1)
-        if total > 1:
-            fail(f"key chances for {difficulty} sum to more than 100% ({total:.4f})")
-
-    # This project deliberately has no predefined quest IDs/story. It only stores overrides.
-    quest_overrides = rewards.get("quests")
-    if not isinstance(quest_overrides, dict):
-        fail("quest-rewards.quests must be a mapping")
-    for quest_id, override in quest_overrides.items():
-        if not re.fullmatch(r"[a-z0-9_-]{1,48}", str(quest_id)):
-            fail(f"invalid quest override ID {quest_id!r}")
-        if not isinstance(override, dict):
-            fail(f"quest override {quest_id} must be a mapping")
-        if "difficulty" in override and override["difficulty"] not in DIFFICULTIES:
-            fail(f"quest override {quest_id} has an invalid difficulty")
-        effective_difficulty = override.get("difficulty", default_difficulty)
-        base_tier = difficulties[effective_difficulty]
-        if "fragments" in override:
-            number(override["fragments"], f"quest override {quest_id}.fragments", 0, 2_000_000_000)
-        else:
-            low = number(
-                override.get("min-fragments", base_tier["min-fragments"]),
-                f"quest override {quest_id}.min-fragments", 0, 2_000_000_000)
-            high = number(
-                override.get("max-fragments", base_tier["max-fragments"]),
-                f"quest override {quest_id}.max-fragments", 0, 2_000_000_000)
-            if low > high:
-                fail(f"quest override {quest_id} min-fragments must not exceed max-fragments")
-
-        # Check the resulting probabilities, including tier defaults for omitted override values.
-        chances = override.get("key-chances", {})
-        if not isinstance(chances, dict):
-            fail(f"quest override {quest_id}.key-chances must be a mapping")
-        total = 0.0
-        for rarity in RARITIES:
-            value = chances.get(rarity, base_tier["key-chances"][rarity])
-            total += number(value, f"quest override {quest_id}.effective-key-chances.{rarity}", 0, 1)
-        if total > 1:
-            fail(f"quest override {quest_id} effective key chances sum to more than 100%")
-
-    code = (ROOT / "src/main/java/cz/halloween/core/SecretRoomManager.java").read_text(encoding="utf-8")
-    required_room_safety = ("hasMatchingKey", "consumeKey", "rollRoomRarity", "populateChest",
-                            ".set(path + \".loot-generated\", true)", "InventoryMoveItemEvent")
-    for marker in required_room_safety:
-        if marker not in code:
-            fail(f"SecretRoomManager is missing expected safety/reward hook {marker!r}")
-
-    print(
-        "Reward validation passed: 3 room rarities, vanilla-only loot, "
-        "fragment ranges and all quest key chances are internally consistent. "
-        f"New-chunk room attempt chance: {chance:.1%}."
-    )
-
-
-if __name__ == "__main__":
-    main()
+window = cfg["activeWindow"]
+if (window.get("startMonth"), window.get("startDay"), window.get("endMonth"), window.get("endDay")) != (10, 23, 11, 2):
+    raise SystemExit("Wrong season window")
+if cfg["season"].get("enabled") is not True:
+    raise SystemExit("Season is disabled")
+print("Quest rewards, 15 daily/3 weekly contracts, Jobs cap, expanded shop and seasonal dates validated.")

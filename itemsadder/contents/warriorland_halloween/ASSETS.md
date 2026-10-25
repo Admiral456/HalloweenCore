@@ -1,28 +1,9 @@
-# Zachované ItemsAdder assety
+# HalloweenCore ItemsAdder assety
 
-Namespace: warriorland_halloween
+Namespace `warriorland_halloween` obsahuje:
 
-## Převzaté sladkosti
+- 13 zachovaných licencovaných 16×16 PNG sladkostí v `textures/item/stev_candy/`. Jejich licence a SHA-256 manifest zůstávají beze změny.
+- 1 vlastní 64×64 pixel-art PNG `textures/item/halloween_fragment.png`, používaný jako ikona virtuální měny HalloweenCore.
+- 4 oranžové varianty zbraní pro Minecraft 1.21.10 (trojzubec, palcát, netheritový meč a sekera), jejichž vanilkové textury se obarvují přes `graphics.color: "#ff7900"`. Pro ně se nepřidávají vlastní PNG.
 
-Těchto třináct 16×16 PNG textur zůstává beze změny pod licencí MIT:
-- apple_core.png
-- candy_apple.png
-- candy_bag.png
-- caramel.png
-- caramel_apple.png
-- chocolate_bar.png
-- frosted_sugar_cookie.png
-- gumdrop.png
-- hard_candy.png
-- lollipop.png
-- peanut_butter_cup.png
-- sugar_cookie.png
-- toasted_pumpkin_seeds.png
-
-Cesta: resourcepack/assets/warriorland_halloween/textures/item/stev_candy/.
-
-## Vlastní klíč
-
-- resourcepack/assets/warriorland_halloween/textures/item/secret_key.png — 32×32 pixel-art ikona pro warriorland_halloween:secret_key.
-
-Další původní HalloweenCore assety nejsou součástí tohoto balíčku.
+Tajné místnosti, klíče a jejich textura zůstávají odstraněné. Generátor hrobů/podzemních struktur, který nefungoval spolehlivě, se neobnovuje. Eventy SpookySeason a HorrorNights mají zdrojový kód v pluginu, ale nemění násilně počasí ani oblohu.

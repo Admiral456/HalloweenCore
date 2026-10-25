@@ -1,71 +1,84 @@
-# HalloweenCore — questy, fragmenty a tajné místnosti
+# HalloweenCore
 
-Tato verze je omezená na dialogové questy, evidenci jejich stavu, fragmenty, tajné podzemní místnosti se zamčenou truhlou a speciální klíč. Zachovává také třináct sladkostí a jejich původní textury ze Stev's Halloween pod licencí MIT.
+HalloweenCore spojuje plnou implementaci sezónních funkcí SpookySeason, nezávislou implementaci HorrorNights a vlastní systém denních questů, fragmentů a obchodu pro Paper/Purpur.
 
-## Dialogy přes BetonQuest
+## Požadavky a instalace
 
-Dialogy a kontrolu cílů zajišťuje BetonQuest 3.2+. Připravený příklad najdeš v balíčku betonquest/QuestPackages/warriorland_halloween_dialogues; GitHub Actions z něj vytváří ZIP artefakt WarriorLand-Halloween-BetonQuest.
+Tato vydávaná sestava je cílená na **Paper/Purpur 1.21.10** a sestavuje se proti **Paper API 1.21.10-R0.1-SNAPSHOT** s Java 21. Tento JAR je určen pro server Minecraft/Paper/Purpur 1.21.10; na jiné verzi jej používej až po samostatném ověření.
 
-- Dialogy se upravují v YAML souborech, nikoli přes webový editor.
-- Pro přiřazení dialogu potřebuješ Citizens NPC. Přirozeně spawnutý villager nemá Citizens ID; vytvoř NPC typu villager a jeho skutečné ID vlož do package.yml.
-- Ukázkový dialog je pouze test: farmář požádá o 10 pšenic. BetonQuest ověří inventář a odebere předměty; HalloweenCore potom jednorázově připíše 5 fragmentů.
-- V ukázkovém questu jsou bonusové klíče vypnuté. Odměnu můžeš změnit v plugins/HalloweenCore/config.yml.
-- Podrobný návod: docs/DIALOGUE_LIBRARY_CZ.md.
+- **Povinné:** Paper nebo Purpur **1.21.10**, Java **21+**.
+- **Doporučeno:** ItemsAdder 4.0.13+ pro vlastní ikonu fragmentu, 13 sladkostí a oranžové zbraně; hráči musí obdržet a přijmout resource pack.
+- **Volitelné integrace:** Jobs Reborn (odměny z Jobs), PlaceholderAPI (fragmentový placeholder), MythicMobs (vlastní HorrorNights moby), WorldGuard/GriefPrevention (kontrola chráněných oblastí) a CustomJukebox (vlastní ambientní hudba).
+- **Po instalaci:** plně restartuj server, zkontroluj konzoli, potom spusť `/iazip`. Obsah ItemsAdder ZIP rozbal do `plugins/ItemsAdder/contents/`, aby výsledná cesta byla `plugins/ItemsAdder/contents/warriorland_halloween/`. Nepoužívej PlugMan/PlugManX k hot-reloadu tohoto pluginu.
 
-BetonQuest a Citizens je potřeba nainstalovat samostatně. UplineDialogues už není vyžadován.
+Podrobnější postup, příkazy a oprávnění jsou v [instalační příručce](docs/INSTALACE_CZ.md). Oranžované zbraně používají moderní barevný systém ItemsAdder, který vyžaduje ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi; kopí (Spear) není ve vanilla Minecraftu 1.21.10 dostupné a z této verze je proto vynechané; ostatní oranžové zbraně fungují na 1.21.10. 
 
-## Odstraněno
+## SpookySeason
 
-- Všechny původní Halloween eventy a jejich automatické plánování.
-- Halloween mobové, jejich modely a textury, Headless Nick a staré encountery.
-- Staré bossy včetně Krále upírů a arénové mechaniky.
-- Generování hřbitova a Halloween vesnice.
-- Staré pasivní odměny za zabíjení, těžbu, farmaření a rybaření.
-- Starý obchod, prokletí, relikvie, stará výbava, denní výzvy, sezónní přepínače, hudba, shader a dekorace světa.
-- Konfigurace, příkazy a skripty sloužící výhradně odstraněným systémům.
+Integrovaný modul obsahuje Trick-or-Treat u dveří i vesničanů, halloweenské sladkosti a negativní setkání, strašidelné noci, duchy, jumpscare efekty, roje netopýrů, dýňový déšť, krvavý déšť vykreslený částicemi, Headless Horseman bosse, halloweenské chování mobů, nájezdy nemrtvých s cíli a vlnami, sezonní odměny, žebříček nasbíraných sladkostí, menu a individuální nastavení zvuků/opt-outu. Zachované jsou také integrace pro PlaceholderAPI a volitelné WorldGuard, GriefPrevention a CustomJukebox.
 
-Žádný ze starých mobů, bossů ani původních eventů se v této verzi znovu nezapíná.
+## HorrorNights
 
-## Odměny za questy
+Nezávislý modul má náhodné spouštění hororových nocí, nebezpečnější a označené moby, ambientní zvuky, částice a náhodné efekty. **Hororové eventy nemění počasí ani oblohu** a krvavý déšť používá pouze částice a zvuky.
 
-HalloweenCore odmění quest pouze při prvním úspěšném volání /halloween quest complete <id>. Pro konkrétní ID lze nastavit pevný počet fragmentů nebo obtížnost a rozsah v quest-rewards.quests.<id>. Šance na klíče se konfigurují samostatně. Ukázkové ID farmer_wheat je nastaveno na pět fragmentů bez bonusového klíče.
+Výchozí sezóna je **23. října až 2. listopadu včetně** v časovém pásmu `Europe/Prague`.
 
-Klíče mají tři serverem ověřované rarity: common, rare a legendary. Všechny používají tutéž existující ItemsAdder texturu warriorland_halloween:secret_key; rarita je uložená v PersistentDataContainer, neodvozuje se od názvu předmětu.
+## Denní a týdenní questy a fragmenty
 
-## Tajné podzemní místnosti
+Příkaz `/quest` zobrazí obě skupiny; `/quest daily` zobrazí denní kontrakty a `/quest weekly` týdenní výzvy. Každý den je aktivních **15 různých kontraktů najednou**: 4 lehké, 4 střední, 3 těžké, 2 velmi těžké a 2 extrémní. Každé pondělí se obmění také **3 týdenní výzvy**: jedna těžká, jedna velmi těžká a jedna extrémní. Zadání se vybírají z poolu **180 unikátních úkolů** zaměřených na souboje, těžbu, farmaření, crafting, rybaření, sbírání kořisti a chov zvířat. Postup se ukládá do `plugins/HalloweenCore/players.yml`; běžné přihlášení ani reload postup nemažou.
 
-- Generují se jen v nově vytvořených chunkech; staré oblasti se zpětně neprokopávají.
-- Výchozí šance je 1 % na nový chunk. Místnost vznikne jen uvnitř souvislého přírodního kamene, pokud prostor neobsahuje rudu, vodu, vzduch, stavbu ani jiné bloky.
-- Místnost má velikost 5×4×5, skrytý krátký vstup a jednu evidovanou truhlu.
-- Rarity common / rare / legendary mají výchozí váhy 70 / 25 / 5.
-- Truhlu nelze otevřít ani rozbít bez klíče stejné rarity; chrání ji také kontrola výbuchu a automatického přenosu přes hopper.
-- Při prvním odemčení se připíšou fragmenty podle rarity a truhla se naplní nastavenými vanilla předměty. Loot se znovu nehází při opětovném otevření.
+Denní odměny jsou odstupňované podle pěti obtížností: lehké **1–2**, střední **3–5**, těžké **6–9**, velmi těžké **10–15** a extrémní **16–24 fragmentů**. Dokončení všech 15 denních kontraktů přidá **15 fragmentů navíc**. Týdenní výzvy násobí odměnu příslušné obtížnosti koeficientem **3×** a dokončení všech tří přidá **50 fragmentů**. Jednotlivé odměny i bonusy lze upravit v `config.yml`.
 
-Nastavení je v plugins/HalloweenCore/config.yml v sekci secret-rooms. Přidej skutečný název herního světa do secret-rooms.worlds. Dokud je seznam prázdný, nic se negeneruje. Svět Spawn zůstává vyloučený.
+### Jobs Reborn
 
-## Zachovaný ItemsAdder obsah
+Je-li nainstalovaný plugin Jobs Reborn, propojení automaticky převádí každých **25 získaných Jobs XP na 1 Halloween fragment**. Limit je **8 fragmentů denně z Jobs** na hráče; Jobs tedy přidává menší průběžný bonus, ale nenahrazuje hlavní postup přes questy. Bez Jobs Reborn zbytek HalloweenCore normálně funguje. Integrace používá veřejnou událost `JobsExpGainEvent` z [Jobs Reborn API](https://github.com/Zrips/Jobs/wiki/API).
 
-Zůstalo třináct licencovaných sladkostí s nezměněnými texturami a vlastní 32×32 pixel-art textura klíče. Licenční poznámky a zdrojové SHA-256 záznamy ke sladkostem zůstávají zachované. Staré moby, bossové, eventy, obchod, vybavení, relikvie, náhrobky, dekorace, zvuky, obloha a shader nejsou součástí nového balíčku.
+## Vlastní textura fragmentu
+
+Fragmenty mají vlastní 64×64 pixel-art ikonu `halloween_fragment.png`, která se zobrazuje u zůstatku v GUI obchodu, pokud je aktivní ItemsAdder a klient přijal resource pack. Položka `warriorland_halloween:halloween_fragment` slouží jako grafická ikona — skutečná měna je bezpečně vedena jako číselný zůstatek `players.<UUID>.fragments` v `plugins/HalloweenCore/players.yml`. Fragmentový předmět proto není směnitelný token a nelze jej rozmnožovat jako náhradu zůstatku.
+
+## Obchod a ceny
+
+Všechny ceny jsou v halloweenských fragmentech. U surovin je uvedené množství za jednu koupi; vybavení a vzácné předměty se prodávají po jednom. Obchod má široký katalog běžných surovin, stavebních bloků, jídla, utility předmětů, zbroje a endgame výbavy.
+
+| Předmět | Cena |
+| --- | ---: |
+| Sladkost z kolekce | 3 fragmenty |
+| Železné ingoty (16) | 18 fragmentů |
+| Diamant | 45 fragmentů |
+| Netheritový ingot | 350 fragmentů |
+| Zlaté jablko | 100 fragmentů |
+| **Enchanted Golden Apple** | **1 000 fragmentů** |
+| Totem of Undying | 750 fragmentů |
+| Nether Star | 900 fragmentů |
+| Netherite Upgrade Template | 1 100 fragmentů |
+| Mace – oranžová varianta | 1 400 fragmentů |
+| Beacon | 1 600 fragmentů |
+| Elytra | 2 000 fragmentů |
+
+Ceny jsou nastavitelné v `shop.prices` v `config.yml`. Enchanted Golden Apple zůstává záměrně prémiový nákup; kontrola CI hlídá, aby nestál méně než 1 000 fragmentů.
+
+## Oranžové zbraně
+
+`scripts/generate_orange_weapon_items.py` generuje definice ItemsAdder pro oranžové varianty trojzubce, palcátu, netheritového meče a sekery. Používá se obarvení vestavěné do moderního systému `graphics.color`, takže nejsou potřeba nové PNG textury. Je potřeba ItemsAdder 4.0.13+ a Minecraft 1.21.4+ na serveru i klientovi; na Minecraftu 1.21.10 není zahrnuto kopí, které přibylo až v 1.21.11. Viz [dokumentace ItemsAdder – Colored Items](https://wiki.itemsadder.com/adding-content/colored-items/). Nákupy těchto zbraní použijí vlastní ItemsAdder item, pokud je ItemsAdder aktivní; jinak zůstává vanilla náhrada. Po změně obsahu vytvoř resource pack příkazem `/iazip` a ověř, že klient resource pack přijal.
+
+## Záměrně odstraněný obsah
+
+Dialogové questy, BetonQuest NPC balíček a Citizens integrace jsou odstraněné; běžné herní questy zůstávají dostupné přes `/quest`. Tajné místnosti, klíče a jejich textura zůstávají odstraněné. Nefunkční generátor hrobů/tajné podzemní struktury se neobnovuje. Žádný event násilně nemění počasí nebo oblohu. Zachovaných 13 licencovaných sladkostí Stev's Halloween má dál svou MIT licenci a SHA-256 manifest.
 
 ## Příkazy
 
-- /halloween help
-- /halloween quest start <id>
-- /halloween quest progress <id> [množství]
-- /halloween quest complete <id>
-- /halloween quest status [id]
-- /halloween fragments
-- /halloween key give [common|rare|legendary] [hráč] [počet] (admin)
-- /halloween rooms status
-- /halloween reload (admin)
+- `/quest` — denní a týdenní kontrakty
+- `/halloween shop`, `/halloween fragments`, `/halloween reload`
+- `/spooky on|off|status|reload|rewards|optout|top|menu`
+- `/spookyboss`, `/spookyraid`, `/spookyvolume`
+- `/pumpkinrain start|stop`, `/bloodrain start|stop`
+- `/horrornights start|stop|status|reload [svět]`
 
-## Sestavení a nasazení
+## Build a nasazení
 
-GitHub Actions sestaví plugin JAR a vytvoří dva obsahové ZIP balíčky: ItemsAdder a BetonQuest. Z úspěšného běhu stáhni artefakty:
-- HalloweenCore-JAR
-- WarriorLand-Halloween-ItemsAdder
-- WarriorLand-Halloween-BetonQuest
+CI ověřuje textury, konfiguraci, questy/obchod a oranžové zbraně, sestavuje JAR přes Maven a balí ItemsAdder obsah. Úspěšný build nenahrazuje živý test na skutečném serveru.
 
-JAR vlož do plugins/ a server restartuj. ItemsAdder obsah zkopíruj do plugins/ItemsAdder/contents/warriorland_halloween/, spusť /iazip a ověř doručení resource packu. BetonQuest ZIP rozbal do plugins/BetonQuest/ a postupuj podle návodu pro přiřazení Citizens NPC ID.
-
-CI ověřuje konfigurace, loot tabulky, ukázkový BetonQuest balíček, Maven sestavení i zabalení artefaktů. Po sestavení je stále nutný živý test na serveru — zejména ověření NPC ID, konverzace a reward flow.
+1. Vezmi `HalloweenCore.jar` z úspěšného GitHub Actions buildu a nahraď starý JAR v `plugins/`.
+2. Nahraj obsah `itemsadder/contents/warriorland_halloween/` do `plugins/ItemsAdder/contents/warriorland_halloween/`.
+3. Restartuj server, zkontroluj konzoli a spusť `/iazip`; hráči musí přijmout resource pack.
