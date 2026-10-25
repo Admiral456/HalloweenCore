@@ -198,7 +198,7 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("GOLDEN_CARROT", 8, "golden-carrot", 25, "Zlaté mrkve (8)", "Kvalitní jídlo.", false));
         offers.add(vanilla("PUMPKIN_PIE", 8, "pumpkin-pie", 15, "Dýňové koláče (8)", "Halloweenová svačina.", false));
         offers.add(vanilla("HONEY_BOTTLE", 4, "honey-bottle", 18, "Medové lahve (4)", "Sladká zásoba.", false));
-        offers.add(vanilla("GOLDEN_APPLE", 1, "golden-apple", 45, "Zlaté jablko", "Vzácná nouzová léčba.", false));
+        offers.add(vanilla("GOLDEN_APPLE", 1, "golden-apple", 100, "Zlaté jablko", "Vzácná nouzová léčba.", false));
         offers.add(vanilla("ENCHANTED_GOLDEN_APPLE", 1, "enchanted-golden-apple", 1000,
                 "Zakleté zlaté jablko", "Extrémně vzácná endgame odměna.", true));
 
