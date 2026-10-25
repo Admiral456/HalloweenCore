@@ -45,7 +45,7 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
     private record ActivityCount(Activity activity, String target, int amount) {}
 
     // Fifteen daily contracts across five tiers: 4 light, 4 medium, 3 hard,
-    // 2 very-hard and 2 extreme. The pool offers 130 different task definitions.
+    // 2 very-hard and 2 extreme. The pool offers 180 different task definitions.
     private static final List<ContractSlot> SLOTS = List.of(
             new ContractSlot("daily-quest", "light", "LEHKÝ", false),
             new ContractSlot("daily-quests.medium", "medium", "STŘEDNÍ", false),
@@ -213,6 +213,57 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("shulkers-extreme-extra", "Padesát schránek", "Poraz 50 shulkerů.", 50, "extreme", Activity.KILL, "SHULKER"),
             new Task("nether-stars-extreme-extra", "Pět hvězd podsvětí", "Získej 5 nether star.", 5, "extreme", Activity.PICKUP, "NETHER_STAR"),
             new Task("beacons-extreme-extra", "Majáky na konci světa", "Vyrob 3 majáky.", 3, "extreme", Activity.CRAFT, "BEACON")
+            // Další úkoly pro rozšířenou rotaci — každý den se losují různé cíle.
+            new Task("bat-hunt-light", "Křídla ve tmě", "Poraz 8 netopýrů.", 8, "light", Activity.KILL, "BAT"),
+            new Task("pigs-light", "Zásoba vepřového", "Poraz 6 prasat.", 6, "light", Activity.KILL, "PIG"),
+            new Task("rabbits-light", "Králík v měsíčním světle", "Poraz 4 králíky.", 4, "light", Activity.KILL, "RABBIT"),
+            new Task("dirt-light", "Zemina na stavbu", "Vytěž 64 bloků hlíny.", 64, "light", Activity.BLOCK, "DIRT"),
+            new Task("sand-light", "Písek do zásob", "Vytěž 48 bloků písku.", 48, "light", Activity.BLOCK, "SAND"),
+            new Task("kelp-light", "Mořská sklizeň", "Nasbírej 24 bloků chaluh.", 24, "light", Activity.BLOCK, "KELP"),
+            new Task("beetroot-light", "Červená úroda", "Sklid 12 bloků červené řepy.", 12, "light", Activity.BLOCK, "BEETROOTS"),
+            new Task("chest-craft-light", "Truhla na výpravu", "Vyrob 4 truhly.", 4, "light", Activity.CRAFT, "CHEST"),
+            new Task("ladder-craft-light", "Cesta vzhůru", "Vyrob 24 žebříků.", 24, "light", Activity.CRAFT, "LADDER"),
+            new Task("feathers-light", "Peří pro lovce", "Sebírej 16 pírek.", 16, "light", Activity.PICKUP, "FEATHER"),
+            new Task("zombies-medium-extra", "Noční hlídka", "Poraz 20 zombie.", 20, "medium", Activity.KILL, "ZOMBIE"),
+            new Task("cave-spiders-medium", "Pavučina v hlubinách", "Poraz 12 jeskynních pavouků.", 12, "medium", Activity.KILL, "CAVE_SPIDER"),
+            new Task("bogged-medium", "Jedovaté šípy", "Poraz 8 bogged.", 8, "medium", Activity.KILL, "BOGGED"),
+            new Task("copper-ore-medium", "Měděná žíla", "Vytěž 24 měděných rud.", 24, "medium", Activity.BLOCK, "COPPER_ORE"),
+            new Task("hoppers-craft-medium", "Sběrný mechanismus", "Vyrob 8 hopperů.", 8, "medium", Activity.CRAFT, "HOPPER"),
+            new Task("bookshelves-craft-medium", "Knihovna čaroděje", "Vyrob 12 knihoven.", 12, "medium", Activity.CRAFT, "BOOKSHELF"),
+            new Task("iron-pickaxe-craft-medium", "Nový krumpáč", "Vyrob 2 železné krumpáče.", 2, "medium", Activity.CRAFT, "IRON_PICKAXE"),
+            new Task("arrows-pickup-medium", "Munice do zásoby", "Sebírej 64 šípů.", 64, "medium", Activity.PICKUP, "ARROW"),
+            new Task("honey-medium", "Sladká odměna", "Sněz 6 lahví medu.", 6, "medium", Activity.CONSUME, "HONEY_BOTTLE"),
+            new Task("breed-pigs-medium", "Prasečí farma", "Rozmnož 8 prasat.", 8, "medium", Activity.BREED, "PIG"),
+            new Task("evokers-hard-extra", "Pánové magie", "Poraz 5 evokerů.", 5, "hard", Activity.KILL, "EVOKER"),
+            new Task("vexes-hard", "Malí přízraci", "Poraz 20 vexů.", 20, "hard", Activity.KILL, "VEX"),
+            new Task("piglin-brutes-hard", "Zlatá pevnost", "Poraz 12 piglin brutes.", 12, "hard", Activity.KILL, "PIGLIN_BRUTE"),
+            new Task("breeze-hard", "Vichřice v komnatě", "Poraz 12 breeze.", 12, "hard", Activity.KILL, "BREEZE"),
+            new Task("blackstone-hard", "Černý kámen", "Vytěž 96 bloků blackstone.", 96, "hard", Activity.BLOCK, "BLACKSTONE"),
+            new Task("echo-shards-hard", "Ozvěna hlubiny", "Sebírej 8 echo shardů.", 8, "hard", Activity.PICKUP, "ECHO_SHARD"),
+            new Task("crossbows-hard", "Kuše lovce", "Vyrob 4 kuše.", 4, "hard", Activity.CRAFT, "CROSSBOW"),
+            new Task("golden-carrots-hard", "Zlaté zásoby", "Vyrob 32 zlatých mrkví.", 32, "hard", Activity.CRAFT, "GOLDEN_CARROT"),
+            new Task("turtle-scutes-hard", "Poklad z pobřeží", "Sebírej 8 želvích štítků.", 8, "hard", Activity.PICKUP, "TURTLE_SCUTE"),
+            new Task("end-crystals-hard-extra", "Krystaly na hraně", "Vyrob 6 endových krystalů.", 6, "hard", Activity.CRAFT, "END_CRYSTAL"),
+            new Task("piglin-brutes-very-hard", "Elita bastionu", "Poraz 30 piglin brutes.", 30, "very-hard", Activity.KILL, "PIGLIN_BRUTE"),
+            new Task("breezes-very-hard", "Bouře v trial chambers", "Poraz 30 breeze.", 30, "very-hard", Activity.KILL, "BREEZE"),
+            new Task("bogged-very-hard", "Bažinná legie", "Poraz 30 bogged.", 30, "very-hard", Activity.KILL, "BOGGED"),
+            new Task("end-stone-very-hard", "Pevnost Endu", "Vytěž 128 end stone.", 128, "very-hard", Activity.BLOCK, "END_STONE"),
+            new Task("elytra-pickup-very-hard", "Křídla svobody", "Získej Elytru jako předmět.", 1, "very-hard", Activity.PICKUP, "ELYTRA"),
+            new Task("nether-stars-very-hard", "Hvězda podsvětí", "Získej 2 nether stars.", 2, "very-hard", Activity.PICKUP, "NETHER_STAR"),
+            new Task("heart-of-sea-very-hard", "Srdce oceánu", "Získej srdce moře.", 1, "very-hard", Activity.PICKUP, "HEART_OF_THE_SEA"),
+            new Task("conduit-craft-very-hard", "Oko mořské bouře", "Vyrob konduit.", 1, "very-hard", Activity.CRAFT, "CONDUIT"),
+            new Task("shulker-shells-very-hard", "Přenosný poklad", "Sebírej 12 shulkerových schránek.", 12, "very-hard", Activity.PICKUP, "SHULKER_SHELL"),
+            new Task("totems-very-hard", "Nesmrtelní obránci", "Získej 5 totemů nesmrtelnosti.", 5, "very-hard", Activity.PICKUP, "TOTEM_OF_UNDYING"),
+            new Task("dragon-egg-extreme", "Vejce posledního draka", "Získej dračí vejce.", 1, "extreme", Activity.PICKUP, "DRAGON_EGG"),
+            new Task("elytra-extreme", "Lovec oblohy", "Získej 3 Elytry.", 3, "extreme", Activity.PICKUP, "ELYTRA"),
+            new Task("enchanted-apples-extreme", "Zakleté zásoby", "Získej 8 zakletých zlatých jablek.", 8, "extreme", Activity.PICKUP, "ENCHANTED_GOLDEN_APPLE"),
+            new Task("netherite-ingots-extreme", "Král netheritu", "Získej 16 netheritových ingotů.", 16, "extreme", Activity.PICKUP, "NETHERITE_INGOT"),
+            new Task("maces-extreme", "Pád z výšin", "Vyrob 4 palcáty.", 4, "extreme", Activity.CRAFT, "MACE"),
+            new Task("netherite-swords-extreme", "Arzenál temného kovu", "Vyrob 16 netheritových mečů.", 16, "extreme", Activity.CRAFT, "NETHERITE_SWORD"),
+            new Task("conduits-extreme", "Vládci oceánů", "Vyrob 4 konduity.", 4, "extreme", Activity.CRAFT, "CONDUIT"),
+            new Task("obsidian-128-extreme", "Černá zeď světa", "Vytěž 128 obsidiánu.", 128, "extreme", Activity.BLOCK, "OBSIDIAN"),
+            new Task("hostiles-250-extreme", "Očista světa", "Poraz 250 nepřátelských mobů.", 250, "extreme", Activity.HOSTILE_KILL, "HOSTILE_ANY"),
+            new Task("breed-100-extreme", "Říše chovatelů", "Rozmnož 100 zvířat.", 100, "extreme", Activity.BREED, "ANY")
     );
 
     private static final Set<String> HOSTILE_MOBS = Set.of(
