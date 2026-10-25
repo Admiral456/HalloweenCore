@@ -31,9 +31,9 @@ legacy_reward = cfg["daily-quest"].get("reward-fragments")
 if not isinstance(legacy_reward, int) or legacy_reward < 0:
     raise SystemExit("Invalid legacy daily-quest migration reward")
 
-# The pool contains 130 possible tasks across five tiers, with 15 daily and three weekly assignments.
+# The pool contains 180 possible tasks across five tiers, with 15 daily and three weekly assignments.
 quest_source = (root / "src/main/java/cz/halloween/core/DailyQuestManager.java").read_text(encoding="utf-8")
-if quest_source.count("new Task(") < 120:
+if quest_source.count("new Task(") < 180:
     raise SystemExit("Expected at least 80 daily/weekly contract definitions")
 for difficulty in ['"light"', '"medium"', '"hard"', '"very-hard"', '"extreme"']:
     if difficulty not in quest_source:
@@ -102,8 +102,8 @@ for item in prices:
         raise SystemExit(f"Shop has a configured price without an offer: {item}")
 if prices["elytra"] <= prices["diamond"] or prices["mace"] <= prices["iron"]:
     raise SystemExit("Endgame prices are not meaningfully higher than basic resources")
-if prices["enchanted-golden-apple"] < 700 or prices["enchanted-golden-apple"] <= prices["golden-apple"]:
-    raise SystemExit("Enchanted golden apples must cost at least 700 fragments and far more than normal golden apples")
+if prices["enchanted-golden-apple"] < 1000 or prices["enchanted-golden-apple"] <= prices["golden-apple"]:
+    raise SystemExit("Enchanted golden apples must cost at least 1000 fragments and far more than normal golden apples")
 if prices["beacon"] <= prices["netherite-ingot"] or prices["nether-star"] <= prices["diamond"]:
     raise SystemExit("Rare endgame items must have premium prices")
 if prices["elytra"] < 1800 or prices["beacon"] < 1400 or prices["mace"] < 1200:
