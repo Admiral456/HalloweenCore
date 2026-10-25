@@ -142,7 +142,54 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("ORANGE_CONCRETE", 32, "orange-concrete", 30, "Oranžový beton (32)", "Halloweenová stavební paleta.", false));
         offers.add(vanilla("LANTERN", 8, "lantern", 25, "Lucerny (8)", "Teplé osvětlení.", false));
         offers.add(vanilla("CAMPFIRE", 8, "campfire", 20, "Tábornické ohně (8)", "Atmosférická dekorace.", false));
-        offers.add(vanilla("CHAIN", 16, "chain", 35, "Řetězy (16)", "Na lampy a dekorace.", false));
+         offers.add(vanilla("CHAIN", 16, "chain", 35, "Řetězy (16)", "Na lampy a dekorace.", false));
+        offers.add(vanilla("DIRT", 64, "dirt", 8, "Hlína (64)", "Základní stavební materiál.", false));
+        offers.add(vanilla("SAND", 64, "sand", 10, "Písek (64)", "Na sklo a stavby.", false));
+        offers.add(vanilla("GRAVEL", 64, "gravel", 10, "Štěrk (64)", "Stavební a výrobní materiál.", false));
+        offers.add(vanilla("NETHERRACK", 64, "netherrack", 12, "Netherrack (64)", "Stavební blok z Netheru.", false));
+        offers.add(vanilla("SOUL_SAND", 32, "soul-sand", 20, "Písek duší (32)", "Temný materiál z Netheru.", false));
+        offers.add(vanilla("SOUL_SOIL", 32, "soul-soil", 20, "Půda duší (32)", "Temný materiál z údolí duší.", false));
+        offers.add(vanilla("BASALT", 32, "basalt", 18, "Čedič (32)", "Dekorační kámen z Netheru.", false));
+        offers.add(vanilla("BLACKSTONE", 32, "blackstone", 18, "Černokámen (32)", "Temný stavební blok.", false));
+        offers.add(vanilla("END_STONE", 32, "end-stone", 35, "Endový kámen (32)", "Vzácnější blok z Endu.", false));
+        offers.add(vanilla("PURPUR_BLOCK", 16, "purpur-block", 45, "Purpurové bloky (16)", "Stavební materiál z Endu.", false));
+        offers.add(vanilla("BRICKS", 32, "bricks", 20, "Cihly (32)", "Klasický stavební blok.", false));
+        offers.add(vanilla("BOOKSHELF", 8, "bookshelf", 45, "Knihovny (8)", "Pro očarovací místnost.", false));
+        offers.add(vanilla("ENCHANTING_TABLE", 1, "enchanting-table", 100, "Očarovací stůl", "Základ pro očarování výbavy.", false));
+        offers.add(vanilla("BREWING_STAND", 1, "brewing-stand", 50, "Varný stojan", "Pro přípravu lektvarů.", false));
+        offers.add(vanilla("HOPPER", 8, "hopper", 55, "Trychtýře (8)", "Pro automatické třídění předmětů.", false));
+        offers.add(vanilla("DISPENSER", 8, "dispenser", 40, "Dávkovače (8)", "Pro redstone mechanismy.", false));
+        offers.add(vanilla("DROPPER", 8, "dropper", 35, "Vhazovače (8)", "Pro redstone mechanismy.", false));
+        offers.add(vanilla("PISTON", 8, "piston", 45, "Písty (8)", "Pro automatizaci.", false));
+        offers.add(vanilla("STICKY_PISTON", 4, "sticky-piston", 75, "Lepivé písty (4)", "Pro pokročilé redstone stroje.", false));
+        offers.add(vanilla("OBSERVER", 8, "observer", 55, "Pozorovatelé (8)", "Detekce změn bloků.", false));
+        offers.add(vanilla("COMPARATOR", 8, "comparator", 35, "Komparátory (8)", "Pro redstone obvody.", false));
+        offers.add(vanilla("REPEATER", 16, "repeater", 25, "Opakovače (16)", "Pro redstone obvody.", false));
+        offers.add(vanilla("CHEST", 16, "chest", 15, "Truhly (16)", "Základní úložiště.", false));
+        offers.add(vanilla("BARREL", 16, "barrel", 18, "Sudy (16)", "Úložiště do dílen a skladů.", false));
+        offers.add(vanilla("MINECART", 1, "minecart", 65, "Vozík", "Pro důlní železnice.", false));
+        offers.add(vanilla("RAIL", 32, "rail", 20, "Koleje (32)", "Základní železniční trať.", false));
+        offers.add(vanilla("POWERED_RAIL", 16, "powered-rail", 55, "Poháněné koleje (16)", "Pro rychlou dopravu.", false));
+        offers.add(vanilla("ARMOR_STAND", 4, "armor-stand", 25, "Stojany na zbroj (4)", "Na vystavení výbavy.", false));
+        offers.add(vanilla("LEATHER", 16, "leather", 12, "Kůže (16)", "Na brnění a knihy.", false));
+        offers.add(vanilla("LEATHER_CHESTPLATE", 1, "leather-chestplate", 35, "Kožená tunika", "Lehká základní zbroj.", true));
+        offers.add(vanilla("TURTLE_HELMET", 1, "turtle-helmet", 160, "Želví krunýř", "Vzácná helma s vodní výhodou.", true));
+        offers.add(vanilla("GOLDEN_HELMET", 1, "golden-helmet", 55, "Zlatá helma", "Základní zlatá zbroj.", true));
+        offers.add(vanilla("GOLDEN_SWORD", 1, "golden-sword", 25, "Zlatý meč", "Lehká zbraň.", true));
+        offers.add(vanilla("IRON_SWORD", 1, "iron-sword", 30, "Železný meč", "Spolehlivá zbraň.", true));
+        offers.add(vanilla("IRON_AXE", 1, "iron-axe", 35, "Železná sekera", "Nástroj i zbraň.", true));
+        offers.add(vanilla("BONE_BLOCK", 32, "bone-block", 35, "Kostěné bloky (32)", "Dekorační blok.", false));
+        offers.add(vanilla("MOSS_BLOCK", 32, "moss-block", 30, "Mechové bloky (32)", "Přírodní dekorace.", false));
+        offers.add(vanilla("SPONGE", 4, "sponge", 100, "Houby (4)", "Užitečné pro odvodnění.", false));
+        offers.add(vanilla("SEA_PICKLE", 16, "sea-pickle", 30, "Mořské okurky (16)", "Podvodní dekorace.", false));
+        offers.add(vanilla("FLOWER_POT", 16, "flower-pot", 20, "Květináče (16)", "Dekorace staveb.", false));
+        offers.add(vanilla("PUMPKIN", 16, "pumpkin", 12, "Dýně (16)", "Halloweenová dekorace.", false));
+        offers.add(vanilla("CARVED_PUMPKIN", 8, "carved-pumpkin", 20, "Vyřezávané dýně (8)", "Halloweenská dekorace.", false));
+        offers.add(vanilla("JACK_O_LANTERN", 8, "jack-o-lantern", 30, "Dýňové lucerny (8)", "Dekorace a světlo.", false));
+        offers.add(vanilla("HONEY_BLOCK", 8, "honey-block", 45, "Medové bloky (8)", "Lepivý stavební materiál.", false));
+        offers.add(vanilla("TARGET", 8, "target", 35, "Terče (8)", "Pro střelbu a redstone.", false));
+        offers.add(vanilla("REDSTONE_LAMP", 16, "redstone-lamp", 30, "Redstone lampy (16)", "Ovládatelné osvětlení.", false));
+        offers.add(vanilla("REDSTONE_TORCH", 32, "redstone-torch", 20, "Redstone pochodně (32)", "Pro redstone obvody.", false));
 
         // Food and healing.
         offers.add(vanilla("BREAD", 16, "bread", 10, "Chléb (16)", "Základní jídlo na cesty.", false));
@@ -152,7 +199,7 @@ public final class HalloweenShopManager implements Listener {
         offers.add(vanilla("PUMPKIN_PIE", 8, "pumpkin-pie", 15, "Dýňové koláče (8)", "Halloweenová svačina.", false));
         offers.add(vanilla("HONEY_BOTTLE", 4, "honey-bottle", 18, "Medové lahve (4)", "Sladká zásoba.", false));
         offers.add(vanilla("GOLDEN_APPLE", 1, "golden-apple", 45, "Zlaté jablko", "Vzácná nouzová léčba.", false));
-        offers.add(vanilla("ENCHANTED_GOLDEN_APPLE", 1, "enchanted-golden-apple", 750,
+        offers.add(vanilla("ENCHANTED_GOLDEN_APPLE", 1, "enchanted-golden-apple", 1000,
                 "Zakleté zlaté jablko", "Extrémně vzácná endgame odměna.", true));
 
         // Utility and exploration supplies.
