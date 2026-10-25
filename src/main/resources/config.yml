@@ -657,6 +657,53 @@ shop:
     lantern: 25
     campfire: 20
     chain: 35
+    dirt: 8
+    sand: 10
+    gravel: 10
+    netherrack: 12
+    soul-sand: 20
+    soul-soil: 20
+    basalt: 18
+    blackstone: 18
+    end-stone: 35
+    purpur-block: 45
+    bricks: 20
+    bookshelf: 45
+    enchanting-table: 100
+    brewing-stand: 50
+    hopper: 55
+    dispenser: 40
+    dropper: 35
+    piston: 45
+    sticky-piston: 75
+    observer: 55
+    comparator: 35
+    repeater: 25
+    chest: 15
+    barrel: 18
+    minecart: 65
+    rail: 20
+    powered-rail: 55
+    armor-stand: 25
+    leather: 12
+    leather-chestplate: 35
+    turtle-helmet: 160
+    golden-helmet: 55
+    golden-sword: 25
+    iron-sword: 30
+    iron-axe: 35
+    bone-block: 35
+    moss-block: 30
+    sponge: 100
+    sea-pickle: 30
+    flower-pot: 20
+    pumpkin: 12
+    carved-pumpkin: 20
+    jack-o-lantern: 30
+    honey-block: 45
+    target: 35
+    redstone-lamp: 30
+    redstone-torch: 20
     glass: 15
     obsidian: 35
     quartz-block: 30
@@ -671,7 +718,7 @@ shop:
     pumpkin-pie: 15
     honey-bottle: 18
     golden-apple: 65
-    enchanted-golden-apple: 750
+    enchanted-golden-apple: 1000
     # Utility and exploration
     ender-pearl: 25
     blaze-rod: 35
