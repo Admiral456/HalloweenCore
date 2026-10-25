@@ -212,7 +212,7 @@ public final class DailyQuestManager implements Listener, CommandExecutor, TabCo
             new Task("ancient-debris-extreme-extra", "Netheritový poklad", "Vytěž 64 ancient debris.", 64, "extreme", Activity.BLOCK, "ANCIENT_DEBRIS"),
             new Task("shulkers-extreme-extra", "Padesát schránek", "Poraz 50 shulkerů.", 50, "extreme", Activity.KILL, "SHULKER"),
             new Task("nether-stars-extreme-extra", "Pět hvězd podsvětí", "Získej 5 nether star.", 5, "extreme", Activity.PICKUP, "NETHER_STAR"),
-            new Task("beacons-extreme-extra", "Majáky na konci světa", "Vyrob 3 majáky.", 3, "extreme", Activity.CRAFT, "BEACON")
+            new Task("beacons-extreme-extra", "Majáky na konci světa", "Vyrob 3 majáky.", 3, "extreme", Activity.CRAFT, "BEACON"),
             // Další úkoly pro rozšířenou rotaci — každý den se losují různé cíle.
             new Task("bat-hunt-light", "Křídla ve tmě", "Poraz 8 netopýrů.", 8, "light", Activity.KILL, "BAT"),
             new Task("pigs-light", "Zásoba vepřového", "Poraz 6 prasat.", 6, "light", Activity.KILL, "PIG"),
